@@ -226,15 +226,16 @@ struct CreatePolicyView: View {
                             
                             policyController.addCategoryToPolicy(xmlContent: policyController.newPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
                             
-                            policyController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: policyController.xmlDoc, policyId: "0")
+                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: policyController.xmlDoc, policyId: "0")
                             
                             layout.separationLine()
                             print("Creating New Policy:\(newPolicyName)")
                             print("Category:\(selectedCategory.name)")
                             print("Department:\(selectedDepartment.name)")
                             print("xml is:\(policyController.newPolicyAsXML)")
+//                            print("authToken is:\(networkController.authToken)")
                         }) {
-                            Text("Create Policy")
+                            Text("New Policy")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
@@ -242,9 +243,7 @@ struct CreatePolicyView: View {
                 }
                 
                 Text("Note: All Fields Must Be Filled")
-                    .tint(.red)
-                    .bold()
-                
+
                 VStack(alignment: .leading) {
                         LazyVGrid(columns: layout.columnFlexMedium) {
                         HStack {

@@ -347,8 +347,10 @@ struct OptionsView: View {
                     }
                  
                     ToolbarItem(id: "Status") {
+//                        VStack(alignment: .leading) {
                             VStack(alignment: .leading, spacing: 1) {
                             HStack {
+//                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right.circle" : "antenna.radiowaves.left.and.right.slash" )
                                 Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
 //                                Text("\t\t\(networkController.status)")
 //                                    .fontWeight(.bold)

@@ -106,6 +106,7 @@ struct ConnectSheet: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+          
             }
 #endif
         }
