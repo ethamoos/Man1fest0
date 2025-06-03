@@ -9,14 +9,16 @@ import AEXML
     // #########################################################################
     // Global Variables
     // #########################################################################
-    let debug_enabled = false
     
-    
+    //    #################################################################################
+    //    DEBUG STATUS
+    //    #################################################################################
+
+        @State var debugStatus = false
     
     // #########################################################################
     //  Build identifiers
     // #########################################################################
-
         
         let product_name = Bundle.main.infoDictionary!["CFBundleName"] as? String
         let product_version = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String
@@ -42,17 +44,15 @@ import AEXML
     var encoded = ""
     var initialDataLoaded = false
     
-    
     //    #################################################################################
     //    Alerts
+    //    #################################################################################
+
     @Published var showAlert = false
     var alertMessage = ""
     var alertTitle = ""
     var showActivity = false
-    
-    
-    
-    
+
     //    #################################################################################
     //    Error Codes
     //    #################################################################################
@@ -85,7 +85,6 @@ import AEXML
     //    ############ GROUPS
     //    #################################################################################
     
-    //    Members of a computer group
     @Published var compGroupComputers = [computerGroupResponse.Computer]()
     @Published var allComputerGroups: [ComputerGroup] = []
     @Published var computerGroupMembers: [ComputerGroupMembers] = []
@@ -107,10 +106,7 @@ import AEXML
     @Published var allPackagesAssignedToAPolicyGlobal: [Package?] = []
     @Published var packages: [Package] = []
     @Published var packagesAssignedToPolicy: [ Package ] = []
-    
     @Published var allPackages: [Package] = []
-    //    @Published var packageDetailed: PackageDetailed? = PackageDetailed(id: "", name: "", category: "", filename: "" , info: "", notes: "", priority: "", rebootRequired: "")
-    
     @Published var packageDetailed: PackageDetailed? = PackageDetailed(id: 0, name: "", category: "", filename: "" , info: "", notes: "", priority: 0, rebootRequired: false,fillUserTemplate: false, fillExistingUsers: false, allowUninstalled: false,
                                                                        osRequirements: "", requiredProcessor: "", hashType: "", hashValue: "", switchWithPackage: "",
                                                                        installIfReportedAvailable: "", reinstallOption: "", sendNotification: false  )
@@ -133,11 +129,6 @@ import AEXML
     @Published var allPoliciesDetailedGeneral: [General] = []
     
     var singlePolicyDetailedGeneral: General? = nil
-    
-    //    var imageA1: UIImage? = nil
-    //    var imageA2: UIImage!
-    //    var imageA3: UIImage = UIImage()
-    //    var imageA4: UIImage? = UIImage()
     
     //    #################################################################################
     //    XML data
@@ -249,12 +240,8 @@ import AEXML
     
 
     
-    
-    
-    
-    
     func getComputersBasic(server: String, authToken: String) async throws {
-        
+        self.separationLine()
         print("Running getComputersBasic")
         let jamfURLQuery = server + "/JSSResource/computers/subset/basic"
         let url = URL(string: jamfURLQuery)!
@@ -262,18 +249,15 @@ import AEXML
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        //        separationLine()
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         let decoder = JSONDecoder()
         
         self.allComputersBasic = try decoder.decode(ComputerBasic.self, from: data)
-        
-        //        DispatchQueue.main.async {
         
         self.allComputersBasicDict = self.allComputersBasic.computers
         
@@ -297,7 +281,6 @@ import AEXML
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
         print("Running func: getAllGroups")
@@ -313,10 +296,7 @@ import AEXML
         //        print("getAllGroups - processDetail Json data as text is:")
         //        print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
-        
-        //        DispatchQueue.main.async {
         self.allComputerGroups = try decoder.decode(Man1fest0.allComputerGroups.self, from: data).computerGroups
-        //        }
     }
     
     //    #################################################################################
@@ -345,9 +325,12 @@ import AEXML
         }
         
         //        DEBUG
-        separationLine()
-        print("processDetail getGroupMembers Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+        if self.debugStatus == true {
+            separationLine()
+            print("processDetail getGroupMembers Json data as text is:")
+            print(String(data: data, encoding: .utf8)!)
+        }
+        
         let compGroupData = try JSONDecoder().decode(computerGroupResponse.self, from: data)
         
         DispatchQueue.main.async {
@@ -382,10 +365,7 @@ import AEXML
         print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
         self.departments = try decoder.decode([Department].self, from: data)
-        //        print("Decoded departments are:\(allDepartments)")
-        //        for department in allDepartments {
-        //            print("- \(department)")
-        //        }
+
     }
     
     func receivedCategory(categories: [Category]) {
@@ -458,9 +438,8 @@ import AEXML
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-  
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
         print("Running func: getDepartments")
@@ -530,7 +509,6 @@ import AEXML
         print("jamfURLQuery is:\(jamfURLQuery)")
         let url = URL(string: jamfURLQuery)!
         print("url is:\(url)")
-//        print("authToken is:\(authToken)")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -561,15 +539,6 @@ import AEXML
         print("packageDetailed is:\(String(describing: self.packageDetailed))")
         
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     enum NetError: Error {
         case couldntEncodeNamePass
@@ -744,10 +713,7 @@ import AEXML
             }
         }
     }
-    
-    
-    
-    
+
     
     func appendStatus(_ string: String) {
         doubleSeparationLine()
@@ -942,8 +908,6 @@ import AEXML
             print("Current scriptID is:\(scriptID)")
             print("Running: deleteScriptAlt")
             print("resourceType is: \(resourceType)")
-            
-//            self.deleteScriptAlt(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
             
             Task {
                 try await self.deleteScript(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
@@ -1671,7 +1635,7 @@ import AEXML
     }
     
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
-        if self.debug_enabled == true {
+        if self.debugStatus == true {
             print("Running getDetailedPolicy - policyID is:\(policyID)")
         }
         let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
@@ -1690,7 +1654,7 @@ import AEXML
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
         self.policyDetailed = decodedData
         
-        if self.debug_enabled == true {
+        if self.debugStatus == true {
             separationLine()
             print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
         }
@@ -2922,75 +2886,33 @@ import AEXML
     
     
     
-    //    #################################################################################
-    //    updateGroup - addToGroup
-    //    #################################################################################
-    
-    
-    func updateGroup(server: String,resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-        
-        //        let resourcePath = getURLFormat(data: (resourceType))
-        //           let policyID = policyID
-        var xml: String
-        
-        print("Running updateGroup - updating via xml")
-        print("computerID is set as:\(computerID)")
-        print("computerName is set as:\(computerName)")
-        print("groupID is set as:\(groupID)")
-        
-        xml = """
-                   <computer_group>
-                       <computers>
-                               <computer>
-                               <name>﻿\(computerName)</name>
-                               </computer>
-                       </computers>
-                   </computer_group>
-                   """
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
-                print("Running update group function - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                // print("xml is set as:\(xml)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-            }
-        }
-    }
-    
-    
-    
     //    ##################################################
     //    addComputerToGroup
     //    ##################################################
     
     
     
-    func addComputerToGroup(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String, authToken: String) {
-        readXMLDataFromString(xmlContent: xmlContent)
-        
-        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
-        self.separationLine()
-        print("Running addComputerToGroup")
-        print("xmlContent is:\(xmlContent)")
-        print("url is:\(url)")
-        print("computerName is:\(computerId)")
-        print("computerId is:\(computerId)")
-        
-        let computers = self.xmlDoc.root["computers"].addChild(name: "computer")
-        computers.addChild(name: "id", value: computerId)
-        computers.addChild(name: "name", value: computerName)
-        print("updatedContent is:\(self.xmlDoc.root.xml)")
-        let jamfCount = computers.count
-        print("jamfCount is:\(jamfCount)")
-        
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
-        
-        
-    }
+//    func addComputerToGroup(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String, authToken: String) {
+//        readXMLDataFromString(xmlContent: xmlContent)
+//        
+//        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
+//        let url = URL(string: jamfURLQuery)!
+//        self.separationLine()
+//        print("Running addComputerToGroup")
+//        print("xmlContent is:\(xmlContent)")
+//        print("url is:\(url)")
+//        print("computerName is:\(computerId)")
+//        print("computerId is:\(computerId)")
+//        
+//        let computers = self.xmlDoc.root["computers"].addChild(name: "computer")
+//        computers.addChild(name: "id", value: computerId)
+//        computers.addChild(name: "name", value: computerName)
+//        print("updatedContent is:\(self.xmlDoc.root.xml)")
+//        let jamfCount = computers.count
+//        print("jamfCount is:\(jamfCount)")
+//        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+//
+//    }
     
     
     //    #################################################################################
