@@ -1264,7 +1264,6 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
     }
     
-    
     func disableAllComputersToScope(xmlContent: String, authToken: String, resourceType: ResourceType, server: String, policyId: String) {
         
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
@@ -1283,7 +1282,6 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         print("Submit updated doc")
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
     }
-    
     
     //    #################################################################################
     //    updatePolicyScopeDepartment - requires policy as XML
@@ -1304,7 +1302,6 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         let departmentCount = departments.count
         print("departmentCount is:\(departmentCount)")
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
-        
     }
     
     //    #################################################################################
@@ -1324,13 +1321,11 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         let buildingCount = buildings.count
         print("buildingCount is:\(buildingCount)")
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
-
     }
     
     //    #################################################################################
     //    updatePolicyScopeLimitationsAuto
     //    #################################################################################
-    
     
     func updatePolicyScopeLimitationsAuto(groupSelection: LDAPCustomGroup, authToken: String, resourceType: ResourceType, server: String, policyID: String) async {
         
@@ -1369,14 +1364,10 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             }
         }
     }
-        
-        
-        
     
     //    #################################################################################
     //    updatePolicyScopeLimitationsAutoRemove
     //    #################################################################################
-    
     
     func updatePolicyScopeLimitAutoRemove(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String) {
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
@@ -1384,8 +1375,6 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         
         self.separationLine()
         print("Running updatePolicyScopeLimitatAutoRemove")
-        
-//        print("Running readXMLDataFromStringScopingBrain")
 
         self.readXMLDataFromStringScopingBrain(xmlContent: currentPolicyAsXML)
         self.separationLine()
@@ -1455,35 +1444,21 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         //            currentUserLimitationsNetworkSegments.removeFromParent()
         //            currentUserLimitationsiBeacons.removeFromParent()
         separationLine()
-        
         print("Update currentScopeOverall")
         currentScopeOverall = xmlDoc.root["scope"]
-        
-        
         currentScopeOverall.addChild(currentComputers)
         currentScopeOverall.addChild(currentComputer_groups)
         currentScopeOverall.addChild(currentBuildings)
         currentScopeOverall.addChild(currentDepartments)
         separationLine()
-        
         print("Scope overall updated is:\n\(currentScopeOverall.xml)")
-        
         self.currentPolicyScopeXML = currentScopeOverall.xml
         self.separationLine()
         print("Read main XML doc - updated")
         print(xmlDoc.xml)
         separationLine()
-        
         print("Submit updated doc")
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
         print("The string is not empty")
-        //    }
     }
-    
-    
-    
-    
-    
-    
-    
 }

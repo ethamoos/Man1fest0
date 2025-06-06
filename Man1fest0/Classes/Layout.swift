@@ -117,8 +117,6 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 250))
     ]
     
-    
-    
     let fiveColumnsAdaptiveWide = [
         GridItem(.adaptive(minimum: 300)),
         GridItem(.adaptive(minimum: 300)),

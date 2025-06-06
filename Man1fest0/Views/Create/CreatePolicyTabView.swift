@@ -17,10 +17,9 @@ struct CreatePolicyTabView: View {
     //    ########################################
     
     @EnvironmentObject var networkController: NetBrain
-    // @EnvironmentObject var controller: JamfController
+
     @EnvironmentObject var progress: Progress
 
-    
     @EnvironmentObject var layout: Layout
 
     
@@ -48,16 +47,12 @@ struct CreatePolicyTabView: View {
     
     @State var newGroupName: String = ""
     
-    
     @State private var packagesAssignedToPolicy: [ Package ] = []
     
-    //    @State private var packageID = "1723"
     @State private var packageID = "0"
     
     @State private var packageName = ""
-    
-    //    @State private var policyPackages = ""
-    
+        
     @State var policyName = ""
     
     @State var scriptName = ""
@@ -65,9 +60,7 @@ struct CreatePolicyTabView: View {
     @State var scriptID = ""
     
     @State private var selectedResourceType = ResourceType.policyDetail
-    
-    
-    
+        
     
     //    ########################################
     //    Selections
@@ -124,9 +117,9 @@ struct CreatePolicyTabView: View {
                             
                             networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory.jamfId), category: selectedCategory.name, departmentID: String(describing: selectedDepartment.jamfId ?? 0) , department: selectedDepartment.name , scriptID: String(describing: $selectedScript.id), scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
                             
-                            // ##############################################################################
-                            //                            DEBUG - POLICY
-                            // ##############################################################################
+        // ##############################################################################
+        //                            DEBUG - POLICY
+        // ##############################################################################
                             
                             networkController.separationLine()
                             print("Creating new Policy:\(policyName)")
@@ -142,14 +135,13 @@ struct CreatePolicyTabView: View {
                         .tint(.blue)
                     }
 //                    .foregroundColor(.blue)
-//                    .background(.green)
                     .background(Color.green)
                 }
                 
-                // ##########################################################################################
-                //                        Selections
-                // ##########################################################################################
-                
+    // ##########################################################################################
+    //                        Selections
+    // ##########################################################################################
+    
                 
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategory, label: Text("Category")) {
@@ -191,9 +183,9 @@ struct CreatePolicyTabView: View {
                 }
 
                 
-                // ######################################################################################
-                //                        Script parameters
-                // ######################################################################################
+        // ######################################################################################
+        //                        Script parameters
+        // ######################################################################################
                 
                 
                 LazyVGrid(columns: layout.columns, spacing: 20) {
@@ -206,12 +198,45 @@ struct CreatePolicyTabView: View {
                 }
                 Divider()
             }
-        
             .padding()
-
+            
+            Group {
+                
+                Divider()
+                
+                // ######################################################################################
+                //                        Create New Department
+                // ######################################################################################
+                
+                HStack {
+                    Image(systemName:"hammer")
+                    
+                    Text("Create New Department").bold()
+                }
+                LazyVGrid(columns: layout.columns, spacing: 20) {
+                    
+                    TextField("Department Name", text: $policyName)
+                }
+                
+                Button(action: {
+                    
+                    progress.showProgress()
+                    progress.waitForABit()
+                    
+                    networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
+                    
+                    networkController.separationLine()
+                    print("Creating new department:\(policyName)")
+                    
+                }) {
+                    Text("Create")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                
+            }
         }
         .background(Color.green)
-
         .foregroundColor(.blue)
         .padding()
     }

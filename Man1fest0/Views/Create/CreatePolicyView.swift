@@ -395,6 +395,7 @@ struct CreatePolicyView: View {
                 VStack(alignment: .leading) {
                     
                     LazyVGrid(columns: layout.columnsFlexAdaptiveMedium, spacing: 20) {
+                        
                         HStack {
                             Button(action: {
                                 let openURL = importExportBrain.showOpenPanel()
@@ -436,7 +437,41 @@ struct CreatePolicyView: View {
                 }
                 #endif
             }
-            Divider()
+                
+                Divider()
+                
+                // ######################################################################################
+                //                        Create New Department
+                // ######################################################################################
+                
+            VStack(alignment: .leading) {
+                
+                LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                    
+                    HStack {
+                        Image(systemName:"hammer")
+                        Text("Department").bold()
+                        TextField("Department Name", text: $newPolicyName)
+                    
+                    Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+                        
+                        networkController.separationLine()
+                        print("Creating new department:\(newPolicyName)")
+                        
+                    }) {
+                        Text("Create")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    }
+
+                }
+            }
         }
         
         // ######################################################################################

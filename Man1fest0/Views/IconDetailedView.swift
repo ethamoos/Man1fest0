@@ -14,8 +14,6 @@ struct IconDetailedView: View {
     
     var selectedResourceType: ResourceType
     @State var server: String
-//    @State var user: String
-//    @State var password: String
     
     @State var iconID: String
     @State var icons: [Icon] = []
@@ -34,9 +32,6 @@ struct IconDetailedView: View {
                     HStack(spacing:20) {
                     }
                     if let currentIconUrl = selectedIcon?.url {
-//                        URLImage(URL(string:currentIconUrl)!){ image in
-//                            image.resizable().frame(width: 50, height: 50)
-//                        }
                         AsyncImage(url: URL(string: currentIconUrl)) { image in
                             image.resizable()
                         } placeholder: {

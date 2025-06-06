@@ -199,7 +199,6 @@ struct CreateGeneralTabView: View {
                 Text("Create New Category").bold()
             }
             
-            
             LazyVGrid(columns: layout.columns, spacing: 20) {
                 
                 TextField("Category Name", text: $newCategoryName)
@@ -289,7 +288,6 @@ struct CreateGeneralTabView: View {
                 Text("Create New Package Record").bold()
             }
             
-            
             LazyVGrid(columns: layout.threeColumns, spacing: 10) {
                 
                 TextField("Package Name", text: $newPackageName)
@@ -344,8 +342,6 @@ struct CreateGeneralTabView: View {
                     importExportController.uploadPackage(authToken: networkController.authToken, server: server, packageId: packageID, pathToFile: self.filePath)
                     layout.separationLine()
                     
-//                    importExportController.uploadPackage3(authToken: networkController.authToken, server: server, packageId: packageID, pathToFile: self.filePath)
-//                    layout.separationLine()
                 }) {
                     HStack {
                         Image(systemName: "suitcase.fill")

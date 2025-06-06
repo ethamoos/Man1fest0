@@ -19,21 +19,16 @@ struct ImportView: View {
     @State var allItemsList = [""]
     
     @State var filename = ""
-//    @State var myURLString = ""
     @State var stdout = ""
-//    @State var scriptOutput = ""
     @State var showList = false
     @State var selectedItem = ""
-//    @State var contents = ""
 
     var body: some View {
         
-//        let importedString
         
         VStack {
    
             Text("File Contents")
-//            Text(contents)
             Text(importExportBrain.importedString)
             
             Button(action: {
@@ -46,7 +41,6 @@ struct ImportView: View {
                     self.showList.toggle()
                     
                     do {
-//                        contents = try String(contentsOfFile: path, encoding: .ascii)
                         importExportBrain.importedString = try String(contentsOfFile: path, encoding: .ascii)
                         print("Data imported")
                         print(importExportBrain.importedString)
