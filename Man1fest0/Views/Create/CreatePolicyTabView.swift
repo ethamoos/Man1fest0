@@ -11,7 +11,6 @@ struct CreatePolicyTabView: View {
     
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     
-    
     //    ########################################
     //    EnvironmentObjects
     //    ########################################
@@ -22,6 +21,9 @@ struct CreatePolicyTabView: View {
 
     @EnvironmentObject var layout: Layout
 
+    //    ########################################
+    //    Variables
+    //    ########################################
     
     @State var categoryName = ""
     
@@ -43,6 +45,8 @@ struct CreatePolicyTabView: View {
     
     @State var departmentName: String = ""
     
+    @State private var createDepartmentIsChecked = false
+    
     @State var enableDisable: Bool = true
     
     @State var newGroupName: String = ""
@@ -60,7 +64,6 @@ struct CreatePolicyTabView: View {
     @State var scriptID = ""
     
     @State private var selectedResourceType = ResourceType.policyDetail
-        
     
     //    ########################################
     //    Selections
@@ -96,13 +99,11 @@ struct CreatePolicyTabView: View {
     
     @State private var showingWarning = false
     
-    
     var body: some View {
         
         VStack(alignment: .leading, spacing: 10) {
             
             Group {
-                
                 
                 LazyVGrid(columns: columns, spacing: 30) {
                     
@@ -116,6 +117,10 @@ struct CreatePolicyTabView: View {
                             progress.waitForABit()
                             
                             networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory.jamfId), category: selectedCategory.name, departmentID: String(describing: selectedDepartment.jamfId ?? 0) , department: selectedDepartment.name , scriptID: String(describing: $selectedScript.id), scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
+                    
+                            if createDepartmentIsChecked == true {
+                                networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
+                            }
                             
         // ##############################################################################
         //                            DEBUG - POLICY
@@ -133,16 +138,31 @@ struct CreatePolicyTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        
+                        Toggle(isOn: $createDepartmentIsChecked) {
+                            Text("New Department")
+                        }
+                        .toggleStyle(.checkbox)
                     }
-//                    .foregroundColor(.blue)
                     .background(Color.green)
+                }
+
+    // ##########################################################################################
+    // Toggle enable create new department automatically
+    // ##########################################################################################
+                
+                VStack {
+                    
+                    Toggle(isOn: $createDepartmentIsChecked) {
+                        Text("New Department")
+                    }
+                    .toggleStyle(.checkbox)
                 }
                 
     // ##########################################################################################
     //                        Selections
     // ##########################################################################################
     
-                
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategory, label: Text("Category")) {
                         Text("").tag("") //basically added empty tag and it solve the case
@@ -181,12 +201,10 @@ struct CreatePolicyTabView: View {
                         }
                     }
                 }
-
                 
         // ######################################################################################
         //                        Script parameters
         // ######################################################################################
-                
                 
                 LazyVGrid(columns: layout.columns, spacing: 20) {
                     
@@ -204,36 +222,35 @@ struct CreatePolicyTabView: View {
                 
                 Divider()
                 
-                // ######################################################################################
-                //                        Create New Department
-                // ######################################################################################
-                
-                HStack {
-                    Image(systemName:"hammer")
-                    
-                    Text("Create New Department").bold()
-                }
-                LazyVGrid(columns: layout.columns, spacing: 20) {
-                    
-                    TextField("Department Name", text: $policyName)
-                }
-                
-                Button(action: {
-                    
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
-                    
-                    networkController.separationLine()
-                    print("Creating new department:\(policyName)")
-                    
-                }) {
-                    Text("Create")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                
+    // ######################################################################################
+    //                        Create New Department
+    // ######################################################################################
+    
+//                HStack {
+//                    Image(systemName:"hammer")
+//                    
+//                    Text("Create New Department").bold()
+//                }
+//                LazyVGrid(columns: layout.columns, spacing: 20) {
+//                    
+//                    TextField("Department Name", text: $policyName)
+//                }
+//                
+//                Button(action: {
+//                    
+//                    progress.showProgress()
+//                    progress.waitForABit()
+//                    
+//                    networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
+//                    
+//                    networkController.separationLine()
+//                    print("Creating new department:\(policyName)")
+//                    
+//                }) {
+//                    Text("Create")
+//                }
+//                .buttonStyle(.borderedProminent)
+//                .tint(.blue)
             }
         }
         .background(Color.green)

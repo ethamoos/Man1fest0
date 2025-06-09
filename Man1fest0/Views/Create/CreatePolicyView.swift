@@ -34,6 +34,7 @@ struct CreatePolicyView: View {
     @State private var showingWarning = false
     @State var enableDisable: Bool = true
     @State private var selfServiceEnable = true
+    @State private var createDepartmentIsChecked = false
     
     //              ################################################################################
     //              categories
@@ -128,6 +129,8 @@ struct CreatePolicyView: View {
     @State var scriptParameter6: String = "Parameter 3"
         
     @State  var tempUUID = (UUID(uuidString: "") ?? UUID())
+    
+    
         
     var body: some View {
         
@@ -211,7 +214,7 @@ struct CreatePolicyView: View {
                 // CREATE NEW POLICY - with multiple packages
                 // ######################################################################################
                 
-                LazyVGrid(columns: columns, spacing: 30) {
+                LazyVGrid(columns: columns, spacing: 5) {
                     
                     HStack {
                         Image(systemName:"hammer")
@@ -228,6 +231,11 @@ struct CreatePolicyView: View {
                             
                             xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: policyController.xmlDoc, policyId: "0")
                             
+                            if createDepartmentIsChecked == true {
+                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+                            }
+                            
                             layout.separationLine()
                             print("Creating New Policy:\(newPolicyName)")
                             print("Category:\(selectedCategory.name)")
@@ -239,13 +247,27 @@ struct CreatePolicyView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        
+                            
+                            Toggle(isOn: $createDepartmentIsChecked) {
+                                Text("New Department")
+                            }
+                            .toggleStyle(.checkbox)
                     }
                 }
-                
-                Text("Note: All Fields Must Be Filled")
 
+                LazyVGrid(columns: layout.columnsFixed, spacing: 5) {
+                    
+                    VStack(alignment: .leading) {
+                        Text("Note: All Fields Must Be Filled")
+                    }
+                }
+
+                
                 VStack(alignment: .leading) {
-                        LazyVGrid(columns: layout.columnFlexMedium) {
+                    
+                    LazyVGrid(columns: layout.columnsFlexAdaptiveMedium, spacing: 20) {
+
                         HStack {
                             Text("Self-Service").bold()
                             if #available(macOS 14.0, *) {
@@ -264,9 +286,9 @@ struct CreatePolicyView: View {
                 }
             }
             
-        // ##########################################################################################
-        //                        Icons
-        // ##########################################################################################
+    // ##########################################################################################
+    //                        Icons
+    // ##########################################################################################
             
             Divider()
             
@@ -307,15 +329,15 @@ struct CreatePolicyView: View {
 //                                    .background(.gray)
             }
         
+    // ##########################################################################################
+    //                        Selections
+    // ##########################################################################################
+        
+        
         // ##########################################################################################
-        //                        Selections
+        //                        Icons - picker
         // ##########################################################################################
-            
-            
-            // ##########################################################################################
-            //                        Icons - picker
-            // ##########################################################################################
-            
+        
             LazyVGrid(columns: columns, spacing: 30) {
                 Picker(selection: $selectedIcon, label: Text("Icon:")) {
                     Text("").tag("") //basically added empty tag and it solve the case
@@ -440,9 +462,9 @@ struct CreatePolicyView: View {
                 
                 Divider()
                 
-                // ######################################################################################
-                //                        Create New Department
-                // ######################################################################################
+    // ######################################################################################
+    //                        Create New Department
+    // ######################################################################################
                 
             VStack(alignment: .leading) {
                 

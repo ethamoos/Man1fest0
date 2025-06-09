@@ -16,61 +16,6 @@ class Layout: ObservableObject {
     let date = String(DateFormatter.localizedString(from: NSDate() as Date, dateStyle: .short, timeStyle: .short))
 
    
-    let columnFlex = [
-        GridItem(.flexible(minimum: 250))
-    ]
-    let columnFlexNarrow = [
-        GridItem(.adaptive(minimum: 100))
-    ]
-    
-    let columnFlexMedium = [
-        GridItem(.adaptive(minimum: 150))
-    ]
-    
-    let columnFlexWide = [
-        GridItem(.adaptive(minimum: 400))
-    ]
-    
-    let columnsFixed = [
-        GridItem(.fixed(200)),
-        GridItem(.fixed(200))
-    ]
-    
-    let columnsFlex = [
-        GridItem(.adaptive(minimum: 250)),
-        GridItem(.adaptive(minimum: 250))
-    ]
-    
-    let columnsFlexWide = [
-        GridItem(.flexible(minimum: 300)),
-        GridItem(.flexible(minimum: 300))
-    ]
-    
-    let columnsAllFlex = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-    let columnsFlexAdaptive = [
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300))
-    ]
-    
-    let columnsFlexMedium = [
-        GridItem(.fixed(600)),
-        GridItem(.flexible(minimum: 600))
-    ]
-    
-    let threeColumnsFlexMedium = [
-        GridItem(.fixed(600)),
-        GridItem(.fixed(600)),
-        GridItem(.flexible(minimum: 600))
-    ]
-    
-    
-    let columnsFlexAdaptiveMedium = [
-        GridItem(.adaptive(minimum: 150)),
-        GridItem(.adaptive(minimum: 150))
-    ]
     
     
     let column = [
@@ -126,8 +71,6 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 300))
     ]
     
-   
-    
     let fiveColumnsAdaptive = [
         GridItem(.adaptive(minimum: 250)),
         GridItem(.adaptive(minimum: 250)),
@@ -136,12 +79,12 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 250)),
     ]
     
-    
     let threeColumnsFlex = [
         GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible())
-    ]  
+    ]
+    
     let fourColumnsFlex = [
         GridItem(.flexible()),
         GridItem(.flexible()),
@@ -156,7 +99,6 @@ class Layout: ObservableObject {
         GridItem(.flexible()),
         GridItem(.flexible())
     ]
-    
     
     let columnsWide = [
         GridItem(.adaptive(minimum: 300)),
@@ -176,7 +118,6 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 300))
     ]
     
-    
     let fiveColumnsWide = [
         GridItem(.adaptive(minimum: 300)),
         GridItem(.adaptive(minimum: 300)),
@@ -184,6 +125,64 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 300)),
         GridItem(.adaptive(minimum: 300))
     ]
+    
+    let columnFlex = [
+        GridItem(.flexible(minimum: 250))
+    ]
+    
+    let columnFlexNarrow = [
+        GridItem(.adaptive(minimum: 100))
+    ]
+    
+    let columnFlexMedium = [
+        GridItem(.adaptive(minimum: 150))
+    ]
+    
+    let columnFlexWide = [
+        GridItem(.adaptive(minimum: 400))
+    ]
+    
+    let columnsFixed = [
+        GridItem(.fixed(200)),
+        GridItem(.fixed(200))
+    ]
+    
+    let columnsFlex = [
+        GridItem(.adaptive(minimum: 250)),
+        GridItem(.adaptive(minimum: 250))
+    ]
+    
+    let columnsFlexWide = [
+        GridItem(.flexible(minimum: 300)),
+        GridItem(.flexible(minimum: 300))
+    ]
+    
+    let columnsAllFlex = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+    
+    let columnsFlexAdaptive = [
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300))
+    ]
+    
+    let columnsFlexMedium = [
+        GridItem(.fixed(600)),
+        GridItem(.flexible(minimum: 600))
+    ]
+    
+    let threeColumnsFlexMedium = [
+        GridItem(.fixed(600)),
+        GridItem(.fixed(600)),
+        GridItem(.flexible(minimum: 600))
+    ]
+    
+    let columnsFlexAdaptiveMedium = [
+        GridItem(.adaptive(minimum: 150)),
+        GridItem(.adaptive(minimum: 150))
+    ]
+    
     
     func separationLine() {
         print("------------------------------------------------")
