@@ -18,6 +18,7 @@
 		A822E0BB2AE9504E009DA477 /* CategoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A822E0BA2AE9504E009DA477 /* CategoriesView.swift */; };
 		A822E0BD2AE950F9009DA477 /* CategoriesDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A822E0BC2AE950F9009DA477 /* CategoriesDetailedView.swift */; };
 		A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D0D432D429F8C0074E422 /* PackageTableView.swift */; };
+		A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */; };
 		A82E40F22AC5668200900B73 /* DepartmentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82E40F12AC5668200900B73 /* DepartmentsView.swift */; };
 		A82E40F42AC585A900900B73 /* DepartmentsDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82E40F32AC585A900900B73 /* DepartmentsDetailedView.swift */; };
 		A8359CE72AE70D2400438AFA /* PoliciesActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */; };
@@ -126,6 +127,7 @@
 		A822E0BC2AE950F9009DA477 /* CategoriesDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoriesDetailedView.swift; sourceTree = "<group>"; };
 		A8297EBC2CBFF4C700840E8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A82D0D432D429F8C0074E422 /* PackageTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageTableView.swift; sourceTree = "<group>"; };
+		A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyTriggersTabView.swift; sourceTree = "<group>"; };
 		A82E40F12AC5668200900B73 /* DepartmentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartmentsView.swift; sourceTree = "<group>"; };
 		A82E40F32AC585A900900B73 /* DepartmentsDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartmentsDetailedView.swift; sourceTree = "<group>"; };
 		A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoliciesActionView.swift; sourceTree = "<group>"; };
@@ -376,6 +378,7 @@
 		E48D59D32C5961A200E1E35B /* Policy */ = {
 			isa = PBXGroup;
 			children = (
+				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				E4CE368D29D3372400533707 /* PolicyView.swift */,
 				E4CE368E29D3372400533707 /* PolicyDetailView.swift */,
 				A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */,
@@ -586,6 +589,7 @@
 				A886701D2AA8E5C0009DA6AA /* PackagesActionView.swift in Sources */,
 				A8B4EA6E2B04E473000F059F /* ResourceTypeEnums.swift in Sources */,
 				A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */,
+				A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */,
 				A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */,
 				A8ECF6512C6D275F0082BE21 /* Ldap.swift in Sources */,
 				E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */,
@@ -826,7 +830,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.34;
+				MARKETING_VERSION = 1.35;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -869,7 +873,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.34;
+				MARKETING_VERSION = 1.35;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

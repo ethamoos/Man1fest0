@@ -28,7 +28,9 @@ struct PolicyPackageTabView: View {
     
     @State private var selectedResourceType = ResourceType.policyDetail
     
-    //    PACKAGES
+    //  ################################################################################
+    //              PACKAGES
+    //  ################################################################################
     
     var packageSelection: Set<Package>
     
@@ -40,6 +42,12 @@ struct PolicyPackageTabView: View {
     
     @State private var packageName = ""
     
+//              ################################################################################
+//              Selection
+//              ################################################################################
+
+
+    
     @State var selectedPackage: Package? = nil
     
     @State private var selection: Package? = nil
@@ -47,11 +55,7 @@ struct PolicyPackageTabView: View {
     var body: some View {
         
         VStack(alignment: .leading) {
-            
-            //  ################################################################################
-            //              PACKAGES
-            //  ################################################################################
-            
+         
             //              ################################################################################
             //              List packages
             //              ################################################################################

@@ -315,7 +315,6 @@ struct PolicyScopeTabView: View {
                                             print("addDepartmentToPolicyScope for policy:\(String(describing: policyID))")
                                             
                                             xmlController.addDepartmentToPolicyScope(xmlContent: networkController.currentPolicyAsXML, departmentName: selectionDepartment.name, departmentId: String(describing:selectionDepartment.jamfId ?? 0), authToken: networkController.authToken, policyId: String(describing: policyID), resourceType: selectedResourceType, server: server)
-                                            
                                         }) {
                                             HStack(spacing: 10) {
                                                 Image(systemName: "plus.square.fill.on.square.fill")
@@ -370,7 +369,6 @@ struct PolicyScopeTabView: View {
             //  Group picker
             //  ################################################################################
                                 
-                                
                                 Divider()
                                 
                                 Group {
@@ -417,7 +415,6 @@ struct PolicyScopeTabView: View {
                             Group {
                                 
                                 Divider()
-                                
                                     
                                     Text("Limitations").font(.system(size: 14, weight: .bold, design: .default))
                                     
@@ -464,7 +461,6 @@ struct PolicyScopeTabView: View {
                                                     showingWarningLimitScope = true
                                                     progress.showProgress()
                                                     progress.waitForABit()
-                                                    
                                                 }) {
                                                     Image(systemName: "plus.square.fill.on.square.fill")
                                                     Text("Limit")
@@ -489,15 +485,10 @@ struct PolicyScopeTabView: View {
                                                     )
                                                 }
                                                 
-                                                
-                                                
-                                                
-                                                
                                                 Button(action: {
                                                     progress.showProgress()
                                                     progress.waitForABit()
                                                     showingWarningClearLimit = true
-
                                                
                                                 }) {
                                                     Text("Clear")
