@@ -262,8 +262,6 @@ struct PolicyDetailView: View {
                 .alert(isPresented: $showingWarning) {
                     Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
                 
                 //              ################################################################################
                 //              DOWNLOAD OPTION
@@ -295,9 +293,6 @@ struct PolicyDetailView: View {
                         print(error)
                     }
                 }
-                //            }
-                //            .padding()
-                //            .border(.blue)
                 
                 Button(action: {
                     
@@ -311,7 +306,6 @@ struct PolicyDetailView: View {
                     
                 }) {
                     HStack(spacing: 10) {
-                        //                        Image(systemName: "arrow.clockwise")
                         Text("Refresh Detail")
                     }
                 }
@@ -411,7 +405,6 @@ struct PolicyDetailView: View {
                                     print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
                                 }
 #if os(macOS)
-                            //                if enableDisableButton {
                             if enableDisableSelfService == true {
                                 Text("Enabled")
                             } else {
@@ -420,6 +413,7 @@ struct PolicyDetailView: View {
 #endif
                         }
                     }
+                    
                     //              ####################################################################
                     //              CATEGORY
                     //              ####################################################################
@@ -430,12 +424,10 @@ struct PolicyDetailView: View {
                         HStack {
                             
                             Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                                //                            Text("").tag("") //basically added empty tag and it solve the case
                                 ForEach(networkController.categories, id: \.self) { category in
                                     Text(String(describing: category.name))
                                         .tag(category as Category?)
                                         .tag(selectedCategory as Category?)
-                                    
                                 }
                             }
                             .onAppear {
@@ -449,15 +441,11 @@ struct PolicyDetailView: View {
                                 
                                 progress.showProgress()
                                 progress.waitForABit()
-                                               
-                                
-                                
                                 
                                 networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
                                 
                             }) {
                                 HStack(spacing: 10) {
-                                    //                                Image(systemName: "arrow.clockwise")
                                     Text("Update")
                                 }
                             }
@@ -572,41 +560,12 @@ struct PolicyDetailView: View {
                 networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
             }
             
-            
-            //  ################################################################################
-            //  ENABLE DISABLE
-            //  ################################################################################
-            
-//            print("Setting policy enable status")
-//            
-//            if networkController.currentDetailedPolicy?.policy.general?.enabled == true {
-//                print("Set enableDisableButton to true")
-//                enableDisableButton = true
-//            } else {
-//                print("Set enableDisableButton to false")
-//                enableDisableButton = false
-//            }
-//            
-////           ################################################################################
-////           Setting of Enabled status
-//            enableDisableStatus = ((networkController.currentDetailedPolicy?.policy.general?.enabled) != nil)
-//            enableDisableButton = enableDisableStatus
-//            print("enableDisableStatus is:\(String(describing: enableDisableStatus)) for policy:\(policyID)")
-//            
-//            print("Setting self service enable status")
-//            
-//            //           Setting of enableDisableSelfService status
-//            enableDisableSelfServiceStatus = ((networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService) != nil)
-//            enableDisableSelfService = enableDisableSelfServiceStatus
-//                        print("enableDisableStatus is:\(String(describing: enableDisableStatus)) for policy:\(policyID)")
-//            
-//            if networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService == true {
-//                print("Set enableDisableSelfService to true")
-//                enableDisableSelfService = true
-//            } else {
-//                print("Set enableDisableSelfService to false")
-//                enableDisableSelfService = false
-//            }
+            if networkController.buildings.count <= 1 {
+//                networkController.connect(server: server,resourceType: ResourceType.building, authToken: networkController.authToken)
+                Task {
+                    try await networkController.getBuildings(server: server, authToken: networkController.authToken)
+                }
+            }
             
             //  ################################################################################
             //  getAllGroups

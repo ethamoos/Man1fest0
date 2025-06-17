@@ -225,11 +225,11 @@ struct CreatePolicyView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            policyController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
+                            xmlController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
+//                            
+                            xmlController.addCategoryToPolicy(xmlContent: xmlController.newPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
                             
-                            policyController.addCategoryToPolicy(xmlContent: policyController.newPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
-                            
-                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: policyController.xmlDoc, policyId: "0")
+                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.xmlDoc, policyId: "0")
                             
                             if createDepartmentIsChecked == true {
                                 networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
@@ -240,10 +240,10 @@ struct CreatePolicyView: View {
                             print("Creating New Policy:\(newPolicyName)")
                             print("Category:\(selectedCategory.name)")
                             print("Department:\(selectedDepartment.name)")
-                            print("xml is:\(policyController.newPolicyAsXML)")
+//                            print("xml is:\(policyController.newPolicyAsXML)")
 //                            print("authToken is:\(networkController.authToken)")
                         }) {
-                            Text("New Policy")
+                            Text("Create Policy")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
@@ -466,34 +466,34 @@ struct CreatePolicyView: View {
     //                        Create New Department
     // ######################################################################################
                 
-            VStack(alignment: .leading) {
-                
-                LazyVGrid(columns: layout.columnsWide, spacing: 20) {
-                    
-                    HStack {
-                        Image(systemName:"hammer")
-                        Text("Department").bold()
-                        TextField("Department Name", text: $newPolicyName)
-                    
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-                        
-                        networkController.separationLine()
-                        print("Creating new department:\(newPolicyName)")
-                        
-                    }) {
-                        Text("Create")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    }
-
-                }
-            }
+//            VStack(alignment: .leading) {
+//                
+//                LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+//                    
+//                    HStack {
+//                        Image(systemName:"hammer")
+//                        Text("Department").bold()
+//                        TextField("Department Name", text: $newPolicyName)
+//                    
+//                    Button(action: {
+//                        
+//                        progress.showProgress()
+//                        progress.waitForABit()
+//                        
+//                        networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+//                        
+//                        networkController.separationLine()
+//                        print("Creating new department:\(newPolicyName)")
+//                        
+//                    }) {
+//                        Text("Create")
+//                    }
+//                    .buttonStyle(.borderedProminent)
+//                    .tint(.blue)
+//                    }
+//
+//                }
+//            }
         }
         
         // ######################################################################################

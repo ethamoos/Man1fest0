@@ -83,6 +83,8 @@ struct PolicyScopeTabView: View {
     
     @State private var showingWarningClearScope = false
     
+    @State private var showingWarningLimitScope = false
+    
     @State private var showingWarningClearLimit = false
 
     //  ########################################################################################
@@ -192,10 +194,11 @@ struct PolicyScopeTabView: View {
                             }) {
                                 
                                 HStack(spacing: 10) {
+                                    Image(systemName: "eraser")
                                     Text("Clear Scope")
                                 }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.red)
+                            
+                            
                                 .alert(isPresented: $showingWarningClearScope) {
                                     Alert(
                                         title: Text("Caution!"),
@@ -209,6 +212,8 @@ struct PolicyScopeTabView: View {
                                     )
                                 }
                             }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
                         }
                     }
                 }
@@ -456,34 +461,66 @@ struct PolicyScopeTabView: View {
                                                 }
                                                 
                                                 Button(action: {
-                                                    
+                                                    showingWarningLimitScope = true
                                                     progress.showProgress()
                                                     progress.waitForABit()
                                                     
-                                                    networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                                                    
-                                                    Task {
-                                                        
-                                                        await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID))
-                                                    }
-                                                    
                                                 }) {
                                                     Image(systemName: "plus.square.fill.on.square.fill")
-                                                    Text("Limitations")
+                                                    Text("Limit")
                                                 }
                                                 .buttonStyle(.borderedProminent)
-                                                .tint(.blue)
+                                                .tint(.red)
+                                                .alert(isPresented: $showingWarningLimitScope) {
+                                                    Alert(
+                                                        title: Text("Caution!"),
+                                                        message: Text("This action will limit the policy scoping.\n Some devices may not receive the policy"),
+                                                        primaryButton: .destructive(Text("I understand!")) {
+                                                            // Code to execute when "Yes" is tapped
+                                                            networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+                                                            
+                                                            Task {
+                                                                
+                                                                await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID))
+                                                            }
+                                                            print("Yes tapped")
+                                                        },
+                                                        secondaryButton: .cancel()
+                                                    )
+                                                }
+                                                
+                                                
+                                                
+                                                
                                                 
                                                 Button(action: {
                                                     progress.showProgress()
                                                     progress.waitForABit()
-                                                    
-                                                    xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: networkController.currentPolicyAsXML)
+                                                    showingWarningClearLimit = true
+
+                                               
                                                 }) {
                                                     Text("Clear")
                                                 }
                                                 .buttonStyle(.borderedProminent)
                                                 .tint(.red)
+                                                .alert(isPresented: $showingWarningClearLimit) {
+                                                    Alert(
+                                                        title: Text("Caution!"),
+                                                        message: Text("This action will clear any current limitations on the policy scoping.\n Some devices previously blocked may now receive the policy"),
+                                                        primaryButton: .destructive(Text("I understand!")) {
+                                                            // Code to execute when "Yes" is tapped
+                                                                                                                        xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: networkController.currentPolicyAsXML)
+                                                            
+//                                                            Task {
+//                                                                
+//                                                                await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID))
+//                                                            }
+                                                            print("Yes tapped")
+                                                        },
+                                                        secondaryButton: .cancel()
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -529,7 +566,6 @@ struct PolicyScopeTabView: View {
                                                 }
                                             }
                                         }
-//                                    }
                                 }
 
                 //   ################################################################################
@@ -571,7 +607,6 @@ struct PolicyScopeTabView: View {
                                 }
                             }
                         }
-//                    }
                     
                     //  ################################################################################
                     //  END

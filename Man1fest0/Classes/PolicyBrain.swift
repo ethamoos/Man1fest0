@@ -205,161 +205,161 @@ class PolicyBrain: ObservableObject {
         }
         dataTask.resume()
     }
-    
-    //    #################################################################################
-    //    Create Policies - via XML
-    //    #################################################################################
-    
-    func createNewPolicyXML(server: String, authToken: String, policyName: String, customTrigger: String, departmentID: String, notificationName: String, notificationStatus: String, iconId: String, iconName: String, iconUrl: String, selfServiceEnable: String ) {
-        
-        var xml:String
-//        let sem = DispatchSemaphore.init(value: 0)
-        
-        self.separationLine()
-        print("DEBUGGING - DISABLE IF NOT TESTING")
-        self.separationLine()
-        print("Running createNewPolicyXML")
-//        print("username is set as:\(username)")
-        //        print("password is set as:\(password)")
-        //        print("authToken is set as:\(authToken)")
-        print("Url is set as:\(server)")
-        print("policyName is set as:\(policyName)")
-        print("notificationName is set as:\(notificationName)")
-        print("notificationStatus is set as:\(notificationStatus)")
-        
-        //    #################################################################################
-        //    newPolicyXml
-        //    #################################################################################
-        
-        xml = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <policy>
-            <general>
-                <id>0</id>
-                <name>\(policyName)</name>
-                <enabled>true</enabled>
-                <trigger>EVENT</trigger>
-                <trigger_checkin>false</trigger_checkin>
-                <trigger_enrollment_complete>false</trigger_enrollment_complete>
-                <trigger_login>false</trigger_login>
-                <trigger_logout>false</trigger_logout>
-                <trigger_network_state_changed>false</trigger_network_state_changed>
-                <trigger_startup>false</trigger_startup>
-                <trigger_other>\(customTrigger)</trigger_other>
-                <frequency>Ongoing</frequency>
-                <retry_event>none</retry_event>
-                <retry_attempts>-1</retry_attempts>
-                <notify_on_each_failed_retry>false</notify_on_each_failed_retry>
-                <location_user_only>false</location_user_only>
-                <target_drive>/</target_drive>
-                <offline>false</offline>
-                <category>
-                </category>
-                <date_time_limitations>
-                    <activation_date/>
-                    <activation_date_epoch>0</activation_date_epoch>
-                    <activation_date_utc/>
-                    <expiration_date/>
-                    <expiration_date_epoch>0</expiration_date_epoch>
-                    <expiration_date_utc/>
-                    <no_execute_on/>
-                    <no_execute_start/>
-                    <no_execute_end/>
-                </date_time_limitations>
-                <network_limitations>
-                    <minimum_network_connection>No Minimum</minimum_network_connection>
-                    <any_ip_address>true</any_ip_address>
-                    <network_segments/>
-                </network_limitations>
-                <override_default_settings>
-                    <target_drive>default</target_drive>
-                    <distribution_point/>
-                    <force_afp_smb>false</force_afp_smb>
-                    <sus>default</sus>
-                    <netboot_server>current</netboot_server>
-                </override_default_settings>
-                <network_requirements>Any</network_requirements>
-                <site>
-                    <id>-1</id>
-                    <name>None</name>
-                </site>
-            </general>
-            <scope>
-                <all_computers>false</all_computers>
-            </scope>
-            <self_service>
-                <use_for_self_service>\(selfServiceEnable)</use_for_self_service>
-                <self_service_display_name/>
-                <install_button_text>Install</install_button_text>
-                <reinstall_button_text>Reinstall</reinstall_button_text>
-                <self_service_description/>
-                <force_users_to_view_description>false</force_users_to_view_description>
-                <self_service_icon>
-                    <id>\(iconId)</id>
-                    <filename>\(iconName)</filename>
-                    <uri>\(iconUrl)</uri>
-                </self_service_icon>
-                <feature_on_main_page>false</feature_on_main_page>
-                <self_service_categories/>
-                <notification>\(notificationStatus)</notification>
-                <notification>Self Service</notification>
-                <notification_subject>\(notificationName)</notification_subject>
-                <notification_message/>
-            </self_service>
-        </policy>
-        """
-        
-        
-        //              ################################################################################
-        //              DEBUG
-        //              ################################################################################
-        
-        self.separationLine()
-        print("Setting newPolicyAsXML variable")
-        self.newPolicyAsXML = xml
-        //        print("Printing initial xml data for new policy")
-        //        print(self.newPolicyAsXML)
-        //        self.separationLine()
-        print("XML variable is set as:")
-        print(xml)
-        print("Reading xml data with AEXML")
-        self.readXMLDataFromStringPolicyBrain(xmlContent: xml)
-        
-        print("XML data is now stored in:self.xmlDoc")
-        print(self.xmlDoc)
-        self.separationLine()
-        
-        //        if URL(string: server) != nil {
-        //            if let serverURL = URL(string: server) {
-        //
-        //                let url = serverURL.appendingPathComponent("/JSSResource/policies/id/0")
-        //                let xmldata = xml.data(using: .utf8)
-        //                print(url)
-        //                // Request options
-        //                var request = URLRequest(url: url)
-        //                request.httpMethod = "POST"
-        //                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-        //                request.setValue("application/xml", forHTTPHeaderField: "Accept")
-        //                request.httpBody = xmldata
-        //                let config = URLSessionConfiguration.default
-        //                config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
-        //                URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
-        //                    defer { sem.signal() }
-        //
-        //                    guard let httpResponse = response as? HTTPURLResponse,
-        //                          (200...299).contains(httpResponse.statusCode) else {
-        //                        print("Bad Credentials")
-        //                        print(response!)
-        //                        return
-        //                    }
-        //
-        //                }.resume()
-        //
-        //                sem.wait()
-        //            }
-        //        }
-    }
-    
+//    
+//    //    #################################################################################
+//    //    Create Policies - via XML
+//    //    #################################################################################
+//    
+//    func createNewPolicyXML(server: String, authToken: String, policyName: String, customTrigger: String, departmentID: String, notificationName: String, notificationStatus: String, iconId: String, iconName: String, iconUrl: String, selfServiceEnable: String ) {
+//        
+//        var xml:String
+////        let sem = DispatchSemaphore.init(value: 0)
+//        
+//        self.separationLine()
+//        print("DEBUGGING - DISABLE IF NOT TESTING")
+//        self.separationLine()
+//        print("Running createNewPolicyXML - PolicyBrain")
+////        print("username is set as:\(username)")
+//        //        print("password is set as:\(password)")
+//        //        print("authToken is set as:\(authToken)")
+//        print("Url is set as:\(server)")
+//        print("policyName is set as:\(policyName)")
+//        print("notificationName is set as:\(notificationName)")
+//        print("notificationStatus is set as:\(notificationStatus)")
+//        
+//        //    #################################################################################
+//        //    newPolicyXml
+//        //    #################################################################################
+//        
+//        xml = """
+//        <?xml version="1.0" encoding="utf-8"?>
+//        <policy>
+//            <general>
+//                <id>0</id>
+//                <name>\(policyName)</name>
+//                <enabled>true</enabled>
+//                <trigger>EVENT</trigger>
+//                <trigger_checkin>false</trigger_checkin>
+//                <trigger_enrollment_complete>false</trigger_enrollment_complete>
+//                <trigger_login>false</trigger_login>
+//                <trigger_logout>false</trigger_logout>
+//                <trigger_network_state_changed>false</trigger_network_state_changed>
+//                <trigger_startup>false</trigger_startup>
+//                <trigger_other>\(customTrigger)</trigger_other>
+//                <frequency>Ongoing</frequency>
+//                <retry_event>none</retry_event>
+//                <retry_attempts>-1</retry_attempts>
+//                <notify_on_each_failed_retry>false</notify_on_each_failed_retry>
+//                <location_user_only>false</location_user_only>
+//                <target_drive>/</target_drive>
+//                <offline>false</offline>
+//                <category>
+//                </category>
+//                <date_time_limitations>
+//                    <activation_date/>
+//                    <activation_date_epoch>0</activation_date_epoch>
+//                    <activation_date_utc/>
+//                    <expiration_date/>
+//                    <expiration_date_epoch>0</expiration_date_epoch>
+//                    <expiration_date_utc/>
+//                    <no_execute_on/>
+//                    <no_execute_start/>
+//                    <no_execute_end/>
+//                </date_time_limitations>
+//                <network_limitations>
+//                    <minimum_network_connection>No Minimum</minimum_network_connection>
+//                    <any_ip_address>true</any_ip_address>
+//                    <network_segments/>
+//                </network_limitations>
+//                <override_default_settings>
+//                    <target_drive>default</target_drive>
+//                    <distribution_point/>
+//                    <force_afp_smb>false</force_afp_smb>
+//                    <sus>default</sus>
+//                    <netboot_server>current</netboot_server>
+//                </override_default_settings>
+//                <network_requirements>Any</network_requirements>
+//                <site>
+//                    <id>-1</id>
+//                    <name>None</name>
+//                </site>
+//            </general>
+//            <scope>
+//                <all_computers>false</all_computers>
+//            </scope>
+//            <self_service>
+//                <use_for_self_service>\(selfServiceEnable)</use_for_self_service>
+//                <self_service_display_name/>
+//                <install_button_text>Install</install_button_text>
+//                <reinstall_button_text>Reinstall</reinstall_button_text>
+//                <self_service_description/>
+//                <force_users_to_view_description>false</force_users_to_view_description>
+//                <self_service_icon>
+//                    <id>\(iconId)</id>
+//                    <filename>\(iconName)</filename>
+//                    <uri>\(iconUrl)</uri>
+//                </self_service_icon>
+//                <feature_on_main_page>false</feature_on_main_page>
+//                <self_service_categories/>
+//                <notification>\(notificationStatus)</notification>
+//                <notification>Self Service</notification>
+//                <notification_subject>\(notificationName)</notification_subject>
+//                <notification_message/>
+//            </self_service>
+//        </policy>
+//        """
+////        
+//        
+//        //              ################################################################################
+//        //              DEBUG
+//        //              ################################################################################
+//        
+//        self.separationLine()
+//        print("Setting newPolicyAsXML variable - PolicyBrain")
+//        self.newPolicyAsXML = xml
+//        //        print("Printing initial xml data for new policy")
+//        //        print(self.newPolicyAsXML)
+//        //        self.separationLine()
+//        print("XML variable is set as:")
+//        print(xml)
+//        print("Reading xml data with AEXML")
+//        self.readXMLDataFromStringPolicyBrain(xmlContent: xml)
+//        
+//        print("XML data is now stored in:self.xmlDoc - PolicyBrain")
+//        print(self.xmlDoc)
+//        self.separationLine()
+//        
+//        //        if URL(string: server) != nil {
+//        //            if let serverURL = URL(string: server) {
+//        //
+//        //                let url = serverURL.appendingPathComponent("/JSSResource/policies/id/0")
+//        //                let xmldata = xml.data(using: .utf8)
+//        //                print(url)
+//        //                // Request options
+//        //                var request = URLRequest(url: url)
+//        //                request.httpMethod = "POST"
+//        //                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+//        //                request.setValue("application/xml", forHTTPHeaderField: "Accept")
+//        //                request.httpBody = xmldata
+//        //                let config = URLSessionConfiguration.default
+//        //                config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
+//        //                URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
+//        //                    defer { sem.signal() }
+//        //
+//        //                    guard let httpResponse = response as? HTTPURLResponse,
+//        //                          (200...299).contains(httpResponse.statusCode) else {
+//        //                        print("Bad Credentials")
+//        //                        print(response!)
+//        //                        return
+//        //                    }
+//        //
+//        //                }.resume()
+//        //
+//        //                sem.wait()
+//        //            }
+//        //        }
+//    }
+//    
     
     
     //    #################################################################################
@@ -454,46 +454,46 @@ class PolicyBrain: ObservableObject {
     //
     //    }
     
-    // ######################################################################################
-    // addCategoryToPolicy
-    // ######################################################################################
-    
-    
-    func addCategoryToPolicy(xmlContent: String,authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
-        
-        self.readXMLDataFromStringPolicyBrain(xmlContent: xmlContent)
-        
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
-        self.separationLine()
-        print("Running addCategoryToPolicy")
-        print("xmlContent is:\(xmlContent)")
-        print("url is:\(url)")
-        print("categoryName is:\(categoryName)")
-        print("categoryId is:\(categoryId)")
-        let category = self.xmlDoc.root["general"].addChild(name: "category")
-        //        if categoryId != "" {
-        //            category.addChild(name: "id", value: categoryId)
-        //        }
-        if categoryName != "" && categoryId != "" {
-            category.addChild(name: "name", value: categoryName)
-            
-            
-        print("updatedContent is:")
-        print(xmlContent)
-            
-            if newPolicyFlag == false {
-                print("Posting data")
-      
-                
-                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent, httpMethod: "PUT")
-            }
-            
-        } else {
-            print("Category is not set - not updating")
-        }
-    }
-    
+//    // ######################################################################################
+//    // addCategoryToPolicy
+//    // ######################################################################################
+//    
+//    
+//    func addCategoryToPolicy(xmlContent: String,authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
+//        
+//        self.readXMLDataFromStringPolicyBrain(xmlContent: xmlContent)
+//        
+//        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
+//        let url = URL(string: jamfURLQuery)!
+//        self.separationLine()
+//        print("Running addCategoryToPolicy")
+//        print("xmlContent is:\(xmlContent)")
+//        print("url is:\(url)")
+//        print("categoryName is:\(categoryName)")
+//        print("categoryId is:\(categoryId)")
+//        let category = self.xmlDoc.root["general"].addChild(name: "category")
+//        //        if categoryId != "" {
+//        //            category.addChild(name: "id", value: categoryId)
+//        //        }
+//        if categoryName != "" && categoryId != "" {
+//            category.addChild(name: "name", value: categoryName)
+//            
+//            
+//        print("updatedContent is:")
+//        print(xmlContent)
+//            
+//            if newPolicyFlag == false {
+//                print("Posting data")
+//      
+//                
+//                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent, httpMethod: "PUT")
+//            }
+//            
+//        } else {
+//            print("Category is not set - not updating")
+//        }
+//    }
+//    
     
     
     
@@ -599,6 +599,9 @@ class PolicyBrain: ObservableObject {
     //        self.processingComplete = true
     //        print(String(describing: self.processingComplete))
     //    }
+    
+    
+    
     
     
     

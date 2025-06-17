@@ -1535,7 +1535,6 @@ import AEXML
         self.separationLine()
         print("Running func: getBuildings")
         print("url is set to:\(url)")
-        
         let (data, response) = try await URLSession.shared.data(for: request)
         //        print("Json data is:")
         //        print(String(data: data, encoding: .utf8)!)
@@ -1547,7 +1546,6 @@ import AEXML
         let allBuildings = try decoder.decode(Buildings.self, from: data)
         self.buildings = allBuildings.buildings
         //        print("buildings is set to:\(self.buildings)")
-        
     }
     
     

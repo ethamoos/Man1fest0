@@ -222,35 +222,6 @@ struct CreatePolicyTabView: View {
                 
                 Divider()
                 
-    // ######################################################################################
-    //                        Create New Department
-    // ######################################################################################
-    
-//                HStack {
-//                    Image(systemName:"hammer")
-//                    
-//                    Text("Create New Department").bold()
-//                }
-//                LazyVGrid(columns: layout.columns, spacing: 20) {
-//                    
-//                    TextField("Department Name", text: $policyName)
-//                }
-//                
-//                Button(action: {
-//                    
-//                    progress.showProgress()
-//                    progress.waitForABit()
-//                    
-//                    networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
-//                    
-//                    networkController.separationLine()
-//                    print("Creating new department:\(policyName)")
-//                    
-//                }) {
-//                    Text("Create")
-//                }
-//                .buttonStyle(.borderedProminent)
-//                .tint(.blue)
             }
         }
         .background(Color.green)

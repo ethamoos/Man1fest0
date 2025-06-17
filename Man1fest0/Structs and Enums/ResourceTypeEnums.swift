@@ -28,6 +28,7 @@ import Foundation
 
 
 enum ResourceType {
+    case building
     case buildingDetailed
     case category
     case categoryDetailed
@@ -55,6 +56,8 @@ enum ResourceType {
 func getURLFormat(data: ResourceType) -> String {
     print("Getting URL format")
     switch data {
+    case .building:
+        return "v1/buildings"
     case .buildingDetailed:
         return "v1/buildings"
     case .category:
@@ -108,6 +111,8 @@ func getURLFormat(data: ResourceType) -> String {
 func getProcessFormat(data: ResourceType) -> String {
     print("Getting process format")
     switch data {
+    case .building:
+        return "process"
     case .buildingDetailed:
         return "process"
     case .category:
@@ -162,6 +167,8 @@ func getProcessFormat(data: ResourceType) -> String {
 func getReplyString(data: ResourceType) -> String {
     print("Getting reply format")
     switch data {
+    case .building:
+        return "BuildingReply"
     case .buildingDetailed:
         return "BuildingReply"
     case .category:
@@ -232,6 +239,8 @@ func getReplyString(data: ResourceType) -> String {
 func getSingleInstanceString(data: ResourceType) -> String {
     print("Getting single instance format")
     switch data {
+    case .building:
+        return "BuildingReply"
     case .buildingDetailed:
         return "BuildingReply"
     case .category:
@@ -282,6 +291,8 @@ func getSingleInstanceString(data: ResourceType) -> String {
 func getViewString(data: ResourceType) -> String {
     print("Getting view string format")
     switch data {
+    case .building:
+        return "BuildingView"
     case .buildingDetailed:
         return "BuildingView"
     case .category:
@@ -295,11 +306,8 @@ func getViewString(data: ResourceType) -> String {
         return "ComputerDetailedView"
     case .computerBasic:
         return "ComputersBasicView"    
-    
     case .computerGroup:
         return "ComputerGroupView"
-        
-        
     case .configProfileMacOS:
         return "ConfigProfileViewMacOS"
     case .configProfileDetailedMacOS:
@@ -328,7 +336,6 @@ func getViewString(data: ResourceType) -> String {
         return "ScriptDetailView"
     case .scripts:
         return "ScriptsView"
-        
     case .computerExtensionAttribute:
         return "ComputerEAView"
     }
@@ -337,6 +344,8 @@ func getViewString(data: ResourceType) -> String {
 func getReceivedString(data: ResourceType) -> String {
     print("Getting received format")
     switch data {
+    case .building:
+        return "receivedBuilding"
     case .buildingDetailed:
         return "receivedBuildings"
     case .category:
@@ -347,10 +356,8 @@ func getReceivedString(data: ResourceType) -> String {
         return "receivedComputers"
     case .computerDetailed:
         return "ComputerDetailedView"    
-    
     case .computerGroup:
         return "ComputerGroupView"
-        
     case .configProfileMacOS:
         return "ConfigProfileDetailedViewMacOS"
     case .configProfileDetailedMacOS:
@@ -381,7 +388,6 @@ func getReceivedString(data: ResourceType) -> String {
         return "receivedScriptDetails"
     case .scripts:
         return "receivedScripts"
-        
     case .computerExtensionAttribute:
         return "receivedComputerEAs"
     }
