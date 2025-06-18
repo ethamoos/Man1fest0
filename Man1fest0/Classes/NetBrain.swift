@@ -2470,6 +2470,7 @@ import AEXML
         let policyID = policyID
         var xml: String
         
+        
         print("Updating XML")
         print("policyCustomTrigger is set as:\(policyCustomTrigger)")
         
@@ -3144,15 +3145,11 @@ import AEXML
     
     func getPolicyAsXMLaSync(server: String, policyID: Int, authToken: String) async throws -> String{
         
-        
         let policyIdString = String(describing: policyID )
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
         let url = URL(string: jamfURLQuery)!
-        
         print("Running getPolicyAsXMLaSync - Netbrain")
         print("policyIdString is: \(policyIdString)")
-
-        
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -3189,14 +3186,9 @@ import AEXML
         }
     }
     
-    
-    
-    
-    
     //    #################################################################################
     //    togglePolicyOnOff - enable/disable policy
     //    #################################################################################
-    
     
     func togglePolicyOnOff(server: String, authToken: String, resourceType: ResourceType, itemID: Int, policyToggle: Bool) {
         
@@ -3237,12 +3229,9 @@ import AEXML
         }
     }
     
-    
-    
     //    #################################################################################
     //    toggleSelfServiceOnOff - enable/disable SelfService
     //    #################################################################################
-    
     
     func toggleSelfServiceOnOff(server: String, authToken: String, resourceType: ResourceType, itemID: Int, selfServiceToggle: Bool) {
         
@@ -3261,7 +3250,7 @@ import AEXML
                     print("Running toggleSelfServiceOnOff policy function - url is set as:\(url)")
                     print("ItemID is set as:\(itemIDString)")
                     print("resourceType is set as:\(resourceType)")
-                    //                    // print("xml is set as:\(xml)")
+                    // print("xml is set as:\(xml)")
                     sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
                     appendStatus("Connecting to \(url)...")
                 }
@@ -3278,7 +3267,7 @@ import AEXML
                     print("Running togglePolicyOnOff policy function - url is set as:\(url)")
                     print("resourceType is set as:\(resourceType)")
                     // print("xml is set as:\(xml)")
-                    //            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+
                     self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
                     
                     appendStatus("Connecting to \(url)...")

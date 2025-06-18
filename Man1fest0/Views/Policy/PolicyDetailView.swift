@@ -376,10 +376,10 @@ struct PolicyDetailView: View {
                         }
                     }
                     
-                    //              ################################################################################
-                    //              UPDATE Self-Service
-                    //              ################################################################################
-                    
+//  ################################################################################
+//              UPDATE Self-Service
+//  ################################################################################
+
                     LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
                         HStack {
@@ -486,6 +486,13 @@ struct PolicyDetailView: View {
                         .tabItem {
                             Label("Scripts", systemImage: "square.and.pencil")
                         }
+                    
+                    PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail)
+                        .tabItem {
+                            Label("Triggers", systemImage: "square.and.pencil")
+                        }
+                    
+                    
                 }
 #endif
             }
