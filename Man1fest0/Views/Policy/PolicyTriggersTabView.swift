@@ -34,9 +34,9 @@ struct PolicyTriggersTabView: View {
         
         VStack(alignment: .leading) {
             
-            //  ################################################################################
-            //              Policy Triggers
-            //  ################################################################################
+//  ##########################################################################
+//              Policy Triggers
+//  ##########################################################################
             
             Button(action: {
                 
@@ -46,14 +46,13 @@ struct PolicyTriggersTabView: View {
                 xmlController.setPolicyTriggers(xmlContent: xmlController.currentPolicyAsXML, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID, trigger_checkin: trigger_checkin, trigger_enrollment_complete: trigger_enrollment_complete, trigger_login: trigger_login, trigger_startup: trigger_startup, trigger_other: trigger_other)
                 
                 
-                // ##############################################################################
-                //                            DEBUG - POLICY
-                // ##############################################################################
-                
+// ##########################################################################
+//                            DEBUG - POLICY
+// ##########################################################################
+
                 networkController.separationLine()
-                print("Seting Triggers")
+                print("Setting Triggers")
                 
-                //
             }) {
                 Text("Set Triggers")
             }
@@ -80,16 +79,21 @@ struct PolicyTriggersTabView: View {
             }
             .toggleStyle(.checkbox)
             
-            HStack {
-                Spacer()
-//                Label("Custom Trigger", systemImage: "brain.head.profile")
-                Text("Custom Trigger")
-                TextField("", text: $trigger_other)
-                    .textSelection(.enabled)
+            LazyVGrid(columns: columns, spacing: 10) {
+                
+                HStack {
+//                    Spacer()
+                    //                Label("Custom Trigger", systemImage: "brain.head.profile")
+                    Text("Custom Trigger")
+                    TextField("", text: $trigger_other)
+                        .textSelection(.enabled)
+                }
             }
         }
         //            .background(Color.green)
+//        Spacer()
         .padding()
+    
     }
 }
 //}

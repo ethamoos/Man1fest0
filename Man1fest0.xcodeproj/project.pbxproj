@@ -378,13 +378,13 @@
 		E48D59D32C5961A200E1E35B /* Policy */ = {
 			isa = PBXGroup;
 			children = (
-				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				E4CE368D29D3372400533707 /* PolicyView.swift */,
 				E4CE368E29D3372400533707 /* PolicyDetailView.swift */,
 				A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */,
 				A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */,
 				A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */,
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
+				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */,
 			);
 			path = Policy;

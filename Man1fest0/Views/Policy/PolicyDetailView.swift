@@ -181,9 +181,10 @@ struct PolicyDetailView: View {
                 .textSelection(.enabled)
                 .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
                 
-                //              ################################################################################
-                //              Toolbar
-                //              ################################################################################
+//              ################################################################################
+//              Toolbar
+//              ################################################################################
+                
                 .toolbar {
                     
                 }
@@ -204,17 +205,17 @@ struct PolicyDetailView: View {
                     }
                 
 #if os(macOS)
-                //                if enableDisableButton {
+
                 if enableDisableButton == true {
                     Text("Enabled")
                 } else {
                     Text("Disabled")
                 }
                 
-                //              ################################################################################
-                //              CLONE
-                //              ################################################################################
-                
+//              ##########################################################################
+//              CLONE
+//              ##########################################################################
+
                 Button(action: {
                     print("Cloning policy:\(policyName)")
                     progress.showProgress()
@@ -229,7 +230,7 @@ struct PolicyDetailView: View {
                     }
                 }) {
                     HStack(spacing: 10) {
-                        Image(systemName: "plus.square.fill.on.square.fill")
+                        Image(systemName: "dog")
                         Text("Clone")
                     }
                 }
@@ -237,10 +238,10 @@ struct PolicyDetailView: View {
                 .tint(.orange)
 #endif
                 
-                //              #############################################################################
-                //              DELETE
-                //              #############################################################################
-                
+//  ##########################################################################
+//              DELETE
+//  ##########################################################################
+
                 Button(action: {
                     
                     progress.showProgress()
@@ -263,14 +264,11 @@ struct PolicyDetailView: View {
                     Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
                 }
                 
-                //              ################################################################################
-                //              DOWNLOAD OPTION
-                //              ################################################################################
+//              ################################################################################
+//              DOWNLOAD OPTION
+//              ################################################################################
+
 #if os(macOS)
-                //                Button(action: {ASyncFileDownloader.downloadFileAsyncAuth(objectID: policyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in}}) {
-                //
-                //                    Text("Download")
-                //                }
                 
                 Button("Export") {
                     exporting = true
@@ -316,10 +314,10 @@ struct PolicyDetailView: View {
             
             .textSelection(.enabled)
             
-            //              ################################################################################
-            //              UPDATE NAME
-            //              ################################################################################
-            
+//  ##########################################################################
+//              UPDATE NAME
+//  ##########################################################################
+
             Divider()
             
             VStack(alignment: .leading) {
@@ -349,10 +347,10 @@ struct PolicyDetailView: View {
                             .tint(.blue)
                         }
                         
-                        //              ################################################################################
-                        //              UPDATE Trigger
-                        //              ################################################################################
-                        
+//  ##########################################################################
+//              UPDATE Trigger
+//  ##########################################################################
+
                         HStack {
                             
                             TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
@@ -376,9 +374,9 @@ struct PolicyDetailView: View {
                         }
                     }
                     
-//  ################################################################################
+//  ##########################################################################
 //              UPDATE Self-Service
-//  ################################################################################
+//  ##########################################################################
 
                     LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
@@ -414,10 +412,10 @@ struct PolicyDetailView: View {
                         }
                     }
                     
-                    //              ####################################################################
-                    //              CATEGORY
-                    //              ####################################################################
-                    
+//  ##########################################################################
+//              CATEGORY
+//  ##########################################################################
+
                     Divider()
                     
                     LazyVGrid(columns: layout.columnsFlex) {
@@ -456,18 +454,18 @@ struct PolicyDetailView: View {
                 }
                 .padding()
                 
-                //  ################################################################################
+                //  ##########################################################################
                 //              DELETE POLICY
-                //  ################################################################################
-                
-                //  ################################################################################
+                //  ##########################################################################
+
+                //  ##########################################################################
                 //  Manually add to assigned list
-                //  ################################################################################
-                
-                //  ################################################################################
+                //  ##########################################################################
+
+                //  ##########################################################################
                 //  TabView - TAB
-                //  ################################################################################
-                
+                //  ##########################################################################
+
                 
 #if os(macOS)
                 TabView {
@@ -491,16 +489,14 @@ struct PolicyDetailView: View {
                         .tabItem {
                             Label("Triggers", systemImage: "square.and.pencil")
                         }
-                    
-                    
                 }
 #endif
             }
             
-            //  ################################################################################
+            //  ##########################################################################
             //  Progress view via showProgress
-            //  ################################################################################
-            
+            //  ##########################################################################
+
             if progress.showProgressView == true {
                 
                 ProgressView {
@@ -520,10 +516,10 @@ struct PolicyDetailView: View {
         
         .onAppear {
             
-            //  ################################################################################
+            //  ##########################################################################
             //  PolicyDetailView
-            //  ################################################################################
-            
+            //  ##########################################################################
+
             networkController.separationLine()
             print("PolicyDetailView appeared - running detailed policy connect function")
             
@@ -542,8 +538,10 @@ struct PolicyDetailView: View {
                 }
             }
             
-            //            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
-            //            The property networkController.policyDetailed will be used
+//            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
+
+//            The property networkController.policyDetailed will be used
+            
             networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
             
             Task {
@@ -574,19 +572,19 @@ struct PolicyDetailView: View {
                 }
             }
             
-            //  ################################################################################
-            //  getAllGroups
-            //  ################################################################################
-            
+//  ##########################################################################
+//  getAllGroups
+//  ##########################################################################
+
             
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
             
-            //  ################################################################################
-            //  Add current packages to packagesAssignedToPolicy list on appear of View
-            //  ################################################################################
-            
+            //  ##########################################################################
+//  Add current packages to packagesAssignedToPolicy list on appear of View
+            //  ##########################################################################
+
             networkController.getPackagesAssignedToPolicy()
             
             networkController.addExistingPackages()
@@ -598,7 +596,6 @@ struct PolicyDetailView: View {
         .textSelection(.enabled)
     }
     
-    
     func fetchData() {
         
         if  networkController.packages.isEmpty {
@@ -608,11 +605,6 @@ struct PolicyDetailView: View {
         } else {
             print("package data is available")
         }
-        
-        //        if networkController.updateXML == true {
-        //            networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-        //        }
-        
     }
 }
 
