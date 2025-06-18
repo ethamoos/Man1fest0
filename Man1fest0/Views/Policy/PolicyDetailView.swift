@@ -485,9 +485,9 @@ struct PolicyDetailView: View {
                             Label("Scripts", systemImage: "square.and.pencil")
                         }
                     
-                    PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail)
+                    PolicyMiscTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail)
                         .tabItem {
-                            Label("Triggers", systemImage: "square.and.pencil")
+                            Label("Miscellaneous", systemImage: "square.and.pencil")
                         }
                 }
 #endif

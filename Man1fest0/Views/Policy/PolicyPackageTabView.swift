@@ -38,7 +38,7 @@ struct PolicyPackageTabView: View {
     
     @State private var packagesAssignedToPolicy: [ Package ] = []
     
-    @State private var packageID = "1723"
+    @State private var packageID = ""
     
     @State private var packageName = ""
     
@@ -46,8 +46,6 @@ struct PolicyPackageTabView: View {
 //              Selection
 //              ################################################################################
 
-
-    
     @State var selectedPackage: Package? = nil
     
     @State private var selection: Package? = nil
@@ -82,7 +80,6 @@ struct PolicyPackageTabView: View {
                 }
             }
                 
-                
                 //  ################################################################################
                 //              Edit package assignment to policy
                 //  ################################################################################
@@ -98,7 +95,6 @@ struct PolicyPackageTabView: View {
 //                Text("Assign Packages").font(.system(size: 12, weight: .bold, design: .default))
 //            }
 //            .padding()
-                
                 
                 //  ################################################################################
                 //  Package picker
@@ -137,13 +133,11 @@ struct PolicyPackageTabView: View {
                         print("Adding selected package to policy:\(String(describing: selectedPackage))")
                         
                         xmlController.addPackageToPolicy(xmlContent: networkController.xmlDoc, xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, server: server, packageName: selectedPackage?.name ?? "",packageId: String(describing: selectedPackage?.jamfId ?? 0), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false )
-                        
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "plus.square.fill.on.square.fill")
                             Text("Add package")
                         }
-                  
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
@@ -173,20 +167,13 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    
-                    
-                    
-                    
-//                }
             }
         }
-        
         .onAppear() {
             
             fetchData()
         }
     }
-    
     
     func fetchData() {
         
@@ -195,16 +182,11 @@ struct PolicyPackageTabView: View {
             print("Count is:\(networkController.packages.count))")
 //            print(networkController.packages.count)
             networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-
         } else {
-            
             print("package data is available")
             print("Count is:\(networkController.packages.count)")
-            
         }
-        
     }
-    
 }
     //#Preview {
     //    PolicyPackageTabView()

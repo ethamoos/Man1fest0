@@ -1151,11 +1151,11 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
     }
     
     //    #################################################################################
-    //    setPolicyTriggers
+    //    setPolicyMisc
     //    #################################################################################
     
     
-    func setPolicyTriggers(xmlContent: String, server: String, authToken: String, resourceType: ResourceType, itemID: Int, trigger_checkin: Bool,trigger_enrollment_complete: Bool, trigger_login: Bool, trigger_startup: Bool, trigger_other: String) {
+    func setPolicyMisc(xmlContent: String, server: String, authToken: String, resourceType: ResourceType, itemID: Int, trigger_checkin: Bool,trigger_enrollment_complete: Bool, trigger_login: Bool, trigger_startup: Bool, trigger_other: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
         let itemIDString = String(itemID)
@@ -1163,7 +1163,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         readXMLDataFromString(xmlContent: xmlContent)
         if self.xmlDoc.name.isEmpty != true {
             separationLine()
-            print("Running setPolicyTriggers - xmlDoc available:\(xmlContent)")
+            print("Running setPolicyMisc - xmlDoc available:\(xmlContent)")
             let wholeDoc = xmlDoc.root
             let policyGeneral = xmlDoc.root["general"]
 //            let policyID = policyGeneral["id"].last!
@@ -1248,7 +1248,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             if URL(string: server) != nil {
                 if let serverURL = URL(string: server) {
                     let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-                    print("Running setPolicyTriggers function - url is set as:\(url)")
+                    print("Running setPolicyMisc function - url is set as:\(url)")
                     print("resourceType is set as:\(resourceType)")
                     self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlDoc.root.xml, httpMethod: "PUT")
                     //                                appendStatus("Connecting to \(url)...")

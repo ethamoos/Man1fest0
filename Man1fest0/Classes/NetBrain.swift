@@ -11,6 +11,8 @@ import AEXML
     // #########################################################################
     let debug_enabled = false
     
+    let timePeriod = ["Zero+Day", "Seven+Day","Three+Month", "Six+Month" ]
+
     
     
     // #########################################################################
@@ -1669,6 +1671,8 @@ import AEXML
     }
     
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
+        
+        print("Running getDetailedPolicy")
         if self.debug_enabled == true {
             print("Running getDetailedPolicy - policyID is:\(policyID)")
         }
@@ -1711,6 +1715,39 @@ import AEXML
             }
         }
     }
+    
+    
+    
+    func flushPolicyLogs(server: String,resourceType: ResourceType, itemID: String, authToken: String,time: String) async throws {
+        let resourcePath = getURLFormat(data: (resourceType))
+        if let serverURL = URL(string: server) {
+            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID).appendingPathComponent("/interval/").appendingPathComponent(time)
+            separationLine()
+            print("Running flushPolicyLogs function - url is set as:\(url)")
+            print("resourceType is set as:\(resourceType)")
+            var request = URLRequest(url: url,timeoutInterval: Double.infinity)
+            print("Request is set as:\(request)")
+
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            request.addValue("application/xml", forHTTPHeaderField: "Accept")
+            request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+            request.httpMethod = "DELETE"
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                print("Code not 200")
+                self.hasError = true
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                self.currentResponseCode = String(describing: statusCode)
+                print("flushPolicyLogs Status code is:\(statusCode)")
+                throw JamfAPIError.http(statusCode)
+            }
+            print("flushPolicyLogs has finished successfully")
+        }
+    }
+        
+        
+        
+      
     
     
     @Published var showProgressView: Bool = false

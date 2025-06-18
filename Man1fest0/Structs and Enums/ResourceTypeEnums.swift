@@ -44,6 +44,7 @@ enum ResourceType {
     case mobile
     case account
     case command
+    case logflush
     case package
     case packages
     case policy
@@ -88,6 +89,8 @@ func getURLFormat(data: ResourceType) -> String {
         return "accounts"
     case .command:
         return "mobiledevicecommands/command/"
+    case .logflush:
+        return "logflush/policy/id/"
     case .packages:
         return "packages"
     case .package:
@@ -141,6 +144,8 @@ func getProcessFormat(data: ResourceType) -> String {
         return "process"
     case .command:
         return "process"
+    case .logflush:
+        return "logflush"
     case .package:
         return "process"
     case .packages:
@@ -197,6 +202,8 @@ func getReplyString(data: ResourceType) -> String {
         return "AccountsReply"
     case .command:
         return "CommandReply"
+    case .logflush:
+        return "LogflushReply"
     case .package:
         return "PackageReply"
     case .packages:
@@ -273,6 +280,10 @@ func getSingleInstanceString(data: ResourceType) -> String {
         return "Policy"
     case .policies:
         return "Policies"
+        
+    case .logflush:
+        return "Logflush"
+        
     case .package:
         return "Package"
     case .packages:
@@ -322,6 +333,11 @@ func getViewString(data: ResourceType) -> String {
         return "AccountsView"
     case .command:
         return "CommandView"
+        
+        
+    case .logflush:
+        return "LogflusheView"
+        
     case .package:
         return "PackageView"
     case .packages:
@@ -374,6 +390,8 @@ func getReceivedString(data: ResourceType) -> String {
         return "receivedAccounts"
     case .command:
         return "receivedCommands"
+    case .logflush:
+        return "receivedLogflush"
     case .packages:
         return "receivedPackages"
     case .package:
