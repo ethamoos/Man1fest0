@@ -16,7 +16,7 @@ class Progress: ObservableObject {
     @Published var debugMode = false
 
     func separationLine() {
-        print("------------------------------------------------")
+        print("------------------------------------------------------------------")
     }
     
     func showProgress() {

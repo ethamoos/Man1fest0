@@ -125,7 +125,7 @@ import SwiftUI
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         let decoder = JSONDecoder()
@@ -168,7 +168,7 @@ import SwiftUI
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         let decoder = JSONDecoder()
@@ -201,7 +201,7 @@ import SwiftUI
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         let decoder = JSONDecoder()
@@ -238,7 +238,7 @@ import SwiftUI
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         let decoder = JSONDecoder()
@@ -337,7 +337,7 @@ import SwiftUI
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
     }
     
@@ -373,7 +373,7 @@ import SwiftUI
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
             
             
             

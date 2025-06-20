@@ -21,6 +21,9 @@ protocol JamfObject: Codable, Identifiable {
 
 extension JamfObject {
     
+    func separationLine() {
+        print("------------------------------------------------------------------")
+    }
     /** build the URL for the request to fetch all categories */
     static func getAllURLComponents(server: String) throws -> URLComponents {
         // assemble the URL for the Jamf API
@@ -39,7 +42,7 @@ extension JamfObject {
     /** Gets a list of all categories from the Jamf Pro Server */
     static func getAll(server: String, auth: JamfAuthToken) async throws -> [Self] {
         // MARK: Prepare Request
-        
+        print("------------------------------------------------------------------")
         print("Running getAll for server:\(server)")
         let components = try getAllURLComponents(server: server)
         
@@ -85,12 +88,14 @@ extension JamfObject {
         
         do {
             let result = try decoder.decode(JamfResults<Self>.self, from: data)
+            print("------------------------------------------------------------------")
             print("Url of request is:\(url)")
             return result.results
             
             // handle decoding errors
             // see DecodingError documentation for details
         } catch let DecodingError.dataCorrupted(context) {
+            print("------------------------------------------------------------------")
             print("\(context.codingPath): data corrupted: \(context.debugDescription)")
             //      print(result.results)
             

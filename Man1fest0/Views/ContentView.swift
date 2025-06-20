@@ -1,6 +1,5 @@
 //
-//  ContentView2.swift
-//  JamfListApp
+//  ContentView.swift
 //
 //  Created by Amos Deane on 22/03/2024.
 //
@@ -9,7 +8,6 @@ import SwiftUI
 
 struct ContentView: View {
     
-//    // @EnvironmentObject var controller: JamfController
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
 
@@ -42,7 +40,6 @@ struct ContentView: View {
         .sheet(isPresented: $networkController.needsCredentials) {
             ConnectSheet(
                 show: $networkController.needsCredentials
-//                controller: networkController
             )
         }
         .alert(isPresented: $networkController.showAlert,
@@ -53,7 +50,7 @@ struct ContentView: View {
             
             await networkController.load()
             
-            await handleConnect(server: server, username: username, password: networkController.password)
+//            await handleConnect(server: server, username: username, password: networkController.password)
             
             Task {
                 
@@ -65,38 +62,38 @@ struct ContentView: View {
         }
     }
     
-    func handleConnect(server: String, username: String, password: String ) async {
-        
-        if password.isEmpty {
-            print("Try to get password from keychain")
-            guard let pwFromKeychain = try? Keychain.getPassword(service: server, account: username)
-            else {
-                print("pwFromKeychain failed")
-                return
-            }
-            networkController.password = pwFromKeychain
-            print("pwFromKeychain succeeded")
-        }
-        
-        networkController.atSeparationLine()
-        print("Handling connection - initial connection to Jamf")
-        
-        do {
-            
-            //  #######################################################################
-            //  CONNECTION
-            //  #######################################################################
-            
-            try await networkController.getToken(server: server, username: username, password: password)
-            
-            if networkController.authToken != "" {
-                print("Token status is:\(networkController.tokenStatusCode)")
-            }
-            
-        } catch {
-            print("Error")
-            print(error)
-            print("Token status is:\(networkController.tokenStatusCode)")
-        }
-    }
+//    func handleConnect(server: String, username: String, password: String ) async {
+//        
+//        if password.isEmpty {
+//            print("Try to get password from keychain")
+//            guard let pwFromKeychain = try? Keychain.getPassword(service: server, account: username)
+//            else {
+//                print("pwFromKeychain failed")
+//                return
+//            }
+//            networkController.password = pwFromKeychain
+//            print("pwFromKeychain succeeded")
+//        }
+//        
+//        networkController.atSeparationLine()
+//        print("Handling connection - initial connection to Jamf")
+//        
+//        do {
+//            
+//            //  #######################################################################
+//            //  CONNECTION
+//            //  #######################################################################
+//            
+//            try await networkController.getToken(server: server, username: username, password: password)
+//            
+//            if networkController.authToken != "" {
+//                print("Token status is:\(networkController.tokenStatusCode)")
+//            }
+//            
+//        } catch {
+//            print("Error")
+//            print(error)
+//            print("Token status is:\(networkController.tokenStatusCode)")
+//        }
+//    }
 }

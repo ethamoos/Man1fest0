@@ -266,7 +266,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         let decoder = JSONDecoder()
@@ -306,7 +306,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         //        DEBUG
         //        separationLine()
@@ -341,7 +341,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         //        DEBUG
@@ -375,7 +375,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         separationLine()
         print("getDepartmentScope - processDetail Json data as text is:")
@@ -417,7 +417,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         separationLine()
         print("processDetail Json data as text is:")
@@ -443,7 +443,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         separationLine()
         print("processDetail Json data as text is:")
@@ -469,7 +469,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         separationLine()
         print("processDetail Json data as text is:")
@@ -493,7 +493,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         print("Decoding without array - using ConfigurationProfiles")
@@ -544,7 +544,7 @@ import AEXML
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - Response is:\(String(describing: responseCode))")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         if let decodedData = try? decoder.decode(PackageDetailedResponse.self, from: data) {
@@ -1013,7 +1013,7 @@ import AEXML
         print("Getting token - Netbrain")
         guard let base64 = encodeBase64(username: username, password: password) else {
             print("Error encoding username/password")
-            throw NetError.couldntEncodeNamePass
+            throw JamfAPIError.couldntEncodeNamePass
         }
         
         guard var components = URLComponents(string: server) else {
@@ -1540,7 +1540,7 @@ import AEXML
         //        print(String(data: data, encoding: .utf8)!)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         let allBuildings = try decoder.decode(Buildings.self, from: data)
@@ -1565,7 +1565,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         self.allPackages = try decoder.decode(Packages.self, from: data).packages
@@ -1593,7 +1593,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         separationLine()
         //        print("Json data is:")
@@ -1626,7 +1626,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
 
         let decoder = JSONDecoder()
@@ -1652,20 +1652,18 @@ import AEXML
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
             print(response)
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
-        
         let decoder = JSONDecoder()
         self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
         self.allPoliciesConverted = decodedData
         allPoliciesComplete = true
-        separationLine()
-        atSeparationLine()
+//        separationLine()
+//        atSeparationLine()
         print("getAllPolicies status is set to:\(allPoliciesComplete)")
         print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
         print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
-        
     }
     
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
@@ -1681,8 +1679,10 @@ import AEXML
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw NetError.badResponseCode
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            self.currentResponseCode = String(describing: statusCode)
+            print("getDetailedPolicy request error - code is:\(statusCode)")
+            throw JamfAPIError.http(statusCode)
         }
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
@@ -1699,14 +1699,12 @@ import AEXML
         
         self.separationLine()
         print("Running func: getAllPoliciesDetailed")
-        
         for policy in policies {
-            
             Task {
                 try await getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: policy.jamfId ?? 1))
                 
                 if policyDetailed != nil {
-                    //                print("Policy is:\(policy.name) - ID is:\(String(describing: policy.jamfId ?? 0))")
+                    print("Policy is:\(policy.name) - ID is:\(String(describing: policy.jamfId ?? 0))")
                 }
             }
         }
@@ -3160,7 +3158,7 @@ import AEXML
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - Response is:\(String(describing: responseCode))")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         
         self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
@@ -4305,7 +4303,7 @@ import AEXML
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - Response is:\(String(describing: responseCode ?? 0))")
-            throw NetError.badResponseCode
+            throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         if let decodedData = try? decoder.decode(Icon.self, from: data) {
@@ -4598,7 +4596,7 @@ import AEXML
         //              ##############################################################
         //              Connections
         //              ##############################################################
-        
+        separationLine()
         print("Running JamfController.load")
         
         // attempt to get an auth token
@@ -4628,10 +4626,12 @@ import AEXML
         if let fetchedComputers = try? await ComputerSample.getAll(server: server, auth: auth) {
             computersample = fetchedComputers
             //          print(computers)
+            separationLine()
             print("fetchedComputers has run successfully")
             
         } else {
             //          hasError = true
+            separationLine()
             print("fetchedComputers has errored")
         }
         
@@ -4642,10 +4642,12 @@ import AEXML
         if let fetchedScripts = try? await Script.getAll(server: server, auth: auth) {
             scriptold = fetchedScripts
             //        print(scripts)
+            separationLine()
             print("fetchedScripts has run successfully")
             
         } else {
             //      hasError = true
+            separationLine()
             print("fetchedScripts has errored")
         }
     }
@@ -4676,6 +4678,7 @@ import AEXML
         
         if auth == nil {
             // no token yet, get one
+            separationLine()
             print("Running JamfAuthToken.get")
             auth = try? await self.getToken(server: server, username: username, password: password)
             if auth == nil {
