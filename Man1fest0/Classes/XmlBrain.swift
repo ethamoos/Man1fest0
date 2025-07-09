@@ -532,8 +532,10 @@ class XmlBrain: ObservableObject {
     func readXMLDataFromStringXmlBrain(xmlContent: String) {
         self.separationLine()
         print("Running readXMLDataFromString")
-        print("xmlContent is:\(xmlContent)")
-        
+        if debugStatus == true {
+            self.separationLine()
+            print("xmlContent is:\(xmlContent)")
+        }
         guard let data = try? Data(xmlContent.utf8)
         else {
             print("Sample XML Data error.")
@@ -1307,10 +1309,13 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
     func readXMLDataFromStringScopingBrain(xmlContent: String) {
         //        Reads xml and stores in a variable
         self.separationLine()
-        //        DEBUG
         print("Running readXMLDataFromStringScopingBrain")
-        print("Initial xmlContent is:\(xmlContent)")
-        self.separationLine()
+        //        DEBUG readXMLDataFromStringScopingBrain
+        if debugStatus == true {
+            self.separationLine()
+            print("Initial xmlContent is:\(xmlContent)")
+        }
+            self.separationLine()
         print("Adding to: AEXMLDocument")
         guard let data = try? Data(xmlContent.utf8)
         else {
@@ -1747,6 +1752,63 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.separationLine()
         print("Read main XML doc - updated")
         print(xmlDoc.xml)
+        separationLine()
+        print("Submit updated doc")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        print("The string is not empty")
+    }
+    
+    
+    
+    //    ##################################################
+    //    replaceScriptParameter
+    //    ##################################################
+    
+    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, scriptNumber: String, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String) {
+    
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
+        let url = URL(string: jamfURLQuery)!
+        self.readXMLDataFromStringScopingBrain(xmlContent: currentPolicyAsXML)
+        self.separationLine()
+        print("Running: replaceScriptParameter")
+        self.separationLine()
+        print("Select the script and attribute")
+        let scripts = self.xmlDoc.root["scripts"]
+        let currentScript = self.xmlDoc.root
+        let selectedScript = self.xmlDoc.root["scripts"].children[Int(scriptNumber) ?? 1]
+        self.separationLine()
+        print("Script number is set as:\(scriptNumber)")
+
+        if parameter4.isEmpty != true {
+            
+            let selectedScriptParameter4 = self.xmlDoc.root["scripts"].children[Int(scriptNumber) ?? 1]["parameter4"]
+            self.separationLine()
+            print("Parameter4 is set - Remove selectedScriptParameter4")
+            let removeSelectedScriptParameter4 = selectedScriptParameter4.removeFromParent()
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+            print("Replace the attribute with parameter:\(parameter4)")
+            _ = selectedScript.addChild(name: "parameter4", value: parameter4)
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+        }
+        
+        self.separationLine()
+        print("Listing scripts after edit")
+        print(self.xmlDoc.root["scripts"].children.description.utf8)
+
+        let numberOfScripts = self.xmlDoc.root["scripts"]["script"].count
+        //      ----------------------------------------------------
+        //        Fix count
+        //      ----------------------------------------------------
+        self.separationLine()
+        print("Counting scripts - number is:\(numberOfScripts)")
+        let _: () = self.xmlDoc.root["scripts"]["size"].removeFromParent()
+        _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
+        
+        self.separationLine()
+        print("Read main XML doc - updated")
+        print(self.xmlDoc.xml)
         separationLine()
         print("Submit updated doc")
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")

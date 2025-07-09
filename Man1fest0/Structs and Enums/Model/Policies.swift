@@ -187,10 +187,26 @@ struct PolicyScripts: Codable, Hashable, Identifiable {
     var jamfId: Int?
     var name: String?
     var priority: String?
+    var parameter4: String?
+    var parameter5: String?
+    var parameter6: String?
+    var parameter7: String?
+    var parameter8: String?
+    var parameter9: String?
+    var parameter10: String?
+    
     enum CodingKeys: String, CodingKey {
         case jamfId = "id"
         case name = "name"
         case priority = "priority"
+        case parameter4 = "parameter4"
+        case parameter5 = "parameter5"
+        case parameter6 = "parameter6"
+        case parameter7 = "parameter7"
+        case parameter8 = "parameter8"
+        case parameter9 = "parameter9"
+        case parameter10 = "parameter10"
+
     }
 }
 

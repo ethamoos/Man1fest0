@@ -247,7 +247,7 @@ struct PolicyDetailView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     
-                    networkController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
+                
                     print("Deleting policy:\(policyID)")
                     showingWarning = true
                     
@@ -260,9 +260,25 @@ struct PolicyDetailView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                
                 .alert(isPresented: $showingWarning) {
-                    Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
+                    Alert(
+                        title: Text("Caution!"),
+                        message: Text("This action will delete data.\n Always ensure that you have a backup!"),
+                        primaryButton: .destructive(Text("I understand!")) {
+                            // Code to execute when "Yes" is tapped
+                            networkController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
+                            print("Yes tapped")
+                        },
+                        secondaryButton: .cancel()
+                    )
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                
+                
+                
                 
 //              ################################################################################
 //              DOWNLOAD OPTION

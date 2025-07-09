@@ -42,6 +42,10 @@ struct PolicyScriptsTabView: View {
     
     @State var computerGroupFilter = ""
     
+//    var numbers = ["0","1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+    
+    @State private var selectedNumber = 0
+    
     //  ########################################################################################
     //  Policy
     //  ########################################################################################
@@ -56,13 +60,18 @@ struct PolicyScriptsTabView: View {
     
     @State var scriptName = ""
     @State var scriptID = ""
-    
+    @State var replacementParameter4 = ""
+    @State var replacementParameter5 = ""
+    @State var replacementParameter6 = ""
+    @State var replacementParameter7 = ""
+    @State var replacementParameter8 = ""
+    @State var replacementParameter9 = ""
+    @State var replacementParameter10 = ""
+    @State var selectedScriptCurrent = "1"
+
     //  ########################################################################################
-        @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
-    //    @State var selectedScript: Script? = nil
-//    @State var selectedScript: ScriptClassic = ScriptClassic(id:(UUID(uuidString: "") ?? UUID()) , name: "", jamfId: 0)
+    @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
     @State var listSelection: PolicyScripts = PolicyScripts(id:(UUID(uuidString: "") ?? UUID()) , jamfId: 0, name: "")
-//                                                             (UUID(uuidString: "")
     //  ########################################################################################
     
     @State var scriptParameter4: String = ""
@@ -77,6 +86,7 @@ struct PolicyScriptsTabView: View {
     
     var body: some View {
         
+//         var currentScript: PolicyScripts? = nil
         
         VStack(alignment: .leading) {
                         
@@ -97,13 +107,32 @@ struct PolicyScriptsTabView: View {
                     Text("Scripts").bold()
 #if os(macOS)
                     List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
+                        //                        if script != nil {
+                        var currentScript = script
+                        //                    }
                         HStack {
-                            Image(systemName: "applescript")
-                            Text(script.name ?? "" )
+                            
+                            Text(script.name ?? "")
+                            Text("\t\tParameter:").bold()
+                            if script.parameter4 != "" {
+                                //                                                      Text("Param1:")
+                                Image(systemName: "1.circle")
+                                Text(script.parameter4 ?? "" )
+                            }
+                            if script.parameter5 != "" {
+                                //                                                      Text("Param2:")
+                                Image(systemName: "2.circle")
+                                
+                                Text(script.parameter5 ?? "" )
+                            }
+                            if script.parameter6 != "" {
+                                Image(systemName: "3.circle")
+                                Text(script.parameter6 ?? "" )
+                            }
                         }
                     }
                     .frame(minHeight: 50)
-                    #else
+#else
                     List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self) { script in
                         HStack {
                             Image(systemName: "applescript")
@@ -111,33 +140,86 @@ struct PolicyScriptsTabView: View {
                         }
                     }
                     .frame(minHeight: 50)
+#endif
+                }
+                
+                //  ################################################################################
+                //  Edit scripts parameters
+                //  ################################################################################
+                
+                //    ##################################################
+                //    replaceScriptParameter
+                //    ##################################################
+                
+                //            LazyVGrid(columns: columns4) {
+                
+                //                if currentScript.parameter4 != "" {
+                
+                HStack {
+                    Button(action: {
+                        print("-----------------------------")
+                        print("replaceScriptParameter button was tapped")
+                        
+                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, scriptNumber: selectedScriptCurrent, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10)
+                    }) {
+                        Text("Update:")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                     
-                    #endif
+                    LazyVGrid(columns: layout.columns) {
+//
+                        Picker("Script", selection: $selectedScriptCurrent) {
+                            ForEach(1..<100) {
+                                Text("\($0)")
+                            }
+                        }
+//                        .onAppear {
+//                            print("selectedScriptCurrent is currently:\(selectedScriptCurrent)")
+//                            if selectedScriptCurrent.isEmpty != true {
+//                                print("Setting numbers picker default")
+//                                selectedScriptCurrent = 1 }
+//                        }
+                        
+                        TextField("Parameter4", text: $replacementParameter4)
+                    }
+                }
+                DisclosureGroup("More Parameters") {
+                    
+                    HStack {
+                        LazyVGrid(columns: layout.columns) {
+                            TextField("Parameter6", text: $replacementParameter6)
+                            TextField("Parameter7", text: $replacementParameter7)
+                        }
+                    }
+                    
+                    HStack {
+                        LazyVGrid(columns: layout.columns) {
+                            TextField("Parameter8", text: $replacementParameter8)
+                            TextField("Parameter9", text: $replacementParameter9)
+                            TextField("Parameter10", text: $replacementParameter10)
+                        }
+                    }
                 }
                 
                 Divider()
                 
-                //              ################################################################################
+                //  ################################################################################
                 //              Scripts picker
-                //              ################################################################################
+                //  ################################################################################
                 
                 LazyVGrid(columns: layout.threeColumns, spacing: 10) {
                     Picker(selection: $selectedScript, label: Text("Scripts")) {
-//                        Text("").tag("") //basically added empty tag and it solve the case
                         ForEach(networkController.scripts, id: \.self) { script in
                             Text(String(describing: script.name))
                                 .tag(script as ScriptClassic?)
                                 .tag(selectedScript as ScriptClassic?)
                         }
-                        
                         .onAppear {
-                            
                             if networkController.scripts.isEmpty != true {
                                 print("Setting package picker default")
                                 selectedScript = networkController.scripts[0] }
                         }
-                        
-                        
                     }
 //                    .onReceive([self.selectedScript].publisher.first()) { (selectedScript) in
 //                        print("selectedScript is:\(String(describing: selectedScript.name))")
@@ -145,9 +227,7 @@ struct PolicyScriptsTabView: View {
 //                    }
                 }
             }
-            
 //            .pickerStyle(SegmentedPickerStyle()) // You can choose the style that suits your UI
-
             
             //              ################################################################################
             //              Add script
@@ -171,7 +251,6 @@ struct PolicyScriptsTabView: View {
                         Image(systemName: "plus.app.fill")
                         Text("Add")
                     }
-                 
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
