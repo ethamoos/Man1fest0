@@ -41,7 +41,9 @@ struct BuildingsView: View {
                     }
                     .searchable(text: $searchText)
                 }
-                
+#if os(macOS)
+                        .frame(minWidth: 400, maxWidth: .infinity)
+#endif
                 Text("\(networkController.buildings.count) total buildings")
                 
             }

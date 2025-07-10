@@ -972,7 +972,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         
         self.separationLine()
         print("Running addPackageToPolicy - XML brain")
-        print("Initial xmlContent is:")
+        print("Initial xmlContent in AEXMLDocument format is:")
         self.atSeparationLine()
         print(xmlContent.xml)
         self.atSeparationLine()

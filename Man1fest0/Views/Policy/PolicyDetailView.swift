@@ -549,8 +549,19 @@ struct PolicyDetailView: View {
                 try await networkController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                 
                 if !networkController.currentPolicyAsXML.isEmpty {
-                    print("Reading XML into AEXML")
-                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    print("Reading XML into AEXML - networkController")
+                    
+//  ##########################################################################
+//  NOTE: CHANGED FROM XML CONTROLLER BELOW
+//  ##########################################################################
+
+//                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+
+//  ##########################################################################
+//  NOTE: CHANGED FROM XML CONTROLLER - END
+//  ##########################################################################
+
                 }
             }
             

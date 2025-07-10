@@ -93,15 +93,15 @@ struct PolicyScriptsTabView: View {
 //            Divider()
             
             Group {
-                
-                // ################################################################################
-                //              SCRIPTS
-                // ################################################################################
-                
-                //              ################################################################################
-                //              List scripts
-                //              ################################################################################
-                
+
+// ################################################################################
+//              SCRIPTS
+// ################################################################################
+
+//              ################################################################################
+//              List scripts
+//              ################################################################################
+
                 if networkController.currentDetailedPolicy?.policy.scripts?.count ?? 0 > 0 {
                     
                     Text("Scripts").bold()
@@ -113,25 +113,40 @@ struct PolicyScriptsTabView: View {
                         HStack {
                             
                             Text(script.name ?? "")
-                            Text("\t\tParameter:").bold()
                             if script.parameter4 != "" {
-                                //                                                      Text("Param1:")
+                                Text("\t\tParams:").bold()
+
                                 Image(systemName: "1.circle")
                                 Text(script.parameter4 ?? "" )
                             }
                             if script.parameter5 != "" {
-                                //                                                      Text("Param2:")
                                 Image(systemName: "2.circle")
-                                
                                 Text(script.parameter5 ?? "" )
                             }
                             if script.parameter6 != "" {
                                 Image(systemName: "3.circle")
                                 Text(script.parameter6 ?? "" )
                             }
+                            if script.parameter7 != "" {
+                                Image(systemName: "4.circle")
+                                Text(script.parameter7 ?? "" )
+                            }
+                            if script.parameter8 != "" {
+                                Image(systemName: "5.circle")
+                                Text(script.parameter8 ?? "" )
+                            }
+                            if script.parameter9 != "" {
+                                Image(systemName: "6.circle")
+                                Text(script.parameter9 ?? "" )
+                            }
+                            if script.parameter10 != "" {
+                                Image(systemName: "7.circle")
+                                Text(script.parameter10 ?? "" )
+                            }
                         }
                     }
                     .frame(minHeight: 50)
+                    .frame(minWidth: 100, maxWidth: .infinity)
 #else
                     List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self) { script in
                         HStack {
@@ -160,9 +175,12 @@ struct PolicyScriptsTabView: View {
                         print("-----------------------------")
                         print("replaceScriptParameter button was tapped")
                         
+                            progress.showProgress()
+                            progress.waitForABit()
+                        
                         xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, scriptNumber: selectedScriptCurrent, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10)
                     }) {
-                        Text("Update:")
+                        Text("Update Parameter")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
@@ -170,7 +188,7 @@ struct PolicyScriptsTabView: View {
                     LazyVGrid(columns: layout.columns) {
 //
                         Picker("Script", selection: $selectedScriptCurrent) {
-                            ForEach(1..<100) {
+                            ForEach(1..<10) {
                                 Text("\($0)")
                             }
                         }
