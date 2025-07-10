@@ -44,7 +44,7 @@ struct OptionsView: View {
        
                         VStack {
                             
-                        Image("ManifestoIcon")
+                        Image("Man1fest0Icon")
                             .frame(width: 80, height: 80, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
                             .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 10))
