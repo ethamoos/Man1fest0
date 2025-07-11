@@ -496,7 +496,7 @@ struct PolicyDetailView: View {
                             Label("Scoping", systemImage: "square.and.pencil")
                         }
                     
-                    PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, computerGroupSelection: $computerGroupSelection , policyID: policyID)
+                    PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
                         .tabItem {
                             Label("Scripts", systemImage: "square.and.pencil")
                         }

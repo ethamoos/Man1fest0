@@ -1,5 +1,5 @@
 //
-//  PolicyEditTabView.swift
+//  PolicyScriptsTabView.swift
 //  Man1fest0
 //
 //  Created by Amos Deane on 12/07/2024.
@@ -14,10 +14,7 @@ struct PolicyScriptsTabView: View {
     var resourceType: ResourceType
     
     @State private var searchText = ""
-    @Binding var computerGroupSelection: Set<ComputerGroup>
-    //    var packageSelection: Set<Package>
-    @State private var selection: PolicyScripts? = nil
-    
+
     //    ########################################################################################
     //    EnvironmentObject
     //    ########################################################################################
@@ -41,8 +38,6 @@ struct PolicyScriptsTabView: View {
     @State private var selectedResourceType = ResourceType.policyDetail
     
     @State var computerGroupFilter = ""
-    
-//    var numbers = ["0","1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
     
     @State private var selectedNumber = 0
     
@@ -70,6 +65,10 @@ struct PolicyScriptsTabView: View {
     @State var selectedScriptCurrent = "1"
 
     //  ########################################################################################
+//     Selections
+    //  ########################################################################################
+    @Binding var computerGroupSelection: Set<ComputerGroup>
+    @State private var selection: PolicyScripts? = nil
     @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
     @State var listSelection: PolicyScripts = PolicyScripts(id:(UUID(uuidString: "") ?? UUID()) , jamfId: 0, name: "")
     //  ########################################################################################
@@ -86,12 +85,8 @@ struct PolicyScriptsTabView: View {
     
     var body: some View {
         
-//         var currentScript: PolicyScripts? = nil
-        
         VStack(alignment: .leading) {
                         
-//            Divider()
-            
             Group {
 
 // ################################################################################
