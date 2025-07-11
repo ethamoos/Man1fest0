@@ -12,7 +12,6 @@ struct PolicyScriptsTabView: View {
     
     var server: String
     var resourceType: ResourceType
-    
     @State private var searchText = ""
 
     //    ########################################################################################
@@ -39,14 +38,12 @@ struct PolicyScriptsTabView: View {
     
     @State var computerGroupFilter = ""
     
-    @State private var selectedNumber = 0
     
     //  ########################################################################################
     //  Policy
     //  ########################################################################################
     
     @State var policyName = ""
-    
     var policyID: Int
     
     //  ########################################################################################
@@ -62,15 +59,18 @@ struct PolicyScriptsTabView: View {
     @State var replacementParameter8 = ""
     @State var replacementParameter9 = ""
     @State var replacementParameter10 = ""
-    @State var selectedScriptCurrent = "1"
 
     //  ########################################################################################
-//     Selections
+    //  Selections
     //  ########################################################################################
+    
     @Binding var computerGroupSelection: Set<ComputerGroup>
     @State private var selection: PolicyScripts? = nil
     @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
     @State var listSelection: PolicyScripts = PolicyScripts(id:(UUID(uuidString: "") ?? UUID()) , jamfId: 0, name: "")
+    @State var pickerSelectedScript = 0
+    @State private var selectedNumber = 0
+
     //  ########################################################################################
     
     @State var scriptParameter4: String = ""
@@ -173,7 +173,7 @@ struct PolicyScriptsTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                         
-                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, scriptNumber: selectedScriptCurrent, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10)
+                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10)
                     }) {
                         Text("Update Parameter")
                     }
@@ -182,18 +182,27 @@ struct PolicyScriptsTabView: View {
                     
                     LazyVGrid(columns: layout.columns) {
 //
-                        Picker("Script", selection: $selectedScriptCurrent) {
+                        Picker("Script", selection: $pickerSelectedScript) {
                             ForEach(1..<10) {
                                 Text("\($0)")
                             }
+                            Text("You selected: \(pickerSelectedScript)")
+
                         }
-//                        .onAppear {
-//                            print("selectedScriptCurrent is currently:\(selectedScriptCurrent)")
-//                            if selectedScriptCurrent.isEmpty != true {
-//                                print("Setting numbers picker default")
-//                                selectedScriptCurrent = 1 }
+//                        .onChange(of:pickerSelectedScript) { value in
+//                            print("Value is:\(value)")
 //                        }
                         
+                        .onChange(of: pickerSelectedScript) { newValue in
+                                       print("pickerSelectedScript changed to \(pickerSelectedScript)")
+                                   }
+                        
+                        .onAppear {
+                            print("pickerSelectedScript is currently:\(pickerSelectedScript)")
+//                            if pickerSelectedScript.isEmpty != true {
+//                                print("Setting numbers picker default")
+//                                pickerSelectedScript = 0 }
+                        }
                         TextField("Parameter4", text: $replacementParameter4)
                     }
                 }

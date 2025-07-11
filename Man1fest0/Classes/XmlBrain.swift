@@ -1764,7 +1764,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
     //    replaceScriptParameter
     //    ##################################################
     
-    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, scriptNumber: String, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String) {
+    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, selectedScriptNumber: Int, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String) {
     
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
         let url = URL(string: jamfURLQuery)!
@@ -1772,16 +1772,16 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.separationLine()
         print("Running: replaceScriptParameter")
         self.separationLine()
+        print("Script number is set as:\(selectedScriptNumber)")
         print("Select the script and attribute")
         let scripts = self.xmlDoc.root["scripts"]
         let currentScript = self.xmlDoc.root
-        let selectedScript = self.xmlDoc.root["scripts"].children[Int(scriptNumber) ?? 1]
+        let selectedScript = self.xmlDoc.root["scripts"].children[selectedScriptNumber ?? 1]
         self.separationLine()
-        print("Script number is set as:\(scriptNumber)")
 
         if parameter4.isEmpty != true {
             
-            let selectedScriptParameter4 = self.xmlDoc.root["scripts"].children[Int(scriptNumber) ?? 1]["parameter4"]
+            let selectedScriptParameter4 = self.xmlDoc.root["scripts"].children[Int(selectedScriptNumber) ?? 1]["parameter4"]
             self.separationLine()
             print("Parameter4 is set - Remove selectedScriptParameter4")
             let removeSelectedScriptParameter4 = selectedScriptParameter4.removeFromParent()
