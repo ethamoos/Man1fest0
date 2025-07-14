@@ -134,6 +134,10 @@ struct OptionsView: View {
                                 NavigationLink(destination: PolicyDetailTableView(server: server)) {
                                     Text("Policy Actions - Detailed")
                                 }
+                                
+//                                NavigationLink(destination: NotesView()) {
+//                                    Text("Notes View")
+//                                }
 #endif
                             }
                         }

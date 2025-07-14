@@ -204,24 +204,35 @@ struct PolicyScriptsTabView: View {
                         TextField("", text: $replacementParameter4)
                     }
                 }
-                DisclosureGroup("More Parameters") {
-                    
-                    HStack {
-                        LazyVGrid(columns: layout.columns) {
-                            TextField("", text: $replacementParameter6)
-                            TextField("", text: $replacementParameter7)
-                        }
-                    }
-                    
-                    HStack {
-                        LazyVGrid(columns: layout.columns) {
-                            TextField("", text: $replacementParameter8)
-                            TextField("", text: $replacementParameter9)
-                            TextField("", text: $replacementParameter10)
-                        }
-                    }
-                }
                 
+//                HStack {
+                    DisclosureGroup("More Parameters") {
+                        
+                        HStack {
+                            LazyVGrid(columns: layout.columns) {
+                                TextField("", text: $replacementParameter6)
+                                TextField("", text: $replacementParameter7)
+                            }
+                        }
+                        
+                        HStack {
+                            LazyVGrid(columns: layout.columns) {
+                                TextField("", text: $replacementParameter8)
+                                TextField("", text: $replacementParameter9)
+                                TextField("", text: $replacementParameter10)
+                            }
+                        }
+                    }
+              
+                    DisclosureGroup("Notes") {
+                        VStack() {
+                        NotesView()
+                    }
+                        .frame(minHeight: 60, alignment: .leading)
+
+                        //                    NavigationLink(destination: NotesView())
+//                    }
+                }
                 Divider()
                 
                 //  ################################################################################

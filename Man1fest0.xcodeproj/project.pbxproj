@@ -28,6 +28,9 @@
 		A840186D2D4BCA6B00C09FD3 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A840186C2D4BCA6700C09FD3 /* ImportView.swift */; };
 		A852DB672C80F0C8005D153F /* Building.swift in Sources */ = {isa = PBXBuildFile; fileRef = A852DB662C80F0C8005D153F /* Building.swift */; };
 		A8533C3E2CA42EA900E6678F /* KeychainWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */; };
+		A857A4242E25657300A96F3A /* NotesModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A857A4222E25657300A96F3A /* NotesModel.xcdatamodeld */; };
+		A857A4262E2565A300A96F3A /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A857A4252E25658900A96F3A /* CoreDataStack.swift */; };
+		A857A4282E2566B900A96F3A /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A857A4272E2566B300A96F3A /* NotesView.swift */; };
 		A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25629D7447A0075D622 /* ComputersBasicView.swift */; };
 		A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */; };
 		A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533ED2C3C22DB002894B2 /* XmlBrain.swift */; };
@@ -128,6 +131,9 @@
 		A840186C2D4BCA6700C09FD3 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 		A852DB662C80F0C8005D153F /* Building.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Building.swift; sourceTree = "<group>"; };
 		A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainWrapper.swift; sourceTree = "<group>"; };
+		A857A4232E25657300A96F3A /* NotesModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = NotesModel.xcdatamodel; sourceTree = "<group>"; };
+		A857A4252E25658900A96F3A /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CoreDataStack.swift; path = ../CoreDataStack.swift; sourceTree = "<group>"; };
+		A857A4272E2566B300A96F3A /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		A861F25629D7447A0075D622 /* ComputersBasicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicView.swift; sourceTree = "<group>"; };
 		A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicDetailedView.swift; sourceTree = "<group>"; };
 		A86533ED2C3C22DB002894B2 /* XmlBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XmlBrain.swift; sourceTree = "<group>"; };
@@ -226,6 +232,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A857A4292E25686600A96F3A /* NotesPersistent */ = {
+			isa = PBXGroup;
+			children = (
+				A857A4252E25658900A96F3A /* CoreDataStack.swift */,
+				A857A4222E25657300A96F3A /* NotesModel.xcdatamodeld */,
+			);
+			path = NotesPersistent;
+			sourceTree = "<group>";
+		};
 		A8682D2529F2FA78000645BF /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -363,6 +378,7 @@
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
 				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */,
+				A857A4272E2566B300A96F3A /* NotesView.swift */,
 			);
 			path = Policy;
 			sourceTree = "<group>";
@@ -407,6 +423,7 @@
 		E4CD02852ADC3A2E00D210B2 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				A857A4292E25686600A96F3A /* NotesPersistent */,
 				A86AF3762C3FE1CC009349C4 /* JamfController */,
 				A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */,
 				A8FB5F8A2AEA59120061D5F7 /* Basher.swift */,
@@ -569,6 +586,7 @@
 				A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */,
 				A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */,
 				A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */,
+				A857A4262E2565A300A96F3A /* CoreDataStack.swift in Sources */,
 				A8ECF6512C6D275F0082BE21 /* Ldap.swift in Sources */,
 				E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */,
 				A86CB8652D3E618000D8F22F /* ReportsExport.swift in Sources */,
@@ -584,7 +602,9 @@
 				E48D59DB2C5A453C00E1E35B /* CreatePolicyTabView.swift in Sources */,
 				A801D8EB2B7E178600E9D5B0 /* GroupDetailView.swift in Sources */,
 				A8DECD5E2BD999AE00D79A11 /* BackgroundTasks.swift in Sources */,
+				A857A4242E25657300A96F3A /* NotesModel.xcdatamodeld in Sources */,
 				A852DB672C80F0C8005D153F /* Building.swift in Sources */,
+				A857A4282E2566B900A96F3A /* NotesView.swift in Sources */,
 				A86CB89E2D3E711D00D8F22F /* ReportsExportCSV.swift in Sources */,
 				A871904A2B6CF74500FC8FB2 /* GroupsView.swift in Sources */,
 				E49319812B642A9400B58519 /* ComputerPrestage.swift in Sources */,
@@ -896,6 +916,20 @@
 			productName = AEXML;
 		};
 /* End XCSwiftPackageProductDependency section */
+
+/* Begin XCVersionGroup section */
+		A857A4222E25657300A96F3A /* NotesModel.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				A857A4232E25657300A96F3A /* NotesModel.xcdatamodel */,
+			);
+			currentVersion = A857A4232E25657300A96F3A /* NotesModel.xcdatamodel */;
+			name = NotesModel.xcdatamodeld;
+			path = Man1fest0/Data/NotesModel.xcdatamodeld;
+			sourceTree = SOURCE_ROOT;
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = E4CE363129D1C43100533707 /* Project object */;
 }

@@ -207,7 +207,7 @@ class XmlBrain: ObservableObject {
             let wholeDoc = xmlDoc.root
             let policyGeneral = xmlDoc.root["general"]
             let lastID = policyGeneral["id"].last!
-            let lastName = policyGeneral["name"].last!
+            let reference = policyGeneral["name"].last!
             //    #################################################################################
             //        ADD NEW STRINGS
             //    #################################################################################
@@ -223,8 +223,8 @@ class XmlBrain: ObservableObject {
             print("lastID ID IS:\(lastID.xml)")
             print("Removing:\(lastID.xml)")
             lastID.removeFromParent()
-            print("Removing:\(lastName.xml)")
-            lastName.removeFromParent()
+            print("Removing:\(reference.xml)")
+            reference.removeFromParent()
             //    #################################################################################
             //    Confirm
             //    #################################################################################
