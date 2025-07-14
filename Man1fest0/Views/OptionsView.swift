@@ -33,6 +33,7 @@ struct OptionsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 
                 Divider()
+                
                 VStack(alignment: .leading, spacing: 10) {
  
                     HStack {

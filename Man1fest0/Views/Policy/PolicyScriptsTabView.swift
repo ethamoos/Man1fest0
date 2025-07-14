@@ -140,7 +140,7 @@ struct PolicyScriptsTabView: View {
                             }
                         }
                     }
-                    .frame(minHeight: 50)
+                    .frame(minHeight: 100)
                     .frame(minWidth: 100, maxWidth: .infinity)
 #else
                     List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self) { script in
@@ -180,7 +180,7 @@ struct PolicyScriptsTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                     
-                    LazyVGrid(columns: layout.columns) {
+                    LazyVGrid(columns: layout.threeColumns) {
 //
                         Picker("Script", selection: $pickerSelectedScript) {
                             ForEach(1..<10) {
@@ -192,34 +192,32 @@ struct PolicyScriptsTabView: View {
 //                        .onChange(of:pickerSelectedScript) { value in
 //                            print("Value is:\(value)")
 //                        }
-                        
                         .onChange(of: pickerSelectedScript) { newValue in
                                        print("pickerSelectedScript changed to \(pickerSelectedScript)")
                                    }
-                        
                         .onAppear {
                             print("pickerSelectedScript is currently:\(pickerSelectedScript)")
 //                            if pickerSelectedScript.isEmpty != true {
 //                                print("Setting numbers picker default")
 //                                pickerSelectedScript = 0 }
                         }
-                        TextField("Parameter4", text: $replacementParameter4)
+                        TextField("", text: $replacementParameter4)
                     }
                 }
                 DisclosureGroup("More Parameters") {
                     
                     HStack {
                         LazyVGrid(columns: layout.columns) {
-                            TextField("Parameter6", text: $replacementParameter6)
-                            TextField("Parameter7", text: $replacementParameter7)
+                            TextField("", text: $replacementParameter6)
+                            TextField("", text: $replacementParameter7)
                         }
                     }
                     
                     HStack {
                         LazyVGrid(columns: layout.columns) {
-                            TextField("Parameter8", text: $replacementParameter8)
-                            TextField("Parameter9", text: $replacementParameter9)
-                            TextField("Parameter10", text: $replacementParameter10)
+                            TextField("", text: $replacementParameter8)
+                            TextField("", text: $replacementParameter9)
+                            TextField("", text: $replacementParameter10)
                         }
                     }
                 }

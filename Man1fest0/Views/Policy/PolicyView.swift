@@ -70,7 +70,7 @@ struct PolicyView: View {
                             }
                         }
 #if os(macOS)
-                        .frame(minWidth: 400, maxWidth: .infinity)
+                        .frame(minWidth: 300, maxWidth: .infinity)
 #endif
                         .toolbar {
                             
