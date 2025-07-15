@@ -386,10 +386,7 @@ struct PolicyScopeTabView: View {
                                             }
                                         }
                                         .onAppear { selectionCompGroup = networkController.allComputerGroups[0] }
-                                        //                                    }
-                                        //
-                                        //                                    LazyVGrid(columns: layout.columns, spacing: 10) {
-                                        
+                                   
                                         Button(action: {
                                             
                                             progress.showProgress()
@@ -505,8 +502,6 @@ struct PolicyScopeTabView: View {
                                                         primaryButton: .destructive(Text("I understand!")) {
                                                             // Code to execute when "Yes" is tapped
                                                             xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: networkController.currentPolicyAsXML)
-//
-//                                                            }
                                                             print("Yes tapped")
                                                         },
                                                         secondaryButton: .cancel()

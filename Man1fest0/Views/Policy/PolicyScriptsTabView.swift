@@ -229,9 +229,6 @@ struct PolicyScriptsTabView: View {
                         NotesView()
                     }
                         .frame(minHeight: 60, alignment: .leading)
-
-                        //                    NavigationLink(destination: NotesView())
-//                    }
                 }
                 Divider()
                 
