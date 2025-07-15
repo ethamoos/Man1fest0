@@ -273,6 +273,7 @@ struct PolicyScopeTabView: View {
                                                 
                                                 progress.showProgress()
                                                 progress.waitForABit()
+                                                
                                                 networkController.separationLine()
                                                 print("addComputerToPolicyScope policy:\(String(describing: policyID))")
                                                 
@@ -343,6 +344,9 @@ struct PolicyScopeTabView: View {
                                         
                                         Button(action: {
                                             
+                                            progress.showProgress()
+                                            progress.waitForABit()
+                                            
                                             networkController.separationLine()
                                             print("addBuildingToPolicyScope - policy is:\(String(describing: policyID))")
                                             
@@ -372,7 +376,7 @@ struct PolicyScopeTabView: View {
                                 Divider()
                                 
                                 Group {
-                                    LazyVGrid(columns: layout.threeColumns, spacing: 10) {
+                                    LazyVGrid(columns: layout.fourColumnsFlexNarrow, spacing: 5) {
                                         
                                         TextField("Filter", text: $computerGroupFilter)
                                         Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
@@ -382,9 +386,9 @@ struct PolicyScopeTabView: View {
                                             }
                                         }
                                         .onAppear { selectionCompGroup = networkController.allComputerGroups[0] }
-                                    }
-                                    
-                                    LazyVGrid(columns: layout.columns, spacing: 10) {
+                                        //                                    }
+                                        //
+                                        //                                    LazyVGrid(columns: layout.columns, spacing: 10) {
                                         
                                         Button(action: {
                                             
@@ -489,7 +493,6 @@ struct PolicyScopeTabView: View {
                                                     progress.showProgress()
                                                     progress.waitForABit()
                                                     showingWarningClearLimit = true
-                                               
                                                 }) {
                                                     Text("Clear")
                                                 }
@@ -501,11 +504,8 @@ struct PolicyScopeTabView: View {
                                                         message: Text("This action will clear any current limitations on the policy scoping.\n Some devices previously blocked may now receive the policy"),
                                                         primaryButton: .destructive(Text("I understand!")) {
                                                             // Code to execute when "Yes" is tapped
-                                                                                                                        xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: networkController.currentPolicyAsXML)
-                                                            
-//                                                            Task {
-//                                                                
-//                                                                await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID))
+                                                            xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: networkController.currentPolicyAsXML)
+//
 //                                                            }
                                                             print("Yes tapped")
                                                         },
