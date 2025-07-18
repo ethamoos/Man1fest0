@@ -210,13 +210,18 @@ struct PolicyScriptsTabView: View {
                         LazyVGrid(columns: layout.columns) {
                             TextField("parameter5", text: $replacementParameter6)
                             TextField("parameter6", text: $replacementParameter6)
-                            TextField("parameter7", text: $replacementParameter7)
                         }
                     }
                     
                     HStack {
                         LazyVGrid(columns: layout.columns) {
+                            TextField("parameter7", text: $replacementParameter7)
                             TextField("parameter8", text: $replacementParameter8)
+                        }
+                    }
+                    
+                    HStack {
+                        LazyVGrid(columns: layout.columns) {
                             TextField("parameter9", text: $replacementParameter9)
                             TextField("parameter10", text: $replacementParameter10)
                         }
