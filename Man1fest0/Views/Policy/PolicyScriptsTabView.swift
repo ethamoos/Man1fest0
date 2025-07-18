@@ -183,7 +183,7 @@ struct PolicyScriptsTabView: View {
                     LazyVGrid(columns: layout.threeColumns) {
 //
                         Picker("Script", selection: $pickerSelectedScript) {
-                            ForEach(1..<10) {
+                            ForEach(0..<10) {
                                 Text("\($0)")
                             }
                             Text("You selected: \(pickerSelectedScript)")
