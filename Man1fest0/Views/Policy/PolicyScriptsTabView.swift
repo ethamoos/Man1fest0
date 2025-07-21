@@ -141,7 +141,7 @@ struct PolicyScriptsTabView: View {
                         }
                     }
                     .frame(minHeight: 100)
-                    .frame(minWidth: 100, maxWidth: .infinity)
+                    .frame(minWidth: 120, maxWidth: .infinity)
 #else
                     List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self) { script in
                         HStack {
