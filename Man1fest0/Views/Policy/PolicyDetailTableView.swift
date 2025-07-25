@@ -138,6 +138,11 @@ struct PolicyDetailTableView: View {
                 policy in
                 Text(String(policy.triggerOther ?? ""))
             }
+            
+//            TableColumn("Scripts", value: \.parameter4!) {
+//                policy in
+//                Text(String(policy.scripts ?? ""))
+//            }
         }
         .searchable(text: $searchText)
         .onChange(of: sortOrder) { newOrder in
@@ -227,9 +232,9 @@ struct PolicyDetailTableView: View {
                         .tint(.blue)
                         
                         
-                        //              ################################################################################
-                        //              Update Category
-                        //              ################################################################################
+    //              ################################################################################
+    //              Update Category
+    //              ################################################################################
                         
                         Button(action: {
                             progress.showProgressView = true
@@ -242,15 +247,13 @@ struct PolicyDetailTableView: View {
                         }) {
                             Text("Update Category/Enable")
                                 .help("This updates the category and also applies the enable/disable settings")
-                                
-                                
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                        
-                        //  ################################################################################
-                        //  Enable or Disable Policies Toggle
-                        //  ################################################################################
+    
+    //  ################################################################################
+    //  Enable or Disable Policies Toggle
+    //  ################################################################################
                         
                         Toggle("", isOn: $enableDisable)
                             .toggleStyle(SwitchToggleStyle(tint: .red))
@@ -362,16 +365,15 @@ struct PolicyDetailTableView: View {
 
                     HStack(spacing:20 ){
                         Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:").bold()) {
-                            //                        Text("").tag("") //basically added empty tag and it solve the case
                             ForEach(scopingController.allLdapCustomGroupsCombinedArray, id: \.self) { group in
                                 Text(String(describing: group.name))
                                     .tag(ldapSearchCustomGroupSelection as LDAPCustomGroup?)
                             }
                         }
                         
-                        //  ################################################################################
-                        //  Limitations
-                        //  ################################################################################
+//  ################################################################################
+//  Limitations
+//  ################################################################################
                         
                         Button(action: {
                             print("Limitations pressed")
@@ -522,11 +524,8 @@ struct PolicyDetailTableView: View {
                             title: Text("Caution!"),
                             message: Text("This action will delete data.\n Always ensure that you have a backup!"),
                             primaryButton: .destructive(Text("I understand!")) {
-                                // Code to execute when "Yes" is tapped
                                 networkController.processDeletePoliciesGeneral(selection: selectedPoliciesInt, server: server,  authToken: networkController.authToken, resourceType: ResourceType.policies)
-                                
                                 print("Delete button - Yes tapped")
-                                
                             },
                             secondaryButton: .cancel()
                         )
@@ -535,12 +534,12 @@ struct PolicyDetailTableView: View {
                     .tint(.red)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     
-                    
-    //                       ################################################################################
-                    //              DOWNLOAD OPTION
-                    //              ################################################################################
-    //                HStack {
-                        Button(action: {
+//                       ################################################################################
+//              DOWNLOAD OPTION
+//              ################################################################################
+
+
+                    Button(action: {
                             
                             progress.showProgress()
                             progress.waitForABit()
@@ -572,10 +571,6 @@ struct PolicyDetailTableView: View {
                             .tint(.yellow)
                             .shadow(color: .gray, radius: 2, x: 0, y: 2)
                         }
-                    
-                    
-                    
-                        
                     }
         }
         
