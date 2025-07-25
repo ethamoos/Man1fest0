@@ -173,6 +173,7 @@ struct PolicyDetailView: View {
                 VStack(alignment: .leading) {
                     Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.name ?? "Blank")\n")
                     Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.enabled ?? true))\n")
+                    Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
                     Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
@@ -609,7 +610,7 @@ struct PolicyDetailView: View {
             }
             
             //  ##########################################################################
-//  Add current packages to packagesAssignedToPolicy list on appear of View
+            //  Add current packages to packagesAssignedToPolicy list on appear of View
             //  ##########################################################################
 
             networkController.getPackagesAssignedToPolicy()

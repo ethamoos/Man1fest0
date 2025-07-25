@@ -82,7 +82,7 @@ struct PolicyDetailTableView: View {
         
         
 //        This variable is a mapping of the ID to the jamfId property in the selection so that although you select the id you actually return the jamfID - meaning that you can do stuff with this
-        
+
 //        networkController.allPoliciesDetailedGeneral is the list of policies that is being selected from that we want to access properties
         
 //        selectedPolicyIDs is a set (as the selection can be multiplw) this by default is populated by the ID only
@@ -178,13 +178,12 @@ struct PolicyDetailTableView: View {
         VStack(alignment: .leading) {
 
             
-            //              ################################################################################
-            //              Category
-            //              ################################################################################
+            //  ################################################################################
+            //  Category
+            //  ################################################################################
+            
             Divider()
 
-            
-//                LazyVGrid(columns: [GridItem(.adaptive(minimum: 300)), GridItem(.flexible(minimum: 200))], spacing: 20) {
             LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
                     
                     HStack {
@@ -221,7 +220,6 @@ struct PolicyDetailTableView: View {
                             
                         }) {
                             HStack(spacing: 10) {
-                                //                                Image(systemName: "arrow.clockwise")
                                 Text("Update")
                             }
                         }
