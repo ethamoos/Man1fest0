@@ -247,8 +247,6 @@ struct PolicyDetailView: View {
                     
                     progress.showProgress()
                     progress.waitForABit()
-                    
-                
                     print("Deleting policy:\(policyID)")
                     showingWarning = true
                     
@@ -277,9 +275,6 @@ struct PolicyDetailView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                
-                
-                
                 
 //              ################################################################################
 //              DOWNLOAD OPTION
@@ -458,7 +453,6 @@ struct PolicyDetailView: View {
                                 progress.waitForABit()
                                 
                                 networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
-                                
                             }) {
                                 HStack(spacing: 10) {
                                     Text("Update")
@@ -482,7 +476,6 @@ struct PolicyDetailView: View {
                 //  ##########################################################################
                 //  TabView - TAB
                 //  ##########################################################################
-
                 
 #if os(macOS)
                 TabView {
@@ -525,7 +518,7 @@ struct PolicyDetailView: View {
             }
         }
         . padding()
-        .frame(minWidth: 100, maxWidth: 600, minHeight: 70, maxHeight: .infinity)
+        .frame(minWidth: 150, maxWidth: 850, minHeight: 70, maxHeight: .infinity)
         
         //        if progress.debugMode == true {
         //            .background(Color.blue)
@@ -604,7 +597,6 @@ struct PolicyDetailView: View {
 //  getAllGroups
 //  ##########################################################################
 
-            
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
@@ -614,9 +606,7 @@ struct PolicyDetailView: View {
             //  ##########################################################################
 
             networkController.getPackagesAssignedToPolicy()
-            
             networkController.addExistingPackages()
-            
             fetchData()
             
         }
