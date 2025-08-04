@@ -648,30 +648,30 @@ struct PoliciesActionView: View {
 //            Read data back
 //    #################################################################################
                 layout.separationLine()
-                print("Reading current policy and storing in: networkController.xmlDoc")
+                print("Reading current policy and storing in: networkController.aexmlDoc")
                 networkController.readXMLDataFromString(xmlContent: currentPolicy)
                 layout.separationLine()
                 print("Remove old scope for all_computers")
-                let scope = networkController.xmlDoc.root["scope"]
-                let currentSettingsAllComps = networkController.xmlDoc.root["scope"]["all_computers"]
+                let scope = networkController.aexmlDoc.root["scope"]
+                let currentSettingsAllComps = networkController.aexmlDoc.root["scope"]["all_computers"]
                 currentSettingsAllComps.removeFromParent()
                 print("Add new scope for all_computers")
                 scope.addChild(name: "all_computers", value: String(describing: all_computersStatus))
                 print("Add new scope for computer_groups")
 
-                let currentComputerGroups = networkController.xmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
+                let currentComputerGroups = networkController.aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
                 currentComputerGroups.addChild(name: "name", value: groupName)
                 currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
                 currentComputerGroups.addChild(name: "isSmart", value: String(describing: smartStatus))
                 print("smartStatus is set as:\(smartStatus)")
                 print("all_computersStatus is set as:\(all_computersStatus)")
                 layout.separationLine()
-                print("Read main XML doc - updated for:\(eachPolicyId)")
-                print(networkController.xmlDoc.xml)
+                print("Read main aeXML doc - updated for:\(eachPolicyId)")
+                print(networkController.aexmlDoc.xml)
                 print("Submit updated doc")
                 
                 Task {
-                    try await networkController.sendRequestAsXMLAsyncID(url: url, authToken: authToken, resourceType: resourceType, xml: networkController.xmlDoc.root.xml, httpMethod: "PUT", policyID: String(describing: eachPolicyId) )
+                    try await networkController.sendRequestAsXMLAsyncID(url: url, authToken: authToken, resourceType: resourceType, xml: networkController.aexmlDoc.root.xml, httpMethod: "PUT", policyID: String(describing: eachPolicyId) )
                 }
                 
             } catch {
@@ -702,16 +702,16 @@ struct PoliciesActionView: View {
 //                print("policyAsXML is:\(policyAsXML)")
                 networkController.readXMLDataFromString(xmlContent: policyAsXML)
                 print("Adding limit_to_users")
-                let currentLdapGroups = networkController.xmlDoc.root["scope"]["limit_to_users"]["user_groups"]
+                let currentLdapGroups = networkController.aexmlDoc.root["scope"]["limit_to_users"]["user_groups"]
                 currentLdapGroups.addChild(name: "user_group", value: ldapUserGroupName)
-                let currentLdapGroupsLimitations = networkController.xmlDoc.root["scope"]["limitations"]["user_groups"].addChild(name: "user_group")
+                let currentLdapGroupsLimitations = networkController.aexmlDoc.root["scope"]["limitations"]["user_groups"].addChild(name: "user_group")
                 currentLdapGroupsLimitations.addChild(name: "id", value: String(describing: ldapUserGroupID))
                 currentLdapGroupsLimitations.addChild(name: "name", value: String(describing: ldapUserGroupName))
                 layout.separationLine()
                 print("Read main XML doc - updated")
-                print(networkController.xmlDoc.xml)
+                print(networkController.aexmlDoc.xml)
                 print("Submit updated doc")
-                try await networkController.sendRequestAsXMLAsyncID(url: url, authToken: authToken,resourceType: resourceType, xml: networkController.xmlDoc.root.xml, httpMethod: "PUT", policyID: policyID)
+                try await networkController.sendRequestAsXMLAsyncID(url: url, authToken: authToken,resourceType: resourceType, xml: networkController.aexmlDoc.root.xml, httpMethod: "PUT", policyID: policyID)
             } catch {
                 print("Fetching detailed policy as xml failed: \(error)")
             }

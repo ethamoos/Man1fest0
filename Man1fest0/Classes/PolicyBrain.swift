@@ -69,7 +69,7 @@ class PolicyBrain: ObservableObject {
     //    XML data
     //    #################################################################################
     
-    var xmlDoc: AEXMLDocument = AEXMLDocument()
+    var aexmlDoc: AEXMLDocument = AEXMLDocument()
     var computerGroupMembersXML: String = ""
     var policyAsXMLScope: String = ""
     var currentPolicyAsXML: String = ""
@@ -133,7 +133,7 @@ class PolicyBrain: ObservableObject {
             return
         }
         do {
-            self.xmlDoc = try AEXMLDocument(xml: data)
+            self.aexmlDoc = try AEXMLDocument(xml: data)
         }
         catch {
             print("\(error)")
@@ -325,8 +325,8 @@ class PolicyBrain: ObservableObject {
 //        print("Reading xml data with AEXML")
 //        self.readXMLDataFromStringPolicyBrain(xmlContent: xml)
 //        
-//        print("XML data is now stored in:self.xmlDoc - PolicyBrain")
-//        print(self.xmlDoc)
+//        print("XML data is now stored in:self.aexmlDoc.root - PolicyBrain")
+//        print(self.aexmlDoc.root)
 //        self.separationLine()
 //        
 //        //        if URL(string: server) != nil {
@@ -442,14 +442,14 @@ class PolicyBrain: ObservableObject {
     //        print("computerName is:\(computerId)")
     //        print("computerId is:\(computerId)")
     //
-    //        let computers = self.xmlDoc.root["computers"].addChild(name: "computer")
+    //        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
     //        computers.addChild(name: "id", value: computerId)
     //        computers.addChild(name: "name", value: computerName)
-    //        print("updatedContent is:\(self.xmlDoc.root.xml)")
+    //        print("updatedContent is:\(self.aexmlDoc.root.xml)")
     //        let jamfCount = computers.count
     //        print("jamfCount is:\(jamfCount)")
     //
-    //        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+    //        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
 
     //
     //    }
@@ -471,7 +471,7 @@ class PolicyBrain: ObservableObject {
 //        print("url is:\(url)")
 //        print("categoryName is:\(categoryName)")
 //        print("categoryId is:\(categoryId)")
-//        let category = self.xmlDoc.root["general"].addChild(name: "category")
+//        let category = self.aexmlDoc.root["general"].addChild(name: "category")
 //        //        if categoryId != "" {
 //        //            category.addChild(name: "id", value: categoryId)
 //        //        }
@@ -498,107 +498,6 @@ class PolicyBrain: ObservableObject {
     
     
     
-    
-    //}
-    //
-    
-    
-    //    func addPackageToPolicyXML (xmlString: String, packageName: String, packageId: String) -> String {
-    //
-    ////        Generic function for adding items
-    //
-    //        let document = try! XMLDocument(xmlString: xmlString) //Change this to a suitable init
-    //        let nodes = try! document.nodes(forXPath: "/policy/package_configuration/packages/package")
-    //
-    //
-    //        for node in nodes {
-    //            if let item = node as? XMLElement {
-    //
-    //                print("---------------------------------------------")
-    //                print("Node is:\(node)")
-    //                element = XMLNode.element(withName: "name", stringValue: packageName) as! XMLNode
-    //                item.addChild(element)
-    //                element2 = XMLNode.element(withName: "id", stringValue: packageId) as! XMLNode
-    //                item.addChild(element2)
-    //            }
-    //        }
-    //
-    //        print("---------------------------------------------")
-    //        print("element is:\(element)")
-    //        print("---------------------------------------------")
-    //        print("all nodes are:\(nodes)")
-    //        print("---------------------------------------------")
-    //        print("Updated document is:")
-    //        print("---------------------------------------------")
-    //        print((document))
-    //        print("---------------------------------------------")
-    //        print(String(describing: document))
-    //        return String(describing: document)
-    //
-    //    }
-    
-    
-    //    #################################################################################
-    //    Update packages polcies selection
-    //    #################################################################################
-    
-    
-    //    func updatePackagesSelectedPolicies(selection:  Set<Policy>, server: String, authToken: String, resourceType: ResourceType) {
-    //
-    //        self.separationLine()
-    //        print("Running: processDeletePolicies")
-    //        print("Set processingComplete to false")
-    //        self.processingComplete = true
-    //        print(String(describing: self.processingComplete))
-    //
-    //        for eachItem in selection {
-    //            self.separationLine()
-    //            print("Items as Dictionary is \(eachItem)")
-    //            let policyID = String(describing:eachItem.id)
-    //            let jamfID: String = String(describing:eachItem.jamfId ?? 0)
-    //            print("Current policyID is:\(policyID)")
-    //            print("Current jamfID is:\(String(describing: jamfID))")
-    ////            self.addPackageToPolicy(xmlContent: <#T##String#>, packageName: <#T##String#>, username: <#T##String#>, password: <#T##String#>, packageId: <#T##String#>, policyId: <#T##String#>, resourceType: <#T##ResourceType#>, server: <#T##String#>)
-    //
-    //            print("List is:\(packageProcessList)")
-    //        }
-    //        self.separationLine()
-    //        print("Finished - Set processingComplete to true")
-    //        self.processingComplete = true
-    //        print(String(describing: self.processingComplete))
-    //    }
-    
-    //    #################################################################################
-    //    Delete polcies selection
-    //    #################################################################################
-    
-    
-    //    func updateScopeMultiplePolicies(selection:  Set<Policy>, server: String, authToken: String, groupName: String, groupId: String, xmlString: String) {
-    //
-    //self.separationLine()
-    //        print("Running: processDeletePolicies")
-    //        print("Set processingComplete to false")
-    //        self.processingComplete = true
-    //        print(String(describing: self.processingComplete))
-    //
-    //        for eachItem in selection {
-    //            self.separationLine()
-    //            print("Items as Dictionary is \(eachItem)")
-    //
-    //            let policyID = String(describing:eachItem.id)
-    //            let jamfID: String = String(describing:eachItem.jamfId ?? 0)
-    //            print("Current policyID is:\(policyID)")
-    //            print("Current jamfID is:\(String(describing: jamfID))")
-    //            print("Run:getPolicyAsXML")
-    //            networkController.getPolicyAsXML(server: server, policyID: eachItem.jamfId ?? 0)
-    //
-    //            self.updateScopeAddCompGroup(xmlString: xmlString, groupName: groupName, groupId: groupId)
-    //        }
-    //self.separationLine()
-    //        print("Finished - Set processingComplete to true")
-    //        self.processingComplete = true
-    //        print(String(describing: self.processingComplete))
-    //    }
     
     
     
@@ -637,6 +536,40 @@ class PolicyBrain: ObservableObject {
         print("Finished - Set processingComplete to true")
         self.processingComplete = true
         print(String(describing: self.processingComplete))
+    }
+    
+    
+    //    #################################################################################
+    //    Remove all packages from selected policies
+    //    #################################################################################
+    
+    
+    func removeAllPackagesSelectionNestedFunction(selection:  Set<Policy>, server: String, authToken: String, operation:(String, String, String)->Void ) {
+        
+//    #################################################################################
+//        Calling function: removeAllPackagesManual         with parameters
+//        (server: server, authToken: networkController.authToken, policyID: String(describing: policyID)
+//    #################################################################################
+
+        self.separationLine()
+        print("Running: removeAllPackagesSelection")
+        print("Set processingComplete to false")
+        self.processingComplete = true
+        print(String(describing: self.processingComplete))
+        
+        for eachItem in selection {
+            self.separationLine()
+            print("Items as Dictionary is \(eachItem)")
+            let policyID = String(describing:eachItem.id)
+            print("Current policyID is:\(policyID)")
+
+            operation(server, authToken, policyID)
+            
+        }
+        self.separationLine()
+//        print("Finished - Set processingComplete to true")
+//        self.processingComplete = true
+//        print(String(describing: self.processingComplete))
     }
     
     
@@ -807,7 +740,7 @@ class PolicyBrain: ObservableObject {
             return
         }
         do {
-            self.xmlDoc = try AEXMLDocument(xml: data)
+            self.aexmlDoc = try AEXMLDocument(xml: data)
         }
         catch {
             print("\(error)")
@@ -825,13 +758,13 @@ class PolicyBrain: ObservableObject {
         
         readXMLDataFromString(xmlContent: xmlContent)
         
-        if self.xmlDoc.name.isEmpty != true {
+        if self.aexmlDoc.name.isEmpty != true {
             
             separationLine()
             print("Running clonePolicy - xmlDoc available:\(policyName)")
             let sem = DispatchSemaphore.init(value: 0)
-            let wholeDoc = xmlDoc.root
-            let policyGeneral = xmlDoc.root["general"]
+            let wholeDoc = aexmlDoc.root
+            let policyGeneral = aexmlDoc.root["general"]
             let lastID = policyGeneral["id"].last!
             let reference = policyGeneral["name"].last!
             //    #################################################################################

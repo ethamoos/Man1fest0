@@ -21,7 +21,11 @@ class XmlBrain: ObservableObject {
     @EnvironmentObject var policyController: PolicyBrain
     @EnvironmentObject var importExportBrain: ImportExportBrain
 
+    //    #################################################################################
+    //    DEBUG STATUS
+    //    #################################################################################
     @State var debugStatus = true
+    //    #################################################################################
 
 #if os(macOS)
 
@@ -81,7 +85,7 @@ class XmlBrain: ObservableObject {
     //    #################################################################################
     //    XML data
     //    #################################################################################
-    @Published var xmlDoc: AEXMLDocument = AEXMLDocument()
+    @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
     @Published var computerGroupMembersXML: String = ""
     @Published var currentPolicyAsXML: String = ""
     @Published var updateXML: Bool = false
@@ -149,13 +153,13 @@ class XmlBrain: ObservableObject {
         print("computerName is:\(computerId)")
         print("computerId is:\(computerId)")
         
-        let computers = self.xmlDoc.root["computers"].addChild(name: "computer")
+        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
         computers.addChild(name: "id", value: computerId)
         computers.addChild(name: "name", value: computerName)
-        print("updatedContent is:\(self.xmlDoc.root.xml)")
+        print("updatedContent is:\(self.aexmlDoc.root.xml)")
         let jamfCount = computers.count
         print("jamfCount is:\(jamfCount)")
-        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     // ######################################################################################
@@ -173,7 +177,7 @@ class XmlBrain: ObservableObject {
         print("url is:\(url)")
         print("categoryName is:\(categoryName)")
         print("categoryId is:\(categoryId)")
-        let category = self.xmlDoc.root["general"].addChild(name: "category")
+        let category = self.aexmlDoc.root["general"].addChild(name: "category")
         if categoryName != "" && categoryId != "" {
             category.addChild(name: "name", value: categoryName)
         print("updatedContent is:")
@@ -199,13 +203,13 @@ class XmlBrain: ObservableObject {
         
         readXMLDataFromString(xmlContent: xmlContent)
         
-        if self.xmlDoc.name.isEmpty != true {
+        if self.aexmlDoc.name.isEmpty != true {
             
             separationLine()
             print("Running clonePolicy - xmlDoc available:\(policyName)")
             let sem = DispatchSemaphore.init(value: 0)
-            let wholeDoc = xmlDoc.root
-            let policyGeneral = xmlDoc.root["general"]
+            let wholeDoc = aexmlDoc.root
+            let policyGeneral = aexmlDoc.root["general"]
             let lastID = policyGeneral["id"].last!
             let reference = policyGeneral["name"].last!
             //    #################################################################################
@@ -417,8 +421,8 @@ class XmlBrain: ObservableObject {
         print(xml)
         print("Reading xml data with AEXML")
         self.readXMLDataFromStringXmlBrain(xmlContent: xml)
-        print("XML data is now stored in:self.xmlDoc - PolicyBrain")
-        print(self.xmlDoc)
+        print("XML data is now stored in:self.aexmlDoc - PolicyBrain")
+        print(self.aexmlDoc)
         self.separationLine()
         
         //        if URL(string: server) != nil {
@@ -542,7 +546,7 @@ class XmlBrain: ObservableObject {
             return
         }
         do {
-            self.xmlDoc = try AEXMLDocument(xml: data)
+            self.aexmlDoc = try AEXMLDocument(xml: data)
         }
         catch {
             print("\(error)")
@@ -619,7 +623,7 @@ class XmlBrain: ObservableObject {
             return
         }
         do {
-            self.xmlDoc = try AEXMLDocument(xml: data)
+            self.aexmlDoc = try AEXMLDocument(xml: data)
         }
         catch {
             print("\(error)")
@@ -888,9 +892,9 @@ class XmlBrain: ObservableObject {
         print("url is:\(url)")
         print("scriptName is:\(scriptName)")
         print("scriptId is:\(scriptId)")
-        let scripts = self.xmlDoc.root["scripts"].addChild(name: "script")
+        let scripts = self.aexmlDoc.root["scripts"].addChild(name: "script")
         //  print("Confirm current number of scripts as:\(numberOfScripts)")
-        //  self.xmlDoc.root["scripts"].addChild(name: "size", value: String(describing:numberOfScripts))
+        //  self.aexmlDoc.root["scripts"].addChild(name: "size", value: String(describing:numberOfScripts))
         scripts.addChild(name: "id", value: scriptId)
         scripts.addChild(name: "name", value: scriptName)
         scripts.addChild(name: "priority", value: "After")
@@ -929,13 +933,13 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         }
 
         //        packages.addChild(name: "action", value: "Install")
-        //        print("updatedContent is:\(self.xmlDoc.root.xml)")
+        //        print("updatedContent is:\(self.aexmlDoc.root.xml)")
 
         let scriptCount = scripts.count
         print("scriptCount is:\(scriptCount)")
         let updatedScriptCount = scriptCount+1
         print("updatedScriptCount is:\(updatedScriptCount)")
-        self.xmlDoc.root["scripts"].addChild(name: "size", value: String(describing:updatedScriptCount))
+        self.aexmlDoc.root["scripts"].addChild(name: "size", value: String(describing:updatedScriptCount))
         
         if newPolicyFlag == true {
             self.separationLine()
@@ -948,7 +952,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         
         print("addScriptToPolicy - updatedContent is:")
         print(xmlContent.xml)
-//        print(self.xmlDoc.root.xml)
+//        print(self.aexmlDoc.root.xml)
     }
     
     // ######################################################################################
@@ -1026,7 +1030,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
     // removePackagesFromPolicy
     // ######################################################################################
     
-    func removePackagesFromPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, policyId: String, resourceType: ResourceType, newPolicyFlag: Bool) {
+    func removePackagesFromPolicy(xmlContent: AEXMLDocument,  authToken: String, server: String, policyId: String) {
         
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
         let url = URL(string: jamfURLQuery)!
@@ -1042,8 +1046,6 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         print(xmlContent.xml)
         self.atSeparationLine()
         print("url is:\(url)")
-
-        print("newPolicyFlag status is:\(newPolicyFlag)")
         self.atSeparationLine()
         
         //              ################################################################################
@@ -1051,16 +1053,21 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         //              ################################################################################
         
         let packages = xmlContent.root["package_configuration"]["packages"]
-        print("Removing:\(packages.xml)")
+        let packageConfig = xmlContent.root["package_configuration"]
+        print("Current packages are:\(packages.xml)")
+        print("Removing current packages")
         packages.removeFromParent()
-        
-        //              ################################################################################
+        print("Add empty packages")
+        packageConfig.addChild(name: "packages")
+        packages.addChild(name: "size", value: "0")
+        print("Current packages are:\(packages.xml)")
+        //  ################################################################################
         //              DEBUG
-        //              ################################################################################
+        //  ################################################################################
 
         if debugStatus == true {
             self.atSeparationLine()
-            print("updated XML after addPackageToPolicy has run is:")
+            print("updated XML after removePackagesFromPolicy has run is:")
             print(xmlContent.xml)
         }
         
@@ -1072,15 +1079,104 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         let packageCount = packages.count
         print("packageCount is:\(packageCount)")
 
-        if newPolicyFlag == true {
-            self.separationLine()
-            print("Is new policy - not posting package data to Jamf at this point")
-        } else {
-            self.separationLine()
-            print("Is not new policy - posting updated package data to Jamf")
-            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: xmlContent.xml, httpMethod: "PUT")
+    
+    }
+    
+//    func removePackagesFromPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, policyId: String, resourceType: ResourceType, newPolicyFlag: Bool) {
+//        
+//        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
+//        let url = URL(string: jamfURLQuery)!
+//        
+//        //              ################################################################################
+//        //              DEBUG
+//        //              ################################################################################
+//        
+//        self.separationLine()
+//        print("Running removePackagesFromPolicy - XML brain")
+//        print("Initial xmlContent is:")
+//        self.atSeparationLine()
+//        print(xmlContent.xml)
+//        self.atSeparationLine()
+//        print("url is:\(url)")
+//        print("newPolicyFlag status is:\(newPolicyFlag)")
+//        self.atSeparationLine()
+//        
+//        //              ################################################################################
+//        //              DEBUG
+//        //              ################################################################################
+//        
+//        let packages = xmlContent.root["package_configuration"]["packages"]
+//        let packageConfig = xmlContent.root["package_configuration"]
+//        print("Current packages are:\(packages.xml)")
+//        print("Removing current packages")
+//        packages.removeFromParent()
+//        print("Add empty packages")
+//        packageConfig.addChild(name: "packages")
+//        packages.addChild(name: "size", value: "0")
+//        print("Current packages are:\(packages.xml)")
+//        //  ################################################################################
+//        //              DEBUG
+//        //  ################################################################################
+//
+//        if debugStatus == true {
+//            self.atSeparationLine()
+//            print("updated XML after removePackagesFromPolicy has run is:")
+//            print(xmlContent.xml)
+//        }
+//        
+//        //              ################################################################################
+//        //              DEBUG
+//        //              ################################################################################
+//        
+//        self.atSeparationLine()
+//        let packageCount = packages.count
+//        print("packageCount is:\(packageCount)")
+//
+//        if newPolicyFlag == true {
+//            self.separationLine()
+//            print("Is new policy - not posting package data to Jamf at this point")
+//        } else {
+//            self.separationLine()
+//            print("Is not new policy - posting updated package data to Jamf")
+//            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent.xml, httpMethod: "PUT")
+//        }
+//    }
+    
+    
+    
+    func removeAllPackagesManual(server: String, authToken: String, policyID: String ) {
+//        Alternative method for removing all packages
+        var xml:String
+        
+        self.separationLine()
+        print("DEBUGGING")
+        self.separationLine()
+        print("Running removeAllPackagesManual for policy ID:\(policyID)")
+        print("Url is set as:\(server)")
+        
+        xml = """
+    <?xml version="1.0" encoding="utf-8"?>
+    <policy>
+        <package_configuration>
+            <packages>
+                <size>0</size>
+            </packages>
+        </package_configuration>
+    </policy>
+    """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("/JSSResource/policies/id/").appendingPathComponent(policyID)
+                print("Running removeAllPackagesManual sendRequestAsXML - url is set as:\(url)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
         }
     }
+
     
         func addPackageToPolicyXML (xmlString: String, packageName: String, packageId: String) -> String {
         
@@ -1119,98 +1215,106 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
     
     func addSelectedPackagesToPolicy(selection: Set<Package>, authToken: String, server: String, xmlContent: AEXMLDocument, policyId: String) {
         
-        let packageCount = selection.count
-        self.separationLine()
-        print("Running addSelectedPackagesToPolicy")
-        print("Adding in structure to xml")
-        _ = self.xmlDoc.root.addChild(name: "package_configuration")
-        _ = self.xmlDoc.root["package_configuration"].addChild(name: "packages")
         
-        if packageCount == 0 {
-            print("No packages to add")
-        } else {
+        if let serverURL = URL(string: server) {
+            let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
+            //            let xmldata = xml.data(using: .utf8)
             
-            for eachPackage in selection {
-                print("Item is \(String(describing: eachPackage))")
-                let currentPackageIdInt = eachPackage.jamfId
-                let currentPackageNameString = eachPackage.name
-                print("Current currentPackageIdInt is:\(String(describing: self.currentPackageIdInt))")
-                print("Current currentPackageNameString is:\(String(describing: self.currentPackageNameString))")
-                print("Adding package:\(eachPackage.name) to list")
-                self.addPackageToPolicy(xmlContent: self.xmlDoc, xmlContentString: "", authToken: authToken, server: server, packageName: currentPackageNameString, packageId: String(describing: currentPackageIdInt), policyId: policyId, resourceType: ResourceType.policyDetail, newPolicyFlag: true)
+            
+            let packageCount = selection.count
+            self.separationLine()
+            print("Running addSelectedPackagesToPolicy")
+            print("Adding in structure to xml")
+            _ = self.aexmlDoc.root.addChild(name: "package_configuration")
+            _ = self.aexmlDoc.root["package_configuration"].addChild(name: "packages")
+            
+            if packageCount == 0 {
+                print("No packages to add")
+            } else {
+                
+                for eachPackage in selection {
+                    print("Item is \(String(describing: eachPackage))")
+                    let currentPackageIdInt = eachPackage.jamfId
+                    let currentPackageNameString = eachPackage.name
+                    print("Current currentPackageIdInt is:\(String(describing: self.currentPackageIdInt))")
+                    print("Current currentPackageNameString is:\(String(describing: self.currentPackageNameString))")
+                    print("Adding package:\(eachPackage.name) to list")
+                    self.addPackageToPolicy(xmlContent: self.aexmlDoc, xmlContentString: "", authToken: authToken, server: server, packageName: currentPackageNameString, packageId: String(describing: currentPackageIdInt), policyId: policyId, resourceType: ResourceType.policyDetail, newPolicyFlag: true)
+                }
             }
-        }
-        
-        self.separationLine()
-        print("Adding packageCount:\(packageCount)")
-        let packages = self.xmlDoc.root["package_configuration"]["packages"].addChild(name: "size", value: String(describing: packageCount))
-        
-        //              ################################################################################
-        //              DEBUG
-        //              ################################################################################
-        
-        if debugStatus == true {
+            
+            self.separationLine()
+            print("Adding packageCount:\(packageCount)")
+            let packages = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "size", value: String(describing: packageCount))
+            
+            //           ################################################################################
+            //              DEBUG
+            //           ################################################################################
+            
+            if debugStatus == true {
+                self.atSeparationLine()
+                print("updated XML after addSelectedPackagesToPolicy has run is:")
+                print(self.aexmlDoc.root.xml)
+            }
             self.atSeparationLine()
-            print("updated XML after addSelectedPackagesToPolicy has run is:")
-            print(self.xmlDoc.root.xml)
+            print("Have finished adding packages to policy - posting xml")
+            
+            self.sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
         }
-        self.atSeparationLine()
-        print("Have finished adding packages to policy - posting xml")
-        self.postNewPolicy(server: server, authToken: authToken, xml: self.xmlDoc.root.xml)
     }
     
     //    #################################################################################
     //    Post new policy - via XML
     //    #################################################################################
     
-    func postNewPolicy(server: String, authToken: String, xml: String ) {
-        
-        let sem = DispatchSemaphore.init(value: 0)
-        
-        //              ################################################################################
-        //              DEBUG
-        //              ################################################################################
-        
-        self.atSeparationLine()
-        self.separationLine()
-        print("Running postNewPolicy")
-//      print("username is set as:\(username)")
-//      print("password is set as:\(password)")
-        print("Url is set as:\(server)")
-//      print("authToken is set as:\(authToken)")
-        self.separationLine()
-        print("XML is set as:")
-        print(xml)
-        self.atSeparationLine()
-        
-        //              ################################################################################
-        //              DEBUG - END
-        //              ################################################################################
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("/JSSResource/policies/id/0")
-                let xmldata = xml.data(using: .utf8)
-                print(url)
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-                request.setValue("application/xml", forHTTPHeaderField: "Accept")
-                request.httpBody = xmldata
-                let config = URLSessionConfiguration.default
-                config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
-                URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
-                    defer { sem.signal() }
-                    guard let httpResponse = response as? HTTPURLResponse,
-                          (200...299).contains(httpResponse.statusCode) else {
-                        print("Bad Credentials")
-                        print(response!)
-                        return
-                    }
-                }.resume()
+        func postNewPolicy(server: String, authToken: String, xml: String ) {
+            
+            let sem = DispatchSemaphore.init(value: 0)
+            
+            //              ################################################################################
+            //              DEBUG
+            //              ################################################################################
+            
+            self.atSeparationLine()
+            self.separationLine()
+            print("Running postNewPolicy")
+            //      print("username is set as:\(username)")
+            //      print("password is set as:\(password)")
+            print("Url is set as:\(server)")
+            //      print("authToken is set as:\(authToken)")
+            self.separationLine()
+            print("XML is set as:")
+            print(xml)
+            self.atSeparationLine()
+            
+            //              ################################################################################
+            //              DEBUG - END
+            //              ################################################################################
+            
+            if URL(string: server) != nil {
+                if let serverURL = URL(string: server) {
+                    let url = serverURL.appendingPathComponent("/JSSResource/policies/id/0")
+                    let xmldata = xml.data(using: .utf8)
+                    print(url)
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "POST"
+                    request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+                    request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                    request.httpBody = xmldata
+                    let config = URLSessionConfiguration.default
+                    config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
+                    URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
+                        defer { sem.signal() }
+                        guard let httpResponse = response as? HTTPURLResponse,
+                              (200...299).contains(httpResponse.statusCode) else {
+                            print("Bad Credentials")
+                            print(response!)
+                            return
+                        }
+                    }.resume()
+                }
             }
         }
-    }
     
     //    #################################################################################
     //    setPolicyTriggers
@@ -1223,11 +1327,11 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         let itemIDString = String(itemID)
         
         readXMLDataFromString(xmlContent: xmlContent)
-        if self.xmlDoc.name.isEmpty != true {
+        if self.aexmlDoc.name.isEmpty != true {
             separationLine()
             print("Running setPolicyTriggers - xmlDoc available:\(xmlContent)")
-            let wholeDoc = xmlDoc.root
-            let policyGeneral = xmlDoc.root["general"]
+            let wholeDoc = aexmlDoc.root
+            let policyGeneral = aexmlDoc.root["general"]
 //            let policyID = policyGeneral["id"].last!
 //            let policyName = policyGeneral["name"].last!
             //    #################################################################################
@@ -1312,7 +1416,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
                     let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
                     print("Running setPolicyTriggers function - url is set as:\(url)")
                     print("resourceType is set as:\(resourceType)")
-                    self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlDoc.root.xml, httpMethod: "PUT")
+                    self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: aexmlDoc.root.xml, httpMethod: "PUT")
                     //                                appendStatus("Connecting to \(url)...")
                 }
             }
@@ -1383,7 +1487,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             return
         }
         do {
-            self.xmlDoc = try AEXMLDocument(xml: data)
+            self.aexmlDoc = try AEXMLDocument(xml: data)
         }
         catch {
             print("\(error)")
@@ -1422,19 +1526,19 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
                 print("Fetching detailed policy as xml failed: \(error)")
             }
             
-            let currentComputerGroups = xmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
+            let currentComputerGroups = aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
             currentComputerGroups.addChild(name: "name", value: groupName)
             currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
             currentComputerGroups.addChild(name: "isSmart", value: "false")
-            let scope = xmlDoc.root["scope"].addChild(name: "scope")
-            let allComputers = xmlDoc.root["scope"]["all_computers"]
+            let scope = aexmlDoc.root["scope"].addChild(name: "scope")
+            let allComputers = aexmlDoc.root["scope"]["all_computers"]
             allComputers.removeFromParent()
             scope.addChild(name: "all_computers", value: "false")
             self.separationLine()
             print("Read main XML doc - updated")
-            print(xmlDoc.xml)
+            print(aexmlDoc.xml)
             print("Submit updated doc")
-            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
             print("The string is not empty")
         }
     }
@@ -1460,19 +1564,19 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         print(policyAsXML)
         self.readXMLDataFromStringScopingBrain(xmlContent: policyAsXML)
         
-        let currentComputerGroups = xmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
+        let currentComputerGroups = aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
         currentComputerGroups.addChild(name: "name", value: groupName)
         currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
         currentComputerGroups.addChild(name: "isSmart", value: "false")
-        let scope = xmlDoc.root["scope"].addChild(name: "scope")
-        let allComputers = xmlDoc.root["scope"]["all_computers"]
+        let scope = aexmlDoc.root["scope"].addChild(name: "scope")
+        let allComputers = aexmlDoc.root["scope"]["all_computers"]
         allComputers.removeFromParent()
         scope.addChild(name: "all_computers", value: "false")
         self.separationLine()
         print("Read main XML doc - updated")
-        print(xmlDoc.xml)
+           print(aexmlDoc.xml)
         print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
         print("The string is not empty")
         
     }
@@ -1529,18 +1633,18 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             }
         } else {
             print("Xml data is present - reading")
-            let currentComputerGroups = xmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
+            let currentComputerGroups = aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
             currentComputerGroups.addChild(name: "name", value: groupName)
             currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
             currentComputerGroups.addChild(name: "isSmart", value: "false")
-            let scope = xmlDoc.root["scope"].addChild(name: "scope")
+            let scope = aexmlDoc.root["scope"].addChild(name: "scope")
             scope.addChild(name: "all_computers", value: "false")
             self.separationLine()
             print("Read main XML doc - updated")
-            print(xmlDoc.xml)
+            print(aexmlDoc.xml)
             print("Submit updated doc")
             
-            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
             print("The string is not empty")
         }
     }
@@ -1562,13 +1666,13 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
 //        print("url is:\(url)")
 //        print("computerName is:\(computerId)")
 //        print("computerId is:\(computerId)")
-//        let computers = self.xmlDoc.root["computers"].addChild(name: "computer")
+//        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
 //        computers.addChild(name: "id", value: computerId)
 //        computers.addChild(name: "name", value: computerName)
-//        print("updatedContent is:\(self.xmlDoc.root.xml)")
+//        print("updatedContent is:\(self.aexmlDoc.root.xml)")
 //        let jamfCount = computers.count
 //        print("jamfCount is:\(jamfCount)")
-//        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+//        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
 //    }
     
     //    ##################################################
@@ -1584,16 +1688,16 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         print("Running addComputerToPolicyScope")
         print("computer name is:\(computerName)")
         print("computer id is:\(computerId)")
-        let computers = xmlDoc.root["scope"]["computers"].addChild(name: "computer")
+        let computers = aexmlDoc.root["scope"]["computers"].addChild(name: "computer")
         computers.addChild(name: "id", value: computerId)
         computers.addChild(name: "name", value: computerName)
-        let scope = xmlDoc.root["scope"].addChild(name: "scope")
+        let scope = aexmlDoc.root["scope"].addChild(name: "scope")
         scope.addChild(name: "all_computers", value: "false")
         self.separationLine()
         print("Read main XML doc - updated")
-        print(xmlDoc.xml)
+           print(aexmlDoc.xml)
         print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     //    ##################################################
@@ -1607,15 +1711,15 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         self.separationLine()
         print("Running addAllComputersToScope")
-        let scope = xmlDoc.root["scope"]
-        let currentSettingsAllComps = xmlDoc.root["scope"]["all_computers"]
+        let scope = aexmlDoc.root["scope"]
+        let currentSettingsAllComps = aexmlDoc.root["scope"]["all_computers"]
         currentSettingsAllComps.removeFromParent()
         scope.addChild(name: "all_computers", value: "true")
         self.separationLine()
         print("Read main XML doc - updated")
-        print(xmlDoc.xml)
+           print(aexmlDoc.xml)
         print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     func disableAllComputersToScope(xmlContent: String, authToken: String, resourceType: ResourceType, server: String, policyId: String) {
@@ -1625,15 +1729,15 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         self.separationLine()
         print("Running addAllComputersToScope")
-        let scope = xmlDoc.root["scope"]
-        let currentSettingsAllComps = xmlDoc.root["scope"]["all_computers"]
+        let scope = aexmlDoc.root["scope"]
+        let currentSettingsAllComps = aexmlDoc.root["scope"]["all_computers"]
         currentSettingsAllComps.removeFromParent()
         scope.addChild(name: "all_computers", value: "false")
         self.separationLine()
         print("Read main XML doc - updated")
-        print(xmlDoc.xml)
+           print(aexmlDoc.xml)
         print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     //    #################################################################################
@@ -1649,12 +1753,12 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         print("Adding XML data")
         print("Adding departmentName: \(departmentName)")
         print("Adding departmentId: \(departmentId)")
-        let departments = xmlDoc.root["scope"]["departments"].addChild(name: "department")
+        let departments = aexmlDoc.root["scope"]["departments"].addChild(name: "department")
         departments.addChild(name: "name", value: departmentName)
         departments.addChild(name: "id", value: departmentId)
         let departmentCount = departments.count
         print("departmentCount is:\(departmentCount)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     //    #################################################################################
@@ -1667,13 +1771,13 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
         let url = URL(string: jamfURLQuery)!
-        let buildings = self.xmlDoc.root["scope"]["buildings"].addChild(name: "building")
+        let buildings = self.aexmlDoc.root["scope"]["buildings"].addChild(name: "building")
         buildings.addChild(name: "name", value: buildingName)
         buildings.addChild(name: "id", value: buildingId)
-        print("updatedContent is:\(self.xmlDoc.root.xml)")
+        print("updatedContent is:\(self.aexmlDoc.root.xml)")
         let buildingCount = buildings.count
         print("buildingCount is:\(buildingCount)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     //    #################################################################################
@@ -1704,18 +1808,18 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
                 print("Xml data is present - reading and adding to:self.readXMLDataFromStringScopingBrain ")
                 self.readXMLDataFromStringScopingBrain(xmlContent: policyAsXML)
                 print("Adding limit_to_users")
-                let currentLdapGroups = self.xmlDoc.root["scope"]["limit_to_users"]["user_groups"]
+                let currentLdapGroups = self.aexmlDoc.root["scope"]["limit_to_users"]["user_groups"]
                 currentLdapGroups.addChild(name: "user_group", value: ldapUserGroupName)
-                let currentLdapGroupsLimitations = self.xmlDoc.root["scope"]["limitations"]["user_groups"].addChild(name: "user_group")
+                let currentLdapGroupsLimitations = self.aexmlDoc.root["scope"]["limitations"]["user_groups"].addChild(name: "user_group")
                 currentLdapGroupsLimitations.addChild(name: "id", value: String(describing: ldapUserGroupID))
                 currentLdapGroupsLimitations.addChild(name: "name", value: String(describing: ldapUserGroupName))
                 self.separationLine()
                 print("Read main XML doc - updated")
                 if debugStatus == true {
-                    print(self.xmlDoc.xml)
+                    print(self.aexmlDoc.xml)
                 }
                 print("Submit updated doc")
-                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
             } catch {
                 print("Fetching detailed policy as xml failed: \(error)")
             }
@@ -1739,19 +1843,19 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             print("DEBUG")
             print("currentPolicyAsXML is:\n\(currentPolicyAsXML)")
         }
-        var currentScopeOverall = xmlDoc.root["scope"]
-        let currentComputers = xmlDoc.root["scope"]["computers"]
-        let currentComputer_groups = xmlDoc.root["scope"]["computer_groups"]
-        let currentBuildings = xmlDoc.root["scope"]["buildings"]
-        let currentDepartments = xmlDoc.root["scope"]["departments"]
-        let currentUserGroups = xmlDoc.root["scope"]["limit_to_users"]["user_groups"]
-        let currentUserLimitationsUsers = xmlDoc.root["scope"]["limitations"]["users"]
-        let currentUserLimitationsUserGroups = xmlDoc.root["scope"]["limitations"]["user_groups"]
-        let currentUserLimitationsNetworkSegments = xmlDoc.root["scope"]["limitations"]["network_segments"]
-        let currentUserLimitationsiBeacons = xmlDoc.root["scope"]["limitations"]["ibeacons"]
-        let currentLimitations = xmlDoc.root["scope"]["limitations"]
+        var currentScopeOverall = aexmlDoc.root["scope"]
+        let currentComputers = aexmlDoc.root["scope"]["computers"]
+        let currentComputer_groups = aexmlDoc.root["scope"]["computer_groups"]
+        let currentBuildings = aexmlDoc.root["scope"]["buildings"]
+        let currentDepartments = aexmlDoc.root["scope"]["departments"]
+        let currentUserGroups = aexmlDoc.root["scope"]["limit_to_users"]["user_groups"]
+        let currentUserLimitationsUsers = aexmlDoc.root["scope"]["limitations"]["users"]
+        let currentUserLimitationsUserGroups = aexmlDoc.root["scope"]["limitations"]["user_groups"]
+        let currentUserLimitationsNetworkSegments = aexmlDoc.root["scope"]["limitations"]["network_segments"]
+        let currentUserLimitationsiBeacons = aexmlDoc.root["scope"]["limitations"]["ibeacons"]
+        let currentLimitations = aexmlDoc.root["scope"]["limitations"]
         
-        if let computers = xmlDoc.root["scope"]["computers"].all {
+        if let computers = aexmlDoc.root["scope"]["computers"].all {
             print("All current computers are:")
             for computer in computers {
                 if let name = computer.value {
@@ -1760,7 +1864,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             }
         }
         
-        if let computer_groups = xmlDoc.root["scope"]["computer_groups"].all {
+        if let computer_groups = aexmlDoc.root["scope"]["computer_groups"].all {
             print("All current UserGroups are:")
             for computerGroup in computer_groups {
                 if let name = computerGroup.value {
@@ -1769,7 +1873,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             }
         }
         
-        if let departments = xmlDoc.root["scope"]["departments"].all {
+        if let departments = aexmlDoc.root["scope"]["departments"].all {
             print("All current departments are:")
             for department in departments {
                 if let name = department.value {
@@ -1778,7 +1882,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
             }
         }
         
-        if let limitations = xmlDoc.root["scope"]["limitations"].all {
+        if let limitations = aexmlDoc.root["scope"]["limitations"].all {
             print("All current limitations are:")
             for limitation in limitations {
                 if let name = limitation.value {
@@ -1801,7 +1905,7 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         //            currentUserLimitationsiBeacons.removeFromParent()
         separationLine()
         print("Update currentScopeOverall")
-        currentScopeOverall = xmlDoc.root["scope"]
+        currentScopeOverall = aexmlDoc.root["scope"]
         currentScopeOverall.addChild(currentComputers)
         currentScopeOverall.addChild(currentComputer_groups)
         currentScopeOverall.addChild(currentBuildings)
@@ -1811,10 +1915,10 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.currentPolicyScopeXML = currentScopeOverall.xml
         self.separationLine()
         print("Read main XML doc - updated")
-        print(xmlDoc.xml)
+           print(aexmlDoc.xml)
         separationLine()
         print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
         print("The string is not empty")
     }
     
@@ -1834,14 +1938,14 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.separationLine()
         print("Script number is set as:\(selectedScriptNumber)")
         print("Select the script and attribute")
-        let scripts = self.xmlDoc.root["scripts"]
-        let currentScript = self.xmlDoc.root
-        let selectedScript = self.xmlDoc.root["scripts"].children[selectedScriptNumber ?? 1]
+        let scripts = self.aexmlDoc.root["scripts"]
+        let currentScript = self.aexmlDoc.root
+        let selectedScript = self.aexmlDoc.root["scripts"].children[selectedScriptNumber ?? 1]
         self.separationLine()
 
         if parameter4.isEmpty != true {
             
-            let selectedScriptParameter4 = self.xmlDoc.root["scripts"].children[Int(selectedScriptNumber) ?? 1]["parameter4"]
+            let selectedScriptParameter4 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber) ?? 1]["parameter4"]
             self.separationLine()
             print("Parameter4 is set - Remove selectedScriptParameter4")
             let removeSelectedScriptParameter4 = selectedScriptParameter4.removeFromParent()
@@ -1855,23 +1959,23 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         
         self.separationLine()
         print("Listing scripts after edit")
-        print(self.xmlDoc.root["scripts"].children.description.utf8)
+        print(self.aexmlDoc.root["scripts"].children.description.utf8)
 
-        let numberOfScripts = self.xmlDoc.root["scripts"]["script"].count
+        let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
         //      ----------------------------------------------------
         //        Fix count
         //      ----------------------------------------------------
         self.separationLine()
         print("Counting scripts - number is:\(numberOfScripts)")
-        let _: () = self.xmlDoc.root["scripts"]["size"].removeFromParent()
+        let _: () = self.aexmlDoc.root["scripts"]["size"].removeFromParent()
         _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
         
         self.separationLine()
         print("Read main XML doc - updated")
-        print(self.xmlDoc.xml)
+        print(self.aexmlDoc.xml)
         separationLine()
         print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
         print("The string is not empty")
     }
 }

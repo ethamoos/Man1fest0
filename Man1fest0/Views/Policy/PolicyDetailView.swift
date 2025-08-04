@@ -550,6 +550,7 @@ struct PolicyDetailView: View {
 //  ##########################################################################
 
 //                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    
                     networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
 
 //  ##########################################################################

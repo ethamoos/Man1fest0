@@ -229,7 +229,7 @@ struct CreatePolicyView: View {
 //                            
                             xmlController.addCategoryToPolicy(xmlContent: xmlController.newPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
                             
-                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.xmlDoc, policyId: "0")
+                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
                             
                             if createDepartmentIsChecked == true {
                                 networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )

@@ -143,7 +143,7 @@ import AEXML
     //    XML data
     //    #################################################################################
     
-    @Published var xmlDoc: AEXMLDocument = AEXMLDocument()
+    @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
     @Published var computerGroupMembersXML: String = ""
     @Published var currentPolicyAsXML: String = ""
     @Published var updateXML: Bool = false
@@ -979,30 +979,7 @@ import AEXML
         }
     }
     
-    
-    func batchDeleteGroup(selection:  Set<ComputerGroup>, server: String, authToken: String, resourceType: ResourceType) async throws {
-        
-        self.separationLine()
-        print("Running: batchDeleteGroup")
-        for eachItem in selection {
-            self.separationLine()
-            print("Items as Dictionary is \(eachItem)")
-            let computerSmartGroupId = String(describing:eachItem.id)
-            let jamfID: String = String(describing:eachItem.id)
-            print("Current computerSmartGroupId is:\(computerSmartGroupId)")
-            print("Current jamfID is:\(String(describing: jamfID))")
-            
-            do {
-               try await self.deleteGroup(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
-            } catch {
-                throw JamfAPIError.badURL
-            }
-        }
-        self.separationLine()
-        print("Finished - Set processingComplete to true")
 
-    }
-    
     
     //    #################################################################################
     //    Tokens and Authorisation
@@ -1507,6 +1484,31 @@ import AEXML
     //    }
     //
     
+    
+    func batchDeleteGroup(selection:  Set<ComputerGroup>, server: String, authToken: String, resourceType: ResourceType) async throws {
+        
+        self.separationLine()
+        print("Running: batchDeleteGroup")
+        for eachItem in selection {
+            self.separationLine()
+            print("Items as Dictionary is \(eachItem)")
+            let computerSmartGroupId = String(describing:eachItem.id)
+            let jamfID: String = String(describing:eachItem.id)
+            print("Current computerSmartGroupId is:\(computerSmartGroupId)")
+            print("Current jamfID is:\(String(describing: jamfID))")
+            
+            do {
+               try await self.deleteGroup(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
+            } catch {
+                throw JamfAPIError.badURL
+            }
+        }
+        self.separationLine()
+        print("Finished - Set processingComplete to true")
+
+    }
+    
+    
     func addExistingPackages() {
         
         if let detailed = self.currentDetailedPolicy {
@@ -1733,7 +1735,7 @@ import AEXML
     }
     
     //    #################################################################################
-    //    run operation - processPoliciesSelected
+    //    run operation - processPoliciesSelected - pass in function
     //    #################################################################################
     
     
@@ -2977,14 +2979,14 @@ import AEXML
         print("computerName is:\(computerId)")
         print("computerId is:\(computerId)")
         
-        let computers = self.xmlDoc.root["computers"].addChild(name: "computer")
+        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
         computers.addChild(name: "id", value: computerId)
         computers.addChild(name: "name", value: computerName)
-        print("updatedContent is:\(self.xmlDoc.root.xml)")
+        print("updatedContent is:\(self.aexmlDoc.root.xml)")
         let jamfCount = computers.count
         print("jamfCount is:\(jamfCount)")
         
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
         
         
     }
@@ -3022,7 +3024,7 @@ import AEXML
                 print("Running removeComputerFromGroup function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
                 // print("xml is set as:\(xml)")
-                // self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+                // self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
                 self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
             }
@@ -3048,13 +3050,13 @@ import AEXML
         print("url is:\(url)")
         //        print("computerName is:\(computerId)")
         //        print("computerId is:\(computerId)")
-        let computers = self.xmlDoc.root["computers"]
+        let computers = self.aexmlDoc.root["computers"]
         let lastcomputer = computers["computer"].last!
         lastcomputer.removeFromParent()
-        print("updatedContent is:\(self.xmlDoc.root.xml)")
+        print("updatedContent is:\(self.aexmlDoc.root.xml)")
         let jamfCount = computers.count
         print("jamfCount is:\(jamfCount)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     //    #############################################################################
@@ -3177,7 +3179,7 @@ import AEXML
             return
         }
         do {
-            self.xmlDoc = try AEXMLDocument(xml: data)
+            self.aexmlDoc = try AEXMLDocument(xml: data)
         }
         catch {
             print("\(error)")
@@ -3856,8 +3858,6 @@ import AEXML
     }
     
     
-    
-    
     //    #################################################################################
     //    Request policies
     //    #################################################################################
@@ -4094,7 +4094,6 @@ import AEXML
                     text += " \(error)."
                     print(text)
                 }
-                
                 
                 self.hasError = true
                 //                self.appendStatus(text)

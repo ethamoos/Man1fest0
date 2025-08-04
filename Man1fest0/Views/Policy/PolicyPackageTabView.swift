@@ -136,7 +136,7 @@ struct PolicyPackageTabView: View {
                         networkController.addExistingPackages()
                         print("Adding selected package to policy:\(String(describing: selectedPackage))")
                         
-                        xmlController.addPackageToPolicy(xmlContent: networkController.xmlDoc, xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, server: server, packageName: selectedPackage?.name ?? "",packageId: String(describing: selectedPackage?.jamfId ?? 0), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false )
+                        xmlController.addPackageToPolicy(xmlContent: networkController.aexmlDoc, xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, server: server, packageName: selectedPackage?.name ?? "",packageId: String(describing: selectedPackage?.jamfId ?? 0), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false )
                         
                     }) {
                         HStack(spacing: 10) {
@@ -186,8 +186,9 @@ struct PolicyPackageTabView: View {
                         networkController.separationLine()
                         print("Clearing all packages in policy:\(String(describing: policyID))")
                         
-                        xmlController.removePackagesFromPolicy(xmlContent: networkController.xmlDoc, xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false )
-                        
+                        xmlController.removePackagesFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+//                        xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+
                         
                     }) {
                         HStack(spacing: 10) {
