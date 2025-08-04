@@ -27,6 +27,7 @@ struct PolicyDetailTableView: View {
     @State private var showingWarningClearScope = false
     @State private var showingWarningClearLimit = false
     @State private var showingWarningClearPackages = false
+    @State private var showingWarningClearScripts = false
     @State var enableDisable: Bool = true
     
     //  ########################################################################################
@@ -451,6 +452,7 @@ struct PolicyDetailTableView: View {
                         .alert(isPresented: $showingWarningClearScope) {
                             Alert(title: Text("Caution!"), message: Text("This action will clear devices from the policy scoping.\n You will need to rescope in order to deploy"), dismissButton: .default(Text("I understand!")))
                         }
+                        
                         Button(action: {
                             showingWarningClearPackages = true
                             progress.showProgress()
@@ -472,6 +474,34 @@ struct PolicyDetailTableView: View {
                                         let currentPolicyID = (String(describing: eachItem ?? 0))
                                         xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: currentPolicyID)
                                         print("Clearing Packages for policy:\(eachItem ?? 0)")
+                                    }
+                                    print("Yes tapped")
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        }
+                        
+                        
+                        Button(action: {
+                            showingWarningClearScripts = true
+                            progress.showProgress()
+                            progress.waitForABit()
+                        }) {
+                            HStack(spacing: 10) {
+                                Text("Clear Scripts")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .alert(isPresented: $showingWarningClearScripts) {
+                            Alert(
+                                title: Text("Caution!"),
+                                message: Text("This action will clear scripts from the polices selected.\n"),             primaryButton: .destructive(Text("I understand!")) {
+                                    // Code to execute when "Yes" is tapped
+                                    for eachItem in selectedPoliciesInt {
+                                        let currentPolicyID = (String(describing: eachItem ?? 0))
+                                        xmlController.removeAllScriptsManual(server: server, authToken: networkController.authToken, policyID: currentPolicyID)
+                                        print("Clearing scripts for policy:\(eachItem ?? 0)")
                                     }
                                     print("Yes tapped")
                                 },

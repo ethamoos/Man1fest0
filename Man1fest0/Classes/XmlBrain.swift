@@ -640,8 +640,8 @@ class XmlBrain: ObservableObject {
         print("url is:\(url)")
        atSeparationLine()
         print("xml is:\(xml)")
-       atSeparationLine()
-        print("xmldata is:\(String(describing: xmldata))")
+//       atSeparationLine()
+//        print("xmldata is:\(String(describing: xmldata) ?? "")")
        atSeparationLine()
         print("httpMethod is:\(httpMethod)")
         let headers = [
@@ -1034,11 +1034,6 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
         let url = URL(string: jamfURLQuery)!
-        
-        //              ################################################################################
-        //              DEBUG
-        //              ################################################################################
-        
         self.separationLine()
         print("Running removePackagesFromPolicy - XML brain")
         print("Initial xmlContent is:")
@@ -1047,11 +1042,9 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         self.atSeparationLine()
         print("url is:\(url)")
         self.atSeparationLine()
-        
         //              ################################################################################
         //              DEBUG
         //              ################################################################################
-        
         let packages = xmlContent.root["package_configuration"]["packages"]
         let packageConfig = xmlContent.root["package_configuration"]
         print("Current packages are:\(packages.xml)")
@@ -1064,89 +1057,69 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         //  ################################################################################
         //              DEBUG
         //  ################################################################################
-
         if debugStatus == true {
             self.atSeparationLine()
             print("updated XML after removePackagesFromPolicy has run is:")
             print(xmlContent.xml)
         }
-        
         //              ################################################################################
         //              DEBUG
         //              ################################################################################
-        
         self.atSeparationLine()
         let packageCount = packages.count
         print("packageCount is:\(packageCount)")
 
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: xmlContent.xml, httpMethod: "PUT")
     
-    }
+    } 
+    // ######################################################################################
+    // removeScriptsFromPolicy
+    // ######################################################################################
     
-//    func removePackagesFromPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, policyId: String, resourceType: ResourceType, newPolicyFlag: Bool) {
-//        
-//        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-//        let url = URL(string: jamfURLQuery)!
-//        
-//        //              ################################################################################
-//        //              DEBUG
-//        //              ################################################################################
-//        
-//        self.separationLine()
-//        print("Running removePackagesFromPolicy - XML brain")
-//        print("Initial xmlContent is:")
-//        self.atSeparationLine()
-//        print(xmlContent.xml)
-//        self.atSeparationLine()
-//        print("url is:\(url)")
-//        print("newPolicyFlag status is:\(newPolicyFlag)")
-//        self.atSeparationLine()
-//        
-//        //              ################################################################################
-//        //              DEBUG
-//        //              ################################################################################
-//        
-//        let packages = xmlContent.root["package_configuration"]["packages"]
-//        let packageConfig = xmlContent.root["package_configuration"]
-//        print("Current packages are:\(packages.xml)")
-//        print("Removing current packages")
-//        packages.removeFromParent()
-//        print("Add empty packages")
-//        packageConfig.addChild(name: "packages")
-//        packages.addChild(name: "size", value: "0")
-//        print("Current packages are:\(packages.xml)")
-//        //  ################################################################################
-//        //              DEBUG
-//        //  ################################################################################
-//
-//        if debugStatus == true {
-//            self.atSeparationLine()
-//            print("updated XML after removePackagesFromPolicy has run is:")
-//            print(xmlContent.xml)
-//        }
-//        
-//        //              ################################################################################
-//        //              DEBUG
-//        //              ################################################################################
-//        
-//        self.atSeparationLine()
-//        let packageCount = packages.count
-//        print("packageCount is:\(packageCount)")
-//
-//        if newPolicyFlag == true {
-//            self.separationLine()
-//            print("Is new policy - not posting package data to Jamf at this point")
-//        } else {
-//            self.separationLine()
-//            print("Is not new policy - posting updated package data to Jamf")
-//            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent.xml, httpMethod: "PUT")
-//        }
-//    }
+    func removeScriptsFromPolicy(xmlContent: AEXMLDocument,  authToken: String, server: String, policyId: String) {
+        
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
+        let url = URL(string: jamfURLQuery)!
+        self.separationLine()
+        print("Running removeScriptsFromPolicy - XML brain")
+        print("Initial xmlContent is:")
+        self.atSeparationLine()
+        print(xmlContent.xml)
+        self.atSeparationLine()
+        print("url is:\(url)")
+        self.atSeparationLine()
+        let scripts = xmlContent.root["scripts"]["script"]
+        let scriptsRoot = xmlContent.root["scripts"]
+        print("Current scripts are:\(scripts.xml)")
+        print("Removing current scripts")
+        scripts.removeFromParent()
+        print("Add empty scripts")
+        scriptsRoot.addChild(name: "scripts")
+        scripts.addChild(name: "size", value: "0")
+        print("Current scripts are:\(scripts.xml)")
+        //  ################################################################################
+        //              DEBUG
+        //  ################################################################################
+        if debugStatus == true {
+            self.atSeparationLine()
+            print("updated XML after removePackagesFromPolicy has run is:")
+            print(xmlContent.xml)
+        }
+        //  ################################################################################
+        //              DEBUG
+        //  ################################################################################
+        self.atSeparationLine()
+        let scriptsCount = scripts.count
+        print("scriptsCount is:\(scriptsCount)")
+
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: xmlContent.xml, httpMethod: "PUT")
+    
+    }
     
     
     
     func removeAllPackagesManual(server: String, authToken: String, policyID: String ) {
-//        Alternative method for removing all packages
+//  Alternative method for removing all packages
         var xml:String
         
         self.separationLine()
@@ -1163,6 +1136,35 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
                 <size>0</size>
             </packages>
         </package_configuration>
+    </policy>
+    """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("/JSSResource/policies/id/").appendingPathComponent(policyID)
+                print("Running removeAllPackagesManual sendRequestAsXML - url is set as:\(url)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+    }
+    
+    func removeAllScriptsManual(server: String, authToken: String, policyID: String ) {
+//  Alternative method for removing all packages
+        var xml:String
+        self.separationLine()
+        print("DEBUGGING")
+        self.separationLine()
+        print("Running removeAllScriptsManual for policy ID:\(policyID)")
+        print("Url is set as:\(server)")
+        
+        xml = """
+    <?xml version="1.0" encoding="utf-8"?>
+    <policy>
+        <scripts>
+                <size>0</size>
+        </scripts>
     </policy>
     """
         
