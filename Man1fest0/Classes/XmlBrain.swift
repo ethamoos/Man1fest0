@@ -1020,6 +1020,66 @@ scripts.addChild(name: "parameter11", value: scriptParameter11)
         }
     }
     
+    // ######################################################################################
+    // removePackagesFromPolicy
+    // ######################################################################################
+    
+    func removePackagesFromPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, policyId: String, resourceType: ResourceType, newPolicyFlag: Bool) {
+        
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
+        let url = URL(string: jamfURLQuery)!
+        
+        //              ################################################################################
+        //              DEBUG
+        //              ################################################################################
+        
+        self.separationLine()
+        print("Running removePackagesFromPolicy - XML brain")
+        print("Initial xmlContent is:")
+        self.atSeparationLine()
+        print(xmlContent.xml)
+        self.atSeparationLine()
+        print("url is:\(url)")
+
+        print("newPolicyFlag status is:\(newPolicyFlag)")
+        self.atSeparationLine()
+        
+        //              ################################################################################
+        //              DEBUG
+        //              ################################################################################
+        
+        let packages = xmlContent.root["package_configuration"]["packages"]
+        print("Removing:\(packages.xml)")
+        packages.removeFromParent()
+        
+        //              ################################################################################
+        //              DEBUG
+        //              ################################################################################
+
+        if debugStatus == true {
+            self.atSeparationLine()
+            print("updated XML after addPackageToPolicy has run is:")
+            print(xmlContent.xml)
+        }
+        
+        //              ################################################################################
+        //              DEBUG
+        //              ################################################################################
+        
+        self.atSeparationLine()
+        let packageCount = packages.count
+        print("packageCount is:\(packageCount)")
+
+        if newPolicyFlag == true {
+            self.separationLine()
+            print("Is new policy - not posting package data to Jamf at this point")
+        } else {
+            self.separationLine()
+            print("Is not new policy - posting updated package data to Jamf")
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent.xml, httpMethod: "PUT")
+        }
+    }
+    
         func addPackageToPolicyXML (xmlString: String, packageName: String, packageId: String) -> String {
         
             let document = try! XMLDocument(xmlString: xmlString) //Change this to a suitable init

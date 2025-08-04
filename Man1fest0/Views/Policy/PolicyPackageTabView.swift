@@ -168,11 +168,35 @@ struct PolicyPackageTabView: View {
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "plus.square.fill.on.square.fill")
-                            Text("Replace All Package")
+                            Text("Replace All Packages")
                         }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    
+                    //  ################################################################################
+                    //              Replace package in policy
+                    //  ################################################################################
+                    
+                    Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        networkController.separationLine()
+                        print("Clearing all packages in policy:\(String(describing: policyID))")
+                        
+                        xmlController.removePackagesFromPolicy(xmlContent: networkController.xmlDoc, xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false )
+                        
+                        
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "plus.square.fill.on.square.fill")
+                            Text("Remove All Packages")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
                     
                     
                     
