@@ -63,12 +63,15 @@ struct PolicyView: View {
                                     Image(systemName:"text.justify")
                                     Text("\(policy.name)")
                                 }
-                                #if os(macOS)
-                .navigationTitle("JamfPolicy")
+#if os(macOS)
+                                .navigationTitle("JamfPolicy")
 #endif
                                 .foregroundColor(.blue)
                             }
                         }
+#if os(macOS)
+                        .frame(minWidth: 300, maxWidth: .infinity)
+#endif
                         .toolbar {
                             
                             Button(action: {

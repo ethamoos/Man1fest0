@@ -47,6 +47,7 @@ struct DepartmentsView: View {
 
                         }
                     }
+                        .frame(minWidth: 300, maxWidth: .infinity)
 #endif
                     Text("\(networkController.departments.count) total departments")
                 }

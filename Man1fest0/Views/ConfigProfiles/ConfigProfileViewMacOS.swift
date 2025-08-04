@@ -39,7 +39,9 @@ struct ConfigProfileViewMacOS: View {
                     }
                 }
                 .searchable(text: $searchText)
-                .frame(width: 500)
+#if os(macOS)
+                        .frame(minWidth: 300, maxWidth: .infinity)
+#endif
                 //                Button(action: {
                 //                    print("Deleting:\($selection)")
                 //                }) {

@@ -133,6 +133,21 @@ class Layout: ObservableObject {
     let columnFlexNarrow = [
         GridItem(.adaptive(minimum: 100))
     ]
+      
+    let columnsFlexNarrow = [
+        GridItem(.adaptive(minimum: 100))
+    ]     
+    let threeColumnsFlexNarrow = [
+        GridItem(.flexible(minimum: 20)),
+        GridItem(.flexible(minimum: 100)),
+        GridItem(.flexible(minimum: 100))
+    ]
+      let fourColumnsFlexNarrow = [
+        GridItem(.flexible(minimum: 20)),
+        GridItem(.flexible(minimum: 100)),
+        GridItem(.flexible(minimum: 100)),
+        GridItem(.flexible(minimum: 100))
+    ]
     
     let columnFlexMedium = [
         GridItem(.adaptive(minimum: 150))
