@@ -173,6 +173,7 @@ struct PolicyDetailView: View {
                 VStack(alignment: .leading) {
                     Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.name ?? "Blank")\n")
                     Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.enabled ?? true))\n")
+                    Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
                     Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
@@ -246,8 +247,6 @@ struct PolicyDetailView: View {
                     
                     progress.showProgress()
                     progress.waitForABit()
-                    
-                    networkController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
                     print("Deleting policy:\(policyID)")
                     showingWarning = true
                     
@@ -260,9 +259,22 @@ struct PolicyDetailView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                
                 .alert(isPresented: $showingWarning) {
-                    Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
+                    Alert(
+                        title: Text("Caution!"),
+                        message: Text("This action will delete data.\n Always ensure that you have a backup!"),
+                        primaryButton: .destructive(Text("I understand!")) {
+                            // Code to execute when "Yes" is tapped
+                            networkController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
+                            print("Yes tapped")
+                        },
+                        secondaryButton: .cancel()
+                    )
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 
 //              ################################################################################
 //              DOWNLOAD OPTION
@@ -441,7 +453,6 @@ struct PolicyDetailView: View {
                                 progress.waitForABit()
                                 
                                 networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
-                                
                             }) {
                                 HStack(spacing: 10) {
                                     Text("Update")
@@ -465,7 +476,6 @@ struct PolicyDetailView: View {
                 //  ##########################################################################
                 //  TabView - TAB
                 //  ##########################################################################
-
                 
 #if os(macOS)
                 TabView {
@@ -480,7 +490,7 @@ struct PolicyDetailView: View {
                             Label("Scoping", systemImage: "square.and.pencil")
                         }
                     
-                    PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, computerGroupSelection: $computerGroupSelection , policyID: policyID)
+                    PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
                         .tabItem {
                             Label("Scripts", systemImage: "square.and.pencil")
                         }
@@ -508,7 +518,7 @@ struct PolicyDetailView: View {
             }
         }
         . padding()
-        .frame(minWidth: 100, maxWidth: 600, minHeight: 70, maxHeight: .infinity)
+        .frame(minWidth: 150, maxWidth: 850, minHeight: 70, maxHeight: .infinity)
         
         //        if progress.debugMode == true {
         //            .background(Color.blue)
@@ -533,8 +543,19 @@ struct PolicyDetailView: View {
                 try await networkController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                 
                 if !networkController.currentPolicyAsXML.isEmpty {
-                    print("Reading XML into AEXML")
-                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    print("Reading XML into AEXML - networkController")
+                    
+//  ##########################################################################
+//  NOTE: CHANGED FROM XML CONTROLLER BELOW
+//  ##########################################################################
+
+//                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+
+//  ##########################################################################
+//  NOTE: CHANGED FROM XML CONTROLLER - END
+//  ##########################################################################
+
                 }
             }
             
@@ -576,19 +597,16 @@ struct PolicyDetailView: View {
 //  getAllGroups
 //  ##########################################################################
 
-            
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
             
             //  ##########################################################################
-//  Add current packages to packagesAssignedToPolicy list on appear of View
+            //  Add current packages to packagesAssignedToPolicy list on appear of View
             //  ##########################################################################
 
             networkController.getPackagesAssignedToPolicy()
-            
             networkController.addExistingPackages()
-            
             fetchData()
             
         }

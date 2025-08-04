@@ -35,6 +35,9 @@ struct PackagesView: View {
                     }
                     .searchable(text: $searchText)
                     .foregroundColor(.blue)
+#if os(macOS)
+                        .frame(minWidth: 300, maxWidth: .infinity)
+#endif
                     Text("\(networkController.packages.count) total packages")
 
                 }

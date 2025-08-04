@@ -33,6 +33,7 @@ struct OptionsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 
                 Divider()
+                
                 VStack(alignment: .leading, spacing: 10) {
  
                     HStack {
@@ -44,7 +45,7 @@ struct OptionsView: View {
        
                         VStack {
                             
-                        Image("ManifestoIcon")
+                        Image("Man1fest0Icon")
                             .frame(width: 80, height: 80, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
                             .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -133,6 +134,10 @@ struct OptionsView: View {
                                 NavigationLink(destination: PolicyDetailTableView(server: server)) {
                                     Text("Policy Actions - Detailed")
                                 }
+                                
+//                                NavigationLink(destination: NotesView()) {
+//                                    Text("Notes View")
+//                                }
 #endif
                             }
                         }
@@ -347,13 +352,11 @@ struct OptionsView: View {
                     }
                  
                     ToolbarItem(id: "Status") {
-//                        VStack(alignment: .leading) {
                             VStack(alignment: .leading, spacing: 1) {
                             HStack {
-//                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right.circle" : "antenna.radiowaves.left.and.right.slash" )
                                 Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
-//                                Text("\t\t\(networkController.status)")
-//                                    .fontWeight(.bold)
+                                    .foregroundColor(.green)
+                                Text(server)
                                     .foregroundColor(.green)
                             }
                         }

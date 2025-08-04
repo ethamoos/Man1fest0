@@ -35,8 +35,8 @@ struct CategoriesView: View {
                 
                 NavigationView {
                     
-                        List(searchResults, id: \.self, selection: $selection) { category in
-
+                    List(searchResults, id: \.self, selection: $selection) { category in
+                        
                         NavigationLink(destination: CategoriesDetailedView(server: server, category: category)) {
                             
                             HStack {
@@ -46,12 +46,15 @@ struct CategoriesView: View {
                             .textSelection(.enabled)
                             .background(Color.gray.opacity(0.05))
                             .foregroundColor(.blue)
-                            #if os(macOS)
-                .navigationTitle("Categories")
+#if os(macOS)
+                            .navigationTitle("Categories")
 #endif
                         }
                         .searchable(text: $searchText)
                     }
+#if os(macOS)
+                        .frame(minWidth: 300, maxWidth: .infinity)
+#endif
                     Text("\(networkController.categories.count) total categories")
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())

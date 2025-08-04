@@ -7,6 +7,11 @@ struct Man1fest0App: App {
     
 //    Order of classes is based on the order in which they were added
     
+    
+//    Core data for persistent notes
+    private let coreDataStack = CoreDataStack(modelName: "NotesModel")
+    @Environment(\.scenePhase) var scenePhase
+    
     let pushController: PushBrain
     let extensionAttributeController: EaBrain
     let networkController: NetBrain
@@ -42,6 +47,11 @@ struct Man1fest0App: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+            
+                .environmentObject(coreDataStack)
+                .environment(\.managedObjectContext,
+                             coreDataStack.managedObjectContext)
+            
                 .environmentObject(pushController)
                 .environmentObject(extensionAttributeController)
                 .environmentObject(networkController)
@@ -58,8 +68,11 @@ struct Man1fest0App: App {
                 .environmentObject(scopingController)
                 .environmentObject(policyController)
                 .environmentObject(exportController)
-    }.commands {
-             SidebarCommands() // 1
-         }
+        }.commands {
+            SidebarCommands() // 1
+        }
+        .onChange(of: scenePhase) { _ in
+            coreDataStack.save()
+        }
     }
 }
