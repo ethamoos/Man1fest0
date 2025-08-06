@@ -375,30 +375,95 @@ struct SelfServiceCategory: Codable, Hashable, Identifiable {
     }
 }
 //    // MARK: - SelfService
+//struct SelfService: Codable, Hashable, Identifiable  {
+//    var id = UUID()
+//    let useForSelfService: Bool?
+//    let selfServiceDisplayName, installButtonText, reinstallButtonText, selfServiceDescription: String?
+//    let forceUsersToViewDescription: Bool?
+//     let selfServiceIcon: SelfServiceIcon
+////    let featureOnMainPage: Bool?
+////    let selfServiceCategories: [SelfServiceCategory]?
+////    let notification, notificationSubject, notificationMessage: String?
+//    enum CodingKeys:String, CodingKey {
+//        case useForSelfService = "use_for_self_service"
+//        case selfServiceDisplayName = "self_service_display_name"
+//        case installButtonText = "install_button_text"
+//        case reinstallButtonText = "reinstall_button_text"
+//        case selfServiceDescription = "self_service_description"
+//        case forceUsersToViewDescription = "force_users_to_view_description"
+//         case selfServiceIcon = "self_service_icon"
+////        case featureOnMainPage = "feature_on_main_page"
+////        case selfServiceCategories = "self_service_categories"
+////        case notification = "notification"
+////        case notificationSubject = "notification_subject"
+////        case notificationMessage = "notification_message"
+//    }
+//    
+//    //    // MARK: - SelfServiceIcon
+//        struct SelfServiceIcon: Codable, Hashable, Identifiable  {
+//            let id, filename: String
+//            let uri: String
+//        }
+//    
+//    
+//    
+//}
+
+
+// MARK: - SelfService
 struct SelfService: Codable, Hashable, Identifiable  {
+    
     var id = UUID()
-    let useForSelfService: Bool?
-    let selfServiceDisplayName, installButtonText, reinstallButtonText, selfServiceDescription: String?
-    let forceUsersToViewDescription: Bool?
-    // let selfServiceIcon: SelfServiceIcon
-//    let featureOnMainPage: Bool?
-//    let selfServiceCategories: [SelfServiceCategory]?
-//    let notification, notificationSubject, notificationMessage: String?
+ let selfServiceDisplayName, installButtonText, reinstallButtonText: String
+//    let selfServiceDescription, forceUsersToViewDescription: String
+    let selfServiceIcon: SelfServiceIcon
+    let useForSelfService: Bool
+//    let featureOnMainPage: String
+//    let selfServiceCategories: SelfServiceCategories
+//    let notification: [String]
+//    let notificationSubject, notificationMessage: String
+    
     enum CodingKeys:String, CodingKey {
         case useForSelfService = "use_for_self_service"
         case selfServiceDisplayName = "self_service_display_name"
         case installButtonText = "install_button_text"
         case reinstallButtonText = "reinstall_button_text"
-        case selfServiceDescription = "self_service_description"
-        case forceUsersToViewDescription = "force_users_to_view_description"
-        // case selfServiceIcon = "self_service_icon"
+//        case selfServiceDescription = "self_service_description"
+//        case forceUsersToViewDescription = "force_users_to_view_description"
+        case selfServiceIcon = "self_service_icon"
 //        case featureOnMainPage = "feature_on_main_page"
 //        case selfServiceCategories = "self_service_categories"
 //        case notification = "notification"
 //        case notificationSubject = "notification_subject"
 //        case notificationMessage = "notification_message"
     }
+              
+    
+    // MARK: - SelfServiceCategories
+        struct SelfServiceCategories: Codable {
+        let category: SelfServiceCategoriesCategory
+    }
+
+    // MARK: - SelfServiceCategoriesCategory
+    struct SelfServiceCategoriesCategory: Codable, Hashable, Identifiable {
+        let id, name, displayIn, featureIn: String
+    }
+
+    // MARK: - SelfServiceIcon
+    struct SelfServiceIcon: Codable, Hashable, Identifiable  {
+        let id, filename: String
+        let uri: String
+    }
+
 }
+
+// MARK: - UserInteraction
+struct UserInteraction {
+    let messageStart, allowUsersToDefer, allowDeferralUntilUTC, allowDeferralMinutes: String
+    let messageFinish: String
+}
+
+
 
 
 struct Users: Codable, Hashable, Identifiable {

@@ -128,6 +128,14 @@ struct PolicyDetailView: View {
     
     @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
     
+    @State var iconMultiSelection = Set<String>()
+    
+    @State var selectedIconString = ""
+    
+    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
+    
+    @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
+    
     //    ########################################################################################
     //    Script parameters
     //    ########################################################################################
@@ -177,7 +185,9 @@ struct PolicyDetailView: View {
                     Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))" )
+                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
+                    Text("Current Icon:\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon.filename ?? "No icon set")")
+
                 }
                 .textSelection(.enabled)
                 .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
@@ -423,7 +433,7 @@ struct PolicyDetailView: View {
 #endif
                         }
                     }
-                    
+ 
 //  ##########################################################################
 //              CATEGORY
 //  ##########################################################################
@@ -498,6 +508,11 @@ struct PolicyDetailView: View {
                     PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail)
                         .tabItem {
                             Label("Triggers", systemImage: "square.and.pencil")
+                        }
+                    
+                    PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail,policyID: policyID )
+                        .tabItem {
+                            Label("Self Service", systemImage: "square.and.pencil")
                         }
                 }
 #endif
@@ -592,6 +607,14 @@ struct PolicyDetailView: View {
                 Task {
                     try await networkController.getBuildings(server: server, authToken: networkController.authToken)
                 }
+            }
+            
+            if networkController.allIconsDetailed.count <= 1 {
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+            } else {
+                print("getAllIconsDetailed has already run")
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
             }
             
 //  ##########################################################################
