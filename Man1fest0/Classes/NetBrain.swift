@@ -543,7 +543,7 @@ import AEXML
         
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200 - Response is:\(String(describing: responseCode))")
+//            print("Code not 200 - Response is:\(String(describing: responseCode))")
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
@@ -1686,10 +1686,21 @@ import AEXML
             print("getDetailedPolicy request error - code is:\(statusCode)")
             throw JamfAPIError.http(statusCode)
         }
+        
+        //        ########################################################
+        //        DEBUG
+        //        ########################################################
+
+//                separationLine()
+//                print("Raw data is:")
+//                      print(String(data: data, encoding: .utf8)!)
+
+                
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
         self.policyDetailed = decodedData
         
+
         if self.debug_enabled == true {
             separationLine()
             print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
@@ -2379,6 +2390,63 @@ import AEXML
         }
     }
     
+     //    #################################################################################
+    //    updateIcon
+    //    #################################################################################
+    
+    
+    func updateIcon(server: String,authToken: String, policyName: String, policyID: String, iconFilename: String, iconID: String, iconURI: String) {
+        let resourceType: ResourceType = ResourceType.policyDetail
+        let resourcePath = getURLFormat(data: (resourceType))
+        let policyID = policyID
+        var xml: String
+        self.separationLine()
+        print("updateName XML")
+        print("policyName is set as:\(policyName)")
+        
+        xml = """
+                <?xml version="1.0" encoding="utf-8"?>
+                    <policy>
+                        <general>
+                            <id>\(policyID)</id>
+                            <name>\(policyName)</name>
+                        </general>
+                        <self_service>
+                            <self_service_icon>
+                                <id>\(iconID)</id>
+                                <filename>\(iconFilename)</filename>
+                                <uri>\(iconURI)</uri>
+                            </self_service_icon>
+                        </self_service>
+                    </policy>
+                """
+                
+//        #################################################################################
+//        <use_for_self_service>false</use_for_self_service>
+//        <self_service_display_name/>
+//        <install_button_text>Install</install_button_text>
+//        <reinstall_button_text>Reinstall</reinstall_button_text>
+//        <self_service_description/>
+//        <force_users_to_view_description>false</force_users_to_view_description>
+//        #################################################################################
+
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
     
     
     //    #################################################################################
@@ -3159,7 +3227,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200 - Response is:\(String(describing: responseCode))")
+//            print("Code not 200 - Response is:\(String(describing: responseCode))")
             throw JamfAPIError.badResponseCode
         }
         
@@ -4301,16 +4369,16 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200 - Response is:\(String(describing: responseCode ?? 0))")
+//            print("Code not 200 - Response is:\(String(describing: responseCode ?? 0))")
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         if let decodedData = try? decoder.decode(Icon.self, from: data) {
             self.iconDetailed = decodedData
-            separationLine()
+//            separationLine()
             //        print("Running getDetailedIcon - iconID is:\(iconID)")
             //        print("Response is:\(String(describing: responseCode))")
-            print("Add to:allIconsDetailed: Icon id is:\(iconID)")
+//            print("Add to:allIconsDetailed: Icon id is:\(iconID)")
             self.allIconsDetailed.insert(self.iconDetailed, at: 0)
         } else {
             print("Decoding failed")

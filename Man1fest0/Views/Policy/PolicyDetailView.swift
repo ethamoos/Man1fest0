@@ -186,7 +186,7 @@ struct PolicyDetailView: View {
                     Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon.filename ?? "No icon set")")
+                    Text("Current Icon:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon?.filename ?? "No icon set")")
 
                 }
                 .textSelection(.enabled)

@@ -120,10 +120,9 @@ struct Maintenance: Codable, Hashable, Identifiable {
 }
 
 
-// MARK: - SelfServiceIcon
-struct SelfServiceIcon: Codable, Hashable, Identifiable {
-    var id = UUID()
-}
+
+
+
 
 // MARK: - NetworkLimitations
 struct NetworkLimitations: Codable, Hashable, Identifiable {

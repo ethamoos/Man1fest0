@@ -618,6 +618,7 @@ class XmlBrain: ObservableObject {
     //}
     
     
+    
     //    #############################################################################
     //    getGroupMembersXML - getAsXML
     //    #############################################################################
@@ -1762,7 +1763,7 @@ class XmlBrain: ObservableObject {
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200 - Response is:\(String(describing: responseCode))")
+//            print("Code not 200 - Response is:\(String(describing: responseCode))")
             throw JamfAPIError.badResponseCode
         }
         self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)

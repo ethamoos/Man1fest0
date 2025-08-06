@@ -19,54 +19,54 @@ struct PolicySelfServiceTabView: View {
     
     var server: String
     var resourceType: ResourceType
-
-//  ########################################################################################
-//    EnvironmentObject
-//  ########################################################################################
-
-@EnvironmentObject var networkController: NetBrain
-
-@EnvironmentObject var xmlController: XmlBrain
-
-@EnvironmentObject var progress: Progress
-
-@EnvironmentObject var layout: Layout
-
-@EnvironmentObject var scopingController: ScopingBrain
-
-@State private var selectedResourceType = ResourceType.policyDetail
-
-//  ########################################################################################
-//    Filters
-//  ########################################################################################
-
-@State var computerGroupFilter = ""
-
-@State var computerFilter = ""
-
-//  ########################################################################################
-//    Policy
-//  ########################################################################################
-
-@State var policyName = ""
-
-var policyID: Int
-
-//  ########################################################################################
-//    SELECTIONS
-//  ########################################################################################
-
-//@Binding var computerGroupSelection: Set<ComputerGroup>
-
-@State private var selection: Package? = Package(jamfId: 0, name: "")
-
-@State var selectionComp: Computer = Computer(id: 0, name: "", jamfId: 0)
-
-@State var selectionCompGroup: ComputerGroup = ComputerGroup(id: 0, name: "", isSmart: false)
-
-@State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
-
-@State  var selectionBuilding: Building = Building(id: 0, name: "")
+    
+    //  ########################################################################################
+    //    EnvironmentObject
+    //  ########################################################################################
+    
+    @EnvironmentObject var networkController: NetBrain
+    
+    @EnvironmentObject var xmlController: XmlBrain
+    
+    @EnvironmentObject var progress: Progress
+    
+    @EnvironmentObject var layout: Layout
+    
+    @EnvironmentObject var scopingController: ScopingBrain
+    
+    @State private var selectedResourceType = ResourceType.policyDetail
+    
+    //  ########################################################################################
+    //    Filters
+    //  ########################################################################################
+    
+    @State var computerGroupFilter = ""
+    
+    @State var computerFilter = ""
+    
+    //  ########################################################################################
+    //    Policy
+    //  ########################################################################################
+    
+    @State var policyName = ""
+    
+    var policyID: Int
+    
+    //  ########################################################################################
+    //    SELECTIONS
+    //  ########################################################################################
+    
+    //@Binding var computerGroupSelection: Set<ComputerGroup>
+    
+    @State private var selection: Package? = Package(jamfId: 0, name: "")
+    
+    @State var selectionComp: Computer = Computer(id: 0, name: "", jamfId: 0)
+    
+    @State var selectionCompGroup: ComputerGroup = ComputerGroup(id: 0, name: "", isSmart: false)
+    
+    @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
+    
+    @State  var selectionBuilding: Building = Building(id: 0, name: "")
     
     
     @State var iconMultiSelection = Set<String>()
@@ -77,10 +77,10 @@ var policyID: Int
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
-
-//  ########################################################################################
-//  LDAP
-//  ########################################################################################
+    
+    //  ########################################################################################
+    //  LDAP
+    //  ########################################################################################
     
     @State var ldapUserGroupName = ""
     
@@ -103,7 +103,7 @@ var policyID: Int
     @State private var showingWarningLimitScope = false
     
     @State private var showingWarningClearLimit = false
-
+    
     //  ########################################################################################
     
     var body: some View {
@@ -112,21 +112,18 @@ var policyID: Int
             
             VStack(alignment: .leading) {
                 
+     
                 
-                
-                
-                
-                
-// ##########################################################################################
-//                        Icons
-// ##########################################################################################
+                // ##########################################################################################
+                //                        Icons
+                // ##########################################################################################
                 
                 Divider()
                 
                 VStack(alignment: .leading) {
                     
                     Text("Icons").bold()
-    #if os(macOS)
+#if os(macOS)
                     List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
@@ -143,8 +140,8 @@ var policyID: Int
                         .tag(icon)
                     }
                     .cornerRadius(8)
-                    .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 50, alignment: .leading)
-    #else
+                    .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
+#else
                     
                     List(networkController.allIconsDetailed, id: \.self) { icon in
                         HStack {
@@ -156,52 +153,63 @@ var policyID: Int
                             }
                         }
                     }
-    #endif
-    //                                    .background(.gray)
+#endif
+                    //                                    .background(.gray)
                 }
                 
-// ##########################################################################################
-//                        Icons - picker
-// ##########################################################################################
+                // ##########################################################################################
+                //                        Icons - picker
+                // ##########################################################################################
                 
-                    LazyVGrid(columns: columns, spacing: 30) {
-                        Picker(selection: $selectedIcon, label: Text("Icon:")) {
-                            Text("").tag("") //basically added empty tag and it solve the case
-                            ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-                                
-        //                            HStack {
-        //                                Text(String(describing: icon?.name ?? ""))
-        //                                AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-        //                                    image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
-        //                                } placeholder: {
-        //                                    //                        Color.red
-        //                                }
-        //                            }
-
-                                Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
-
+                LazyVGrid(columns: columns, spacing: 30) {
+                    Picker(selection: $selectedIcon, label: Text("Icon:")) {
+                        //                            Text("").tag("")
+                        ForEach(networkController.allIconsDetailed, id: \.self) { icon in
+                            HStack {
+                                Text(String(describing: icon?.name ?? ""))
+                                AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                                    image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    //                        Color.red
+                                }
                             }
+                            
+                            Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
+                            
+                            
                         }
-                
-//  ################################################################################
-//  END
-//  ################################################################################
+                        
+                        //  ################################################################################
+                        //  Update Icon Button
+                        //  ################################################################################
+                    }
+                    HStack {
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+                            networkController.updateIcon(server: server,authToken: networkController.authToken, policyName: networkController.currentDetailedPolicy?.policy.general?.name ?? "", policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
+                        }) {
+                            Text("Update Icon")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                }
             }
+            .frame(minHeight: 1)
+            .padding()
         }
     }
-        .frame(minHeight: 1)
-        .padding()
 }
-}
-
-
-
-
-
-
-
-
-
-//#Preview {
-//    PolicyScopeTabView()
-//}
+    
+    
+    
+    
+    
+    
+    
+    //#Preview {
+    //    PolicyScopeTabView()
+    //}
