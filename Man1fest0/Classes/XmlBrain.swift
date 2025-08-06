@@ -185,10 +185,34 @@ class XmlBrain: ObservableObject {
             
             if newPolicyFlag == false {
                 print("Posting data")
-                
                 self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent, httpMethod: "PUT")
             }
+        } else {
+            print("Category is not set - not updating")
+        }
+    }
+    
+     func addCategoryToPolicy2(authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
+        
+//        self.readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
+        let url = URL(string: jamfURLQuery)!
+        self.separationLine()
+        print("Running addCategoryToPolicy")
+//        print("xmlContent is:\(xmlContent)")
+        print("url is:\(url)")
+        print("categoryName is:\(categoryName)")
+        print("categoryId is:\(categoryId)")
+        let category = self.aexmlDoc.root["general"].addChild(name: "category")
+        if categoryName != "" && categoryId != "" {
+            category.addChild(name: "name", value: categoryName)
+        print("updatedContent is:")
+            print(self.aexmlDoc.root.xml)
             
+//            if newPolicyFlag == false {
+//                print("Posting data")
+//                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent, httpMethod: "PUT")
+//            }
         } else {
             print("Category is not set - not updating")
         }
@@ -308,6 +332,123 @@ class XmlBrain: ObservableObject {
             }
         }
     }
+    
+    
+    //    ##################################################
+    //    createPolicyViaAEXML
+    //    ##################################################
+    
+    func createNewPolicyViaAEXML(authToken: String, server: String, policyID: String, scriptName: String,scriptID: String,packageName: String,packageID: String,Sel: String,SelfService: Bool,department: String,category: String, enabledStatus: Bool) {
+    
+        let jamfURLQuery = server + "/JSSResource/policies/id/0"
+        let url = URL(string: jamfURLQuery)!
+//        self.readXMLDataFromStringScopingBrain(xmlContent: currentPolicyAsXML)
+//        print("Running: replaceScriptParameter")
+        self.separationLine()
+        print("Select the script and attribute")
+        let policy = self.aexmlDoc.root["policy"]
+        let general = self.aexmlDoc.root["policy"]["general"]
+        let policyName = general.name
+        let scripts = self.aexmlDoc.root["policy"]["scripts"]
+        let packageConfiguration = self.aexmlDoc.root["policy"]["package_configuration"]
+        let selfService = self.aexmlDoc.root["policy"]["self_service"]
+        let selfServiceEnabled = self.aexmlDoc.root["policy"]["self_service"]["use_for_self_service"]
+        let selfServiceIcon = self.aexmlDoc.root["policy"]["self_service"]["self_service_icon"]
+        
+        self.separationLine()
+        print("Enable policy")
+        
+        if enabledStatus == true {
+            general.addChild(name: "enabled", value: "true")
+        } else {
+            general.addChild(name: "enabled", value: "false")
+        }
+
+        
+//        <self_service>
+//                <use_for_self_service>true</use_for_self_service>
+//                <self_service_display_name />
+//                <install_button_text>Install</install_button_text>
+//                <reinstall_button_text>Reinstall</reinstall_button_text>
+//                <self_service_description />
+//                <force_users_to_view_description>false</force_users_to_view_description>
+//                <self_service_icon>
+//                    <id>0</id>
+//                    <filename />
+//                    <uri />
+//                </self_service_icon>
+//        let currentScript = self.aexmlDoc.root
+//        let selectedScript = self.aexmlDoc.root["scripts"].children[selectedScriptNumber ?? 1]
+//        self.separationLine()
+
+        //    ##################################################
+        //    SCRIPTS
+        //    ##################################################
+
+        if scriptName.isEmpty != true {
+            self.separationLine()
+            print("Adding script")
+            scripts.addChild(name: "name", value: scriptName)
+            let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
+            _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
+        } else {
+            print("No scripts specified - remove this node")
+            scripts.removeFromParent()
+        }
+        
+        
+        //    ##################################################
+        //    Packages
+        //    ##################################################
+
+        if packageName.isEmpty != true {
+            self.separationLine()
+            print("Adding script")
+            scripts.addChild(name: "name", value: scriptName)
+            let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
+            _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
+        } else {
+            print("No scripts specified - remove this node")
+            scripts.removeFromParent()
+        }
+        
+//        self.separationLine()
+//        print("Listing scripts after edit")
+//        print(self.aexmlDoc.root["scripts"].children.description.utf8)
+
+        //      ----------------------------------------------------
+        //        Fix count
+        //      ----------------------------------------------------
+//        self.separationLine()
+//        print("Counting scripts - number is:\(numberOfScripts)")
+//        let _: () = self.aexmlDoc.root["scripts"]["size"].removeFromParent()
+//        _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
+//        
+        
+        
+        
+        
+        self.newPolicyAsXML = self.aexmlDoc.xml
+        
+        
+        
+        self.separationLine()
+        print("Read main XML doc - updated")
+        print(self.aexmlDoc.xml)
+        separationLine()
+        print("Submit updated doc")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+        print("The string is not empty")
+        
+        
+        
+        
+        
+    }
+    
+    
+    
+    
     
     
     //    #################################################################################

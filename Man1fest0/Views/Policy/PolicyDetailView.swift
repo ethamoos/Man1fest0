@@ -526,9 +526,9 @@ struct PolicyDetailView: View {
         
         .onAppear {
             
-            //  ##########################################################################
-            //  PolicyDetailView
-            //  ##########################################################################
+    //  ##########################################################################
+    //  PolicyDetailView
+    //  ##########################################################################
 
             networkController.separationLine()
             print("PolicyDetailView appeared - running detailed policy connect function")

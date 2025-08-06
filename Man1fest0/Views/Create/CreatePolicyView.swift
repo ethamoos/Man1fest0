@@ -86,9 +86,9 @@ struct CreatePolicyView: View {
     
     @State var newPolicyId = "0"
     
-    //              ################################################################################
-    //              Scripts
-    //              ################################################################################
+    // ################################################################################
+    // Scripts
+    // ################################################################################
     
     @State var scriptName = ""
     
@@ -187,15 +187,15 @@ struct CreatePolicyView: View {
         
 #endif
         
-        //              ################################################################################
+        //  ################################################################################
         //              Toolbar - END
-        //              ################################################################################
+        //  ################################################################################
   
         Divider()
         
-        //              ################################################################################
+        //  ################################################################################
         //              selections
-        //              ################################################################################
+        //  ################################################################################
         
         
         List(Array(packageMultiSelection), id: \.self) { package in
@@ -210,9 +210,9 @@ struct CreatePolicyView: View {
             
             Group {
                 
-                // ######################################################################################
-                // CREATE NEW POLICY - with multiple packages
-                // ######################################################################################
+            // ######################################################################################
+            // CREATE NEW POLICY - with multiple packages
+            // ######################################################################################
                 
                 LazyVGrid(columns: columns, spacing: 5) {
                     
@@ -226,8 +226,10 @@ struct CreatePolicyView: View {
                             progress.waitForABit()
                             
                             xmlController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
-//                            
-                            xmlController.addCategoryToPolicy(xmlContent: xmlController.newPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
+                            
+                            
+                            //
+                            xmlController.addCategoryToPolicy(xmlContent: xmlController.aexmlDoc.xml, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
                             
                             xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
                             
@@ -240,19 +242,53 @@ struct CreatePolicyView: View {
                             print("Creating New Policy:\(newPolicyName)")
                             print("Category:\(selectedCategory.name)")
                             print("Department:\(selectedDepartment.name)")
-//                            print("xml is:\(policyController.newPolicyAsXML)")
-//                            print("authToken is:\(networkController.authToken)")
+                            //                            print("xml is:\(policyController.newPolicyAsXML)")
+                            //                            print("authToken is:\(networkController.authToken)")
                         }) {
                             Text("Create Policy")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                         
+                        
+                        Toggle(isOn: $createDepartmentIsChecked) {
+                            Text("New Department")
+                        }
+                        .toggleStyle(.checkbox)
+                    }
+                    
+                    HStack {
+                        Image(systemName:"hammer")
+                        TextField("Policy Name", text: $newPolicyName)
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
                             
-                            Toggle(isOn: $createDepartmentIsChecked) {
-                                Text("New Department")
+//                            xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken, server: String, policyID: String, scriptName: String,scriptID: String,packageName: String,packageID: String,Sel: String,SelfService: Bool,department: String,category: String, enabledStatus: Bool)
+                            //
+                            
+                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
+                            if createDepartmentIsChecked == true {
+                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
                             }
-                            .toggleStyle(.checkbox)
+                            
+                            layout.separationLine()
+                            print("Creating New Policy:\(newPolicyName)")
+                            print("Category:\(selectedCategory.name)")
+                            print("Department:\(selectedDepartment.name)")
+                            //                            print("xml is:\(policyController.newPolicyAsXML)")
+                            //                            print("authToken is:\(networkController.authToken)")
+                        }) {
+                            Text("Create Policy")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        
+                        Toggle(isOn: $createDepartmentIsChecked) {
+                            Text("New Department")
+                        }
+                        .toggleStyle(.checkbox)
                     }
                 }
 
