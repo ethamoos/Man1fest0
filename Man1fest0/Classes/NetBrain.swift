@@ -1527,6 +1527,27 @@ import AEXML
         }
     }
     
+    
+    func updateIconBatch(selectedPoliciesInt: [Int?], server: String,authToken: String, iconFilename: String, iconID: String, iconURI: String) {
+        
+        
+        
+        for eachItem in selectedPoliciesInt {
+            
+            let currentPolicyID = (eachItem ?? 0)
+            self.separationLine()
+            print("currentPolicyID is: \(String(describing: currentPolicyID))")
+            
+            
+            Task {
+                do {
+                    let policyAsXML = try await getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: authToken)
+                    updateIcon(server: server, authToken: authToken, policyID: String(describing: currentPolicyID), iconFilename: iconFilename, iconID: iconID, iconURI: iconURI)
+                }
+            }
+        }
+    }
+    
     func getBuildings(server: String, authToken: String) async throws {
         let jamfURLQuery = server + "/JSSResource/buildings"
         let url = URL(string: jamfURLQuery)!
@@ -2395,21 +2416,21 @@ import AEXML
     //    #################################################################################
     
     
-    func updateIcon(server: String,authToken: String, policyName: String, policyID: String, iconFilename: String, iconID: String, iconURI: String) {
+    func updateIcon(server: String,authToken: String, policyID: String, iconFilename: String, iconID: String, iconURI: String) {
         let resourceType: ResourceType = ResourceType.policyDetail
         let resourcePath = getURLFormat(data: (resourceType))
         let policyID = policyID
         var xml: String
         self.separationLine()
         print("updateName XML")
-        print("policyName is set as:\(policyName)")
+//        print("policyName is set as:\(policyName)")
+//        <name>\(policyName)</name>
         
         xml = """
                 <?xml version="1.0" encoding="utf-8"?>
                     <policy>
                         <general>
                             <id>\(policyID)</id>
-                            <name>\(policyName)</name>
                         </general>
                         <self_service>
                             <self_service_icon>
@@ -2429,7 +2450,6 @@ import AEXML
 //        <self_service_description/>
 //        <force_users_to_view_description>false</force_users_to_view_description>
 //        #################################################################################
-
         
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {

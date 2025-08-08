@@ -201,10 +201,10 @@ struct PolicyDetailView: View {
                 }
 #endif
             }
-            
-            //              ################################################################################
-            //              ENABLE/DISABLE
-            //              ################################################################################
+
+// ################################################################################
+//              ENABLE/DISABLE
+// ################################################################################
             
             HStack(spacing: 20) {
                 
@@ -625,9 +625,9 @@ struct PolicyDetailView: View {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
             
-            //  ##########################################################################
-            //  Add current packages to packagesAssignedToPolicy list on appear of View
-            //  ##########################################################################
+//  ##########################################################################
+//  Add current packages to packagesAssignedToPolicy list on appear of View
+//  ##########################################################################
 
             networkController.getPackagesAssignedToPolicy()
             networkController.addExistingPackages()

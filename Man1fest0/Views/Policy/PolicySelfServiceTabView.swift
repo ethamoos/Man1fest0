@@ -189,7 +189,7 @@ struct PolicySelfServiceTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            networkController.updateIcon(server: server,authToken: networkController.authToken, policyName: networkController.currentDetailedPolicy?.policy.general?.name ?? "", policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
+                            networkController.updateIcon(server: server,authToken: networkController.authToken, policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
                         }) {
                             Text("Update Icon")
                         }
