@@ -421,6 +421,8 @@ struct PolicyDetailView: View {
                             Toggle("", isOn: $enableDisableSelfService)
                                 .toggleStyle(SwitchToggleStyle(tint: .red))
                                 .onChange(of: enableDisableSelfService) { value in
+                                    progress.showProgress()
+                                    progress.waitForABit()
                                     networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
                                     print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
                                 }

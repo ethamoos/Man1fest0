@@ -89,11 +89,9 @@ struct PolicyTriggersTabView: View {
                         .textSelection(.enabled)
                 }
             }
+            Spacer()
         }
         //            .background(Color.green)
-//        Spacer()
         .padding()
-    
     }
 }
-//}
