@@ -35,15 +35,14 @@ struct CreatePolicyView: View {
     @State var enableDisable: Bool = true
     @State private var selfServiceEnable = true
     @State private var createDepartmentIsChecked = false
+    @State private var enableSelfService = false
     
     //              ################################################################################
     //              categories
     //              ################################################################################
     
     @State var categoryName = ""
-    
     @State private var categoryID = ""
-    
     @State var categories: [Category] = []
     
     //              ################################################################################
@@ -51,13 +50,9 @@ struct CreatePolicyView: View {
     //              ################################################################################
     
     @State private var computers: [ Computer ] = []
-    
     @State var computerID = ""
-    
     @State var computerUDID = ""
-    
     @State var computerName = ""
-    
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
     //              ################################################################################
@@ -65,33 +60,25 @@ struct CreatePolicyView: View {
     //              ################################################################################
     
     @State var newPolicyName = ""
-    
     //    @State var departmentName: String = ""
-    
     @State var newCategoryName: String = ""
-    
     @State var newGroupName: String = ""
-    
+    @State var newPolicyId = "0"
+
     //              ################################################################################
     //              Packages
     //              ################################################################################
     
     @State private var packageSelection = Set<Package>()
-    
     @State private var packagesAssignedToPolicy: [ Package ] = []
-    
     @State private var packageID = "0"
-    
     @State private var packageName = ""
     
-    @State var newPolicyId = "0"
-    
-    //              ################################################################################
-    //              Scripts
-    //              ################################################################################
+    // ################################################################################
+    // Scripts
+    // ################################################################################
     
     @State var scriptName = ""
-    
     @State var scriptID = ""
     
     //              ################################################################################
@@ -187,15 +174,15 @@ struct CreatePolicyView: View {
         
 #endif
         
-        //              ################################################################################
+        //  ################################################################################
         //              Toolbar - END
-        //              ################################################################################
+        //  ################################################################################
   
         Divider()
         
-        //              ################################################################################
+        //  ################################################################################
         //              selections
-        //              ################################################################################
+        //  ################################################################################
         
         
         List(Array(packageMultiSelection), id: \.self) { package in
@@ -210,9 +197,9 @@ struct CreatePolicyView: View {
             
             Group {
                 
-                // ######################################################################################
-                // CREATE NEW POLICY - with multiple packages
-                // ######################################################################################
+            // ######################################################################################
+            // CREATE NEW POLICY - with multiple packages
+            // ######################################################################################
                 
                 LazyVGrid(columns: columns, spacing: 5) {
                     
@@ -226,10 +213,12 @@ struct CreatePolicyView: View {
                             progress.waitForABit()
                             
                             xmlController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
-//                            
-                            xmlController.addCategoryToPolicy(xmlContent: xmlController.newPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
                             
-                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.xmlDoc, policyId: "0")
+                            
+                            //
+                            xmlController.addCategoryToPolicy(xmlContent: xmlController.aexmlDoc.xml, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
+                            
+                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
                             
                             if createDepartmentIsChecked == true {
                                 networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
@@ -240,19 +229,57 @@ struct CreatePolicyView: View {
                             print("Creating New Policy:\(newPolicyName)")
                             print("Category:\(selectedCategory.name)")
                             print("Department:\(selectedDepartment.name)")
-//                            print("xml is:\(policyController.newPolicyAsXML)")
-//                            print("authToken is:\(networkController.authToken)")
+                            //                            print("xml is:\(policyController.newPolicyAsXML)")
+                            //                            print("authToken is:\(networkController.authToken)")
                         }) {
                             Text("Create Policy")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                         
+                        Toggle(isOn: $createDepartmentIsChecked) {
+                            Text("New Department")
+                        }
+                        .toggleStyle(.checkbox)
+                    }
+                    
+                    HStack {
+                        Image(systemName:"hammer")
+                        TextField("Policy Name", text: $newPolicyName)
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
                             
-                            Toggle(isOn: $createDepartmentIsChecked) {
-                                Text("New Department")
-                            }
-                            .toggleStyle(.checkbox)
+                            xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken, server: server, policyName: newPolicyName, policyID: newPolicyId, scriptName: scriptName, scriptID: scriptID, packageName: packageName, packageID: packageID, SelfServiceEnabled: enableSelfService, department: selectedDepartment.name, category: selectedCategory.name, enabledStatus: enableDisable,iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""))
+                            
+                            
+//                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
+//                            if createDepartmentIsChecked == true {
+//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+//                            }
+                            
+                            layout.separationLine()
+                            print("Creating New Policy:\(newPolicyName)")
+//                            print("Category:\(selectedCategory.name)")
+//                            print("Department:\(selectedDepartment.name)")
+                            //                            print("xml is:\(policyController.newPolicyAsXML)")
+                            //                            print("authToken is:\(networkController.authToken)")
+                        }) {
+                            Text("Create Policy 2")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        
+                        Toggle(isOn: $createDepartmentIsChecked) {
+                            Text("New Department")
+                        }
+                        .toggleStyle(.checkbox)
+                        
+                        Toggle(isOn: $enableSelfService) {
+                            Text("Self Service")
+                        }
+                        .toggleStyle(.checkbox)
                     }
                 }
 

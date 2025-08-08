@@ -143,7 +143,7 @@ import AEXML
     //    XML data
     //    #################################################################################
     
-    @Published var xmlDoc: AEXMLDocument = AEXMLDocument()
+    @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
     @Published var computerGroupMembersXML: String = ""
     @Published var currentPolicyAsXML: String = ""
     @Published var updateXML: Bool = false
@@ -543,7 +543,7 @@ import AEXML
         
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200 - Response is:\(String(describing: responseCode))")
+//            print("Code not 200 - Response is:\(String(describing: responseCode))")
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
@@ -979,30 +979,7 @@ import AEXML
         }
     }
     
-    
-    func batchDeleteGroup(selection:  Set<ComputerGroup>, server: String, authToken: String, resourceType: ResourceType) async throws {
-        
-        self.separationLine()
-        print("Running: batchDeleteGroup")
-        for eachItem in selection {
-            self.separationLine()
-            print("Items as Dictionary is \(eachItem)")
-            let computerSmartGroupId = String(describing:eachItem.id)
-            let jamfID: String = String(describing:eachItem.id)
-            print("Current computerSmartGroupId is:\(computerSmartGroupId)")
-            print("Current jamfID is:\(String(describing: jamfID))")
-            
-            do {
-               try await self.deleteGroup(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
-            } catch {
-                throw JamfAPIError.badURL
-            }
-        }
-        self.separationLine()
-        print("Finished - Set processingComplete to true")
 
-    }
-    
     
     //    #################################################################################
     //    Tokens and Authorisation
@@ -1507,6 +1484,31 @@ import AEXML
     //    }
     //
     
+    
+    func batchDeleteGroup(selection:  Set<ComputerGroup>, server: String, authToken: String, resourceType: ResourceType) async throws {
+        
+        self.separationLine()
+        print("Running: batchDeleteGroup")
+        for eachItem in selection {
+            self.separationLine()
+            print("Items as Dictionary is \(eachItem)")
+            let computerSmartGroupId = String(describing:eachItem.id)
+            let jamfID: String = String(describing:eachItem.id)
+            print("Current computerSmartGroupId is:\(computerSmartGroupId)")
+            print("Current jamfID is:\(String(describing: jamfID))")
+            
+            do {
+               try await self.deleteGroup(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
+            } catch {
+                throw JamfAPIError.badURL
+            }
+        }
+        self.separationLine()
+        print("Finished - Set processingComplete to true")
+
+    }
+    
+    
     func addExistingPackages() {
         
         if let detailed = self.currentDetailedPolicy {
@@ -1522,6 +1524,27 @@ import AEXML
         } else {
             self.separationLine()
             print("No detailed policy response yet")
+        }
+    }
+    
+    
+    func updateIconBatch(selectedPoliciesInt: [Int?], server: String,authToken: String, iconFilename: String, iconID: String, iconURI: String) {
+        
+        
+        
+        for eachItem in selectedPoliciesInt {
+            
+            let currentPolicyID = (eachItem ?? 0)
+            self.separationLine()
+            print("currentPolicyID is: \(String(describing: currentPolicyID))")
+            
+            
+            Task {
+                do {
+                    let policyAsXML = try await getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: authToken)
+                    updateIcon(server: server, authToken: authToken, policyID: String(describing: currentPolicyID), iconFilename: iconFilename, iconID: iconID, iconURI: iconURI)
+                }
+            }
         }
     }
     
@@ -1684,10 +1707,21 @@ import AEXML
             print("getDetailedPolicy request error - code is:\(statusCode)")
             throw JamfAPIError.http(statusCode)
         }
+        
+        //        ########################################################
+        //        DEBUG
+        //        ########################################################
+
+//                separationLine()
+//                print("Raw data is:")
+//                      print(String(data: data, encoding: .utf8)!)
+
+                
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
         self.policyDetailed = decodedData
         
+
         if self.debug_enabled == true {
             separationLine()
             print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
@@ -1733,7 +1767,7 @@ import AEXML
     }
     
     //    #################################################################################
-    //    run operation - processPoliciesSelected
+    //    run operation - processPoliciesSelected - pass in function
     //    #################################################################################
     
     
@@ -2377,6 +2411,62 @@ import AEXML
         }
     }
     
+     //    #################################################################################
+    //    updateIcon
+    //    #################################################################################
+    
+    
+    func updateIcon(server: String,authToken: String, policyID: String, iconFilename: String, iconID: String, iconURI: String) {
+        let resourceType: ResourceType = ResourceType.policyDetail
+        let resourcePath = getURLFormat(data: (resourceType))
+        let policyID = policyID
+        var xml: String
+        self.separationLine()
+        print("updateName XML")
+//        print("policyName is set as:\(policyName)")
+//        <name>\(policyName)</name>
+        
+        xml = """
+                <?xml version="1.0" encoding="utf-8"?>
+                    <policy>
+                        <general>
+                            <id>\(policyID)</id>
+                        </general>
+                        <self_service>
+                            <self_service_icon>
+                                <id>\(iconID)</id>
+                                <filename>\(iconFilename)</filename>
+                                <uri>\(iconURI)</uri>
+                            </self_service_icon>
+                        </self_service>
+                    </policy>
+                """
+                
+//        #################################################################################
+//        <use_for_self_service>false</use_for_self_service>
+//        <self_service_display_name/>
+//        <install_button_text>Install</install_button_text>
+//        <reinstall_button_text>Reinstall</reinstall_button_text>
+//        <self_service_description/>
+//        <force_users_to_view_description>false</force_users_to_view_description>
+//        #################################################################################
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
     
     
     //    #################################################################################
@@ -2977,14 +3067,14 @@ import AEXML
         print("computerName is:\(computerId)")
         print("computerId is:\(computerId)")
         
-        let computers = self.xmlDoc.root["computers"].addChild(name: "computer")
+        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
         computers.addChild(name: "id", value: computerId)
         computers.addChild(name: "name", value: computerName)
-        print("updatedContent is:\(self.xmlDoc.root.xml)")
+        print("updatedContent is:\(self.aexmlDoc.root.xml)")
         let jamfCount = computers.count
         print("jamfCount is:\(jamfCount)")
         
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
         
         
     }
@@ -3022,7 +3112,7 @@ import AEXML
                 print("Running removeComputerFromGroup function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
                 // print("xml is set as:\(xml)")
-                // self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+                // self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
                 self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
             }
@@ -3048,13 +3138,13 @@ import AEXML
         print("url is:\(url)")
         //        print("computerName is:\(computerId)")
         //        print("computerId is:\(computerId)")
-        let computers = self.xmlDoc.root["computers"]
+        let computers = self.aexmlDoc.root["computers"]
         let lastcomputer = computers["computer"].last!
         lastcomputer.removeFromParent()
-        print("updatedContent is:\(self.xmlDoc.root.xml)")
+        print("updatedContent is:\(self.aexmlDoc.root.xml)")
         let jamfCount = computers.count
         print("jamfCount is:\(jamfCount)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
     //    #############################################################################
@@ -3157,7 +3247,7 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200 - Response is:\(String(describing: responseCode))")
+//            print("Code not 200 - Response is:\(String(describing: responseCode))")
             throw JamfAPIError.badResponseCode
         }
         
@@ -3177,7 +3267,7 @@ import AEXML
             return
         }
         do {
-            self.xmlDoc = try AEXMLDocument(xml: data)
+            self.aexmlDoc = try AEXMLDocument(xml: data)
         }
         catch {
             print("\(error)")
@@ -3856,8 +3946,6 @@ import AEXML
     }
     
     
-    
-    
     //    #################################################################################
     //    Request policies
     //    #################################################################################
@@ -4095,7 +4183,6 @@ import AEXML
                     print(text)
                 }
                 
-                
                 self.hasError = true
                 //                self.appendStatus(text)
             }
@@ -4302,16 +4389,16 @@ import AEXML
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200 - Response is:\(String(describing: responseCode ?? 0))")
+//            print("Code not 200 - Response is:\(String(describing: responseCode ?? 0))")
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         if let decodedData = try? decoder.decode(Icon.self, from: data) {
             self.iconDetailed = decodedData
-            separationLine()
+//            separationLine()
             //        print("Running getDetailedIcon - iconID is:\(iconID)")
             //        print("Response is:\(String(describing: responseCode))")
-            print("Add to:allIconsDetailed: Icon id is:\(iconID)")
+//            print("Add to:allIconsDetailed: Icon id is:\(iconID)")
             self.allIconsDetailed.insert(self.iconDetailed, at: 0)
         } else {
             print("Decoding failed")

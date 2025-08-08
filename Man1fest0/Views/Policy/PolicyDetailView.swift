@@ -128,6 +128,14 @@ struct PolicyDetailView: View {
     
     @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
     
+    @State var iconMultiSelection = Set<String>()
+    
+    @State var selectedIconString = ""
+    
+    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
+    
+    @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
+    
     //    ########################################################################################
     //    Script parameters
     //    ########################################################################################
@@ -177,7 +185,9 @@ struct PolicyDetailView: View {
                     Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))" )
+                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
+                    Text("Current Icon:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon?.filename ?? "No icon set")")
+
                 }
                 .textSelection(.enabled)
                 .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
@@ -191,10 +201,10 @@ struct PolicyDetailView: View {
                 }
 #endif
             }
-            
-            //              ################################################################################
-            //              ENABLE/DISABLE
-            //              ################################################################################
+
+// ################################################################################
+//              ENABLE/DISABLE
+// ################################################################################
             
             HStack(spacing: 20) {
                 
@@ -423,7 +433,7 @@ struct PolicyDetailView: View {
 #endif
                         }
                     }
-                    
+ 
 //  ##########################################################################
 //              CATEGORY
 //  ##########################################################################
@@ -499,6 +509,11 @@ struct PolicyDetailView: View {
                         .tabItem {
                             Label("Triggers", systemImage: "square.and.pencil")
                         }
+                    
+                    PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail,policyID: policyID )
+                        .tabItem {
+                            Label("Self Service", systemImage: "square.and.pencil")
+                        }
                 }
 #endif
             }
@@ -526,9 +541,9 @@ struct PolicyDetailView: View {
         
         .onAppear {
             
-            //  ##########################################################################
-            //  PolicyDetailView
-            //  ##########################################################################
+    //  ##########################################################################
+    //  PolicyDetailView
+    //  ##########################################################################
 
             networkController.separationLine()
             print("PolicyDetailView appeared - running detailed policy connect function")
@@ -550,6 +565,7 @@ struct PolicyDetailView: View {
 //  ##########################################################################
 
 //                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    
                     networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
 
 //  ##########################################################################
@@ -593,6 +609,14 @@ struct PolicyDetailView: View {
                 }
             }
             
+            if networkController.allIconsDetailed.count <= 1 {
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+            } else {
+                print("getAllIconsDetailed has already run")
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+            }
+            
 //  ##########################################################################
 //  getAllGroups
 //  ##########################################################################
@@ -601,9 +625,9 @@ struct PolicyDetailView: View {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
             
-            //  ##########################################################################
-            //  Add current packages to packagesAssignedToPolicy list on appear of View
-            //  ##########################################################################
+//  ##########################################################################
+//  Add current packages to packagesAssignedToPolicy list on appear of View
+//  ##########################################################################
 
             networkController.getPackagesAssignedToPolicy()
             networkController.addExistingPackages()

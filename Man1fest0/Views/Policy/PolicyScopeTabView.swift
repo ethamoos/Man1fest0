@@ -395,7 +395,7 @@ struct PolicyScopeTabView: View {
                                             networkController.separationLine()
                                             print("updateScopeCompGroupSingle for policy:\(String(describing: policyID))")
                                             
-                                            xmlController.updateScopeCompGroupSingle(groupSelection: selectionCompGroup, authToken: networkController.authToken,resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, currentPolicyAsAEXML: networkController.xmlDoc)
+                                            xmlController.updateScopeCompGroupSingle(groupSelection: selectionCompGroup, authToken: networkController.authToken,resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, currentPolicyAsAEXML: networkController.aexmlDoc)
                                             
                                         }) {
                                             HStack(spacing: 10) {

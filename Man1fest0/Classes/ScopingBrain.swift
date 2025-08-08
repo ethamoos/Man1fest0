@@ -49,7 +49,7 @@ import AEXML
     //    XML data
     //    #################################################################################
     
-    @Published var xmlDoc: AEXMLDocument = AEXMLDocument()
+    @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
     @Published var currentPolicyScopeXML: String = ""
     @Published var computerGroupMembersXML: String = ""
     @State var currentPolicyAsXML: String = ""
@@ -423,7 +423,7 @@ import AEXML
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
                 print("Running updateSSName name function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
             }
         }
         else {
@@ -450,7 +450,7 @@ import AEXML
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
                 print("Running updateSSName name function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.xmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
             }
         }
         else {

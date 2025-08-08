@@ -276,7 +276,7 @@ struct PolicyScriptsTabView: View {
                     
 //                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
                     
-                    xmlController.addScriptToPolicy(xmlContent: xmlController.xmlDoc,xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                    xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
                     
                     print("Adding script:\(selectedScript.name)")
                     print("parameter 4 is :\(scriptParameter4)")
@@ -288,6 +288,51 @@ struct PolicyScriptsTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                
+                Button(action: {
+                    
+                    progress.showProgress()
+                    progress.waitForABit()
+                    
+//                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    
+                    xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                    
+                    print("Removing script:\(selectedScript.name)")
+                    print("parameter 4 is :\(scriptParameter4)")
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.app.fill")
+                        Text("Remove")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                
+                //  ################################################################################
+                //              Remove scripts in policy
+                //  ################################################################################
+                
+                Button(action: {
+                    
+                    progress.showProgress()
+                    progress.waitForABit()
+                    
+                    networkController.separationLine()
+                    print("Removing all scripts in policy:\(String(describing: policyID))")
+                    
+                    xmlController.removeScriptsFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+//                        xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+
+                    
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "minus.square.fill.on.square.fill")
+                        Text("Remove All Scripts")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
             }
             //        }
             //            }
