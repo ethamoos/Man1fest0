@@ -149,7 +149,7 @@ struct PolicyScriptsTabView: View {
                             Text(script.name ?? "" )
                         }
                     }
-                    .frame(minHeight: 50)
+                    .frame(minHeight: 0)
 #endif
                 }
                 
@@ -189,9 +189,7 @@ struct PolicyScriptsTabView: View {
                             Text("You selected: \(pickerSelectedScript)")
 
                         }
-//                        .onChange(of:pickerSelectedScript) { value in
-//                            print("Value is:\(value)")
-//                        }
+
                         .onChange(of: pickerSelectedScript) { newValue in
                                        print("pickerSelectedScript changed to \(pickerSelectedScript)")
                                    }
@@ -205,7 +203,6 @@ struct PolicyScriptsTabView: View {
                     }
                 }
                 
-//                HStack {
                     DisclosureGroup("More Parameters") {
                         
                         HStack {
@@ -236,6 +233,7 @@ struct PolicyScriptsTabView: View {
                     }
                         .frame(minHeight: 60, alignment: .leading)
                 }
+                
                 Divider()
                 
                 //  ################################################################################
@@ -255,17 +253,12 @@ struct PolicyScriptsTabView: View {
                                 selectedScript = networkController.scripts[0] }
                         }
                     }
-//                    .onReceive([self.selectedScript].publisher.first()) { (selectedScript) in
-//                        print("selectedScript is:\(String(describing: selectedScript.name))")
-//                        print("selectedScriptID is:\(String(describing: selectedScript.id))")
-//                    }
                 }
             }
-//            .pickerStyle(SegmentedPickerStyle()) // You can choose the style that suits your UI
             
-            //              ################################################################################
+            //  ################################################################################
             //              Add script
-            //              ################################################################################
+            //  ################################################################################
             
             Group {
                 
@@ -273,8 +266,6 @@ struct PolicyScriptsTabView: View {
                     
                     progress.showProgress()
                     progress.waitForABit()
-                    
-//                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
                     
                     xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
                     
@@ -293,8 +284,6 @@ struct PolicyScriptsTabView: View {
                     
                     progress.showProgress()
                     progress.waitForABit()
-                    
-//                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
                     
                     xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
                     
@@ -322,8 +311,6 @@ struct PolicyScriptsTabView: View {
                     print("Removing all scripts in policy:\(String(describing: policyID))")
                     
                     xmlController.removeScriptsFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
-//                        xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-
                     
                 }) {
                     HStack(spacing: 10) {
@@ -334,8 +321,6 @@ struct PolicyScriptsTabView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
             }
-            //        }
-            //            }
             
             Group {
                 Divider()
@@ -343,8 +328,6 @@ struct PolicyScriptsTabView: View {
                     VStack(alignment: .leading) {
                         DisclosureGroup("Parameters") {
 
-//                        Group {
-//                            Text("Parameters")
                             TextField("Parameter 4", text: $scriptParameter4)
                             TextField("Parameter 5", text: $scriptParameter5)
                             TextField("Parameter 6", text: $scriptParameter6)
@@ -355,7 +338,6 @@ struct PolicyScriptsTabView: View {
                             TextField("Parameter 11", text: $scriptParameter11)
                             Text("Priority:")
                             TextField("Before/After?", text: $priority)
-                            
                         }
                     }
                 }
@@ -385,7 +367,6 @@ struct PolicyScriptsTabView: View {
     }
 }
 
-//}
 //var searchResults: [Script] {
 //    if searchText.isEmpty {
 //        // print("Search is empty")
@@ -397,13 +378,8 @@ struct PolicyScriptsTabView: View {
 //        //            DEBUG
 //        //            print(networkController.scripts)
 //        return controller.scripts.filter { $0.name.lowercased().contains(searchText.lowercased())}
-//
 //    }
 //}
-//
-//}
-//}
-
 
 
 //#Preview {
