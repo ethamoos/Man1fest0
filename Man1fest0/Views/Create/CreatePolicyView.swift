@@ -203,45 +203,45 @@ struct CreatePolicyView: View {
                 
                 LazyVGrid(columns: columns, spacing: 5) {
                     
-                    HStack {
-                        Image(systemName:"hammer")
-                        TextField("Policy Name", text: $newPolicyName)
-                        
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            xmlController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
-                            
-                            
-                            //
-                            xmlController.addCategoryToPolicy(xmlContent: xmlController.aexmlDoc.xml, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
-                            
-                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
-                            
-                            if createDepartmentIsChecked == true {
-                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-                            }
-                            
-                            layout.separationLine()
-                            print("Creating New Policy:\(newPolicyName)")
-                            print("Category:\(selectedCategory.name)")
-                            print("Department:\(selectedDepartment.name)")
-                            //                            print("xml is:\(policyController.newPolicyAsXML)")
-                            //                            print("authToken is:\(networkController.authToken)")
-                        }) {
-                            Text("Create Policy")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        
-                        Toggle(isOn: $createDepartmentIsChecked) {
-                            Text("New Department")
-                        }
-                        .toggleStyle(.checkbox)
-                    }
+//                    HStack {
+//                        Image(systemName:"hammer")
+//                        TextField("Policy Name", text: $newPolicyName)
+//                        
+//                        Button(action: {
+//                            
+//                            progress.showProgress()
+//                            progress.waitForABit()
+//                            
+//                            xmlController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
+//                            
+//                            
+//                            //
+//                            xmlController.addCategoryToPolicy(xmlContent: xmlController.aexmlDoc.xml, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
+//                            
+//                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
+//                            
+//                            if createDepartmentIsChecked == true {
+//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
+//                            }
+//                            
+//                            layout.separationLine()
+//                            print("Creating New Policy:\(newPolicyName)")
+//                            print("Category:\(selectedCategory.name)")
+//                            print("Department:\(selectedDepartment.name)")
+//                            //                            print("xml is:\(policyController.newPolicyAsXML)")
+//                            //                            print("authToken is:\(networkController.authToken)")
+//                        }) {
+//                            Text("Create Policy")
+//                        }
+//                        .buttonStyle(.borderedProminent)
+//                        .tint(.blue)
+//                        
+//                        Toggle(isOn: $createDepartmentIsChecked) {
+//                            Text("New Department")
+//                        }
+//                        .toggleStyle(.checkbox)
+//                    }
                     
                     HStack {
                         Image(systemName:"hammer")
@@ -266,7 +266,7 @@ struct CreatePolicyView: View {
                             //                            print("xml is:\(policyController.newPolicyAsXML)")
                             //                            print("authToken is:\(networkController.authToken)")
                         }) {
-                            Text("Create Policy 2")
+                            Text("Create Policy")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
@@ -283,12 +283,12 @@ struct CreatePolicyView: View {
                     }
                 }
 
-                LazyVGrid(columns: layout.columnsFixed, spacing: 5) {
-                    
-                    VStack(alignment: .leading) {
-                        Text("Note: All Fields Must Be Filled")
-                    }
-                }
+//                LazyVGrid(columns: layout.columnsFixed, spacing: 5) {
+//                    
+//                    VStack(alignment: .leading) {
+//                        Text("Note: All Fields Must Be Filled")
+//                    }
+//                }
 
                 
                 VStack(alignment: .leading) {
@@ -319,42 +319,45 @@ struct CreatePolicyView: View {
             
             Divider()
             
-            VStack(alignment: .leading) {
-                
-                Text("Icons").bold()
-#if os(macOS)
-                List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-                    HStack {
-                        Image(systemName: "photo.circle")
-                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-                            image.resizable().frame(width: 15, height: 15)
-                        } placeholder: {
-                        }
-                    }
-                    .foregroundColor(.gray)
-                    .listRowBackground(selectedIconString == icon?.name
-                                       ? Color.green.opacity(0.3)
-                                       : Color.clear)
-                    .tag(icon)
-                }
-                .cornerRadius(8)
-                .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-#else
-                
-                List(networkController.allIconsDetailed, id: \.self) { icon in
-                    HStack {
-                        Image(systemName: "photo.circle")
-                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-                            image.resizable().frame(width: 15, height: 15)
-                        } placeholder: {
-                        }
-                    }
-                }
-#endif
-//                                    .background(.gray)
-            }
+//            LazyVGrid(columns: column, spacing: 30) {
+//                
+//                VStack(alignment: .leading) {
+//                    
+//                    Text("Icons").bold()
+                    //#if os(macOS)
+                    //                List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
+                    //                    HStack {
+                    //                        Image(systemName: "photo.circle")
+                    //                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
+                    //                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                    //                            image.resizable().frame(width: 15, height: 15)
+                    //                        } placeholder: {
+                    //                        }
+                    //                    }
+                    //                    .foregroundColor(.gray)
+                    //                    .listRowBackground(selectedIconString == icon?.name
+                    //                                       ? Color.green.opacity(0.3)
+                    //                                       : Color.clear)
+                    //                    .tag(icon)
+                    //                }
+                    //                .cornerRadius(8)
+                    //                .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
+                    //#else
+                    //
+                    //                List(networkController.allIconsDetailed, id: \.self) { icon in
+                    //                    HStack {
+                    //                        Image(systemName: "photo.circle")
+                    //                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
+                    //                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                    //                            image.resizable().frame(width: 15, height: 15)
+                    //                        } placeholder: {
+                    //                        }
+                    //                    }
+                    //                }
+                    //#endif
+                    //                                    .background(.gray)
+//                }
+//            }
         
     // ##########################################################################################
     //                        Selections
@@ -370,16 +373,16 @@ struct CreatePolicyView: View {
                     Text("").tag("") //basically added empty tag and it solve the case
                     ForEach(networkController.allIconsDetailed, id: \.self) { icon in
                         
-//                            HStack {
-//                                Text(String(describing: icon?.name ?? ""))
-//                                AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-//                                    image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
-//                                } placeholder: {
-//                                    //                        Color.red
-//                                }
-//                            }
+                            HStack {
+                                Text(String(describing: icon?.name ?? ""))
+                                AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                                    image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    //                        Color.red
+                                }
+                            }
 
-                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
+//                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
 
                     }
                 }
