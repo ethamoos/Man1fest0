@@ -41,13 +41,16 @@ struct ScriptsActionView: View {
                         
 #endif
                         .foregroundColor(.blue)
-                        .searchable(text: $searchText)
                         //                    Text("\(networkController.scripts.count) total scripts")
                     }
                     //              ################################################################################
                     //              Toolbar
                     //              ################################################################################
-                    
+#if os(macOS)
+
+                    .frame(minWidth: 300, maxWidth: .infinity)
+#endif
+
                     .toolbar {
                         
                         Button(action: {
@@ -63,23 +66,22 @@ struct ScriptsActionView: View {
                             }
                         }
                     }
+                    .searchable(text: $searchText)
                 }
+                
+                .navigationViewStyle(DefaultNavigationViewStyle())
+
                 //              ################################################################################
                 //              Toolbar - END
                 //              ################################################################################
-                
-                
                 
                 #if os(macOS)
                 
                 VStack(alignment: .leading) {
                     
                     Text("Selections").fontWeight(.bold)
-                    
                     List(Array(selection), id: \.self) { script in
-                        
                         Text(script.name )
-                        
                     }
                     
                     .searchable(text: $searchText)
@@ -127,17 +129,10 @@ struct ScriptsActionView: View {
             }
         }
         
-        .frame(minWidth: 200, minHeight: 100, alignment: .center)
+//        .frame(minWidth: 200, minHeight: 100, alignment: .center)
         
-        //              ################################################################################
-        //              Toolbar
-        //              ################################################################################
-        
-        
-        //              ################################################################################
-        //              Toolbar - END
-        //              ################################################################################
-        
+        .frame(minWidth: 300, minHeight: 100, alignment: .center)
+
         .onAppear {
             networkController.separationLine()
             print("ScriptsView appeared.")

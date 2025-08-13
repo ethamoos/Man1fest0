@@ -73,16 +73,13 @@ struct PolicyView: View {
                         .frame(minWidth: 300, maxWidth: .infinity)
 #endif
                         .toolbar {
-                            
                             Button(action: {
                                 networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
                                 networkController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
-                                
                                 print("Refresh policyView - get all policies")
                                 networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
                                 progress.showProgress()
                                 progress.waitForABit()
-                                
                                 if selection.name.isEmpty == false {
                                     print("Policy is selected")
                                     print("Refreshing detailed policy:\(selection.jamfId ?? 0)")
@@ -92,7 +89,6 @@ struct PolicyView: View {
                                     print("Refresh getPolicyAsXML")
                                         networkController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
                                 }
-                                
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "arrow.clockwise")
@@ -107,12 +103,9 @@ struct PolicyView: View {
                         Text("\(networkController.policies.count) total policies")
                             .toolbar {
                             }
-                        
 #else
-        
 //                        List(searchResults, id: \.self) { policy in
 //                            NavigationLink(destination: PolicyDetailView_iOS(server: server, policy: policy, policyID: policy.jamfId ?? 1)) {
-//                                
 //                                HStack {
 //                                    Image(systemName:"text.justify")
 //                                    Text("\(policy.name)")
@@ -138,6 +131,11 @@ struct PolicyView: View {
                 }
             }
         }
+        
+        
+        //              ################################################################################
+        //              onAppear
+        //              ################################################################################
         
         .onAppear {
 

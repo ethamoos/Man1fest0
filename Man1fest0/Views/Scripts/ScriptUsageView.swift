@@ -86,7 +86,7 @@ struct ScriptUsageView: View {
                 //        Assigned scripts
                 //        ########################################
                 
-                if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
+//                if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
                     
                     VStack(alignment: .leading, spacing: 5) {
                         
@@ -154,7 +154,7 @@ struct ScriptUsageView: View {
                     .tint(.red)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     .padding()
-                }
+//                }
                 
                 
                 Group {
@@ -187,7 +187,7 @@ struct ScriptUsageView: View {
                 
                     HStack {
                         
-                        if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
+//                        if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
                             
                             Button(action: {
                                 progress.showProgress()
@@ -200,12 +200,11 @@ struct ScriptUsageView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
-                        }
+//                        }
                         
                         Button(action: {
                             
                             networkController.allPoliciesDetailed.removeAll()
-                            
                             networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
                         }) {
                             Text("Refresh Policy Data")
