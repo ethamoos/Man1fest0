@@ -352,21 +352,30 @@ struct PolicyDetailTableView: View {
             //                        Icons - picker
             // ##########################################################################################
             
-            LazyVGrid(columns: columns, spacing: 30) {
+            LazyVGrid(columns: columns, spacing: 10) {
                 Picker(selection: $selectedIcon, label: Text("Icon:")) {
                     //                            Text("").tag("")
                     ForEach(networkController.allIconsDetailed, id: \.self) { icon in
                         HStack {
                             Text(String(describing: icon?.name ?? ""))
-                            AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-                                image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                //                        Color.red
-                            }
+//
+                            
+                            AsyncImage(url: URL(string: icon?.url ?? "" ))  { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    ProgressView()
+                                }
+                                .frame(width: 05, height: 05)
+                                .background(Color.gray)
+                                .clipShape(Circle())
+                            
+                            
+                            
                         }
-                        
-                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
-                        
+                        .frame(width: 05, height: 05)
+
                         
                     }
                     
