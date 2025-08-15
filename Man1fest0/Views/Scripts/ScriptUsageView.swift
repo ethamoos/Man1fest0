@@ -124,7 +124,7 @@ struct ScriptUsageView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        print("Selection is:")
+                        print("Xml data is present - readingSelection is:")
                         print(selection)
                         
                         selectedValue = selection

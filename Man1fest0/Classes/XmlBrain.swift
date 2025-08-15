@@ -1780,7 +1780,7 @@ class XmlBrain: ObservableObject {
         let groupId = groupSelection.id
         
         self.separationLine()
-        print("Running updateScopeCompGroupSingle")
+        print("Running updateScopeCompGroupSingle on XML controller")
         print("group name is:\(groupName)")
         print("group id is:\(groupId)")
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"

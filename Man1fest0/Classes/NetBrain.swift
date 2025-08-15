@@ -712,23 +712,7 @@ import AEXML
     }
     
     
-    struct PoliciesDetailReply: Codable {
-        
-        let policyDetailed: PoliciesDetailed
-        
-        static func decode(_ data: Data) -> Result<PoliciesDetailed,Error> {
-            
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(PoliciesDetailed.self, from: data)
-                print("PoliciesDetailReply Decoding succeeded")
-                return .success(response)
-            } catch {
-                print("PoliciesDetailReply Failed - Decoding errror")
-                return .failure(error)
-            }
-        }
-    }
+   
     
     struct ScriptsReply: Codable {
         
@@ -1454,16 +1438,6 @@ import AEXML
         }
     }
     
-    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
-//        DispatchQueue.main.async {
-            self.currentDetailedPolicy = policyDetailed
-            // self.status = "Computers retrieved"
-            //        self.status = ""
-            print("Adding:policyDetailed to: allPoliciesDetailed ")
-            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-            
-//        }
-    }
     
     
     //    #################################################################################
@@ -1699,8 +1673,8 @@ import AEXML
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
-        separationLine()
-        print("Raw data is:\(String(data: data, encoding: .utf8)!)")
+//        separationLine()
+//        print("Raw data is:\(String(data: data, encoding: .utf8)!)")
         
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -1711,25 +1685,21 @@ import AEXML
             throw JamfAPIError.http(statusCode)
         }
 
-        let decoder = JSONDecoder()
-        
+//        let decoder = JSONDecoder()
         let decoded = PoliciesDetailReply.decode(data)
         
         switch decoded {
         case .success(let policyDetailed):
             receivedPolicyDetail(policyDetailed: policyDetailed)
             separationLine()
-
         case .failure(let error):
             print("Decoding failed - Corrupt data. \(response) \(error)")
             separationLine()
             appendStatus("Corrupt data. \(response) \(error)")
         }
         
-        
 //        let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
 //        self.policyDetailed = decodedData
-//
 //        if self.debug_enabled == true {
 //            separationLine()
 //            print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "") Adding to: allPoliciesDetailed ")
@@ -1737,6 +1707,29 @@ import AEXML
 //            print("decodedData request error - code is:\(decodedData)")
 //        }
 //        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+        
+    }
+    struct PoliciesDetailReply: Codable {
+        let policyDetailed: PoliciesDetailed
+        static func decode(_ data: Data) -> Result<PoliciesDetailed,Error> {
+            let decoder = JSONDecoder()
+            do {
+                let response = try decoder.decode(PoliciesDetailed.self, from: data)
+                print("PoliciesDetailReply Decoding succeeded")
+                return .success(response)
+            } catch {
+                print("PoliciesDetailReply Failed - Decoding error")
+                return .failure(error)
+            }
+        }
+    }
+    
+    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
+//        DispatchQueue.main.async {
+            self.currentDetailedPolicy = policyDetailed
+            print("Adding:policyDetailed to: allPoliciesDetailed ")
+            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+//        }
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
@@ -1779,7 +1772,6 @@ import AEXML
     //    run operation - processPoliciesSelected - pass in function
     //    #################################################################################
     
-    
     func processPoliciesSelected(selectionConverted: [Policy], operation:(String)->Void) {
         
         //    #################################################################################
@@ -1800,11 +1792,9 @@ import AEXML
         }
     }
     
-    
     //    #################################################################################
     //    processComputersSelected
     //    #################################################################################
-    
     
     func processComputersSelected(selection: Set<Computer>,  server: String, resourceType: ResourceType, url: String) {
         print("Running processComputersSelected")
@@ -2149,8 +2139,8 @@ import AEXML
             print("policyEnDisable is:\(policyEnDisable)")
             
             if self.currentDetailedPolicy != nil {
-                if let categoryName = self.currentDetailedPolicy?.policy.general?.category?.name {
-                    let categoryID = self.currentDetailedPolicy?.policy.general?.category?.jamfId
+                if let categoryName = self.currentDetailedPolicy?.policy.general.category?.name {
+                    let categoryID = self.currentDetailedPolicy?.policy.general.category?.jamfId
                     print("Old categoryName is:\(categoryName)")
                     print("Old categoryID is:\(String(describing: categoryID))")
                 }

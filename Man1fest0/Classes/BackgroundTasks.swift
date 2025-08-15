@@ -40,7 +40,7 @@ class BackgroundTasks: ObservableObject {
         
         for eachPolicy in allPoliciesDetailedArray {
                         
-            print("getPackagesInUse Policy is:\(String(describing: eachPolicy?.general?.name ?? ""))")
+            print("getPackagesInUse Policy is:\(String(describing: eachPolicy?.general.name ?? ""))")
             let packagesFound = eachPolicy?.package_configuration?.packages
             
             for package in packagesFound ?? [] {

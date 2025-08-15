@@ -9,8 +9,7 @@ import Foundation
 
 
 
-// ################# Basic POLICY ####################
-
+// ################# Basic POLICY #################################
 
 // Previously called Policies
 
@@ -44,7 +43,7 @@ struct PoliciesDetailed: Codable, Hashable {
 struct PolicyDetailed: Codable, Hashable, Identifiable {
     
     var id = UUID()
-    let general: General?
+    let general: General
     //    let serialsByPrestageID: [String: String]
     let scope: Scope?
     let package_configuration: PackageConfiguration?
@@ -400,14 +399,19 @@ struct SelfService: Codable, Hashable, Identifiable  {
     }
     
     //    // MARK: - SelfServiceIcon
-        struct SelfServiceIcon: Codable, Hashable  {
-            let filename: String
-            let id: Int
-            let uri: String
+    struct SelfServiceIcon: Codable, Hashable  {
+        let filename: String
+        let id: Int
+        let uri: String
+        
+        enum CodingKeys:String, CodingKey {
+            case filename = "filename"
+            case id = "id"
+            case uri = "uri"
+            
         }
-
+    }
 }
-//
     
 
 
