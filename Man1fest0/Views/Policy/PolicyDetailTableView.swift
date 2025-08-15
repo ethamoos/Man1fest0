@@ -714,7 +714,6 @@ struct PolicyDetailTableView: View {
                 for eachItem in selectedPoliciesInt {
                     
                     let currentPolicyID = (eachItem ?? 0)
-                    
                     //                        print("Download file for \(eachItem.name)")
                     print("jamfId is \(String(describing: eachItem ?? 0))")
                     
@@ -768,6 +767,7 @@ struct PolicyDetailTableView: View {
 
 func convertToallPoliciesDetailedGeneral() {
     
+    print("Running: convertToallPoliciesDetailedGeneral")
     print("Reset allPoliciesDetailedGeneral and re-add")
     
     networkController.allPoliciesDetailedGeneral.removeAll()
@@ -783,6 +783,7 @@ func convertToallPoliciesDetailedGeneral() {
 
 func refreshDetailedPolicySelections(selectedPolicies: [Int?], authToken: String, server: String) async {
     
+    print("Running: refreshDetailedPolicySelections")
     if selectedPolicies.isEmpty {
         print("no selection")
         convertToallPoliciesDetailedGeneral()
@@ -895,7 +896,8 @@ func generateCSV() -> URL {
                                                in: .allDomainsMask,
                                                appropriateFor: nil,
                                                create: false)
-        
+        networkController.separationLine()
+        print("Policies Table View - Setting path component for csv output")
         fileURL = path.appendingPathComponent("Policy-Data.csv")
         
         // append string data to file

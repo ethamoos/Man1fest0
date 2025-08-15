@@ -181,13 +181,13 @@ struct PolicyDetailView: View {
                 VStack(alignment: .leading) {
                     Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.name ?? "Blank")\n")
                     Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.enabled ?? true))\n")
-                    Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
-                    Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon?.filename ?? "No icon set")")
-
+                    Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
+                    Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
+                    Text("Current Icon:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon.filename ?? "No icon set")")
+               
                 }
                 .textSelection(.enabled)
                 .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
@@ -321,8 +321,14 @@ struct PolicyDetailView: View {
                     progress.waitForABit()
                     
                     networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                    networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
-                    print("Refresh detailPolicyView")
+//                    networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+                    
+                    print("Running getDetailedPolicy")
+                    
+                    Task {
+                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    }
+                    
                     
                 }) {
                     HStack(spacing: 10) {
@@ -550,46 +556,54 @@ struct PolicyDetailView: View {
             networkController.separationLine()
             print("PolicyDetailView appeared - running detailed policy connect function")
             
-            progress.showProgress()
-            progress.waitForNotVeryLong()
-            
-            let currentPolicyAsXMLLocal = Task {
-                
-                print("getPolicyAsXML - running get policy as xml function")
-                
-                try await networkController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                
-                if !networkController.currentPolicyAsXML.isEmpty {
-                    print("Reading XML into AEXML - networkController")
-                    
-//  ##########################################################################
-//  NOTE: CHANGED FROM XML CONTROLLER BELOW
-//  ##########################################################################
-
-//                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
-                    
-                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
-
-//  ##########################################################################
-//  NOTE: CHANGED FROM XML CONTROLLER - END
-//  ##########################################################################
-
-                }
-            }
-            
-//            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
-
-//            The property networkController.policyDetailed will be used
-            
-            networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
-            
             Task {
+                
+//                This fetches the detailed policy - this is then added to the allPoliciesDetailed array
+                
+                print("Attempting to run request: getDetailedPolicy")
                 
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                 
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
             
+            progress.showProgress()
+//            progress.waitForNotVeryLong()
+            progress.waitForABit()
+            
+//            let currentPolicyAsXMLLocal = Task {
+//                
+//                print("getPolicyAsXML - running get policy as xml function")
+//                
+//                try await networkController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+//                
+//                if !networkController.currentPolicyAsXML.isEmpty {
+//                    print("Reading XML into AEXML - networkController")
+//                    
+//                    //  ##########################################################################
+//                    //  NOTE: CHANGED FROM XML CONTROLLER BELOW
+//                    //  ##########################################################################
+//                    
+//                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+//                    
+//                    //  ##########################################################################
+//                    //  NOTE: CHANGED FROM XML CONTROLLER - END
+//                    //  ##########################################################################
+//                    
+//                }
+//            }
+            
+//            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
+
+//            The property networkController.policyDetailed will be used
+            
+//            networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+            
+//            This fetches the detailed policy - this is then added to the allPoliciesDetailed array
+
+//            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+
+
             if networkController.categories.count <= 1 {
                 print("No categories - fetching")
                 networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)

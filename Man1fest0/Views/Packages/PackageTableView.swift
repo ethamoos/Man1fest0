@@ -666,7 +666,9 @@ struct PackageTableView: View {
                                                    in: .allDomainsMask,
                                                    appropriateFor: nil,
                                                    create: false)
-            
+            networkController.separationLine()
+            print("Packages Table View - Setting path component for csv output")
+
             fileURL = path.appendingPathComponent("Policy-Data.csv")
             
             // append string data to file

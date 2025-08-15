@@ -38,8 +38,8 @@ struct Policy: Codable, Hashable, Identifiable {
 // ################# START OF DETAILED POLICY ####################
 
 struct PoliciesDetailed: Codable, Hashable {
+    
     let policy: PolicyDetailed }
-
 
 struct PolicyDetailed: Codable, Hashable, Identifiable {
     
@@ -48,7 +48,7 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
     //    let serialsByPrestageID: [String: String]
     let scope: Scope?
     let package_configuration: PackageConfiguration?
-        let scripts: [PolicyScripts]?
+    let scripts: [PolicyScripts]?
     //    let printers: [PrinterElement]?
     let self_service: SelfService?
     //    let files_processes: FilesProcesses?
@@ -380,7 +380,7 @@ struct SelfService: Codable, Hashable, Identifiable  {
     let useForSelfService: Bool?
     let selfServiceDisplayName, installButtonText, reinstallButtonText, selfServiceDescription: String?
     let forceUsersToViewDescription: Bool?
-     let selfServiceIcon: SelfServiceIcon?
+     let selfServiceIcon: SelfServiceIcon
 //    let featureOnMainPage: Bool?
 //    let selfServiceCategories: [SelfServiceCategory]?
 //    let notification, notificationSubject, notificationMessage: String?
@@ -490,23 +490,3 @@ struct UserGroups: Codable, Hashable, Identifiable {
 
 // ################# END OF DETAILED POLICY ####################
 
-
-
-//struct AllPolicies: Codable {
-//    let policies: [Policy]
-//}
-//struct Policy: Codable, Hashable, Identifiable {
-//    //    let id: Int
-//    let name: String
-//    //    let enabled: Bool
-//    var id = UUID()
-//    var jamfId: Int?
-//    //    var name: String
-//    enum CodingKeys:String, CodingKey{
-//        case jamfId = "id"
-//        case name = "name"
-//    }
-//
-//
-//
-//}

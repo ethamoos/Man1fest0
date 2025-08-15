@@ -97,61 +97,61 @@ struct PolicyScriptsTabView: View {
 //              List scripts
 //              ################################################################################
 
-                if networkController.currentDetailedPolicy?.policy.scripts?.count ?? 0 > 0 {
-                    
-                    Text("Scripts").bold()
-#if os(macOS)
-                    List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
-                        //                        if script != nil {
-                        var currentScript = script
-                        //                    }
-                        HStack {
-                            
-                            Text(script.name ?? "")
-                            if script.parameter4 != "" {
-                                Text("\t\tParams:").bold()
-
-                                Image(systemName: "1.circle")
-                                Text(script.parameter4 ?? "" )
-                            }
-                            if script.parameter5 != "" {
-                                Image(systemName: "2.circle")
-                                Text(script.parameter5 ?? "" )
-                            }
-                            if script.parameter6 != "" {
-                                Image(systemName: "3.circle")
-                                Text(script.parameter6 ?? "" )
-                            }
-                            if script.parameter7 != "" {
-                                Image(systemName: "4.circle")
-                                Text(script.parameter7 ?? "" )
-                            }
-                            if script.parameter8 != "" {
-                                Image(systemName: "5.circle")
-                                Text(script.parameter8 ?? "" )
-                            }
-                            if script.parameter9 != "" {
-                                Image(systemName: "6.circle")
-                                Text(script.parameter9 ?? "" )
-                            }
-                            if script.parameter10 != "" {
-                                Image(systemName: "7.circle")
-                                Text(script.parameter10 ?? "" )
-                            }
-                        }
-                    }
-                    .frame(minHeight: 100)
-                    .frame(minWidth: 120, maxWidth: .infinity)
-#else
-                    List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self) { script in
-                        HStack {
-                            Image(systemName: "applescript")
-                            Text(script.name ?? "" )
-                        }
-                    }
-                    .frame(minHeight: 0)
-#endif
-                }
+//                if networkController.currentDetailedPolicy?.policy.scripts?.count ?? 0 > 0 {
+//                    
+//                    Text("Scripts").bold()
+//#if os(macOS)
+//                    List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
+//                        //                        if script != nil {
+//                        var currentScript = script
+//                        //                    }
+//                        HStack {
+//                            
+//                            Text(script.name ?? "")
+//                            if script.parameter4 != "" {
+//                                Text("\t\tParams:").bold()
+//
+//                                Image(systemName: "1.circle")
+//                                Text(script.parameter4 ?? "" )
+//                            }
+//                            if script.parameter5 != "" {
+//                                Image(systemName: "2.circle")
+//                                Text(script.parameter5 ?? "" )
+//                            }
+//                            if script.parameter6 != "" {
+//                                Image(systemName: "3.circle")
+//                                Text(script.parameter6 ?? "" )
+//                            }
+//                            if script.parameter7 != "" {
+//                                Image(systemName: "4.circle")
+//                                Text(script.parameter7 ?? "" )
+//                            }
+//                            if script.parameter8 != "" {
+//                                Image(systemName: "5.circle")
+//                                Text(script.parameter8 ?? "" )
+//                            }
+//                            if script.parameter9 != "" {
+//                                Image(systemName: "6.circle")
+//                                Text(script.parameter9 ?? "" )
+//                            }
+//                            if script.parameter10 != "" {
+//                                Image(systemName: "7.circle")
+//                                Text(script.parameter10 ?? "" )
+//                            }
+//                        }
+//                    }
+//                    .frame(minHeight: 100)
+//                    .frame(minWidth: 120, maxWidth: .infinity)
+//#else
+//                    List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self) { script in
+//                        HStack {
+//                            Image(systemName: "applescript")
+//                            Text(script.name ?? "" )
+//                        }
+//                    }
+//                    .frame(minHeight: 0)
+//#endif
+//                }
                 
                 //  ################################################################################
                 //  Edit scripts parameters

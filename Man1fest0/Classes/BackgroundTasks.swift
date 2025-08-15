@@ -13,20 +13,14 @@ import Foundation
 class BackgroundTasks: ObservableObject {
     
     var assignedPackages: [Package] = []
-//    var packagesFound: [Package]? = []
     var assignedPackagesByNameDict: [String: String] = [:]
     var assignedPackagesByNameSet = Set<String>()
     var allPackagesByNameDict: [String: String] = [:]
-    
-    
-    
     
     var clippedPackages = Set<String>()
     var unassignedPackagesSet = Set<String>()
     var unassignedPackagesArray: [String] = []
     var unassignedPackagesByNameDict: [String: String] = [:]
-    
-    
     
     var allPackagesByNameSet = Set<String>()
     
@@ -42,75 +36,23 @@ class BackgroundTasks: ObservableObject {
 
 //        DEBUG
 //        print("PolicyDetailed is: \(String(describing: allPoliciesDetailedArray))")
-
-        
         print("allPoliciesDetailed initial count is:\(allPoliciesDetailedArray.count)")
-
-//        let allPoliciesDetailed = networkController.allPoliciesDetailed
-//        
-//        for eachPolicy in allPoliciesDetailed {
-////            print("Policy is:\(String(describing: eachPolicy))")
-//            
-//            let scriptsFound: [PolicyScripts]? = eachPolicy?.scripts
-//                        
-//            for script in scriptsFound ?? [] {
-//                print("Script is:\(script)")
-//
-//                //        ########################################
-//                //                Convert to dict
-//                //        ########################################
-//                
-//                assignedScriptsByNameDict[script.name ?? "" ] = String(describing: script.jamfId)
-//                assignedScripts.insert(script, at: 0)
-        
-        //        ########################################
-        //        All Scripts - convert to set
-        //        ########################################
-        
-//        //        All scripts in Jamf converted to a set
-//        allScriptsByNameSet = Set(Array(allScriptsByNameDict.keys))
-//        //        ########################################
-//        //        Assigned Scripts
-//        //        ########################################
-//        //        All scripts found in policies
-//        assignedScriptsByNameSet = Set(Array(assignedScriptsByNameDict.keys))//
-//        //        ########################################
-//        //        Unassigned scripts
-//        //        ########################################
-//        
-//        print("everything not in both - scripts not in use")
-//        unassignedScriptsSet = allScriptsByNameSet.symmetricDifference(assignedScriptsByNameSet)
-//        print(unassignedScriptsSet.count)
-//        
-//        print("unassignedScriptsArray")
-//        unassignedScriptsArray = Array(unassignedScriptsSet)
-//        print(unassignedScriptsArray.count)
-//        
-//        
-        
-        
         
         for eachPolicy in allPoliciesDetailedArray {
                         
-            print("Policy is:\(String(describing: eachPolicy?.general?.name ?? ""))")
-            
+            print("getPackagesInUse Policy is:\(String(describing: eachPolicy?.general?.name ?? ""))")
             let packagesFound = eachPolicy?.package_configuration?.packages
             
             for package in packagesFound ?? [] {
                 print("#### Adding package found:\(String(describing: package.name))")
-                
-
                 //        ########################################
                 //                Convert to dict and add
                 //        ########################################
-                
                 assignedPackagesByNameDict[package.name ] = String(describing: package.jamfId)
                 assignedPackages.insert(package, at: 0)
             }
         }
         print("assignedPackagesByNameDict final value is:\(assignedPackagesByNameDict.count)")
-        
-        
         
         //        ########################################
         //        DEBUG - assignedPackagesByNameDict
@@ -123,7 +65,6 @@ class BackgroundTasks: ObservableObject {
 //        print(assignedPackagesByNameDict)
 //        - prints a lot of data to the console
         
-        
         //        ########################################
         //        SET Assigned Packages
         //        ########################################
@@ -133,12 +74,7 @@ class BackgroundTasks: ObservableObject {
         //        ########################################
         print("Convert assigned packages to a set")
         assignedPackagesByNameSet = Set(Array(assignedPackagesByNameDict.keys))
-        
-        
-
-//        return assignedPackagesByNameDict
     }
-    
     
     
     
@@ -146,19 +82,8 @@ class BackgroundTasks: ObservableObject {
     
     func getPackagesNotInUse (allPoliciesDetailedArray: [PolicyDetailed?] , allPackages: [Package]) {
         
-        //        ########################################
-        //                Convert all packages to dict
-        //        ########################################
-        
-        //  var allPackagesByNameDict: [String: String] = [:]
         
         print("Running: getPackagesNotInUse")
-        
-        //        ########################################
-        //                Convert all packages to dict
-        //        ########################################
-        
-        
         
         for package in allPackages {
             print("Package is:\(package) - add to allPackagesByNameDict")
@@ -244,7 +169,7 @@ class BackgroundTasks: ObservableObject {
 //                print("Current value pair is:\(item) = \(value)")
 //                print("Current item is:\(currentItem)")
                 if currentItem == assignedItem {
-                    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+                    highlightedSeparationLine()
                     print("Match found for \(currentItem)")
                     print("Removing a key-Value pair")
                     allPackages.removeValue(forKey: currentItem)
@@ -254,7 +179,7 @@ class BackgroundTasks: ObservableObject {
             }
         }
         
-        print("--------------------------------------------")
+        print(self.separationLine())
         print("unusedPackages are:")
         unassignedPackagesByNameDict = allPackages
         print(unassignedPackagesByNameDict)
@@ -376,5 +301,8 @@ class BackgroundTasks: ObservableObject {
     
     func separationLine() {
         print("------------------------------------------------------------------")
+    }    
+    func highlightedSeparationLine() {
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     }
 }
