@@ -380,7 +380,7 @@ struct SelfService: Codable, Hashable, Identifiable  {
     let useForSelfService: Bool?
     let selfServiceDisplayName, installButtonText, reinstallButtonText, selfServiceDescription: String?
     let forceUsersToViewDescription: Bool?
-     let selfServiceIcon: SelfServiceIcon?
+//     let selfServiceIcon: SelfServiceIcon?
 //    let featureOnMainPage: Bool?
 //    let selfServiceCategories: [SelfServiceCategory]?
 //    let notification, notificationSubject, notificationMessage: String?
@@ -391,7 +391,7 @@ struct SelfService: Codable, Hashable, Identifiable  {
         case reinstallButtonText = "reinstall_button_text"
         case selfServiceDescription = "self_service_description"
         case forceUsersToViewDescription = "force_users_to_view_description"
-         case selfServiceIcon = "self_service_icon"
+//         case selfServiceIcon = "self_service_icon"
 //        case featureOnMainPage = "feature_on_main_page"
 //        case selfServiceCategories = "self_service_categories"
 //        case notification = "notification"
