@@ -241,9 +241,9 @@ struct PolicyScopeTabView: View {
                                                         print("allComputersButton changed - value is now:\(value) for policy:\(policyID)")
                                                         
                                                         if value == true {
-                                                            xmlController.enableAllComputersToScope(xmlContent: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                            xmlController.enableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
                                                         } else {
-                                                            xmlController.disableAllComputersToScope(xmlContent: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                            xmlController.disableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
                                                         }
                                                     }
 #if os(macOS)
@@ -277,7 +277,7 @@ struct PolicyScopeTabView: View {
                                                 networkController.separationLine()
                                                 print("addComputerToPolicyScope policy:\(String(describing: policyID))")
                                                 
-                                                xmlController.addComputerToPolicyScope( xmlContent: networkController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
+                                                xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
                                             }) {
                                                 HStack(spacing: 10) {
                                                     Image(systemName: "plus.square.fill.on.square.fill")
@@ -315,7 +315,7 @@ struct PolicyScopeTabView: View {
                                             layout.separationLine()
                                             print("addDepartmentToPolicyScope for policy:\(String(describing: policyID))")
                                             
-                                            xmlController.addDepartmentToPolicyScope(xmlContent: networkController.currentPolicyAsXML, departmentName: selectionDepartment.name, departmentId: String(describing:selectionDepartment.jamfId ?? 0), authToken: networkController.authToken, policyId: String(describing: policyID), resourceType: selectedResourceType, server: server)
+                                            xmlController.addDepartmentToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, departmentName: selectionDepartment.name, departmentId: String(describing:selectionDepartment.jamfId ?? 0), authToken: networkController.authToken, policyId: String(describing: policyID), resourceType: selectedResourceType, server: server)
                                         }) {
                                             HStack(spacing: 10) {
                                                 Image(systemName: "plus.square.fill.on.square.fill")
@@ -350,7 +350,7 @@ struct PolicyScopeTabView: View {
                                             networkController.separationLine()
                                             print("addBuildingToPolicyScope - policy is:\(String(describing: policyID))")
                                             
-                                            xmlController.addBuildingToPolicyScope(xmlContent: networkController.currentPolicyAsXML, buildingName: selectionBuilding.name, buildingId: String(describing: selectionBuilding.id), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, server: server, authToken: networkController.authToken)
+                                            xmlController.addBuildingToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, buildingName: selectionBuilding.name, buildingId: String(describing: selectionBuilding.id), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, server: server, authToken: networkController.authToken)
                                             
                                         }) {
                                             HStack(spacing: 10) {
@@ -395,7 +395,7 @@ struct PolicyScopeTabView: View {
                                             networkController.separationLine()
                                             print("updateScopeCompGroupSingle for policy:\(String(describing: policyID))")
                                             
-                                            xmlController.updateScopeCompGroupSingle(groupSelection: selectionCompGroup, authToken: networkController.authToken,resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, currentPolicyAsAEXML: networkController.aexmlDoc)
+                                            xmlController.updateScopeCompGroupSingle(groupSelection: selectionCompGroup, authToken: networkController.authToken,resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, currentPolicyAsAEXML: networkController.aexmlDoc)
                                             
                                         }) {
                                             HStack(spacing: 10) {
@@ -474,7 +474,7 @@ struct PolicyScopeTabView: View {
                                                         message: Text("This action will limit the policy scoping.\n Some devices may not receive the policy"),
                                                         primaryButton: .destructive(Text("I understand!")) {
                                                             // Code to execute when "Yes" is tapped
-                                                            networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+                                                            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                                                             
                                                             Task {
                                                                 
@@ -501,7 +501,7 @@ struct PolicyScopeTabView: View {
                                                         message: Text("This action will clear any current limitations on the policy scoping.\n Some devices previously blocked may now receive the policy"),
                                                         primaryButton: .destructive(Text("I understand!")) {
                                                             // Code to execute when "Yes" is tapped
-                                                            xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: networkController.currentPolicyAsXML)
+                                                            xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML)
                                                             print("Yes tapped")
                                                         },
                                                         secondaryButton: .cancel()

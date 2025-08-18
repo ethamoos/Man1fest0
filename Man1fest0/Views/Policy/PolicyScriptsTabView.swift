@@ -173,7 +173,7 @@ struct PolicyScriptsTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                         
-                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: networkController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10)
+                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10)
                     }) {
                         Text("Update Parameter")
                     }
@@ -267,7 +267,7 @@ struct PolicyScriptsTabView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     
-                    xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                    xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
                     
                     print("Adding script:\(selectedScript.name)")
                     print("parameter 4 is :\(scriptParameter4)")
@@ -285,7 +285,7 @@ struct PolicyScriptsTabView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     
-                    xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: networkController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                    xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
                     
                     print("Removing script:\(selectedScript.name)")
                     print("parameter 4 is :\(scriptParameter4)")

@@ -165,7 +165,7 @@ struct PolicyDetailView: View {
     
     var body: some View {
 
-        let text = String(describing: networkController.currentPolicyAsXML)
+        let text = String(describing: xmlController.currentPolicyAsXML)
         
         let document = TextDocument(text: text)
         
@@ -235,7 +235,7 @@ struct PolicyDetailView: View {
                         policyNameInitial = networkController.currentDetailedPolicy?.policy.general?.name ?? ""
                         let newPolicyName = "\(policyNameInitial)1"
                         print("No name provided - policy is:\(newPolicyName)")
-                        policyController.clonePolicy(xmlContent: networkController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
                     } else {
                         print("Policy name is set as:\(policyName)")
                     }
@@ -320,7 +320,7 @@ struct PolicyDetailView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     
-                    networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+                    xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                     networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
                     print("Refresh detailPolicyView")
                     
@@ -516,6 +516,10 @@ struct PolicyDetailView: View {
                         .tabItem {
                             Label("Self Service", systemImage: "square.and.pencil")
                         }
+                    PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
+                        .tabItem {
+                            Label("Remove Items", systemImage: "square.and.pencil")
+                        }
                 }
 #endif
             }
@@ -557,18 +561,18 @@ struct PolicyDetailView: View {
                 
                 print("getPolicyAsXML - running get policy as xml function")
                 
-                try await networkController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                 
-                if !networkController.currentPolicyAsXML.isEmpty {
+                if !xmlController.currentPolicyAsXML.isEmpty {
                     print("Reading XML into AEXML - networkController")
                     
 //  ##########################################################################
 //  NOTE: CHANGED FROM XML CONTROLLER BELOW
 //  ##########################################################################
 
-//                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+//                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                     
-                    networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
+                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
 
 //  ##########################################################################
 //  NOTE: CHANGED FROM XML CONTROLLER - END

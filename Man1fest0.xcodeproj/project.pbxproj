@@ -13,6 +13,7 @@
 		A813124229D4B10100BB1C9F /* ScriptsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */; };
 		A813124429D4B50800BB1C9F /* PackagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124329D4B50800BB1C9F /* PackagesView.swift */; };
 		A813124629D4B52800BB1C9F /* PackagesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124529D4B52800BB1C9F /* PackagesDetailView.swift */; };
+		A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */; };
 		A81B58092C4A5E83008C1C25 /* Policies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B58082C4A5E83008C1C25 /* Policies.swift */; };
 		A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */; };
 		A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D0D432D429F8C0074E422 /* PackageTableView.swift */; };
@@ -116,6 +117,7 @@
 		A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsDetailView.swift; sourceTree = "<group>"; };
 		A813124329D4B50800BB1C9F /* PackagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesView.swift; sourceTree = "<group>"; };
 		A813124529D4B52800BB1C9F /* PackagesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesDetailView.swift; sourceTree = "<group>"; };
+		A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyRemoveItemsTabView.swift; sourceTree = "<group>"; };
 		A81B58082C4A5E83008C1C25 /* Policies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Policies.swift; sourceTree = "<group>"; };
 		A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyScriptsTabView.swift; sourceTree = "<group>"; };
 		A8297EBC2CBFF4C700840E8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -252,7 +254,6 @@
 				E45E13282C53B27F007C175F /* ConnectSheet.swift */,
 				E45E132A2C53B2CA007C175F /* OptionsView.swift */,
 				A83C945F2D7B5DC800F639A1 /* File.swift */,
-				A83D00DA2D774FC30091B794 /* ErrorView.swift */,
 				A840186C2D4BCA6700C09FD3 /* ImportView.swift */,
 				A88491902C8A1D8600C37DB7 /* IconView.swift */,
 				A88491942C8AE45900C37DB7 /* IconDetailedView.swift */,
@@ -261,6 +262,7 @@
 				E48D59D92C5A452D00E1E35B /* Create */,
 				A86AF37F2C3FE2C2009349C4 /* Computers */,
 				A87190492B6CF74500FC8FB2 /* GroupsView.swift */,
+				A83D00DA2D774FC30091B794 /* ErrorView.swift */,
 				A83D21062DE6124900D9AD2F /* GroupsSmartView.swift */,
 				A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */,
 				E48D59D42C5961B800E1E35B /* Packages */,
@@ -384,6 +386,7 @@
 				E4CE368E29D3372400533707 /* PolicyDetailView.swift */,
 				A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */,
 				A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */,
+				A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */,
 				A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */,
 				A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */,
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
@@ -663,6 +666,7 @@
 				E493198D2B679BE400B58519 /* PrestageRemoveDeviceView.swift in Sources */,
 				A87004362C81C48700C1AB97 /* PolicyDetailTableView.swift in Sources */,
 				A8ECB7C12C88492700FAFDC2 /* PushBrain.swift in Sources */,
+				A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */,
 				E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */,
 				A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */,
 				E45E132B2C53B2CA007C175F /* OptionsView.swift in Sources */,

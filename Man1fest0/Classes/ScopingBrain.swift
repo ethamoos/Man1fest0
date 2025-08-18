@@ -227,7 +227,7 @@ import AEXML
     //            print("Current policyID is:\(policyID)")
     //            print("Current jamfID is:\(String(describing: jamfID))")
     //            print("Run:getPolicyAsXML")
-    //            networkController.getPolicyAsXML(server: server, policyID: eachItem.jamfId ?? 0)
+    //            xmlController.getPolicyAsXML(server: server, policyID: eachItem.jamfId ?? 0)
     //
     //            self.updateScopeAddCompGroup(xmlString: xmlString, groupName: groupName, groupId: groupId)
     //        }

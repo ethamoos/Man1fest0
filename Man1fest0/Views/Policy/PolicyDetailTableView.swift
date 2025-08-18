@@ -213,22 +213,6 @@ struct PolicyDetailTableView: View {
                         }
                     }
                     
-                    //                    Button(action: {
-                    //
-                    //                        progress.showProgress()
-                    //                        progress.waitForABit()
-                    //                        networkController.connect(server: server,resourceType:  ResourceType.policies, authToken: networkController.authToken)
-                    //
-                    //                        print("Refresh")
-                    //
-                    //                    }) {
-                    //                        HStack(spacing: 10) {
-                    //                            Image(systemName: "arrow.clockwise")
-                    //                            Text("Refresh")
-                    //                        }
-                    //                    }
-                    //                    .buttonStyle(.borderedProminent)
-                    //                    .tint(.blue)
                     
                     Button(action: {
                         
@@ -276,28 +260,7 @@ struct PolicyDetailTableView: View {
                     } else {
                         Text("Disabled")
                     }
-                    //                }
-                    //
-                    //                    Button(action: {
-                    //
-                    //                        progress.showProgress()
-                    //                        progress.waitForABit()
-                    //
-                    //
-                    //
-                    //
-                    //                        networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
-                    //
-                    //                        networkController.processUpdatePoliciesCombined(selection: selectedPoliciesInt, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
-                    //
-                    //                    }) {
-                    //                        HStack(spacing: 10) {
-                    //                            //                                Image(systemName: "arrow.clockwise")
-                    //                            Text("Update")
-                    //                        }
-                    //                    }
-                    //                    .buttonStyle(.borderedProminent)
-                    //                    .tint(.blue)
+                  
                 }
             }
             
@@ -352,51 +315,51 @@ struct PolicyDetailTableView: View {
             //                        Icons - picker
             // ##########################################################################################
             
-            LazyVGrid(columns: columns, spacing: 10) {
-                Picker(selection: $selectedIcon, label: Text("Icon:")) {
-                    //                            Text("").tag("")
-                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-                        HStack {
-                            Text(String(describing: icon?.name ?? ""))
-//
-                            
-                            AsyncImage(url: URL(string: icon?.url ?? "" ))  { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    ProgressView()
-                                }
-                                .frame(width: 05, height: 05)
-                                .background(Color.gray)
-                                .clipShape(Circle())
-                            
-                            
-                            
-                        }
-                        .frame(width: 05, height: 05)
-
-                        
-                    }
-                    
-                    //  ################################################################################
-                    //  Update Icon Button
-                    //  ################################################################################
-                }
-                HStack {
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        networkController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
-                    }) {
-                        Text("Update Icon")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                }
-        }
+            //            LazyVGrid(columns: columns, spacing: 10) {
+            //                Picker(selection: $selectedIcon, label: Text("Icon:")) {
+            //                    //                            Text("").tag("")
+            //                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
+            //                        HStack {
+            //                            Text(String(describing: icon?.name ?? ""))
+            ////
+            //
+            //                            AsyncImage(url: URL(string: icon?.url ?? "" ))  { image in
+            //                                    image
+            //                                        .resizable()
+            //                                        .scaledToFill()
+            //                                } placeholder: {
+            //                                    ProgressView()
+            //                                }
+            //                                .frame(width: 05, height: 05)
+            //                                .background(Color.gray)
+            //                                .clipShape(Circle())
+            //
+            //
+            //
+            //                        }
+            //                        .frame(width: 05, height: 05)
+            //
+            //
+            //                    }
+            //
+            //                    //  ################################################################################
+            //                    //  Update Icon Button
+            //                    //  ################################################################################
+            //                }
+            //                HStack {
+            //                    Button(action: {
+            //
+            //                        progress.showProgress()
+            //                        progress.waitForABit()
+            //
+            //                        networkController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
+            //                    }) {
+            //                        Text("Update Icon")
+            //                    }
+            //                    .buttonStyle(.borderedProminent)
+            //                    .tint(.blue)
+            //                }
+            //        }
         
         Divider()
         
@@ -433,7 +396,7 @@ struct PolicyDetailTableView: View {
                         let currentPolicyID = (eachItem ?? 0)
                         Task {
                             do {
-                                let policyAsXML = try await networkController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+                                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
                                 xmlController.updateScopeCompGroupSetAsyncSingle(groupSelection: computerGroupSelection,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), policyAsXML: policyAsXML)
                             } catch {
                                 print("Fetching detailed policy as xml failed: \(error)")
@@ -503,7 +466,7 @@ struct PolicyDetailTableView: View {
                             
                             Task {
                                 do {
-                                    let policyAsXML = try await networkController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+                                    let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
                                     
                                     xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
                                 } catch {
