@@ -25,16 +25,9 @@ struct PolicyDetailTableView: View {
     @State private var showingWarning = false
     @State private var showingWarningDelete = false
 
-    @State private var showingWarningClearPackages = false
-    @State private var showingWarningClearScripts = false
     @State var enableDisable: Bool = true
     
-    //  ########################################################################################
-    //    Category SELECTION
-    //  ########################################################################################
-    
-    @State var categories: [Category] = []
-    @State  var selectedCategory: Category = Category(jamfId: 0, name: "")
+
     //  ########################################################################################
     //    POLICY SELECTION
     //  ########################################################################################
@@ -46,12 +39,7 @@ struct PolicyDetailTableView: View {
     @State private var policiesSelection = Set<Policy>()
     @State var searchText = ""
     
-    //  ########################################################################################
-    //  Filters
-    //  ########################################################################################
-    
-    @State var computerGroupFilter = ""
-    @State var allLdapServersFilter = ""
+
     
     
     
@@ -178,13 +166,23 @@ struct PolicyDetailTableView: View {
             
 #if os(macOS)
             TabView {
+                
+                PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                                    .tabItem {
+                                        Label("General", systemImage: "square.and.pencil")
+                                    }
                 PolicyDetailClearItemsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                     .tabItem {
                         Label("Clear Items", systemImage: "square.and.pencil")
                     }
                 PolicyDetailScopeTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                                     .tabItem {
-                                        Label("Limitations", systemImage: "square.and.pencil")
+                                        Label("Scope", systemImage: "square.and.pencil")
+                                    }
+                
+                PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                                    .tabItem {
+                                        Label("Export", systemImage: "square.and.pencil")
                                     }
             }
 //            PolicyDetailLimitationsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
@@ -195,225 +193,8 @@ struct PolicyDetailTableView: View {
 #endif
             
             
-            //  ################################################################################
-            //  Category
-            //  ################################################################################
-            
-            Divider()
-            
-            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
-                
-                HStack {
-                    Picker(selection: $selectedCategory, label: Text("Category:")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
-                        ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
-                        }
-                    }
-                    
-                    
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        networkController.processBatchUpdateCategory(selection: selectedPoliciesInt, server: server,  resourceType: ResourceType.policyDetail, authToken: networkController.authToken, newCategoryName: String(describing: selectedCategory.name), newCategoryID:  String(describing: selectedCategory.jamfId))
-                        
-                    }) {
-                        HStack(spacing: 10) {
-                            Text("Update")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    
-                    
-                    //  ###############################################################################
-                    //              Update Category
-                    //  ################################################################################
-                    
-                    Button(action: {
-                        progress.showProgressView = true
-                        networkController.processingComplete = false
-                        progress.waitForABit()
-                        print("Setting category to:\(String(describing: selectedCategory))")
-                        print("Policy enable/disable status is set as:\(String(describing: enableDisable))")
-                        networkController.selectedCategory = selectedCategory
-                        networkController.processUpdatePoliciesCombined(selection: selectedPoliciesInt, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
-                    }) {
-                        Text("Update Category/Enable")
-                            .help("This updates the category and also applies the enable/disable settings")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    
-                    //  ################################################################################
-                    //  Enable or Disable Policies Toggle
-                    //  ################################################################################
-                    
-                    Toggle("", isOn: $enableDisable)
-                        .toggleStyle(SwitchToggleStyle(tint: .red))
-                    if enableDisable {
-                        Text("Enabled")
-                    } else {
-                        Text("Disabled")
-                    }
-                  
-                }
-            }
-            
-            //  ################################################################################
-            //  UPDATE POLICY - COMPLETE
-            //  ################################################################################
-            
-            // ##########################################################################################
-            //                        Icons
-            // ##########################################################################################
-            
-            Divider()
-            
-            VStack(alignment: .leading) {
-                
-                Text("Icons").bold()
-//#if os(macOS)
-//                List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-//                    HStack {
-//                        Image(systemName: "photo.circle")
-//                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-//                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-//                            image.resizable().frame(width: 15, height: 15)
-//                        } placeholder: {
-//                        }
-//                    }
-//                    .foregroundColor(.gray)
-//                    .listRowBackground(selectedIconString == icon?.name
-//                                       ? Color.green.opacity(0.3)
-//                                       : Color.clear)
-//                    .tag(icon)
-//                }
-//                .cornerRadius(8)
-//                .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-//#else
-//                
-//                List(networkController.allIconsDetailed, id: \.self) { icon in
-//                    HStack {
-//                        Image(systemName: "photo.circle")
-//                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-//                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-//                            image.resizable().frame(width: 15, height: 15)
-//                        } placeholder: {
-//                        }
-//                    }
-//                }
-//#endif
-                //                                    .background(.gray)
-            }
-            
-            // ##########################################################################################
-            //                        Icons - picker
-            // ##########################################################################################
-            
-            //            LazyVGrid(columns: columns, spacing: 10) {
-            //                Picker(selection: $selectedIcon, label: Text("Icon:")) {
-            //                    //                            Text("").tag("")
-            //                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-            //                        HStack {
-            //                            Text(String(describing: icon?.name ?? ""))
-            ////
-            //
-            //                            AsyncImage(url: URL(string: icon?.url ?? "" ))  { image in
-            //                                    image
-            //                                        .resizable()
-            //                                        .scaledToFill()
-            //                                } placeholder: {
-            //                                    ProgressView()
-            //                                }
-            //                                .frame(width: 05, height: 05)
-            //                                .background(Color.gray)
-            //                                .clipShape(Circle())
-            //
-            //
-            //
-            //                        }
-            //                        .frame(width: 05, height: 05)
-            //
-            //
-            //                    }
-            //
-            //                    //  ################################################################################
-            //                    //  Update Icon Button
-            //                    //  ################################################################################
-            //                }
-            //                HStack {
-            //                    Button(action: {
-            //
-            //                        progress.showProgress()
-            //                        progress.waitForABit()
-            //
-            //                        networkController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
-            //                    }) {
-            //                        Text("Update Icon")
-            //                    }
-            //                    .buttonStyle(.borderedProminent)
-            //                    .tint(.blue)
-            //                }
-            //        }
         
-        Divider()
-        
-        //  ################################################################################
-        //  Set Scoping - Group
-        //  ################################################################################
-        
-        Group {
-            
-            //  ################################################################################
-            //  Group picker
-            //  ################################################################################
-            
-            
-            LazyVGrid(columns: layout.threeColumns, spacing: 20) {
-                Picker(selection: $computerGroupSelection, label:Label("Groups", systemImage: "person.3")
-                ) {
-                    //                        Text("").tag("")
-                    ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
-                        Text(String(describing: group.name))
-                            .tag(group as ComputerGroup?)
-                    }
-                }
-                
-                //  ################################################################################
-                //  Update groups button
-                //  ################################################################################
-                
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    for eachItem in selectedPoliciesInt {
-                        print("Updating for \(String(describing: eachItem ?? 0))")
-                        let currentPolicyID = (eachItem ?? 0)
-                        Task {
-                            do {
-                                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
-                                xmlController.updateScopeCompGroupSetAsyncSingle(groupSelection: computerGroupSelection,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), policyAsXML: policyAsXML)
-                            } catch {
-                                print("Fetching detailed policy as xml failed: \(error)")
-                            }
-                        }
-                    }
-                }) {
-                    //                        Image(systemName: "plus.square.fill.on.square.fill")
-                    Text("Update Groups")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-            }
-        }
-        
-        //  ################################################################################
-        //  LDAP SEARCH RESULTS - Picker 1
-        //  ################################################################################
-        
+//        Divider()
         Divider()
         
         VStack(alignment: .leading) {
@@ -424,61 +205,6 @@ struct PolicyDetailTableView: View {
                    
                     
                    
-                    Button(action: {
-                        showingWarningClearPackages = true
-                        progress.showProgress()
-                        progress.waitForABit()
-                    }) {
-                        HStack(spacing: 10) {
-                            Text("Clear Packages")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .alert(isPresented: $showingWarningClearPackages) {
-                        Alert(
-                            title: Text("Caution!"),
-                            message: Text("This action will clear packages from the polices selected.\n"),             primaryButton: .destructive(Text("I understand!")) {
-                                // Code to execute when "Yes" is tapped
-                                for eachItem in selectedPoliciesInt {
-                                    
-                                    let currentPolicyID = (String(describing: eachItem ?? 0))
-                                    xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: currentPolicyID)
-                                    print("Clearing Packages for policy:\(eachItem ?? 0)")
-                                }
-                                print("Yes tapped")
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
-                    
-                    
-                    Button(action: {
-                        showingWarningClearScripts = true
-                        progress.showProgress()
-                        progress.waitForABit()
-                    }) {
-                        HStack(spacing: 10) {
-                            Text("Clear Scripts")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .alert(isPresented: $showingWarningClearScripts) {
-                        Alert(
-                            title: Text("Caution!"),
-                            message: Text("This action will clear scripts from the polices selected.\n"),             primaryButton: .destructive(Text("I understand!")) {
-                                // Code to execute when "Yes" is tapped
-                                for eachItem in selectedPoliciesInt {
-                                    let currentPolicyID = (String(describing: eachItem ?? 0))
-                                    xmlController.removeAllScriptsManual(server: server, authToken: networkController.authToken, policyID: currentPolicyID)
-                                    print("Clearing scripts for policy:\(eachItem ?? 0)")
-                                }
-                                print("Yes tapped")
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
                     
                     //                        Button(action: {
                     //                            showingWarningClearPackages = true
@@ -509,77 +235,8 @@ struct PolicyDetailTableView: View {
         
       
         
-        
-        //  ################################################################################
-        //              DELETE
-        //  ################################################################################
-        
-        Divider()
-        HStack(spacing: 20) {
-            Button(action: {
-                showingWarningDelete = true
-                progress.showProgressView = true
-                print("Set showProgressView to true")
-                print(progress.showProgressView)
-                progress.waitForABit()
-                print("Check processingComplete")
-                print(String(describing: networkController.processingComplete))
-            }) {
-                Text("Delete")
-            }
-            .alert(isPresented: $showingWarningDelete) {
-                Alert(
-                    title: Text("Caution!"),
-                    message: Text("This action will delete data.\n Always ensure that you have a backup!"),
-                    primaryButton: .destructive(Text("I understand!")) {
-                        networkController.processDeletePoliciesGeneral(selection: selectedPoliciesInt, server: server,  authToken: networkController.authToken, resourceType: ResourceType.policies)
-                        print("Delete button - Yes tapped")
-                    },
-                    secondaryButton: .cancel()
-                )
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-            .shadow(color: .gray, radius: 2, x: 0, y: 2)
-            
-            //              ################################################################################
-            //              DOWNLOAD OPTION
-            //              ################################################################################
-            
-            
-            Button(action: {
-                
-                progress.showProgress()
-                progress.waitForABit()
-                
-                for eachItem in selectedPoliciesInt {
-                    
-                    let currentPolicyID = (eachItem ?? 0)
-                    
-                    //                        print("Download file for \(eachItem.name)")
-                    print("jamfId is \(String(describing: eachItem ?? 0))")
-                    
-                    ASyncFileDownloader.downloadFileAsyncAuth( objectID: currentPolicyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in}
-                }
-                
-            }) {
-                Image(systemName: "plus.square.fill.on.square.fill")
-                Text("Download")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.yellow)
-            .shadow(color: .gray, radius: 2, x: 0, y: 2)
-            
-            VStack {
-                
-                ShareLink(item:generateCSV()) {
-                    Label("Export CSV", systemImage: "list.bullet.rectangle.portrait")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.yellow)
-                .shadow(color: .gray, radius: 2, x: 0, y: 2)
-            }
-        }
+          
+//        }
     }
     
     //  ################################################################################
@@ -714,40 +371,6 @@ func fetchData() {
 }
 
 
-
-func generateCSV() -> URL {
-    
-    let myData: [General] =  networkController.allPoliciesDetailedGeneral
-    
-    
-    var fileURL: URL!
-    // heading of CSV file.
-    let heading = "Name, Category, Status, ID, Trigger\n"
-    
-    // file rows
-    let rows = myData.map { "\(String(describing: $0.name ?? "")),\($0.category!.name),\(String(describing: $0.enabled ?? false )),\($0.jamfId!),\($0.triggerOther!)" }
-    
-    // rows to string data
-    let stringData = heading + rows.joined(separator: "\n")
-    
-    do {
-        
-        let path = try FileManager.default.url(for: .documentDirectory,
-                                               in: .allDomainsMask,
-                                               appropriateFor: nil,
-                                               create: false)
-        
-        fileURL = path.appendingPathComponent("Policy-Data.csv")
-        
-        // append string data to file
-        try stringData.write(to: fileURL, atomically: true , encoding: .utf8)
-        print(fileURL!)
-        
-    } catch {
-        print("error generating csv file")
-    }
-    return fileURL
-}
 
 
 var searchResults: [General] {

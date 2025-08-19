@@ -16,6 +16,8 @@
 		A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */; };
 		A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */; };
 		A813C12B2E54873000735884 /* PolicyDetailScopeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */; };
+		A813C12D2E548C3B00735884 /* PolicyDetailGeneralTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */; };
+		A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */; };
 		A81B58092C4A5E83008C1C25 /* Policies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B58082C4A5E83008C1C25 /* Policies.swift */; };
 		A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */; };
 		A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D0D432D429F8C0074E422 /* PackageTableView.swift */; };
@@ -122,6 +124,8 @@
 		A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyRemoveItemsTabView.swift; sourceTree = "<group>"; };
 		A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailClearItemsTabView.swift; sourceTree = "<group>"; };
 		A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailScopeTabView.swift; sourceTree = "<group>"; };
+		A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailGeneralTabView.swift; sourceTree = "<group>"; };
+		A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailExportTabView.swift; sourceTree = "<group>"; };
 		A81B58082C4A5E83008C1C25 /* Policies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Policies.swift; sourceTree = "<group>"; };
 		A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyScriptsTabView.swift; sourceTree = "<group>"; };
 		A8297EBC2CBFF4C700840E8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -396,7 +400,9 @@
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
 				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */,
+				A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */,
 				A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */,
+				A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */,
 				A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */,
 				A857A4272E2566B300A96F3A /* NotesView.swift */,
 			);
@@ -634,11 +640,13 @@
 				A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */,
 				A8B4EA6C2B04E46F000F059F /* Responses.swift in Sources */,
 				A813C12B2E54873000735884 /* PolicyDetailScopeTabView.swift in Sources */,
+				A813C12D2E548C3B00735884 /* PolicyDetailGeneralTabView.swift in Sources */,
 				E45E13292C53B27F007C175F /* ConnectSheet.swift in Sources */,
 				E45E13272C53B22F007C175F /* ContentView.swift in Sources */,
 				A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */,
 				A840186D2D4BCA6B00C09FD3 /* ImportView.swift in Sources */,
 				A83D00DB2D774FCA0091B794 /* ErrorView.swift in Sources */,
+				A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */,
 				A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */,
 				E493197F2B6429C300B58519 /* PrestageBrain.swift in Sources */,
 				A83898132C6686F3003D3F95 /* Buttons.swift in Sources */,
