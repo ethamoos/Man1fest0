@@ -51,6 +51,11 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 250))
     ]
     
+    let columnsAdaptive = [
+        GridItem(.adaptive(minimum: 250)),
+        GridItem(.adaptive(minimum: 250))
+    ]
+    
     let threeColumnsAdaptive = [
         GridItem(.adaptive(minimum: 250)),
         GridItem(.adaptive(minimum: 250)),
@@ -100,15 +105,19 @@ class Layout: ObservableObject {
         GridItem(.flexible())
     ]
     
+    let columnWide = [
+        GridItem(.fixed(400))
+    ]
+    
     let columnsWide = [
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300))
+        GridItem(.fixed(400)),
+        GridItem(.fixed(400))
     ]
     
     let threeColumnsWide = [
         GridItem(.fixed(400)),
         GridItem(.fixed(400)),
-        GridItem(.adaptive(minimum: 300))
+        GridItem(.fixed(400))
     ]
     
     let fourColumnsWide = [

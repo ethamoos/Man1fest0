@@ -30,7 +30,6 @@ struct PolicyDetailExportTabView: View {
     @State var enableDisable: Bool = true
     @State private var showingWarningClearPackages = false
     @State private var showingWarningClearScripts = false
-    //    @State private var showingWarningDelete = false
     
     //  ####################################################################################
     //    Category SELECTION
@@ -40,17 +39,17 @@ struct PolicyDetailExportTabView: View {
     @State  var selectedCategory: Category = Category(jamfId: 0, name: "")
     
     
+    
     var body: some View {
         
-        VStack {
-            
-            //            Text("General").bold()
+        VStack(alignment: .leading) {
             
             //  ############################################################################
             //  Category
             //  ############################################################################
             
-            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
+            //            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
+            LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                 
                 HStack(spacing: 20) {
                     
@@ -80,17 +79,19 @@ struct PolicyDetailExportTabView: View {
                     .tint(.yellow)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     
-                    VStack {
-                        
-                        ShareLink(item:generateCSV()) {
-                            Label("Export CSV", systemImage: "list.bullet.rectangle.portrait")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.yellow)
-                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    //                    VStack {
+                    
+                    ShareLink(item:generateCSV()) {
+                        Label("Export CSV", systemImage: "list.bullet.rectangle.portrait")
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.yellow)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    //                    }
+                    
                 }
             }
+            Spacer()
         }
     }
     

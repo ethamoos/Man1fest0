@@ -162,34 +162,40 @@ struct PolicyDetailTableView: View {
             }
         }
         
-        VStack(alignment: .leading) {
+//        VStack(alignment: .leading) {
             
 #if os(macOS)
+            
+        VStack(alignment: .leading) {
+            
             TabView {
                 
                 PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                                    .tabItem {
-                                        Label("General", systemImage: "square.and.pencil")
-                                    }
+                    .tabItem {
+                        Label("General", systemImage: "square.and.pencil")
+                    }
                 PolicyDetailClearItemsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                     .tabItem {
                         Label("Clear Items", systemImage: "square.and.pencil")
                     }
                 PolicyDetailScopeTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                                    .tabItem {
-                                        Label("Scope", systemImage: "square.and.pencil")
-                                    }
+                    .tabItem {
+                        Label("Scope", systemImage: "square.and.pencil")
+                    }
                 
                 PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                                    .tabItem {
-                                        Label("Export", systemImage: "square.and.pencil")
-                                    }
+                    .tabItem {
+                        Label("Export", systemImage: "square.and.pencil")
+                    }
             }
-//            PolicyDetailLimitationsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-//                    .tabItem {
-//                        Label("Limitations", systemImage: "square.and.pencil")
-//                    }
-//            }
+        }
+        .background(Color.blue.opacity(0.0))
+        .border(Color.yellow)
+        //            PolicyDetailLimitationsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+        //                    .tabItem {
+        //                        Label("Limitations", systemImage: "square.and.pencil")
+        //                    }
+        //            }
 #endif
             
             
@@ -197,14 +203,14 @@ struct PolicyDetailTableView: View {
 //        Divider()
         Divider()
         
-        VStack(alignment: .leading) {
-            
-            LazyVGrid(columns: layout.columnsAllFlex, spacing: 20) {
-                
-                HStack(spacing:20 ){
-                   
+//        VStack(alignment: .leading) {
+//            
+//            LazyVGrid(columns: layout.columnsAllFlex, spacing: 20) {
+//                
+//                HStack(spacing:20 ){
                     
-                   
+                    
+                    
                     
                     //                        Button(action: {
                     //                            showingWarningClearPackages = true
@@ -229,15 +235,17 @@ struct PolicyDetailTableView: View {
                     //                                secondaryButton: .cancel()
                     //                            )
                     //                        }
-                }
-            }
-        }
+//                }
+//            }
+//        }
+//        .border(Color.green)
+
         
       
         
           
 //        }
-    }
+//    }
     
     //  ################################################################################
     //  END

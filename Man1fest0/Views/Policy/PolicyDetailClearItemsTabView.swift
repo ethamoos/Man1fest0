@@ -31,17 +31,18 @@ struct PolicyDetailClearItemsTabView: View {
     var body: some View {
         
         
-        
         VStack(alignment: .leading) {
             
-            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
+//            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
+//            LazyVGrid(columns: layout.fourColumnsAdaptive, spacing: 20) {
+            LazyVGrid(columns: layout.columnsAdaptive, spacing: 20) {
+                
                 HStack {
                     
                     //  ################################################################################
                     //              DELETE
                     //  ################################################################################
                     
-                    //                Divider()
                     Button(action: {
                         showingWarningDelete = true
                         progress.showProgressView = true
@@ -51,7 +52,7 @@ struct PolicyDetailClearItemsTabView: View {
                         print("Check processingComplete")
                         print(String(describing: networkController.processingComplete))
                     }) {
-                        Text("Delete")
+                        Text("Delete Policies")
                     }
                     .alert(isPresented: $showingWarningDelete) {
                         Alert(
@@ -95,8 +96,13 @@ struct PolicyDetailClearItemsTabView: View {
                             secondaryButton: .cancel()
                         )
                     }
+                }
+            }
+            
+            LazyVGrid(columns: layout.columnsAdaptive, spacing: 20) {
                     
-                    
+                    HStack {
+
                     Button(action: {
                         showingWarningClearScripts = true
                         progress.showProgress()
@@ -124,20 +130,20 @@ struct PolicyDetailClearItemsTabView: View {
                         )
                     }
                     
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        //            xmlController.removeMaintenanceBatch(selectedPoliciesInt: selectedPoliciesInt, server: server, authToken: networkController.authToken)
-                        
-                    }) {
-                        HStack(spacing: 10) {
-                            Text("Update")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+//                    Button(action: {
+//                        
+//                        progress.showProgress()
+//                        progress.waitForABit()
+//                        
+//                        //            xmlController.removeMaintenanceBatch(selectedPoliciesInt: selectedPoliciesInt, server: server, authToken: networkController.authToken)
+//                        
+//                    }) {
+//                        HStack(spacing: 10) {
+//                            Text("Update")
+//                        }
+//                    }
+//                    .buttonStyle(.borderedProminent)
+//                    .tint(.blue)
                     
                     
                     Button(action: {
@@ -155,8 +161,8 @@ struct PolicyDetailClearItemsTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                 }
-                Spacer()
             }
+            Spacer()
         }
     }
 }

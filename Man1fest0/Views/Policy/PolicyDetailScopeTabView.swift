@@ -73,14 +73,11 @@ struct PolicyDetailScopeTabView: View {
     
     var body: some View {
         
-        VStack {
-            
-            //            Text("Scope").bold()
-            
-            
-            LazyVGrid(columns: layout.threeColumns, spacing: 20) {
+        VStack(alignment: .leading) {
+
+            LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                 
-//                HStack(spacing:20 ){
+                HStack(spacing:20 ){
                     
                     //  ################################################################################
                     //  Limitations
@@ -102,68 +99,74 @@ struct PolicyDetailScopeTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                }
+            }
+                
+            LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                     
                     //  ################################################################################
                     //  Clear Limitations
                     //  ################################################################################
                     
-                    Button(action: {
-                        showingWarningClearLimit = true
-                        progress.showProgress()
-                        progress.waitForABit()
-                        print("Pressing clear limitations")
-                        for eachItem in selectedPoliciesInt {
-                            print("Updating for \(String(describing: eachItem ?? 0))")
-                            let currentPolicyID = (eachItem ?? 0)
-                            
-                            Task {
-                                do {
-                                    let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
-                                    
-                                    xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
-                                } catch {
-                                    print("Fetching detailed policy as xml failed: \(error)")
+                    HStack(spacing:20 ){
+                        
+                        Button(action: {
+                            showingWarningClearLimit = true
+                            progress.showProgress()
+                            progress.waitForABit()
+                            print("Pressing clear limitations")
+                            for eachItem in selectedPoliciesInt {
+                                print("Updating for \(String(describing: eachItem ?? 0))")
+                                let currentPolicyID = (eachItem ?? 0)
+                                
+                                Task {
+                                    do {
+                                        let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+                                        
+                                        xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
+                                    } catch {
+                                        print("Fetching detailed policy as xml failed: \(error)")
+                                    }
                                 }
                             }
+                        }) {
+                            Text("Clear Limitations")
                         }
-                    }) {
-                        Text("Clear Limitations")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .alert(isPresented: $showingWarningClearScope) {
-                        Alert(title: Text("Caution!"), message: Text("This action will clear any limitations from the policy scoping.\n You will need to re-add these if you still require them"), dismissButton: .default(Text("I understand!")))
-                    }
-//                }
-                //              ################################################################################
-                //              Clear Scope
-                //              ################################################################################
-                
-                
-                Button(action: {
-                    showingWarningClearScope = true
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    for eachItem in selectedPoliciesInt {
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .alert(isPresented: $showingWarningClearScope) {
+                            Alert(title: Text("Caution!"), message: Text("This action will clear any limitations from the policy scoping.\n You will need to re-add these if you still require them"), dismissButton: .default(Text("I understand!")))
+                        }
                         
-                        let currentPolicyID = (String(describing: eachItem ?? 0))
-                        networkController.clearScope(server: server,resourceType:  ResourceType.policies, policyID: currentPolicyID, authToken: networkController.authToken)
-                        print("Clear Scope for policy:\(eachItem ?? 0)")
-                    }
-                    
-                }) {
-                    HStack(spacing: 10) {
-                        Text("Clear Scope")
+                        //  ################################################################################
+                        //              Clear Scope
+                        //  ################################################################################
+                        
+                        Button(action: {
+                            showingWarningClearScope = true
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+                            for eachItem in selectedPoliciesInt {
+                                
+                                let currentPolicyID = (String(describing: eachItem ?? 0))
+                                networkController.clearScope(server: server,resourceType:  ResourceType.policies, policyID: currentPolicyID, authToken: networkController.authToken)
+                                print("Clear Scope for policy:\(eachItem ?? 0)")
+                            }
+                        }) {
+                            HStack(spacing: 10) {
+                                Text("Clear Scope")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .alert(isPresented: $showingWarningClearScope) {
+                            Alert(title: Text("Caution!"), message: Text("This action will clear devices from the policy scoping.\n You will need to rescope in order to deploy"), dismissButton: .default(Text("I understand!")))
+                        }
+                        .padding()
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .alert(isPresented: $showingWarningClearScope) {
-                    Alert(title: Text("Caution!"), message: Text("This action will clear devices from the policy scoping.\n You will need to rescope in order to deploy"), dismissButton: .default(Text("I understand!")))
-                }
-//            }
-        }
+//        }
             
             
             
@@ -294,6 +297,7 @@ struct PolicyDetailScopeTabView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
             }
+            Spacer()
         }
     }
 }

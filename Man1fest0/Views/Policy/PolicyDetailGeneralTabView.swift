@@ -39,16 +39,16 @@ struct PolicyDetailGeneralTabView: View {
     @State var categories: [Category] = []
     @State  var selectedCategory: Category = Category(jamfId: 0, name: "")
     
-    
     var body: some View {
-        
 
             //  ############################################################################
             //  Category - update
             //  ############################################################################
         VStack(alignment: .leading) {
 
-            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
+//            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
+            LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
+
                 HStack {
                     Picker(selection: $selectedCategory, label: Text("Category:")) {
                         Text("").tag("") //basically added empty tag and it solve the case
@@ -72,13 +72,15 @@ struct PolicyDetailGeneralTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                 }
+//                .background(Color.green.opacity(0.5))
+//                    .border(Color.yellow)
             }
             
             // ####################################################################
             //              Update Category Enable
             //  ####################################################################
             
-            LazyVGrid(columns: layout.threeColumnsFlexMedium, spacing: 20) {
+            LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
 
                 HStack {
                     Button(action: {
@@ -111,6 +113,8 @@ struct PolicyDetailGeneralTabView: View {
             }
                 Spacer()
         }
+//        .background(Color.purple.opacity(0.5))
+//            .border(Color.orange)
         //    }
         
         //  ################################################################################

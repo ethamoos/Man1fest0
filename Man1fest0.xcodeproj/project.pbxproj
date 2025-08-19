@@ -402,8 +402,8 @@
 				A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */,
 				A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */,
 				A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */,
-				A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */,
 				A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */,
+				A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */,
 				A857A4272E2566B300A96F3A /* NotesView.swift */,
 			);
 			path = Policy;
