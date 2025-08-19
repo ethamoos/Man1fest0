@@ -147,7 +147,7 @@ struct PolicyView: View {
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
         }
-        .frame(minWidth: 100, minHeight: 100, alignment: .center)
+//        .frame(minWidth: 100, minHeight: 100, alignment: .center)
     }
     
 

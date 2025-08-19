@@ -25,7 +25,8 @@ struct PolicyDetailClearItemsTabView: View {
     @State private var showingWarningClearPackages = false
     @State private var showingWarningClearScripts = false
     @State private var showingWarningDelete = false
-
+    @State private var showingWarningClearScope = false
+    @State private var showingWarningClearLimit = false
     
     
     var body: some View {
@@ -33,15 +34,94 @@ struct PolicyDetailClearItemsTabView: View {
         
         VStack(alignment: .leading) {
             
-//            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
-//            LazyVGrid(columns: layout.fourColumnsAdaptive, spacing: 20) {
-            LazyVGrid(columns: layout.columnsAdaptive, spacing: 20) {
+            //  ################################################################################
+            //  Clear Limitations
+            //  ################################################################################
+            
+            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack(spacing:20 ){
+                    
+                    Text("Clear Limitations")
+                    
+                    Button(action: {
+                        showingWarningClearLimit = true
+                        progress.showProgress()
+                        progress.waitForABit()
+                        print("Pressing clear limitations")
+                        for eachItem in selectedPoliciesInt {
+                            print("Updating for \(String(describing: eachItem ?? 0))")
+                            let currentPolicyID = (eachItem ?? 0)
+                            
+                            Task {
+                                do {
+                                    let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+                                    
+                                    xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
+                                } catch {
+                                    print("Fetching detailed policy as xml failed: \(error)")
+                                }
+                            }
+                        }
+                    }) {
+                        Text("Clear")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .alert(isPresented: $showingWarningClearScope) {
+                        Alert(title: Text("Caution!"), message: Text("This action will clear any limitations from the policy scoping.\n You will need to re-add these if you still require them"), dismissButton: .default(Text("I understand!")))
+                    }
+                }
+            }
+            //        }
+            
+            //  ################################################################################
+            //              Clear Scope
+            //  ################################################################################
+            
+            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
                 
                 HStack {
                     
-                    //  ################################################################################
-                    //              DELETE
-                    //  ################################################################################
+                    Text("Clear Scope")
+                    
+                    Button(action: {
+                        showingWarningClearScope = true
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        for eachItem in selectedPoliciesInt {
+                            
+                            let currentPolicyID = (String(describing: eachItem ?? 0))
+                            networkController.clearScope(server: server,resourceType:  ResourceType.policies, policyID: currentPolicyID, authToken: networkController.authToken)
+                            print("Clear Scope for policy:\(eachItem ?? 0)")
+                        }
+                    }) {
+                        HStack(spacing: 10) {
+                            Text("Clear Scope")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .alert(isPresented: $showingWarningClearScope) {
+                        Alert(title: Text("Caution!"), message: Text("This action will clear devices from the policy scoping.\n You will need to rescope in order to deploy"), dismissButton: .default(Text("I understand!")))
+                    }
+                }
+            }
+            //        }
+            //}
+            
+            
+            
+            //  ################################################################################
+            //              DELETE
+            //  ################################################################################
+            
+            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack {
+                    
+                    Text("Delete Policies")
                     
                     Button(action: {
                         showingWarningDelete = true
@@ -52,7 +132,7 @@ struct PolicyDetailClearItemsTabView: View {
                         print("Check processingComplete")
                         print(String(describing: networkController.processingComplete))
                     }) {
-                        Text("Delete Policies")
+                        Text("Delete")
                     }
                     .alert(isPresented: $showingWarningDelete) {
                         Alert(
@@ -68,6 +148,18 @@ struct PolicyDetailClearItemsTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                }
+            }
+            
+            //  ################################################################################
+            //  CLEAR PACKAGES
+            //  ################################################################################
+            
+            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack {
+                    
+                    Text("Clear Packages")
                     
                     Button(action: {
                         showingWarningClearPackages = true
@@ -75,7 +167,7 @@ struct PolicyDetailClearItemsTabView: View {
                         progress.waitForABit()
                     }) {
                         HStack(spacing: 10) {
-                            Text("Clear Packages")
+                            Text("Clear")
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -86,7 +178,6 @@ struct PolicyDetailClearItemsTabView: View {
                             message: Text("This action will clear packages from the polices selected.\n"),             primaryButton: .destructive(Text("I understand!")) {
                                 // Code to execute when "Yes" is tapped
                                 for eachItem in selectedPoliciesInt {
-                                    
                                     let currentPolicyID = (String(describing: eachItem ?? 0))
                                     xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: currentPolicyID)
                                     print("Clearing Packages for policy:\(eachItem ?? 0)")
@@ -99,17 +190,23 @@ struct PolicyDetailClearItemsTabView: View {
                 }
             }
             
-            LazyVGrid(columns: layout.columnsAdaptive, spacing: 20) {
+            //  ################################################################################
+            //  CLEAR SCRIPTS
+            //  ################################################################################
+            
+            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack {
                     
-                    HStack {
-
+                    Text("Clear Scripts")
+                    
                     Button(action: {
                         showingWarningClearScripts = true
                         progress.showProgress()
                         progress.waitForABit()
                     }) {
                         HStack(spacing: 10) {
-                            Text("Clear Scripts")
+                            Text("Clear")
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -129,22 +226,34 @@ struct PolicyDetailClearItemsTabView: View {
                             secondaryButton: .cancel()
                         )
                     }
+                }
+            }
+            
+            //                    Button(action: {
+            //
+            //                        progress.showProgress()
+            //                        progress.waitForABit()
+            //
+            //                        //            xmlController.removeMaintenanceBatch(selectedPoliciesInt: selectedPoliciesInt, server: server, authToken: networkController.authToken)
+            //
+            //                    }) {
+            //                        HStack(spacing: 10) {
+            //                            Text("Update")
+            //                        }
+            //                    }
+            //                    .buttonStyle(.borderedProminent)
+            //                    .tint(.blue)
+            
+            //                }
+            //  ################################################################################
+            //  CLEAR MAINTENANCE
+            //  ################################################################################
+            
+            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack(spacing: 10) {
                     
-//                    Button(action: {
-//                        
-//                        progress.showProgress()
-//                        progress.waitForABit()
-//                        
-//                        //            xmlController.removeMaintenanceBatch(selectedPoliciesInt: selectedPoliciesInt, server: server, authToken: networkController.authToken)
-//                        
-//                    }) {
-//                        HStack(spacing: 10) {
-//                            Text("Update")
-//                        }
-//                    }
-//                    .buttonStyle(.borderedProminent)
-//                    .tint(.blue)
-                    
+                    Text("Clear Maintenance")
                     
                     Button(action: {
                         
@@ -155,14 +264,18 @@ struct PolicyDetailClearItemsTabView: View {
                         
                     }) {
                         HStack(spacing: 10) {
-                            Text("Clear Maintenance")
+                            Text("Clear")
                         }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                 }
+                
             }
             Spacer()
+
         }
+        .frame(alignment: .leading)
     }
 }
+//}
