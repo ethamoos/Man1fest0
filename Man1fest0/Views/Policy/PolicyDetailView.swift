@@ -48,17 +48,7 @@ struct PolicyDetailView: View {
     
     @State var computerGroupFilter = ""
     
-    //  ########################################################################################
-    //  LDAP
-    //  ########################################################################################
-    
-    @State var ldapUserGroupName = ""
-    
-    @State var ldapUserGroupId = ""
-    
-    @State var ldapUserGroupName2 = ""
-    
-    @State var ldapUserGroupId2 = ""
+   
     
     //  ########################################################################################
     //  Packages

@@ -14,6 +14,8 @@
 		A813124429D4B50800BB1C9F /* PackagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124329D4B50800BB1C9F /* PackagesView.swift */; };
 		A813124629D4B52800BB1C9F /* PackagesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124529D4B52800BB1C9F /* PackagesDetailView.swift */; };
 		A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */; };
+		A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */; };
+		A813C12B2E54873000735884 /* PolicyDetailScopeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */; };
 		A81B58092C4A5E83008C1C25 /* Policies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B58082C4A5E83008C1C25 /* Policies.swift */; };
 		A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */; };
 		A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D0D432D429F8C0074E422 /* PackageTableView.swift */; };
@@ -118,6 +120,8 @@
 		A813124329D4B50800BB1C9F /* PackagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesView.swift; sourceTree = "<group>"; };
 		A813124529D4B52800BB1C9F /* PackagesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesDetailView.swift; sourceTree = "<group>"; };
 		A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyRemoveItemsTabView.swift; sourceTree = "<group>"; };
+		A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailClearItemsTabView.swift; sourceTree = "<group>"; };
+		A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailScopeTabView.swift; sourceTree = "<group>"; };
 		A81B58082C4A5E83008C1C25 /* Policies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Policies.swift; sourceTree = "<group>"; };
 		A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyScriptsTabView.swift; sourceTree = "<group>"; };
 		A8297EBC2CBFF4C700840E8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -392,6 +396,8 @@
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
 				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */,
+				A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */,
+				A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */,
 				A857A4272E2566B300A96F3A /* NotesView.swift */,
 			);
 			path = Policy;
@@ -600,6 +606,7 @@
 				A8B4EA6E2B04E473000F059F /* ResourceTypeEnums.swift in Sources */,
 				A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */,
 				A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */,
+				A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */,
 				A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */,
 				A8ECF6512C6D275F0082BE21 /* Ldap.swift in Sources */,
 				E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */,
@@ -626,6 +633,7 @@
 				E433D9DE2B58488C005727E1 /* TestOptionsView.swift in Sources */,
 				A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */,
 				A8B4EA6C2B04E46F000F059F /* Responses.swift in Sources */,
+				A813C12B2E54873000735884 /* PolicyDetailScopeTabView.swift in Sources */,
 				E45E13292C53B27F007C175F /* ConnectSheet.swift in Sources */,
 				E45E13272C53B22F007C175F /* ContentView.swift in Sources */,
 				A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */,

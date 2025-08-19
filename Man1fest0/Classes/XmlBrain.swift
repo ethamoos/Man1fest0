@@ -1369,6 +1369,73 @@ class XmlBrain: ObservableObject {
     }
     
     
+   // ######################################################################################
+   // removeMaintenanceManual
+   // ######################################################################################
+   
+   func removeMaintenanceManual(server: String, authToken: String, policyID: String ) {
+       //  Alternative method for removing all packages
+       var xml:String
+       self.separationLine()
+       print("DEBUGGING")
+       self.separationLine()
+       print("Running removeAllremoveMaintenanceManualScriptsManual for policy ID:\(policyID)")
+       print("Url is set as:\(server)")
+       
+       xml = """
+   <?xml version="1.0" encoding="utf-8"?>
+   <policy>
+     <maintenance>
+         <recon>false</recon>
+         <reset_name>false</reset_name>
+         <install_all_cached_packages>false</install_all_cached_packages>
+         <heal>false</heal>
+         <prebindings>false</prebindings>
+         <permissions>false</permissions>
+         <byhost>false</byhost>
+         <system_cache>false</system_cache>
+         <user_cache>false</user_cache>
+         <verify>false</verify>
+     </maintenance>
+   </policy>
+   """
+       
+       if URL(string: server) != nil {
+           if let serverURL = URL(string: server) {
+               let url = serverURL.appendingPathComponent("/JSSResource/policies/id/").appendingPathComponent(policyID)
+               print("Running removeAllPackagesManual sendRequestAsXML - url is set as:\(url)")
+               sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+               print("Set updateXML to true ")
+               self.updateXML = true
+           }
+       }
+   }
+    //  ################################################################################
+    //              Clear - Batch Versions
+    //  ################################################################################
+    
+    
+    func removeMaintenanceBatch(selectedPoliciesInt: [Int?], server: String, authToken: String) {
+            
+            separationLine()
+            print("Running: removeMaintenanceBatch")
+            print("Set processingComplete to false")
+            self.processingComplete = true
+            print(String(describing: self.processingComplete))
+            print("selection is:\(selectedPoliciesInt)")
+                
+                for policyID in selectedPoliciesInt {
+                    separationLine()
+                    print("policyID is:\(String(describing: policyID))")
+                    print("Current policyID is:\(String(describing: policyID))")
+                    xmlController.removeMaintenanceManual(server: server, authToken: authToken, policyID: String(describing: policyID))
+            }
+            separationLine()
+            print("Finished - Set processingComplete to true")
+            self.processingComplete = true
+            print(String(describing: self.processingComplete))
+        }
+    
     func clearScope() {
         self.separationLine()
         print("Removing scope")
@@ -1487,7 +1554,6 @@ class XmlBrain: ObservableObject {
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
             //            let xmldata = xml.data(using: .utf8)
-            
             
             let packageCount = selection.count
             self.separationLine()
