@@ -165,29 +165,11 @@ struct PolicyRemoveItemsTabView: View {
                     .tint(.blue)
                     .help("This refreshes the data for the latest selected policy")
                 }
-//                    .padding()
-                Spacer()
-
+//                Spacer()
             }
             .padding()
-//                .onAppear() {
-//                    
-//                    fetchData()
-//                }
+            Spacer()
         }
-    }
-    
-    
-    func fetchData() {
-        
-        //        if  networkController.packages.count <= 1 {
-        //            print("No package data - fetching")
-        //            print("Count is:\(networkController.packages.count))")
-        ////            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-        //        } else {
-        //            print("package data is available")
-        //            print("Count is:\(networkController.packages.count)")
-        //        }
     }
 }
 //#Preview {

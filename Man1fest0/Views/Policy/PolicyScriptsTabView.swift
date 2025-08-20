@@ -340,8 +340,9 @@ struct PolicyScriptsTabView: View {
                             TextField("Before/After?", text: $priority)
                         }
                     }
-                }
+                }   
             }
+            Spacer()
         }
         .frame(minWidth: 400, alignment: .leading)
         .padding()
