@@ -10,6 +10,7 @@ import SwiftUI
 struct GroupDetailView: View {
     
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var xmlController: XmlBrain
     
 //    @State var selection: ComputerGroup
     @State var group: ComputerGroup
@@ -61,7 +62,7 @@ struct GroupDetailView: View {
             print(error)
         }
         
-        networkController.getGroupMembersXML    (server: server, groupId: selection.id)
+        xmlController.getGroupMembersXML    (server: server, groupId: selection.id)
         
     }
 }

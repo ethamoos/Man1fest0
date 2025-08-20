@@ -33,6 +33,8 @@ struct PolicyView: View {
     
     @EnvironmentObject var networkController: NetBrain
     
+    @EnvironmentObject var xmlController: XmlBrain
+    
     @EnvironmentObject var scopingController: ScopingBrain
     
     //    ########################################################################################
@@ -75,7 +77,7 @@ struct PolicyView: View {
                         .toolbar {
                             Button(action: {
                                 networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
-                                networkController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
+                                xmlController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
                                 print("Refresh policyView - get all policies")
                                 networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
                                 progress.showProgress()
@@ -87,7 +89,7 @@ struct PolicyView: View {
                                     print("Refreshing all policies")
                                     networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
                                     print("Refresh getPolicyAsXML")
-                                        networkController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
+                                        xmlController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
                                 }
                             }) {
                                 HStack(spacing: 10) {
@@ -145,7 +147,7 @@ struct PolicyView: View {
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
         }
-        .frame(minWidth: 100, minHeight: 100, alignment: .center)
+//        .frame(minWidth: 100, minHeight: 100, alignment: .center)
     }
     
 

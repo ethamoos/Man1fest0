@@ -134,10 +134,10 @@ struct PoliciesActionView: View {
                         }
                     }
                     
-                    if networkController.currentPolicyAsXML.isEmpty {
-                        print("No value for: networkController.currentPolicyAsXML")
+                    if xmlController.currentPolicyAsXML.isEmpty {
+                        print("No value for: xmlController.currentPolicyAsXML")
                     } else {
-                        print("currentPolicyAsXML is populated")
+                        print("xmlController.currentPolicyAsXML is populated")
                     }
                 }
                 .toolbar {
@@ -479,7 +479,7 @@ struct PoliciesActionView: View {
                                 
                                 Task {
                                     do {
-                                        let policyAsXML = try await networkController.getPolicyAsXMLaSync(server: server, policyID: Int(currentPolicyID), authToken: networkController.authToken)
+                                        let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(currentPolicyID), authToken: networkController.authToken)
                                         
                                         xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
                                     }
@@ -617,7 +617,7 @@ struct PoliciesActionView: View {
             print("Current policyName is:\(String(describing: policyName))")
             print("Run:getPolicyAsXML")
             
-            networkController.getPolicyAsXML(server: server, policyID: policyID ?? 0, authToken: networkController.authToken)
+            xmlController.getPolicyAsXML(server: server, policyID: policyID ?? 0, authToken: networkController.authToken)
         }
     }
     
@@ -643,13 +643,13 @@ struct PoliciesActionView: View {
 //            Get policy as xml data
 //    #################################################################################
             do {
-                let currentPolicy = try await networkController.getPolicyAsXMLaSync(server: server, policyID: eachPolicyId, authToken: authToken)
+                let currentPolicy = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: eachPolicyId, authToken: authToken)
 //    #################################################################################
 //            Read data back
 //    #################################################################################
                 layout.separationLine()
                 print("Reading current policy and storing in: networkController.aexmlDoc")
-                networkController.readXMLDataFromString(xmlContent: currentPolicy)
+                xmlController.readXMLDataFromString(xmlContent: currentPolicy)
                 layout.separationLine()
                 print("Remove old scope for all_computers")
                 let scope = networkController.aexmlDoc.root["scope"]
@@ -694,13 +694,13 @@ struct PoliciesActionView: View {
 
         Task {
             do {
-                let policyAsXML = try await networkController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: authToken)
+                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: authToken)
                 layout.separationLine()
                 print("policyAsXML is:\(policyAsXML)")
                 print("policyID is:\(policyID)")
                 print("Xml data is present - reading and adding to:self.readXMLDataFromStringScopingBrain ")
 //                print("policyAsXML is:\(policyAsXML)")
-                networkController.readXMLDataFromString(xmlContent: policyAsXML)
+                xmlController.readXMLDataFromString(xmlContent: policyAsXML)
                 print("Adding limit_to_users")
                 let currentLdapGroups = networkController.aexmlDoc.root["scope"]["limit_to_users"]["user_groups"]
                 currentLdapGroups.addChild(name: "user_group", value: ldapUserGroupName)

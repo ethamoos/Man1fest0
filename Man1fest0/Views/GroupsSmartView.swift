@@ -16,6 +16,7 @@ struct GroupsSmartView: View {
     
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var xmlController: XmlBrain
     
     
     
@@ -187,7 +188,7 @@ struct GroupsSmartView: View {
             print("Error getting GroupMembers")
             print(error)
         }
-        networkController.getGroupMembersXML(server: server, groupId: selection.id)
+        xmlController.getGroupMembersXML(server: server, groupId: selection.id)
     }
     
     var searchResults: [ComputerGroup] {

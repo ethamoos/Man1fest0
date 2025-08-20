@@ -216,7 +216,7 @@
 //                            policyNameInitial = networkController.currentDetailedPolicy?.policy.general?.name ?? ""
 //                            let newPolicyName = "\(policyNameInitial)1"
 //                            print("No name provided - policy is:\(newPolicyName)")
-//                            policyController.clonePolicy(xmlContent: networkController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+//                            policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
 //                        } else {
 //                            print("Policy name is set as:\(policyName)")
 //                        }
@@ -484,7 +484,7 @@
 //                networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
 //            }
 //
-//            networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+//            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
 //  
 //            networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
 //            
@@ -528,7 +528,7 @@
 //        }
 //        
 ////        if networkController.updateXML == true {
-////            networkController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+////            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
 ////        }
 //        
 //    }

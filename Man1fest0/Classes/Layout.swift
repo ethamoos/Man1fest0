@@ -51,6 +51,11 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 250))
     ]
     
+    let columnsAdaptive = [
+        GridItem(.adaptive(minimum: 250)),
+        GridItem(.adaptive(minimum: 250))
+    ]
+    
     let threeColumnsAdaptive = [
         GridItem(.adaptive(minimum: 250)),
         GridItem(.adaptive(minimum: 250)),
@@ -62,6 +67,14 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 250)),
         GridItem(.adaptive(minimum: 250))
     ]
+   
+    let fiveColumnsAdaptive = [
+        GridItem(.adaptive(minimum: 250)),
+        GridItem(.adaptive(minimum: 250)),
+        GridItem(.adaptive(minimum: 250)),
+        GridItem(.adaptive(minimum: 250)),
+        GridItem(.adaptive(minimum: 250)),
+    ]
     
     let fiveColumnsAdaptiveWide = [
         GridItem(.adaptive(minimum: 300)),
@@ -71,12 +84,33 @@ class Layout: ObservableObject {
         GridItem(.adaptive(minimum: 300))
     ]
     
-    let fiveColumnsAdaptive = [
-        GridItem(.adaptive(minimum: 250)),
-        GridItem(.adaptive(minimum: 250)),
-        GridItem(.adaptive(minimum: 250)),
-        GridItem(.adaptive(minimum: 250)),
-        GridItem(.adaptive(minimum: 250)),
+    let columnFlexNarrow = [
+        GridItem(.adaptive(minimum: 100))
+    ]
+      
+    let columnsFlexNarrow = [
+        GridItem(.adaptive(minimum: 100))
+    ]
+    let threeColumnsFlexNarrow = [
+        GridItem(.flexible(minimum: 20)),
+        GridItem(.flexible(minimum: 100)),
+        GridItem(.flexible(minimum: 100))
+    ]
+    
+      let fourColumnsFlexNarrow = [
+        GridItem(.flexible(minimum: 20)),
+        GridItem(.flexible(minimum: 100)),
+        GridItem(.flexible(minimum: 100)),
+        GridItem(.flexible(minimum: 100))
+    ]
+    
+    let columnFlex = [
+        GridItem(.flexible(minimum: 250))
+    ]
+    
+    let columnsFlex = [
+        GridItem(.flexible(minimum: 250)),
+        GridItem(.flexible(minimum: 250))
     ]
     
     let threeColumnsFlex = [
@@ -93,78 +127,11 @@ class Layout: ObservableObject {
     ]
     
     let fiveColumnsFlex = [
-        GridItem(.fixed(200)),
+        GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible())
-    ]
-    
-    let columnsWide = [
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300))
-    ]
-    
-    let threeColumnsWide = [
-        GridItem(.fixed(400)),
-        GridItem(.fixed(400)),
-        GridItem(.adaptive(minimum: 300))
-    ]
-    
-    let fourColumnsWide = [
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300))
-    ]
-    
-    let fiveColumnsWide = [
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300)),
-        GridItem(.adaptive(minimum: 300))
-    ]
-    
-    let columnFlex = [
-        GridItem(.flexible(minimum: 250))
-    ]
-    
-    let columnFlexNarrow = [
-        GridItem(.adaptive(minimum: 100))
-    ]
-      
-    let columnsFlexNarrow = [
-        GridItem(.adaptive(minimum: 100))
-    ]     
-    let threeColumnsFlexNarrow = [
-        GridItem(.flexible(minimum: 20)),
-        GridItem(.flexible(minimum: 100)),
-        GridItem(.flexible(minimum: 100))
-    ]
-      let fourColumnsFlexNarrow = [
-        GridItem(.flexible(minimum: 20)),
-        GridItem(.flexible(minimum: 100)),
-        GridItem(.flexible(minimum: 100)),
-        GridItem(.flexible(minimum: 100))
-    ]
-    
-    let columnFlexMedium = [
-        GridItem(.adaptive(minimum: 150))
-    ]
-    
-    let columnFlexWide = [
-        GridItem(.adaptive(minimum: 400))
-    ]
-    
-    let columnsFixed = [
-        GridItem(.fixed(200)),
-        GridItem(.fixed(200))
-    ]
-    
-    let columnsFlex = [
-        GridItem(.adaptive(minimum: 250)),
-        GridItem(.adaptive(minimum: 250))
     ]
     
     let columnsFlexWide = [
@@ -196,6 +163,52 @@ class Layout: ObservableObject {
     let columnsFlexAdaptiveMedium = [
         GridItem(.adaptive(minimum: 150)),
         GridItem(.adaptive(minimum: 150))
+    ]
+    
+    let columnFlexMedium = [
+        GridItem(.adaptive(minimum: 150))
+    ]
+    
+    let columnFlexWide = [
+        GridItem(.adaptive(minimum: 400))
+    ]
+    
+    let columnWide = [
+        GridItem(.fixed(400))
+    ]
+    
+    let columnsWide = [
+        GridItem(.fixed(400)),
+        GridItem(.fixed(400))
+    ]
+    
+    let threeColumnsWide = [
+        GridItem(.fixed(400)),
+        GridItem(.fixed(400)),
+        GridItem(.fixed(400))
+    ]
+    
+    let fourColumnsWide = [
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300))
+    ]
+    
+    let fiveColumnsWide = [
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300)),
+        GridItem(.adaptive(minimum: 300))
+    ]
+    
+    let columnFixed = [
+        GridItem(.fixed(200))
+    ]  
+    let columnsFixed = [
+        GridItem(.fixed(200)),
+        GridItem(.fixed(200))
     ]
     
     

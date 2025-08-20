@@ -498,7 +498,7 @@ struct CreatePolicyView: View {
                 
 //            VStack(alignment: .leading) {
 //                
-//                LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+//                LazyVGrid(columns: layout.columnsAdaptive, spacing: 20) {
 //                    
 //                    HStack {
 //                        Image(systemName:"hammer")

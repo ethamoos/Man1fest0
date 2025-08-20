@@ -145,7 +145,7 @@ import AEXML
     
     @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
     @Published var computerGroupMembersXML: String = ""
-    @Published var currentPolicyAsXML: String = ""
+//    @Published var currentPolicyAsXML: String = ""
     @Published var updateXML: Bool = false
     
     //    #################################################################################
@@ -1528,25 +1528,7 @@ import AEXML
     }
     
     
-    func updateIconBatch(selectedPoliciesInt: [Int?], server: String,authToken: String, iconFilename: String, iconID: String, iconURI: String) {
-        
-        
-        
-        for eachItem in selectedPoliciesInt {
-            
-            let currentPolicyID = (eachItem ?? 0)
-            self.separationLine()
-            print("currentPolicyID is: \(String(describing: currentPolicyID))")
-            
-            
-            Task {
-                do {
-                    let policyAsXML = try await getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: authToken)
-                    updateIcon(server: server, authToken: authToken, policyID: String(describing: currentPolicyID), iconFilename: iconFilename, iconID: iconID, iconURI: iconURI)
-                }
-            }
-        }
-    }
+    
     
     func getBuildings(server: String, authToken: String) async throws {
         let jamfURLQuery = server + "/JSSResource/buildings"
@@ -2411,63 +2393,6 @@ import AEXML
         }
     }
     
-     //    #################################################################################
-    //    updateIcon
-    //    #################################################################################
-    
-    
-    func updateIcon(server: String,authToken: String, policyID: String, iconFilename: String, iconID: String, iconURI: String) {
-        let resourceType: ResourceType = ResourceType.policyDetail
-        let resourcePath = getURLFormat(data: (resourceType))
-        let policyID = policyID
-        var xml: String
-        self.separationLine()
-        print("updateName XML")
-//        print("policyName is set as:\(policyName)")
-//        <name>\(policyName)</name>
-        
-        xml = """
-                <?xml version="1.0" encoding="utf-8"?>
-                    <policy>
-                        <general>
-                            <id>\(policyID)</id>
-                        </general>
-                        <self_service>
-                            <self_service_icon>
-                                <id>\(iconID)</id>
-                                <filename>\(iconFilename)</filename>
-                                <uri>\(iconURI)</uri>
-                            </self_service_icon>
-                        </self_service>
-                    </policy>
-                """
-                
-//        #################################################################################
-//        <use_for_self_service>false</use_for_self_service>
-//        <self_service_display_name/>
-//        <install_button_text>Install</install_button_text>
-//        <reinstall_button_text>Reinstall</reinstall_button_text>
-//        <self_service_description/>
-//        <force_users_to_view_description>false</force_users_to_view_description>
-//        #################################################################################
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("Running update policy name function - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                //                // print("xml is set as:\(xml)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-                print("Set updateXML to true ")
-                self.updateXML = true
-            }
-        }
-        else {
-            print("Nothing to do")
-        }
-    }
-    
     
     //    #################################################################################
     //    updateName -editName - rename
@@ -3049,230 +2974,96 @@ import AEXML
     
     
     
-    //    ##################################################
-    //    addComputerToGroup
-    //    ##################################################
-    
-    
-    
-    func addComputerToGroup(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String, authToken: String) {
-        readXMLDataFromString(xmlContent: xmlContent)
-        
-        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
-        self.separationLine()
-        print("Running addComputerToGroup")
-        print("xmlContent is:\(xmlContent)")
-        print("url is:\(url)")
-        print("computerName is:\(computerId)")
-        print("computerId is:\(computerId)")
-        
-        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
-        computers.addChild(name: "id", value: computerId)
-        computers.addChild(name: "name", value: computerName)
-        print("updatedContent is:\(self.aexmlDoc.root.xml)")
-        let jamfCount = computers.count
-        print("jamfCount is:\(jamfCount)")
-        
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
-        
-        
-    }
-    
-    
-    //    #################################################################################
-    //    removeFromGroup
-    //    #################################################################################
-    
-    
-    
-    
-    func removeComputerFromGroup(server: String, authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-        
-        var xml: String
-        
-        print("Running removeComputerFromGroup - updating via xml")
-        print("computerID is set as:\(computerID)")
-        print("computerName is set as:\(computerName)")
-        print("groupID is set as:\(groupID)")
-        
-        xml = """
-                   <computer_group>
-                       <computer_deletions>
-                               <computer>
-                               <name>﻿\(computerName)</name>
-                               </computer>
-                       </computer_deletions>
-                   </computer_group>
-               """
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
-                print("Running removeComputerFromGroup function - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                // print("xml is set as:\(xml)")
-                // self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
-                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-            }
-        }
-    }
-    
-    
-    //    #################################################################################
-    //    removeLastComputer
-    //    #################################################################################
-    
-    
-    
-    
-    func removeLastComputer(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String) {
-        readXMLDataFromString(xmlContent: xmlContent)
-        
-        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
-        self.separationLine()
-        print("Running removeLastComputer")
-        print("xmlContent is:\(xmlContent)")
-        print("url is:\(url)")
-        //        print("computerName is:\(computerId)")
-        //        print("computerId is:\(computerId)")
-        let computers = self.aexmlDoc.root["computers"]
-        let lastcomputer = computers["computer"].last!
-        lastcomputer.removeFromParent()
-        print("updatedContent is:\(self.aexmlDoc.root.xml)")
-        let jamfCount = computers.count
-        print("jamfCount is:\(jamfCount)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
-    }
-    
-    //    #############################################################################
-    //   getGroupMembersXML - getAsXML
-    //    #############################################################################
-    
-    func getGroupMembersXML(server: String, groupId: Int) {
-        
-        let groupIdString = String(describing: groupId )
-        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupIdString)"
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
-        request.addValue("application/xml", forHTTPHeaderField: "Accept")
-        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.httpMethod = "GET"
-        separationLine()
-        print("Running: getGroupMembersXML")
-        print("groupId set as: \(groupId)")
-        print("jamfURLQuery set as: \(jamfURLQuery)")
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data else {
-                //                self.separationLine()
-                print("getGroupMembersXML failed")
-                print(String(describing: error))
-                return
-            }
-            //            self.separationLine()
-            print("getGroupMembersXML data is:")
-            print(String(data: data, encoding: .utf8)!)
-            DispatchQueue.main.async {
-                self.computerGroupMembersXML = (String(data: data, encoding: .utf8)!)
-            }
-        }
-        task.resume()
-    }
-    
     //   #################################################################################
     //   getPolicyAsXML
     //   #################################################################################
     
-    func getPolicyAsXML(server: String, policyID: Int, authToken: String) {
-        
-        let policyIdString = String(describing: policyID )
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
-        let url = URL(string: jamfURLQuery)!
-        
-        let headers = [
-            "Accept": "application/xml",
-            "Content-Type": "application/xml",
-            "Authorization": "Bearer \(authToken)" ]
-        
-        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = "GET"
-        separationLine()
-        print("Running: networkController.getPolicyAsXML")
-        print("policyID set as: \(policyID)")
-        print("jamfURLQuery set as: \(jamfURLQuery)")
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data else {
-                //                separationLine()
-                print("getPolicyAsXML failed")
-                print(String(describing: error))
-                return
-            }
-            
-            //            #########################################################################
-            //            DEBUG - CHECK XML
-            //            self.separationLine()
-            //                        print("networkController.getPolicyAsXML data is:")
-            //                        print(String(data: data, encoding: .utf8)!)
-            //            #########################################################################
-            
-            DispatchQueue.main.async {
-                self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
-                print("Set updateXML to false")
-                self.updateXML = false
-            }
-        }
-        task.resume()
-    }
+//    func getPolicyAsXML(server: String, policyID: Int, authToken: String) {
+//        
+//        let policyIdString = String(describing: policyID )
+//        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
+//        let url = URL(string: jamfURLQuery)!
+//        
+//        let headers = [
+//            "Accept": "application/xml",
+//            "Content-Type": "application/xml",
+//            "Authorization": "Bearer \(authToken)" ]
+//        
+//        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
+//        request.allHTTPHeaderFields = headers
+//        request.httpMethod = "GET"
+//        separationLine()
+//        print("Running: xmlController.getPolicyAsXML")
+//        print("policyID set as: \(policyID)")
+//        print("jamfURLQuery set as: \(jamfURLQuery)")
+//        
+//        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+//            guard let data = data else {
+//                //                separationLine()
+//                print("getPolicyAsXML failed")
+//                print(String(describing: error))
+//                return
+//            }
+//            
+//            //            #########################################################################
+//            //            DEBUG - CHECK XML
+//            //            self.separationLine()
+//            //                        print("xmlController.getPolicyAsXML data is:")
+//            //                        print(String(data: data, encoding: .utf8)!)
+//            //            #########################################################################
+//            
+//            DispatchQueue.main.async {
+//                self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
+//                print("Set updateXML to false")
+//                self.updateXML = false
+//            }
+//        }
+//        task.resume()
+//    }
+//    
     
-    
-    func getPolicyAsXMLaSync(server: String, policyID: Int, authToken: String) async throws -> String{
-        
-        let policyIdString = String(describing: policyID )
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
-        let url = URL(string: jamfURLQuery)!
-        print("Running getPolicyAsXMLaSync - Netbrain")
-        print("policyIdString is: \(policyIdString)")
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/xml", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running getPolicyAsXMLaSync - policyID is:\(policyID)")
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let responseCode = (response as? HTTPURLResponse)?.statusCode
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200 - Response is:\(String(describing: responseCode))")
-            throw JamfAPIError.badResponseCode
-        }
-        
-        self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
-        return self.currentPolicyAsXML
-    }
-    
-    func readXMLDataFromString(xmlContent: String) {
-        self.separationLine()
-        separationLine()
-        print("Running readXMLDataFromString - NetBrain")
-//        print("xmlContent is:\(xmlContent)")
-        guard let data = try? Data(xmlContent.utf8)
-                
-        else {
-            print("Sample XML Data error.")
-            return
-        }
-        do {
-            self.aexmlDoc = try AEXMLDocument(xml: data)
-        }
-        catch {
-            print("\(error)")
-        }
-    }
+//    func getPolicyAsXMLaSync(server: String, policyID: Int, authToken: String) async throws -> String{
+//        
+//        let policyIdString = String(describing: policyID )
+//        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
+//        let url = URL(string: jamfURLQuery)!
+//        print("Running getPolicyAsXMLaSync - Netbrain")
+//        print("policyIdString is: \(policyIdString)")
+//        var request = URLRequest(url: url)
+//        request.httpMethod = "GET"
+//        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+//        request.setValue("application/xml", forHTTPHeaderField: "Accept")
+//        separationLine()
+//        print("Running getPolicyAsXMLaSync - policyID is:\(policyID)")
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        let responseCode = (response as? HTTPURLResponse)?.statusCode
+//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+////            print("Code not 200 - Response is:\(String(describing: responseCode))")
+//            throw JamfAPIError.badResponseCode
+//        }
+//        
+//        self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
+//        return self.currentPolicyAsXML
+//    }
+//    
+//    func readXMLDataFromString(xmlContent: String) {
+//        self.separationLine()
+//        separationLine()
+//        print("Running readXMLDataFromString - NetBrain")
+////        print("xmlContent is:\(xmlContent)")
+//        guard let data = try? Data(xmlContent.utf8)
+//                
+//        else {
+//            print("Sample XML Data error.")
+//            return
+//        }
+//        do {
+//            self.aexmlDoc = try AEXMLDocument(xml: data)
+//        }
+//        catch {
+//            print("\(error)")
+//        }
+//    }
     
     //    #################################################################################
     //    togglePolicyOnOff - enable/disable policy

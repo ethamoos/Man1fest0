@@ -385,7 +385,7 @@ struct PackageTableView: View {
 //                            let currentPolicyID = (eachItem ?? 0)
 //                            Task {
 //                                do {
-//                                    let policyAsXML = try await networkController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+//                                    let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
 //                                    scopingController.updateScopeCompGroupSetAsyncSingle(groupSelection: computerGroupSelection,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), policyAsXML: policyAsXML)
 //                                } catch {
 //                                    print("Fetching detailed policy as xml failed: \(error)")
@@ -454,7 +454,7 @@ struct PackageTableView: View {
 //                                
 //                                Task {
 //                                    do {
-//                                        let policyAsXML = try await networkController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+//                                        let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
 //                                        
 //                                        scopingController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
 //                                        

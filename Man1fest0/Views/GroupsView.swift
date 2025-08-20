@@ -14,6 +14,7 @@ struct GroupsView: View {
     
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var xmlController: XmlBrain
     
     @State var server: String
     @State private var showingWarning = false
@@ -77,7 +78,7 @@ struct GroupsView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        networkController.addComputerToGroup(xmlContent: networkController.computerGroupMembersXML, computerName: networkController.selectedSimpleComputer.name, computerId: String(describing: networkController.selectedSimpleComputer.id), groupId: String(describing: selectionGroup.id), resourceType: ResourceType.computerGroup, server: server, authToken: networkController.authToken)
+                        xmlController.addComputerToGroup(xmlContent: networkController.computerGroupMembersXML, computerName: networkController.selectedSimpleComputer.name, computerId: String(describing: networkController.selectedSimpleComputer.id), groupId: String(describing: selectionGroup.id), resourceType: ResourceType.computerGroup, server: server, authToken: networkController.authToken)
                         
                     }) {
 #if os(macOS)
@@ -130,7 +131,7 @@ struct GroupsView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         showingWarning = true
-                        networkController.removeComputerFromGroup(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerGroup, groupID: String(describing: selectionGroup.id), computerID: networkController.selectedSimpleComputer.id, computerName: networkController.selectedSimpleComputer.name)
+                        xmlController.removeComputerFromGroup(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerGroup, groupID: String(describing: selectionGroup.id), computerID: networkController.selectedSimpleComputer.id, computerName: networkController.selectedSimpleComputer.name)
                         
                     }) {
 #if os(macOS)
@@ -217,7 +218,7 @@ struct GroupsView: View {
             print("Error getting GroupMembers")
             print(error)
         }
-        networkController.getGroupMembersXML(server: server, groupId: selection.id)
+        xmlController.getGroupMembersXML(server: server, groupId: selection.id)
     }
     
     var searchResults: [ComputerGroup] {
