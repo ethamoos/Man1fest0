@@ -7,7 +7,6 @@ struct OptionsView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var prestageController: PrestageBrain
     @EnvironmentObject var progress: Progress
- // // @EnvironmentObject var controller: JamfController
     
     @State var prestageID = ""
     @State var serial = ""
@@ -46,9 +45,9 @@ struct OptionsView: View {
                         VStack {
                             
                         Image("Man1fest0Icon")
-                            .frame(width: 80, height: 80, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+//                            .frame(width: 80, height: 80, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+//                            .clipped()
+//                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                         .frame(width: 60, height: 60, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
                         .clipped()
@@ -84,7 +83,6 @@ struct OptionsView: View {
                             
                             DisclosureGroup("Computers") {
                                 
-                                //
                                 NavigationLink(destination: ComputerActionView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
                                     Text("Computers")
                                 }
@@ -126,7 +124,6 @@ struct OptionsView: View {
                                     Text("Policies")
                                 }
 #if os(macOS)
-
                                 NavigationLink(destination: PoliciesActionView(server: server, selectedResourceType: ResourceType.policy )) {
                                     Text("Policy Actions")
                                 }
@@ -164,7 +161,6 @@ struct OptionsView: View {
 #endif
                             }
                         }
-                        
                       
                             
 #if os(macOS)
@@ -185,8 +181,6 @@ struct OptionsView: View {
                             }
                         }
 #endif
-                    
-                        
                         
                         Group {
 
@@ -194,9 +188,9 @@ struct OptionsView: View {
 
                             DisclosureGroup("Profiles") {
                                 
-                                //    #################################################################################
+                                //  ###########################################################################
                                 //    Config Profiles
-                                //    #################################################################################
+                                //  ###########################################################################
                                 NavigationLink(destination: ConfigProfileViewMacOS(server: server )) {
                                     Text("Config Profiles")
                                 }
@@ -215,25 +209,24 @@ struct OptionsView: View {
                         Group {
                             DisclosureGroup("Structures") {
                    
-                    //    #################################################################################
+                    //    ###########################################################################
                     //    Categories
-                                //    #################################################################################
+                    //    ###########################################################################
                                 NavigationLink(destination: CategoriesView(selectedResourceType: ResourceType.category, server: server )) {
                                     Text("Categories")
                                 }
-                                //    #################################################################################
-                                //    Buildings
-                                //    #################################################################################
+                                //  ###########################################################################
+                                //  Buildings
+                                //  ###########################################################################
                                 NavigationLink(destination: BuildingsView( server: server)) {
                                     Text("Buildings")
                                 }
-                                //    #################################################################################
-                                //                                          Departments
-                                //    #################################################################################
+                                //  ###########################################################################
+                                //  Departments
+                                //  ###########################################################################
                                 NavigationLink(destination: DepartmentsView(selectedResourceType: ResourceType.department, server: server )) {
                                     Text("Departments")
                                 }
-                                
                             }
                         }
                         
@@ -261,9 +254,9 @@ struct OptionsView: View {
                                 Divider()
                                 
                                 DisclosureGroup("Groups") {
-                                    //    #################################################################################
-                                    //                                          Static Groups
-                                    //    #################################################################################
+                                    //  #######################################################################
+                                    //  Static Groups
+                                    //  #######################################################################
                                     
                                     NavigationLink(destination: GroupsView(server: server)) {
                                         Text("Static Groups")
@@ -281,14 +274,11 @@ struct OptionsView: View {
                                     NavigationLink(destination: ComputerExtAttributeView(server: server)) {
                                         Text("Computer Extension Attributes")
                                     }
-                                    
                                     NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
                                         Text("Computer Extension Attributes Actions")
                                     }
                                 }
                             }
-                            
-                            
                                            
                             Divider()
                             
@@ -313,7 +303,7 @@ struct OptionsView: View {
                             Divider()
                             
 //#if os(macOS)
-//                            NavigationLink(destination: BackupsView(server: server, username: username, password: password )) {
+//  NavigationLink(destination: BackupsView(server: server, username: username, password: password )) {
 //                            Text("Backups")
 //                           }
 //#endif
@@ -334,8 +324,7 @@ struct OptionsView: View {
                     
                     // #################################################################################
                     //  CONNECT
-                    //    #################################################################################
-                    
+                    // #################################################################################
                     
                     ToolbarItem(id: "Connect") {
                         
@@ -362,9 +351,7 @@ struct OptionsView: View {
                         }
                     }
                 }
-                .frame(minWidth: 220)
                 .foregroundColor(.blue)
-                
                 
                 //  #######################################################################
                 //  END OF SIDEBAR
@@ -378,16 +365,10 @@ struct OptionsView: View {
             }
             .listStyle(.sidebar)
             .padding()
-            .frame(minWidth: 180)
-            
+            .frame(minWidth: 220)
         }
     }
 }
-
-////  #######################################################################
-////  CONNECTION
-////  #######################################################################
-//
 
 //  #######################################################################
 //  CONNECTION - END

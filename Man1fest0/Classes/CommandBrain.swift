@@ -21,7 +21,7 @@ import Foundation
 //        sayHello(to: "Amos")
 //
 //    }
-//    .frame(width: 200, height: 20, alignment: .center )
+//    .frame(width: 200, height: 20, alignment: .leading )
 //    .foregroundColor(.white)
 //    .padding()
 //    .background(Color.blue)
@@ -34,7 +34,7 @@ import Foundation
 //
 //
 //    }
-//    .frame(width: 200, height: 20, alignment: .center )
+//    .frame(width: 200, height: 20, alignment: .leading )
 //    .foregroundColor(.white)
 //    .padding()
 //    .background(Color.blue)
@@ -49,7 +49,7 @@ import Foundation
 //        //            sendCommandGeneric(id: computer.id, command: "EnableRemoteDesktop")
 //
 //    }
-//    .frame(width: 200, height: 20, alignment: .center )
+//    .frame(width: 200, height: 20, alignment: .leading )
 //    .foregroundColor(.white)
 //    .padding()
 //    .background(Color.blue)
@@ -60,7 +60,7 @@ import Foundation
 //        //            print("Sending command:EnableRemoteDesktop to device\(computer.id)")
 //        //            sendCommandGeneric(id: computer.id, command: "DisableRemoteDesktop")
 //    }
-//    .frame(width: 200, height: 20, alignment: .center )
+//    .frame(width: 200, height: 20, alignment: .leading )
 //    .foregroundColor(.white)
 //    .padding()
 //    .background(Color.blue)
@@ -71,7 +71,7 @@ import Foundation
 //        //            sendCommandGeneric(id: computer.id, command: "SettingsDisableBluetooth")
 //
 //    }
-//    .frame(width: 200, height: 20, alignment: .center )
+//    .frame(width: 200, height: 20, alignment: .leading )
 //    .foregroundColor(.white)
 //    .padding()
 //    .background(Color.red)

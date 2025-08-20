@@ -65,7 +65,7 @@ struct DepartmentsView: View {
             }
         }
 
-        .frame(minWidth: 300, minHeight: 100, alignment: .center)
+        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
 
         .onAppear {
             print("Departments View appeared. Running onAppear")
