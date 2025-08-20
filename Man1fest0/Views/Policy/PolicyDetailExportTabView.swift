@@ -37,9 +37,7 @@ struct PolicyDetailExportTabView: View {
     
     @State var categories: [Category] = []
     @State  var selectedCategory: Category = Category(jamfId: 0, name: "")
-    
-    
-    
+        
     var body: some View {
         
         VStack(alignment: .leading) {
@@ -48,7 +46,6 @@ struct PolicyDetailExportTabView: View {
             //  Category
             //  ############################################################################
             
-            //            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
             LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                 
                 HStack(spacing: 20) {
@@ -87,12 +84,13 @@ struct PolicyDetailExportTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.yellow)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                    //                    }
                     
                 }
             }
             Spacer()
+                .padding()
         }
+        .padding()
     }
     
     

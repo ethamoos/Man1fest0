@@ -15,12 +15,10 @@ struct ConnectSheet: View {
     
     @State var saveInKeychain: Bool = false
     
-    //Alert
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
     @State private var showActivity = false
-
     
     @AppStorage("server") var server = ""
     @AppStorage("username") var username = ""
@@ -82,7 +80,6 @@ struct ConnectSheet: View {
                         alertMessage = "Could not authenticate. Please check the url and authentication details"
                         alertTitle = "Authentication Error"
                     }
-              
                 }
             }.padding()
 #else
@@ -106,15 +103,12 @@ struct ConnectSheet: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
-          
             }
 #endif
         }
     }
 
-    
     func connect() async {
-        // hide this sheet
         show = false
 #if os(macOS)
         if saveInKeychain {
@@ -125,12 +119,10 @@ struct ConnectSheet: View {
             try? networkController.updateKC(networkController.password, account: server, service: username)
         }
 #endif
-                
         Task {
             await handleConnect(server: server, username: username, password: networkController.password)
         }
     }
-    
     
     func handleConnect(server: String, username: String, password: String ) async {
         
@@ -190,69 +182,3 @@ struct ConnectSheet: View {
 //}
 
 
-
-//            let bearerToken = try? await networkController.getToken(server: server, username: username, password: password)
-
-//                        guard networkController.tokenStatusCode == 200 else {
-//            guard let bearerToken else {
-//                //                                self.alertMessage = "Could not authenticate. Please check the url and authentication details"
-//                //                                self.alertTitle = "Authentication Error"
-//                showAlert = true
-//                print("showAlert error status 2 is:\(showAlert)")
-//
-////                self.showActivity = true
-//                print("Running bearerToken warning")
-//                return
-//            }
-
-
-
-
-//            let bearerToken = try? await networkController.getToken(server: server, username: username, password: password)
-
-//            guard networkController.tokenStatusCode == 200 else {
-//                guard let bearerToken else {
-//                alertMessage = "Could not authenticate. Please check the url and authentication details"
-//                alertTitle = "Authentication Error"
-//                showAlert = true
-//                showActivity = false
-//                print("Running bearerToken warning")
-//                return
-//            }
-
-
-
-//        Button("Show Alert") {
-//            self.showAlert = true
-//            alertMessage = "Could not authenticate. Please check the url and authentication details"
-//            alertTitle = "Authentication Error"
-//        }
-//        .alert(isPresented: $showAlert,
-//               content: {
-//            showCustomAlert(alertTitle: networkController.alertTitle, alertMessage: networkController.alertMessage )
-//        }).padding()
-//    }.padding()
-
-        
-//        .alert(isPresented: $showAlert) {
-//            Alert(title: Text("Caution!"), message: Text("Updating"), dismissButton: .default(Text("Proceed")))
-//        }
-        
-//                    .alert(isPresented: $showAlert,
-//                           content: {
-//                        showCustomAlert()
-//                    }).padding()
-//                    .alert(isPresented: $networkController.showAlert) {
-//                               Alert(title: Text("Caution!"), message: Text("Updating"), dismissButton: .default(Text("Proceed")))
-//                           }
-        
-        
-//                    Button("Show Alert") {
-//                        self.showAlert = true
-//                    }
-//                    .alert(isPresented: $showAlert,
-//                           content: {
-//                        showCustomAlert()
-//                    })
-        
-        

@@ -50,8 +50,6 @@ struct ContentView: View {
             
             await networkController.load()
             
-//            await handleConnect(server: server, username: username, password: networkController.password)
-            
             Task {
                 
                 try await networkController.getAllPackages(server: server)
@@ -61,39 +59,4 @@ struct ContentView: View {
             }
         }
     }
-    
-//    func handleConnect(server: String, username: String, password: String ) async {
-//        
-//        if password.isEmpty {
-//            print("Try to get password from keychain")
-//            guard let pwFromKeychain = try? Keychain.getPassword(service: server, account: username)
-//            else {
-//                print("pwFromKeychain failed")
-//                return
-//            }
-//            networkController.password = pwFromKeychain
-//            print("pwFromKeychain succeeded")
-//        }
-//        
-//        networkController.atSeparationLine()
-//        print("Handling connection - initial connection to Jamf")
-//        
-//        do {
-//            
-//            //  #######################################################################
-//            //  CONNECTION
-//            //  #######################################################################
-//            
-//            try await networkController.getToken(server: server, username: username, password: password)
-//            
-//            if networkController.authToken != "" {
-//                print("Token status is:\(networkController.tokenStatusCode)")
-//            }
-//            
-//        } catch {
-//            print("Error")
-//            print(error)
-//            print("Token status is:\(networkController.tokenStatusCode)")
-//        }
-//    }
 }

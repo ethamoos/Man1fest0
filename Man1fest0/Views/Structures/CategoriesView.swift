@@ -69,7 +69,7 @@ struct CategoriesView: View {
                 .padding()
             }
         }
-        .frame(minWidth: 300, minHeight: 100, alignment: .center)
+        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
         
         .onAppear {
             print("Categories View appeared. Running onAppear")

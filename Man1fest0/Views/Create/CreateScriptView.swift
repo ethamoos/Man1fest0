@@ -149,16 +149,16 @@ struct CreateScriptView: View {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("Title", text: $newScriptName)
                     .padding(4)
-                    .border(Color.gray)
+                    .border(Color.blue)
                 TextField("Info", text: $info)
                     .padding(4)
-                    .border(Color.gray)
+                    .border(Color.blue)
                  TextField("Notes", text: $notes)
                     .padding(4)
-                    .border(Color.gray)
+                    .border(Color.blue)
                 
                 TextEditor(text: $bodyText)
-                    .border(Color.gray)
+                    .border(Color.blue)
                 
             }
             .padding()

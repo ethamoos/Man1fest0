@@ -17,20 +17,16 @@ struct PolicyDetailClearItemsTabView: View {
     @EnvironmentObject var layout: Layout
     
     var server: String
-    //    private var selectedPolicyjamfIDs: Set<General>
     var selectedPoliciesInt: [Int?]
-    
-    //    private var policyID: String
     
     @State private var showingWarningClearPackages = false
     @State private var showingWarningClearScripts = false
     @State private var showingWarningDelete = false
     @State private var showingWarningClearScope = false
     @State private var showingWarningClearLimit = false
-    
+    @State private var showingWarningClearMaintenance = false
     
     var body: some View {
-        
         
         VStack(alignment: .leading) {
             
@@ -38,7 +34,7 @@ struct PolicyDetailClearItemsTabView: View {
             //  Clear Limitations
             //  ################################################################################
             
-            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+            LazyVGrid(columns: layout.column, alignment: .leading, spacing: 10) {
                 
                 HStack(spacing:20 ){
                     
@@ -72,16 +68,15 @@ struct PolicyDetailClearItemsTabView: View {
                         Alert(title: Text("Caution!"), message: Text("This action will clear any limitations from the policy scoping.\n You will need to re-add these if you still require them"), dismissButton: .default(Text("I understand!")))
                     }
                 }
-            }
-            //        }
-            
-            //  ################################################################################
-            //              Clear Scope
-            //  ################################################################################
-            
-            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                //            }
                 
-                HStack {
+                //  ################################################################################
+                //              Clear Scope
+                //  ################################################################################
+                
+                //            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack(spacing:20 ){
                     
                     Text("Clear Scope")
                     
@@ -97,9 +92,7 @@ struct PolicyDetailClearItemsTabView: View {
                             print("Clear Scope for policy:\(eachItem ?? 0)")
                         }
                     }) {
-                        HStack(spacing: 10) {
-                            Text("Clear Scope")
-                        }
+                        Text("Clear")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
@@ -107,19 +100,15 @@ struct PolicyDetailClearItemsTabView: View {
                         Alert(title: Text("Caution!"), message: Text("This action will clear devices from the policy scoping.\n You will need to rescope in order to deploy"), dismissButton: .default(Text("I understand!")))
                     }
                 }
-            }
-            //        }
-            //}
-            
-            
-            
-            //  ################################################################################
-            //              DELETE
-            //  ################################################################################
-            
-            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                //            }
                 
-                HStack {
+                //  ################################################################################
+                //              DELETE
+                //  ################################################################################
+                
+                //            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack(spacing:20 ){
                     
                     Text("Delete Policies")
                     
@@ -149,15 +138,15 @@ struct PolicyDetailClearItemsTabView: View {
                     .tint(.red)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 }
-            }
-            
-            //  ################################################################################
-            //  CLEAR PACKAGES
-            //  ################################################################################
-            
-            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                //            }
                 
-                HStack {
+                //  ################################################################################
+                //  CLEAR PACKAGES
+                //  ################################################################################
+                
+                //            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack(spacing:20 ){
                     
                     Text("Clear Packages")
                     
@@ -166,9 +155,7 @@ struct PolicyDetailClearItemsTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                     }) {
-                        HStack(spacing: 10) {
-                            Text("Clear")
-                        }
+                        Text("Clear")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
@@ -188,15 +175,15 @@ struct PolicyDetailClearItemsTabView: View {
                         )
                     }
                 }
-            }
-            
-            //  ################################################################################
-            //  CLEAR SCRIPTS
-            //  ################################################################################
-            
-            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                //            }
                 
-                HStack {
+                //  ################################################################################
+                //  CLEAR SCRIPTS
+                //  ################################################################################
+                
+                //            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                HStack(spacing:20 ){
                     
                     Text("Clear Scripts")
                     
@@ -227,36 +214,20 @@ struct PolicyDetailClearItemsTabView: View {
                         )
                     }
                 }
-            }
-            
-            //                    Button(action: {
-            //
-            //                        progress.showProgress()
-            //                        progress.waitForABit()
-            //
-            //                        //            xmlController.removeMaintenanceBatch(selectedPoliciesInt: selectedPoliciesInt, server: server, authToken: networkController.authToken)
-            //
-            //                    }) {
-            //                        HStack(spacing: 10) {
-            //                            Text("Update")
-            //                        }
-            //                    }
-            //                    .buttonStyle(.borderedProminent)
-            //                    .tint(.blue)
-            
-            //                }
-            //  ################################################################################
-            //  CLEAR MAINTENANCE
-            //  ################################################################################
-            
-            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
+                
+                //  ################################################################################
+                //  CLEAR MAINTENANCE
+                //  ################################################################################
+                
+                //            LazyVGrid(columns: layout.columnsWide, spacing: 20) {
                 
                 HStack(spacing: 10) {
                     
                     Text("Clear Maintenance")
-                    
                     Button(action: {
                         
+                        showingWarningClearMaintenance = true
+
                         progress.showProgress()
                         progress.waitForABit()
                         
@@ -269,13 +240,27 @@ struct PolicyDetailClearItemsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .alert(isPresented: $showingWarningClearMaintenance) {
+                        Alert(
+                            title: Text("Caution!"),
+                            message: Text("This action will clear maintenance from the polices selected.\n"),             primaryButton: .destructive(Text("I understand!")) {
+                                // Code to execute when "Yes" is tapped
+                                for eachItem in selectedPoliciesInt {
+                                    let currentPolicyID = (String(describing: eachItem ?? 0))
+                                    xmlController.removeAllScriptsManual(server: server, authToken: networkController.authToken, policyID: currentPolicyID)
+                                    print("Clearing maintenance for policy:\(eachItem ?? 0)")
+                                }
+                                print("Yes tapped")
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
                 }
-                
             }
-            Spacer()
-
+Spacer()
         }
-        .frame(alignment: .leading)
+                      .padding()
+        //        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
     }
 }
 //}

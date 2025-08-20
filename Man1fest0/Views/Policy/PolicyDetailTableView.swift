@@ -39,10 +39,6 @@ struct PolicyDetailTableView: View {
     @State private var policiesSelection = Set<Policy>()
     @State var searchText = ""
     
-
-    
-    
-    
     
     //  ########################################################################################
     //  SELECTIONS
@@ -161,7 +157,6 @@ struct PolicyDetailTableView: View {
                 }
             }
         }
-        
 //        VStack(alignment: .leading) {
             
 #if os(macOS)
@@ -182,7 +177,6 @@ struct PolicyDetailTableView: View {
                     .tabItem {
                         Label("Scope", systemImage: "square.and.pencil")
                     }
-                
                 PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                     .tabItem {
                         Label("Export", systemImage: "square.and.pencil")
@@ -190,62 +184,15 @@ struct PolicyDetailTableView: View {
             }
         }
         .background(Color.blue.opacity(0.0))
-        .border(Color.yellow)
-        //            PolicyDetailLimitationsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-        //                    .tabItem {
-        //                        Label("Limitations", systemImage: "square.and.pencil")
-        //                    }
-        //            }
+//        .border(Color.yellow)
+//        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
+
+
 #endif
-            
-            
         
-//        Divider()
+//        Text("")
         Divider()
         
-//        VStack(alignment: .leading) {
-//            
-//            LazyVGrid(columns: layout.columnsAllFlex, spacing: 20) {
-//                
-//                HStack(spacing:20 ){
-                    
-                    
-                    
-                    
-                    //                        Button(action: {
-                    //                            showingWarningClearPackages = true
-                    //                            progress.showProgress()
-                    //                            progress.waitForABit()
-                    //
-                    //                        }) {
-                    //                            HStack(spacing: 10) {
-                    //                                Text("Clear Packages")
-                    //                            }
-                    //                        }
-                    //                        .buttonStyle(.borderedProminent)
-                    //                        .tint(.red)
-                    //                        .alert(isPresented: $showingWarningClearPackages) {
-                    //                            Alert(
-                    //                                title: Text("Caution!"),
-                    //                                message: Text("This action will clear packages from the polices selected.\n"),             primaryButton: .destructive(Text("I understand!")) {
-                    //                                    // Code to execute when "Yes" is tapped
-                    //                                    xmlController.removeAllPackagesSelectionNestedFunction(selection: policiesSelection, server: server, authToken: networkController.authToken, operation: xmlController.removeAllPackagesManual(   operation(server, authToken, policyID)) )
-                    //                                    print("Yes tapped")
-                    //                                },
-                    //                                secondaryButton: .cancel()
-                    //                            )
-                    //                        }
-//                }
-//            }
-//        }
-//        .border(Color.green)
-
-        
-      
-        
-          
-//        }
-//    }
     
     //  ################################################################################
     //  END
