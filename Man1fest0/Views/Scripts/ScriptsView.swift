@@ -87,7 +87,7 @@ struct ScriptsView: View {
             }
         }
         
-        .frame(minWidth: 200, minHeight: 100, alignment: .center)
+        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
 
         .onAppear {
             networkController.separationLine()
