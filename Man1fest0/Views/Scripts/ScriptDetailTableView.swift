@@ -122,7 +122,7 @@ struct ScriptDetailTableView: View {
             progress.showProgress()
             progress.waitForABit()
             Task {
-                try? await Script.getAll(server: server, auth: networkController.auth ?? JamfAuthToken(token: "", expires: ""))
+                try? await Script.getAll(server: server, auth: networkController.auth ?? JamfAuthToken(token: "", expires: ""), type: "scripts")
             }
             print("Refresh")
             

@@ -1680,7 +1680,7 @@ import AEXML
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -1689,20 +1689,16 @@ import AEXML
             print("getDetailedPolicy request error - code is:\(statusCode)")
             throw JamfAPIError.http(statusCode)
         }
-        
         //        ########################################################
         //        DEBUG
         //        ########################################################
-
 //                separationLine()
 //                print("Raw data is:")
-//                      print(String(data: data, encoding: .utf8)!)
-
+//                print(String(data: data, encoding: .utf8)!)
                 
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
         self.policyDetailed = decodedData
-        
 
         if self.debug_enabled == true {
             separationLine()
@@ -4501,7 +4497,7 @@ import AEXML
         //              Computers
         //              ##############################################################
         
-        if let fetchedComputers = try? await ComputerSample.getAll(server: server, auth: auth) {
+        if let fetchedComputers = try? await ComputerSample.getAll(server: server, auth: auth, type: "computers") {
             computersample = fetchedComputers
             //          print(computers)
             separationLine()
@@ -4517,7 +4513,7 @@ import AEXML
         //              Scripts
         //              ##############################################################
         
-        if let fetchedScripts = try? await Script.getAll(server: server, auth: auth) {
+        if let fetchedScripts = try? await Script.getAll(server: server, auth: auth, type: "scripts") {
             scriptold = fetchedScripts
             //        print(scripts)
             separationLine()

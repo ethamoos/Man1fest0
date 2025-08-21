@@ -16,7 +16,7 @@ protocol JamfObject: Codable, Identifiable {
     static func getAllURLComponents(server: String) throws -> URLComponents
     
     /** Gets a list of all objects from the Jamf Pro Server */
-    static func getAll(server: String, auth: JamfAuthToken) async throws -> [Self]
+    static func getAll(server: String, auth: JamfAuthToken, type: String) async throws -> [Self]
 }
 
 extension JamfObject {
@@ -40,10 +40,11 @@ extension JamfObject {
     }
     
     /** Gets a list of all categories from the Jamf Pro Server */
-    static func getAll(server: String, auth: JamfAuthToken) async throws -> [Self] {
+    static func getAll(server: String, auth: JamfAuthToken,type: String) async throws -> [Self] {
         // MARK: Prepare Request
         print("------------------------------------------------------------------")
         print("Running getAll for server:\(server)")
+        print("Type is:\(type)")
         let components = try getAllURLComponents(server: server)
         
         guard let url = components.url

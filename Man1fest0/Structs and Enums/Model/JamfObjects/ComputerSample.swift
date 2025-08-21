@@ -18,7 +18,7 @@ struct ComputerSample: JamfObject {
   struct General: Codable {
     var name: String
     var assetTag: String?
-    var lastEnrolledDate: Date
+    var lastEnrolledDate: Date?
     var userApprovedMdm: Bool
   }
   
