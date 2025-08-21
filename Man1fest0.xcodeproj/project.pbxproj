@@ -321,6 +321,7 @@
 				A88491922C8A2D8C00C37DB7 /* Icons.swift */,
 				A8ECF6502C6D275F0082BE21 /* Ldap.swift */,
 				A81B58082C4A5E83008C1C25 /* Policies.swift */,
+				A8B4EA6B2B04E46F000F059F /* Responses.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -439,7 +440,6 @@
 			children = (
 				A86AF3842C3FE64A009349C4 /* Model */,
 				A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */,
-				A8B4EA6B2B04E46F000F059F /* Responses.swift */,
 				A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */,
 				A83C94572D79D9B500F639A1 /* ResponseCodes.swift */,
 			);
@@ -828,7 +828,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0Debug.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.37.1;
+				CURRENT_PROJECT_VERSION = 1.38.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				DEVELOPMENT_TEAM = T8LP25947P;
@@ -871,7 +871,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.37.1;
+				CURRENT_PROJECT_VERSION = 1.38.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				DEVELOPMENT_TEAM = T8LP25947P;

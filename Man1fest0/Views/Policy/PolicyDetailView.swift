@@ -169,13 +169,13 @@ struct PolicyDetailView: View {
                 
 #if os(macOS)
                 VStack(alignment: .leading) {
-                    Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.name ?? "Blank")\n")
-                    Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.enabled ?? true))\n")
+                    Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general.name ?? "Blank")\n")
+                    Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general.enabled ?? true))\n")
                     Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
                     Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
-                    Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
-                    Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
+                    Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general.triggerOther ?? "")\n")
+                    Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general.category?.name ?? "")\n")
+                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general.jamfId ?? 0))\n" )
                     Text("Current Icon:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon?.filename ?? "No icon set")")
 
                 }
@@ -222,7 +222,7 @@ struct PolicyDetailView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     if policyName.isEmpty == true {
-                        policyNameInitial = networkController.currentDetailedPolicy?.policy.general?.name ?? ""
+                        policyNameInitial = networkController.currentDetailedPolicy?.policy.general.name ?? ""
                         let newPolicyName = "\(policyNameInitial)1"
                         print("No name provided - policy is:\(newPolicyName)")
                         policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
@@ -342,7 +342,7 @@ struct PolicyDetailView: View {
                         
                         HStack {
                             
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyNameInitial, text: $policyName)
+                            TextField(networkController.currentDetailedPolicy?.policy.general.name ?? policyNameInitial, text: $policyName)
                                 .textSelection(.enabled)
                             
                             Button(action: {
@@ -365,7 +365,7 @@ struct PolicyDetailView: View {
 
                         HStack {
                             
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
+                            TextField(networkController.currentDetailedPolicy?.policy.general.triggerOther ?? "", text: $policyCustomTrigger)
                                 .textSelection(.enabled)
                             
                             Button(action: {
@@ -393,7 +393,7 @@ struct PolicyDetailView: View {
                     LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
                         HStack {
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $policyName)
+                            TextField(networkController.currentDetailedPolicy?.policy.general.name ?? policyName, text: $policyName)
                                 .textSelection(.enabled)
                             Button(action: {
                                 

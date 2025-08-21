@@ -44,7 +44,7 @@ struct PoliciesDetailed: Codable, Hashable {
 struct PolicyDetailed: Codable, Hashable, Identifiable {
     
     var id = UUID()
-    let general: General?
+    let general: General
     //    let serialsByPrestageID: [String: String]
     let scope: Scope?
     let package_configuration: PackageConfiguration?

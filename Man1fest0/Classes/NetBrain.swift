@@ -1706,7 +1706,7 @@ import AEXML
 
         if self.debug_enabled == true {
             separationLine()
-            print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
+            print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general.name ?? "")")
         }
         self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
     }
@@ -2015,7 +2015,7 @@ import AEXML
         case .success(let policyDetailed):
             receivedPolicyDetail(policyDetailed: policyDetailed)
             //            separationLine()
-            //            print("policyDetailed is:\(String(describing: policyDetailed.policy.general?.name ?? nil))")
+            //            print("policyDetailed is:\(String(describing: policyDetailed.policy.general.name ?? nil))")
         case .failure(let error):
             print("Decoding failed - Corrupt data. \(response) \(error)")
             separationLine()
@@ -2122,8 +2122,8 @@ import AEXML
             print("policyEnDisable is:\(policyEnDisable)")
             
             if self.currentDetailedPolicy != nil {
-                if let categoryName = self.currentDetailedPolicy?.policy.general?.category?.name {
-                    let categoryID = self.currentDetailedPolicy?.policy.general?.category?.jamfId
+                if let categoryName = self.currentDetailedPolicy?.policy.general.category?.name {
+                    let categoryID = self.currentDetailedPolicy?.policy.general.category?.jamfId
                     print("Old categoryName is:\(categoryName)")
                     print("Old categoryID is:\(String(describing: categoryID))")
                 }

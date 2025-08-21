@@ -92,7 +92,7 @@ class BackgroundTasks: ObservableObject {
         
         for eachPolicy in allPoliciesDetailedArray {
                         
-            print("Policy is:\(String(describing: eachPolicy?.general?.name ?? ""))")
+            print("Policy is:\(String(describing: eachPolicy?.general.name ?? ""))")
             
             let packagesFound = eachPolicy?.package_configuration?.packages
             
