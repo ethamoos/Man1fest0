@@ -1664,7 +1664,7 @@ import AEXML
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
         self.allPoliciesConverted = decodedData
         allPoliciesComplete = true
-//        separationLine()
+        separationLine()
 //        atSeparationLine()
         print("getAllPolicies status is set to:\(allPoliciesComplete)")
         print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
@@ -1690,24 +1690,25 @@ import AEXML
             throw JamfAPIError.http(statusCode)
         }
         
-        //        ########################################################
-        //        DEBUG
-        //        ########################################################
-
-//                separationLine()
-//                print("Raw data is:")
-//                      print(String(data: data, encoding: .utf8)!)
-
-                
+//        ########################################################
+//        DEBUG
+//        ########################################################
+//        separationLine()
+//        print("Raw data is:")
+//        print(String(data: data, encoding: .utf8)!)
+//        ########################################################
+//        DEBUG
+//        ########################################################
+    
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
         self.policyDetailed = decodedData
-        
 
         if self.debug_enabled == true {
             separationLine()
             print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
         }
+//      On completion add policy to array of detailed policies
         self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
     }
     
