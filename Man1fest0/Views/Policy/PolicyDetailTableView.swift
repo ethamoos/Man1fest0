@@ -59,13 +59,13 @@ struct PolicyDetailTableView: View {
     var body: some View {
         
         
-        //        This variable is a mapping of the ID to the jamfId property in the selection so that although you select the id you actually return the jamfID - meaning that you can do stuff with this
+        //  This variable is a mapping of the ID to the jamfId property in the selection so that although you select the id you actually return the jamfID - meaning that you can do stuff with this
         
-        //        networkController.allPoliciesDetailedGeneral is the list of policies that is being selected from that we want to access properties
+        //  networkController.allPoliciesDetailedGeneral is the list of policies that is being selected from that we want to access properties
         
-        //        selectedPolicyIDs is a set (as the selection can be multiplw) this by default is populated by the ID only
+        //  selectedPolicyIDs is a set (as the selection can be multiplw) this by default is populated by the ID only
         
-        //        selectedPoliciesInt is an array of the jamf ids from the mapping
+        //  selectedPoliciesInt is an array of the jamf ids from the mapping
         
         
         let selectedPoliciesInt: [Int?] = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }

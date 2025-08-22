@@ -401,9 +401,9 @@ struct SelfService: Codable, Hashable, Identifiable  {
     
     //    // MARK: - SelfServiceIcon
         struct SelfServiceIcon: Codable, Hashable  {
-            let filename: String
-            let id: Int
-            let uri: String
+            let filename: String?
+            let id: Int?
+            let uri: String?
         }
 
 }
