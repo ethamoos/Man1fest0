@@ -131,7 +131,6 @@ import AEXML
         dataTask.resume()
     }
     
-    
     //   #################################################################################
     //   getPolicyAsXML
     //   #################################################################################
@@ -170,16 +169,9 @@ import AEXML
         task.resume()
     }
     
-    
-    
-    
-    
     //    ##################################################
     //    XML Global Operations - END
     //    ##################################################
-    
-    
-    
     
     
     func separationLine() {
@@ -201,14 +193,9 @@ import AEXML
     //    Batch Operations
     //    ##################################################
     
-    
-    
-    
-    
     //    #################################################################################
     //    updateScopeMultiplePolicies - batch
     //    #################################################################################
-    
     
     //    func updateScopeMultiplePolicies(selection:  Set<Policy>, server: String, authToken: String, groupName: String, groupId: String, xmlString: String) {
     //
@@ -236,7 +223,6 @@ import AEXML
     //        self.processingComplete = true
     //        print(String(describing: self.processingComplete))
     //    }
-    
     
     //    #################################################################################
     //    SCOPING SECTION - START
@@ -325,12 +311,9 @@ import AEXML
         }
     }
     
-    
-    
     //    #################################################################################
     //    updatePolicyScopeLimitations2Groups
     //    #################################################################################
-    
     
     func updatePolicyScopeLimitations2Groups(server: String, authToken: String, resourceType: ResourceType, policyName: String, policyID: String, ldapUserGroupID: String, ldapUserGroupName: String, ldapUserGroupID2: String, ldapUserGroupName2: String) {
         
@@ -399,8 +382,6 @@ import AEXML
     //    #################################################################################
     //    updatePolicyScopeLimitations
     //    #################################################################################
-    
-    
     
     func updatePolicyScopeToAll(server: String, authToken: String, resourceType: ResourceType, policyName: String, policyID: String, building: String) {
         

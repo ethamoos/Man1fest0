@@ -24,10 +24,10 @@ struct PolicyDetailTableView: View {
     @State var status: Bool = true
     @State private var showingWarning = false
     @State private var showingWarningDelete = false
-
+    
     @State var enableDisable: Bool = true
     
-
+    
     //  ########################################################################################
     //    POLICY SELECTION
     //  ########################################################################################
@@ -157,10 +157,10 @@ struct PolicyDetailTableView: View {
                 }
             }
         }
-//        VStack(alignment: .leading) {
-            
+        //        VStack(alignment: .leading) {
+        
 #if os(macOS)
-            
+        
         VStack(alignment: .leading) {
             
             TabView {
@@ -184,157 +184,165 @@ struct PolicyDetailTableView: View {
             }
         }
         .background(Color.blue.opacity(0.0))
-//        .border(Color.yellow)
-//        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
-
-
+        //        .border(Color.yellow)
+        //        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
+        
+        
 #endif
         
-//        Text("")
+        //        Text("")
         Divider()
         
-    
-    //  ################################################################################
-    //  END
-    //  ################################################################################
-    
-        .onAppear() {
-            
-            print("PolicyDetailTableView - getting primary data")
-            fetchData()
-            
-        }
-        .padding()
-    
-    
-    if progress.showProgressView == true {
         
-        ProgressView {
-            Text("Loading")
-                .font(.title)
-                .progressViewStyle(.horizontal)
+        //  ################################################################################
+        //  END
+        //  ################################################################################
+        
+            .onAppear() {
+                
+                print("PolicyDetailTableView - getting primary data")
+                fetchData()
+                
+            }
+            .padding()
+        
+        
+        if progress.showProgressView == true {
+            
+            ProgressView {
+                Text("Loading")
+                    .font(.title)
+                    .progressViewStyle(.horizontal)
+            }
+            .padding()
+            Spacer()
         }
-        .padding()
-        Spacer()
     }
-}
-
-func convertToallPoliciesDetailedGeneral() {
     
-    print("Reset allPoliciesDetailedGeneral and re-add")
-    
-    networkController.allPoliciesDetailedGeneral.removeAll()
-    
-    if networkController.allPoliciesDetailed.isEmpty != true {
-        for eachPolicy in networkController.allPoliciesDetailed {
-            if let eachPolicyGeneral = eachPolicy?.general {
-                networkController.allPoliciesDetailedGeneral.insert((eachPolicyGeneral), at: 0)
+    func convertToallPoliciesDetailedGeneral() {
+        
+        print("Reset allPoliciesDetailedGeneral and re-add")
+        
+        networkController.allPoliciesDetailedGeneral.removeAll()
+        
+        if networkController.allPoliciesDetailed.isEmpty != true {
+            for eachPolicy in networkController.allPoliciesDetailed {
+                if let eachPolicyGeneral = eachPolicy?.general {
+                    networkController.allPoliciesDetailedGeneral.insert((eachPolicyGeneral), at: 0)
+                }
             }
         }
     }
-}
-
-func refreshDetailedPolicySelections(selectedPolicies: [Int?], authToken: String, server: String) async {
     
-    if selectedPolicies.isEmpty {
-        print("no selection")
-        convertToallPoliciesDetailedGeneral()
-    } else {
-        print("refreshing detailed policy selections")
-        for eachPolicy in selectedPolicies {
-            Task {
-                try await networkController.getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: eachPolicy))
-            }
-        }
-        convertToallPoliciesDetailedGeneral()
-    }
-}
-
-
-//  #################################################################################
-//  Master Fetch function
-//  #################################################################################
-
-
-func fetchData() {
-    
-    if  networkController.categories.isEmpty {
-        print("No category data - fetching")
-        networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+    func refreshDetailedPolicySelections(selectedPolicies: [Int?], authToken: String, server: String) async {
         
-    } else {
-        print("category data is available")
-    }
-    
-    if networkController.allIconsDetailed.count <= 1 {
-        print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
-    } else {
-        print("getAllIconsDetailed has already run")
-        print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-    }
-    
-    if  networkController.packages.isEmpty {
-        print("No package data - fetching")
-        networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-        
-    } else {
-        print("package data is available")
-    }
-    
-    if  networkController.policies.isEmpty {
-        print("No policies data - fetching")
-        networkController.connect(server: server,resourceType: ResourceType.policies, authToken: networkController.authToken)
-        
-    } else {
-        print("policies data is available")
-    }
-    
-    if  networkController.allComputerGroups.isEmpty {
-        print("No groups data - fetching")
-        Task {
-            try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-        }
-    } else {
-        print("groups data is available")
-    }
-    
-    if networkController.fetchedDetailedPolicies == false {
-        
-        print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-        
-        if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
-            
-            print("fetching detailed policies")
-            
-            progress.showProgress()
-            
-            networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-            
+        if selectedPolicies.isEmpty {
+            print("no selection")
             convertToallPoliciesDetailedGeneral()
-            
-            progress.waitForABit()
-            
-            networkController.fetchedDetailedPolicies = true
+        } else {
+            print("refreshing detailed policy selections")
+            for eachPolicy in selectedPolicies {
+                Task {
+                    try await networkController.getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: eachPolicy))
+                }
+            }
+            convertToallPoliciesDetailedGeneral()
+        }
+    }
+    
+    
+    //  #################################################################################
+    //  Master Fetch function
+    //  #################################################################################
+    
+    
+    func fetchData() {
+        
+        if  networkController.categories.isEmpty {
+            print("No category data - fetching")
+            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
             
         } else {
-            print("Download complete")
+            print("category data is available")
         }
-    } else {
-        print("fetchedDetailedPolicies has run")
+        
+        if networkController.allIconsDetailed.count <= 1 {
+            print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+        } else {
+            print("getAllIconsDetailed has already run")
+            print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+        }
+        
+        if scopingController.allLdapServers.count <= 1 {
+            print("getLdapServers is:\(scopingController.allLdapServers.count) - running")
+            Task {
+                try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
+            }
+        } else {
+            print("getLdapServers has already run")
+            print("getLdapServers is:\(scopingController.allLdapServers.count) - running")
+        }
+        
+        if  networkController.packages.isEmpty {
+            print("No package data - fetching")
+            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+            
+        } else {
+            print("package data is available")
+        }
+        
+        if  networkController.policies.isEmpty {
+            print("No policies data - fetching")
+            networkController.connect(server: server,resourceType: ResourceType.policies, authToken: networkController.authToken)
+            
+        } else {
+            print("policies data is available")
+        }
+        
+        if  networkController.allComputerGroups.isEmpty {
+            print("No groups data - fetching")
+            Task {
+                try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+            }
+        } else {
+            print("groups data is available")
+        }
+        
+        if networkController.fetchedDetailedPolicies == false {
+            
+            print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
+            
+            if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
+                
+                print("fetching detailed policies")
+                
+                progress.showProgress()
+                
+                networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                
+                convertToallPoliciesDetailedGeneral()
+                
+                progress.waitForABit()
+                
+                networkController.fetchedDetailedPolicies = true
+                
+            } else {
+                print("Download complete")
+            }
+        } else {
+            print("fetchedDetailedPolicies has run")
+        }
     }
-}
-
-
-
-
-var searchResults: [General] {
-    if searchText.isEmpty {
-        return networkController.allPoliciesDetailedGeneral
-    } else {
-        return networkController.allPoliciesDetailedGeneral.filter { $0.name!.lowercased().contains(searchText.lowercased())}
+    
+    
+    var searchResults: [General] {
+        if searchText.isEmpty {
+            return networkController.allPoliciesDetailedGeneral
+        } else {
+            return networkController.allPoliciesDetailedGeneral.filter { $0.name!.lowercased().contains(searchText.lowercased())}
+        }
     }
-}
 }
 
 

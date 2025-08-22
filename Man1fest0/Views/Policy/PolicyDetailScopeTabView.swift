@@ -209,7 +209,6 @@ struct PolicyDetailScopeTabView: View {
             
             LazyVGrid(columns: layout.threeColumns, spacing: 20) {
                 Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:").bold()) {
-                    //                    Text("").tag("") //basically added empty tag and it solve the case
                     ForEach(scopingController.allLdapServers, id: \.self) { group in
                         Text(String(describing: group.name))
                             .tag(ldapServerSelection as LDAPServer?)

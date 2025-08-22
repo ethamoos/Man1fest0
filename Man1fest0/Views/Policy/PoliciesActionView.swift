@@ -717,8 +717,6 @@ struct PoliciesActionView: View {
             }
         }
     }
-    
-    
 }
 
 
