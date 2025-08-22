@@ -181,8 +181,8 @@ struct PolicyDetailView: View {
                 VStack(alignment: .leading) {
                     Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.name ?? "Blank")\n")
                     Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.enabled ?? true))\n")
-                    Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
-                    Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
+//                    Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
+//                    Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
@@ -565,8 +565,6 @@ struct PolicyDetailView: View {
 //  ##########################################################################
 //  NOTE: CHANGED FROM XML CONTROLLER BELOW
 //  ##########################################################################
-
-//                    xmlController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
                     
                     networkController.readXMLDataFromString(xmlContent: networkController.currentPolicyAsXML)
 
@@ -577,9 +575,9 @@ struct PolicyDetailView: View {
                 }
             }
             
-//            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
+//  This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
 
-//            The property networkController.policyDetailed will be used
+//  The property networkController.policyDetailed will be used
             
             networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
             
@@ -605,7 +603,7 @@ struct PolicyDetailView: View {
             }
             
             if networkController.buildings.count <= 1 {
-//                networkController.connect(server: server,resourceType: ResourceType.building, authToken: networkController.authToken)
+
                 Task {
                     try await networkController.getBuildings(server: server, authToken: networkController.authToken)
                 }

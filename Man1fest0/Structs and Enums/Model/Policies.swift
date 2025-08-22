@@ -50,7 +50,7 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
     let package_configuration: PackageConfiguration?
         let scripts: [PolicyScripts]?
     //    let printers: [PrinterElement]?
-    let self_service: SelfService?
+//    let self_service: SelfService?
     //    let files_processes: FilesProcesses?
     //    let printer:[PrinterClass]?
     
@@ -59,7 +59,7 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
         case scope = "scope"
         case package_configuration = "package_configuration"
         case scripts = "scripts"
-        case self_service = "self_service"
+//        case self_service = "self_service"
         //        case printers = "printers"
         //        case files_processes = "files_processes"
         //        case printer
