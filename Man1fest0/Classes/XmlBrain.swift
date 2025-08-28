@@ -184,15 +184,23 @@ class XmlBrain: ObservableObject {
         let url = URL(string: jamfURLQuery)!
         separationLine()
         print("Running addComputerToGroup XML brain")
-        print("xmlContent is:\(xmlContent)")
+        separationLine()
+        print("xmlContent is:")
+        separationLine()
+        print(xmlContent)
+        separationLine()
         print("url is:\(url)")
-        print("computerName is:\(computerId)")
+        print("computerName is:\(computerName)")
         print("computerId is:\(computerId)")
+        print("groupId is:\(groupId)")
         
         let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
         computers.addChild(name: "id", value: computerId)
         computers.addChild(name: "name", value: computerName)
-        print("updatedContent is:\(self.aexmlDoc.root.xml)")
+        separationLine()
+        print("updatedContent is:")
+        separationLine()
+        print(self.aexmlDoc.root.xml)
         let jamfCount = computers.count
         print("jamfCount is:\(jamfCount)")
         self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
@@ -659,7 +667,7 @@ class XmlBrain: ObservableObject {
     //    getGroupMembersXML - getAsXML
     //    #############################################################################
     
-    func getGroupMembersXML(server: String, groupId: Int) {
+    func getGroupMembersXML(server: String, groupId: Int, authToken: String ) {
         
         //        Runs in view to get the members for the selected group as xml
         
@@ -670,6 +678,7 @@ class XmlBrain: ObservableObject {
         request.addValue("application/xml", forHTTPHeaderField: "Accept")
         request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
         request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         self.separationLine()
         print("Running: getGroupMembersXML - xmlcontroller")
         print("groupId set as: \(groupId)")

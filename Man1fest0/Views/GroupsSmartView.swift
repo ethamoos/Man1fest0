@@ -188,7 +188,7 @@ struct GroupsSmartView: View {
             print("Error getting GroupMembers")
             print(error)
         }
-        xmlController.getGroupMembersXML(server: server, groupId: selection.id)
+        xmlController.getGroupMembersXML(server: server, groupId: selection.id, authToken: networkController.authToken)
     }
     
     var searchResults: [ComputerGroup] {

@@ -86,7 +86,7 @@ struct PackageUsageView: View {
             }
             
             
-            if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
+//            if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
                 
                 //        ########################################
                 //        Assigned packages
@@ -157,13 +157,13 @@ struct PackageUsageView: View {
                 .tint(.red)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 .padding()
-            }
+//            }
                 
             Form {
                 
                 Group {
                     
-                    if networkController.allPoliciesDetailed.count > 0 {
+//                    if networkController.allPoliciesDetailed.count > 0 {
                         
                         VStack(alignment: .leading, spacing: 5) {
                             
@@ -184,7 +184,7 @@ struct PackageUsageView: View {
                         }
                         .padding()
                         .border(.blue)
-                    }
+//                    }
                 }
             }
                 
@@ -193,7 +193,7 @@ struct PackageUsageView: View {
                 //        ########################################
             
             HStack {
-                if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
+//                if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
                     
                     Button(action: {
                         
@@ -220,7 +220,7 @@ struct PackageUsageView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                     .padding()
-                }
+//                }
                 
                 Button(action: {
                     
