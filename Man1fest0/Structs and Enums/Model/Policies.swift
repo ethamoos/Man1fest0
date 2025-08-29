@@ -40,7 +40,6 @@ struct Policy: Codable, Hashable, Identifiable {
 struct PoliciesDetailed: Codable, Hashable {
     let policy: PolicyDetailed }
 
-
 struct PolicyDetailed: Codable, Hashable, Identifiable {
     
     var id = UUID()
@@ -115,8 +114,8 @@ struct General: Codable, Hashable, Identifiable {
     let name: String?
     let enabled: Bool?
     let trigger: String?
-//    let triggerCheckin, triggerEnrollmentComplete, triggerLogin, triggerLogout: Bool?
-//    let triggerNetworkStateChanged, triggerStartup: Bool?
+    let triggerCheckin, triggerEnrollmentComplete, triggerLogin, triggerLogout: Bool?
+    let triggerNetworkStateChanged, triggerStartup: Bool?
     let triggerOther: String?
 //    let frequency: String?
 //    let locationUserOnly: Bool?
@@ -137,12 +136,12 @@ struct General: Codable, Hashable, Identifiable {
         case name = "name"
         case enabled = "enabled"
         case trigger = "trigger"
-//        case triggerCheckin = "trigger_checkin"
-//        case triggerEnrollmentComplete = "trigger_enrollment_complete"
-//        case triggerLogin = "trigger_login"
-//        case triggerLogout = "trigger_logout"
-//        case triggerNetworkStateChanged = "trigger_network_state_changed"
-//        case triggerStartup = "trigger_startup"
+        case triggerCheckin = "trigger_checkin"
+        case triggerEnrollmentComplete = "trigger_enrollment_complete"
+        case triggerLogin = "trigger_login"
+        case triggerLogout = "trigger_logout"
+        case triggerNetworkStateChanged = "trigger_network_state_changed"
+        case triggerStartup = "trigger_startup"
         case triggerOther = "trigger_other"
 //        case frequency = "frequency"
 //        case locationUserOnly = "location_user_only"
