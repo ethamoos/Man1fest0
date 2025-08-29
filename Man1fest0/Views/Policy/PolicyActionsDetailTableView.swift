@@ -24,9 +24,7 @@ struct PolicyActionsDetailTableView: View {
     @State var status: Bool = true
     @State private var showingWarning = false
     @State private var showingWarningDelete = false
-    
     @State var enableDisable: Bool = true
-    
     
     //  ########################################################################################
     //    POLICY SELECTION
@@ -35,10 +33,15 @@ struct PolicyActionsDetailTableView: View {
     @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
     @State private var selectedIDs = []
-    @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
     @State private var policiesSelection = Set<Policy>()
     @State var searchText = ""
+    @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
+    @State private var sortOrder2 = [KeyPathComparator(\General.name, order: .forward)]
     
+//    @State private var sortOrder: [KeyPathComparator<Item>] = [
+//        .init(\.name, order: .forward)
+//    ]
+
     
     //  ########################################################################################
     //  SELECTIONS
@@ -54,11 +57,36 @@ struct PolicyActionsDetailTableView: View {
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
-    
+    @State private var isAscending = true
+
     
     var body: some View {
         
         
+//        Button("Sort by Active") {
+//            isAscending.toggle()
+//            networkController.allPoliciesDetailedGeneral.sort { isAscending ? $0.enabled && !$1.enabled : !$0.enabled && $1.enabled }
+//        }
+        
+        Table(networkController.allPoliciesDetailedGeneral, sortOrder: $sortOrder2) {
+//            TableColumn("Name", value: \.name)
+//            TableColumn("Active") { item in
+//                Text(item.isActive ? "Yes" : "No")
+//            }
+            
+            TableColumn("Enabled") {
+                policy in
+                Text(policy.enabled ?? true ? "true" : "false")
+            }
+        }
+        .onChange(of: sortOrder) { newOrder in
+            networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
+        }
+        
+//        .onChange(of: sortOrder) { newOrder in
+//            items.sort(using: newOrder)
+//        }
+        //  ########################################################################################
         //  This variable is a mapping of the ID to the jamfId property in the selection so that although you select the id you actually return the jamfID - meaning that you can do stuff with this
         
         //  networkController.allPoliciesDetailedGeneral is the list of policies that is being selected from that we want to access properties
@@ -95,12 +123,22 @@ struct PolicyActionsDetailTableView: View {
                 Text(String(policy.name ?? ""))
             }
             
+//            TableColumn("Enabled") {
+//                policy in
+//                Text(policy.enabled ? "true" : "false")
+//            }
+            
             TableColumn("Category", value: \.category!.name)
+
             
             TableColumn("Enabled") {
                 policy in
-                Text(String(policy.enabled ?? false))
+                Text(String(policy.enabled ?? true))
             }
+            
+//            TableColumn("Active") { item in
+//                           Text(item.isActive ? "Yes" : "No")
+//                       }
             
             TableColumn("ID", value: \.jamfId!) {
                 policy in
