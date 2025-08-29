@@ -23,11 +23,11 @@ struct PolicyTriggersTabView: View {
     
     @EnvironmentObject var layout: Layout
     
-    @State var trigger_checkin = false
-    @State var trigger_enrollment_complete = false
-    @State var trigger_login = false
-    @State var trigger_startup = false
-    @State var trigger_other = ""
+     var trigger_checkin: Bool
+     var trigger_enrollment_complete: Bool
+     var trigger_login: Bool
+     var trigger_startup: Bool
+     var trigger_other: String = ""
     
     
     var body: some View {
@@ -101,9 +101,6 @@ struct PolicyTriggersTabView: View {
                 }
                 .toggleStyle(.checkbox)
                 
-                
-//                LazyVGrid(columns: columns, spacing: 10) {
-                    
                     if currentTrigger_other.isEmpty != true {
                         
                         Text("Custom Trigger is:\(currentTrigger_other)")
@@ -112,20 +109,13 @@ struct PolicyTriggersTabView: View {
                         
                         Text("Custom Trigger not configured")
                     }
-                    
-//                }
                 
-                
-                //            LazyVGrid(columns: columns, spacing: 10) {
-                //
-                //                HStack {
-                //                    Text("Custom Trigger")
-                //                    TextField("", text: $trigger_other)
-                //                    Text("Custom Trigger is:\(currentTrigger_other)")
-                //                        .textSelection(.enabled)
-                //                }
-                //            }
-                
+                HStack {
+                    Text("Custom Trigger")
+                    TextField("", text: $trigger_other)
+                    Text("Custom Trigger is:\(currentTrigger_other)")
+                        .textSelection(.enabled)
+                }
             }
             Spacer()
         }

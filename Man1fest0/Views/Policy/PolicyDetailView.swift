@@ -497,7 +497,7 @@ struct PolicyDetailView: View {
                             Label("Scripts", systemImage: "square.and.pencil")
                         }
                     
-                    PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail)
+                    PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.currentDetailedPolicy?.policy.general?.triggerLogin ?? false, trigger_checkin: networkController.currentDetailedPolicy?.policy.general?.triggerCheckin ?? false, trigger_startup: networkController.currentDetailedPolicy?.policy.general?.triggerStartup??, false, trigger_enrollment_complete: networkController.currentDetailedPolicy?.policy.general?.triggerEnrollmentComplete ?? false )
                         .tabItem {
                             Label("Triggers", systemImage: "square.and.pencil")
                         }
