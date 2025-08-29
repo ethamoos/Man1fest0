@@ -692,9 +692,9 @@ struct PackageTableView: View {
 
 
 
-//struct PolicyDetailTableView_Previews: PreviewProvider {
+//struct PolicyActionsDetailTableView_Previews: PreviewProvider {
 //    static var previews: some View {
-//        PolicyDetailTableView(server: "")
+//        PolicyActionsDetailTableView(server: "")
 //            .environmentObject (NetBrain())
 //            .environmentObject (Progress())
 //            .environmentObject (Layout())

@@ -576,7 +576,6 @@ struct PoliciesActionView: View {
             Task {
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
-//            networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
             
                 networkController.refreshPolicies()
                 networkController.refreshCategories()

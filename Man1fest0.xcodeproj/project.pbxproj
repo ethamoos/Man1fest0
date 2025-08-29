@@ -48,10 +48,11 @@
 		A86CB8652D3E618000D8F22F /* ReportsExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB8642D3E617A00D8F22F /* ReportsExport.swift */; };
 		A86CB89E2D3E711D00D8F22F /* ReportsExportCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB89D2D3E711100D8F22F /* ReportsExportCSV.swift */; };
 		A86F4DEF2C78ED6200D5518B /* ComputerExtAttributeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */; };
-		A87004362C81C48700C1AB97 /* PolicyDetailTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */; };
+		A87004362C81C48700C1AB97 /* PolicyActionsDetailTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */; };
 		A871904A2B6CF74500FC8FB2 /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87190492B6CF74500FC8FB2 /* GroupsView.swift */; };
 		A87445CB2E2AACFB00BCB41B /* NotesModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A87445C82E2AACFB00BCB41B /* NotesModel.xcdatamodeld */; };
 		A87445CD2E2AAD3500BCB41B /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87445CC2E2AAD3500BCB41B /* CoreDataStack.swift */; };
+		A877BED12E60F3400041D3C9 /* Sorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A877BED02E60F3390041D3C9 /* Sorting.swift */; };
 		A88491912C8A1D8600C37DB7 /* IconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491902C8A1D8600C37DB7 /* IconView.swift */; };
 		A88491932C8A2D8C00C37DB7 /* Icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491922C8A2D8C00C37DB7 /* Icons.swift */; };
 		A88491952C8AE45900C37DB7 /* IconDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491942C8AE45900C37DB7 /* IconDetailedView.swift */; };
@@ -157,10 +158,11 @@
 		A86CB8642D3E617A00D8F22F /* ReportsExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsExport.swift; sourceTree = "<group>"; };
 		A86CB89D2D3E711100D8F22F /* ReportsExportCSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsExportCSV.swift; sourceTree = "<group>"; };
 		A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerExtAttributeView.swift; sourceTree = "<group>"; };
-		A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailTableView.swift; sourceTree = "<group>"; };
+		A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyActionsDetailTableView.swift; sourceTree = "<group>"; };
 		A87190492B6CF74500FC8FB2 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
 		A87445CA2E2AACFB00BCB41B /* NotesModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = NotesModel.xcdatamodel; sourceTree = "<group>"; };
 		A87445CC2E2AAD3500BCB41B /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
+		A877BED02E60F3390041D3C9 /* Sorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sorting.swift; sourceTree = "<group>"; };
 		A88491902C8A1D8600C37DB7 /* IconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconView.swift; sourceTree = "<group>"; };
 		A88491922C8A2D8C00C37DB7 /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
 		A88491942C8AE45900C37DB7 /* IconDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconDetailedView.swift; sourceTree = "<group>"; };
@@ -399,7 +401,7 @@
 				A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */,
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
 				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
-				A87004352C81C48700C1AB97 /* PolicyDetailTableView.swift */,
+				A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */,
 				A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */,
 				A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */,
 				A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */,
@@ -437,6 +439,7 @@
 		E49319822B642ADA00B58519 /* Structs and Enums */ = {
 			isa = PBXGroup;
 			children = (
+				A877BED02E60F3390041D3C9 /* Sorting.swift */,
 				A86AF3842C3FE64A009349C4 /* Model */,
 				A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */,
 				A8B4EA6B2B04E46F000F059F /* Responses.swift */,
@@ -620,6 +623,7 @@
 				A866AE222DBAA35600675075 /* ScriptDetailTableView.swift in Sources */,
 				A86533F02C3E98D0002894B2 /* PolicyScopeTabView.swift in Sources */,
 				A8AB48FB2B07D92D004C3675 /* CreateView.swift in Sources */,
+				A877BED12E60F3400041D3C9 /* Sorting.swift in Sources */,
 				E48D59DD2C5A457D00E1E35B /* CreateGeneralTabView.swift in Sources */,
 				E48D59D62C5965AA00E1E35B /* PolicyBrain.swift in Sources */,
 				A88491932C8A2D8C00C37DB7 /* Icons.swift in Sources */,
@@ -680,7 +684,7 @@
 				A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */,
 				A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */,
 				E493198D2B679BE400B58519 /* PrestageRemoveDeviceView.swift in Sources */,
-				A87004362C81C48700C1AB97 /* PolicyDetailTableView.swift in Sources */,
+				A87004362C81C48700C1AB97 /* PolicyActionsDetailTableView.swift in Sources */,
 				A8ECB7C12C88492700FAFDC2 /* PushBrain.swift in Sources */,
 				A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */,
 				E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */,
