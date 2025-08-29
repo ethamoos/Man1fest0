@@ -1611,7 +1611,7 @@ import AEXML
         //        let allScriptsFullyDetailed = self.allScriptsVeryDetailed.results
         
     }
-    //
+    
     func getDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
         
         separationLine()
@@ -1637,7 +1637,6 @@ import AEXML
         let decoder = JSONDecoder()
         scriptDetailed = try decoder.decode(Script.self, from: data)
         //        print("scriptDetailed is set to:\(scriptDetailed)")
-        
     }
     
     
@@ -1646,9 +1645,9 @@ import AEXML
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-  
+        
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
         print("Running func: getAllPolicies")
@@ -1665,7 +1664,7 @@ import AEXML
         self.allPoliciesConverted = decodedData
         allPoliciesComplete = true
         separationLine()
-//        atSeparationLine()
+        //        atSeparationLine()
         print("getAllPolicies status is set to:\(allPoliciesComplete)")
         print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
         print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
@@ -1794,7 +1793,6 @@ import AEXML
     
     
     @Published var showProgressView: Bool = false
-    
     
     func showProgress() {
         

@@ -93,10 +93,41 @@ class XmlBrain: ObservableObject {
     var newPolicyAsXML: String = ""
     @Published var currentPolicyScopeXML: String = ""
     
-    //    #################################################################################
-    //    #################################################################################
+    // #########################################################################
+    //  Build identifiers
+    // #########################################################################
 
+        
+        let product_name = Bundle.main.infoDictionary!["CFBundleName"] as? String
+        let product_version = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String
+        let build_version = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+
+    //    #################################################################################
+    //    ############ Computers
+    //    #################################################################################
     
+    @Published var computers: [Computer] = []
+    @Published var computersBasic: [Computers.ComputerResponse] = []
+    @Published var allComputersBasic: ComputerBasic = ComputerBasic(computers: [])
+    @Published var allComputersBasicDict = [ComputerBasicRecord]()
+    
+    //    #################################################################################
+    //    ############ GROUPS
+    //    #################################################################################
+    
+    //    Members of a computer group
+    @Published var compGroupComputers = [computerGroupResponse.Computer]()
+    @Published var allComputerGroups: [ComputerGroup] = []
+    @Published var computerGroupMembers: [ComputerGroupMembers] = []
+    @Published var computerGroupInstance: [ComputerGroupInstance] = []
+    
+    @Published var computerGroupMembersComputers: [ComputerMember] = []
+    @Published var allComputerRecordsInit: ComputerGroupMembers = ComputerGroupMembers(computer: ComputerMember(id: 0, name: "") )
+    @Published var allComputerGroupsInitDict = ComputerMember(id: 0, name: "")
+    
+    @Published var userGroupsLDAP = ""
+    //        Groups in policy scope
+    @Published var allComputerGroupsScope: [ComputerGroup] = []
     
     func separationLine() {
         print("------------------------------------------------------------------")
@@ -152,16 +183,24 @@ class XmlBrain: ObservableObject {
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
         let url = URL(string: jamfURLQuery)!
         separationLine()
-        print("Running addComputerToGroup")
-        print("xmlContent is:\(xmlContent)")
+        print("Running addComputerToGroup XML brain")
+        separationLine()
+        print("xmlContent is:")
+        separationLine()
+        print(xmlContent)
+        separationLine()
         print("url is:\(url)")
-        print("computerName is:\(computerId)")
+        print("computerName is:\(computerName)")
         print("computerId is:\(computerId)")
+        print("groupId is:\(groupId)")
         
         let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
         computers.addChild(name: "id", value: computerId)
         computers.addChild(name: "name", value: computerName)
-        print("updatedContent is:\(self.aexmlDoc.root.xml)")
+        separationLine()
+        print("updatedContent is:")
+        separationLine()
+        print(self.aexmlDoc.root.xml)
         let jamfCount = computers.count
         print("jamfCount is:\(jamfCount)")
         self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
@@ -628,7 +667,7 @@ class XmlBrain: ObservableObject {
     //    getGroupMembersXML - getAsXML
     //    #############################################################################
     
-    func getGroupMembersXML(server: String, groupId: Int) {
+    func getGroupMembersXML(server: String, groupId: Int, authToken: String ) {
         
         //        Runs in view to get the members for the selected group as xml
         
@@ -639,8 +678,9 @@ class XmlBrain: ObservableObject {
         request.addValue("application/xml", forHTTPHeaderField: "Accept")
         request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
         request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         self.separationLine()
-        print("Running: getGroupMembersXML")
+        print("Running: getGroupMembersXML - xmlcontroller")
         print("groupId set as: \(groupId)")
         print("jamfURLQuery set as: \(jamfURLQuery)")
         
@@ -660,6 +700,49 @@ class XmlBrain: ObservableObject {
         }
         task.resume()
     }
+    
+    
+    //    #################################################################################
+    //    try await get Group Members - simple auth
+    //    #################################################################################
+    
+    
+    func getGroupMembers(server: String,  name: String, authToken: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/computergroups/name/" + name
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+          request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        separationLine()
+        print("Running func: getGroupMembers Xml brain")
+        print("jamfURLQuery is: \(jamfURLQuery)")
+        print("Server is: \(server)")
+        print("Name is: \(name)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        
+        //        DEBUG
+        separationLine()
+        print("processDetail getGroupMembers Json data as text is:")
+        print(String(data: data, encoding: .utf8)!)
+        let compGroupData = try JSONDecoder().decode(computerGroupResponse.self, from: data)
+        
+        DispatchQueue.main.async {
+            self.allComputerGroupsInitDict = self.allComputerRecordsInit.computer
+            self.allComputersBasicDict = self.allComputersBasic.computers
+            self.compGroupComputers = compGroupData.computerGroup.computers
+        }
+    }
+    
+    
+    
     
     func updateScopeAddCompGroup (xmlString: String, groupName: String, groupId: String) -> String {
         
@@ -2419,21 +2502,17 @@ class XmlBrain: ObservableObject {
         }
     }
     
-    
-    
     //    ##################################################
     //    addComputerToGroup
     //    ##################################################
-    
-    
-    
+        
     func addComputerToGroup(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String, authToken: String) {
         readXMLDataFromString(xmlContent: xmlContent)
         
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
         let url = URL(string: jamfURLQuery)!
         self.separationLine()
-        print("Running addComputerToGroup")
+        print("Running addComputerToGroup XmlBrain")
         print("xmlContent is:\(xmlContent)")
         print("url is:\(url)")
         print("computerName is:\(computerId)")
@@ -2447,7 +2526,6 @@ class XmlBrain: ObservableObject {
         print("jamfCount is:\(jamfCount)")
         
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
-        
         
     }
     

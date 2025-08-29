@@ -78,7 +78,7 @@ struct GroupsView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        xmlController.addComputerToGroup(xmlContent: networkController.computerGroupMembersXML, computerName: networkController.selectedSimpleComputer.name, computerId: String(describing: networkController.selectedSimpleComputer.id), groupId: String(describing: selectionGroup.id), resourceType: ResourceType.computerGroup, server: server, authToken: networkController.authToken)
+                        xmlController.addComputerToGroup(xmlContent: xmlController.computerGroupMembersXML, computerName: networkController.selectedSimpleComputer.name, computerId: String(describing: networkController.selectedSimpleComputer.id), groupId: String(describing: selectionGroup.id), resourceType: ResourceType.computerGroup, server: server, authToken: networkController.authToken)
                         
                     }) {
 #if os(macOS)
@@ -92,7 +92,6 @@ struct GroupsView: View {
 //                            Text("Add")
                         }
 #endif
-
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
@@ -108,6 +107,8 @@ struct GroupsView: View {
                         
                         Task {
                             await runGetGroupMembers(selection: selectionGroup, authToken: networkController.authToken)
+//                          try await xmlController.getGroupMembers(server: server, name: selectionGroup.name, authToken: networkController.authToken)
+                            
                         }
                         
                     }) {
@@ -218,7 +219,7 @@ struct GroupsView: View {
             print("Error getting GroupMembers")
             print(error)
         }
-        xmlController.getGroupMembersXML(server: server, groupId: selection.id)
+        xmlController.getGroupMembersXML(server: server, groupId: selection.id, authToken: networkController.authToken)
     }
     
     var searchResults: [ComputerGroup] {

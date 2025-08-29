@@ -62,7 +62,7 @@ struct GroupDetailView: View {
             print(error)
         }
         
-        xmlController.getGroupMembersXML    (server: server, groupId: selection.id)
+        xmlController.getGroupMembersXML(server: server, groupId: selection.id, authToken: networkController.authToken)
         
     }
 }

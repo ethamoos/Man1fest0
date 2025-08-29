@@ -52,6 +52,29 @@ struct PolicyDetailGeneralTabView: View {
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
+//  ############################################################################
+//  Sort order
+//  ############################################################################
+
+    
+    @State private var sortOption: SortOption = .alphabetical
+        
+        enum SortOption: String, CaseIterable, Identifiable {
+            case alphabetical = "Alphabetical"
+            case reverseAlphabetical = "Reverse Alphabetical"
+            
+            var id: String { self.rawValue }
+        }
+        
+        var sortedIcons: [Icon?] {
+            switch sortOption {
+            case .alphabetical:
+                return networkController.allIconsDetailed.sorted { $0?.name ?? "" < $1?.name ?? "" }
+            case .reverseAlphabetical:
+                return networkController.allIconsDetailed.sorted { $0?.name ?? "" > $1?.name ?? ""}
+            }
+        }
+    
     
     var body: some View {
         
@@ -61,7 +84,6 @@ struct PolicyDetailGeneralTabView: View {
         
         VStack(alignment: .leading) {
             
-//            LazyVGrid(columns: layout.columnsFlexMedium, spacing: 20) {
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
                     Picker(selection: $selectedCategory, label: Text("Category:")) {
@@ -182,7 +204,37 @@ struct PolicyDetailGeneralTabView: View {
             //                        Icons - picker
             // ################################################################################
             
+          
             LazyVGrid(columns: layout.columns, spacing: 10) {
+                
+//                VStack {
+//                    Picker("Sort Order", selection: $sortOrder) {
+//                        Text("Ascending").tag(SortOrder.ascending)
+//                        Text("Descending").tag(SortOrder.descending)
+//                    }
+//                    .pickerStyle(SegmentedPickerStyle())
+//                    .padding()
+//                    
+//                    List(sortedItems, id: \.self) { item in
+//                        Text(item)
+//                    }
+//                }
+                
+//                VStack {
+//                    Picker("Sort Options", selection: $sortOption) {
+//                        ForEach(SortOption.allCases) { option in
+//                            Text(option.rawValue).tag(option)
+//                        }
+//                    }
+//                    .pickerStyle(SegmentedPickerStyle())
+//                    .padding()
+//                    
+//                    List(sortedIcons) { icon in
+//                        Text(icon.id)
+//                    }
+//                }
+                
+                
                 Picker(selection: $selectedIcon, label: Text("Icon:")) {
                     //                            Text("").tag("")
                     ForEach(networkController.allIconsDetailed, id: \.self) { icon in

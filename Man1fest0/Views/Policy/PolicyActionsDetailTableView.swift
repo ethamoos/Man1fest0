@@ -1,5 +1,5 @@
 //
-//  PolicyDetailTableView.swift
+//  PolicyActionsDetailTableView.swift
 //  Man1fest0
 //
 //  Created by Amos Deane on 30/08/2024.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PolicyDetailTableView: View {
+struct PolicyActionsDetailTableView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var scopingController: ScopingBrain
@@ -200,7 +200,7 @@ struct PolicyDetailTableView: View {
         
             .onAppear() {
                 
-                print("PolicyDetailTableView - getting primary data")
+                print("PolicyActionsDetailTableView - getting primary data")
                 fetchData()
                 
             }
@@ -347,9 +347,9 @@ struct PolicyDetailTableView: View {
 
 
 
-//struct PolicyDetailTableView_Previews: PreviewProvider {
+//struct PolicyActionsDetailTableView_Previews: PreviewProvider {
 //    static var previews: some View {
-//        PolicyDetailTableView(server: "")
+//        PolicyActionsDetailTableView(server: "")
 //            .environmentObject (NetBrain())
 //            .environmentObject (Progress())
 //            .environmentObject (Layout())
