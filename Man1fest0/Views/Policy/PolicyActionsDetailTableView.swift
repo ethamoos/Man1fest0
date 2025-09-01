@@ -35,12 +35,7 @@ struct PolicyActionsDetailTableView: View {
     @State private var selectedIDs = []
     @State private var policiesSelection = Set<Policy>()
     @State var searchText = ""
-    @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
-    @State private var sortOrder2 = [KeyPathComparator(\General.name, order: .forward)]
-    
-//    @State private var sortOrder: [KeyPathComparator<Item>] = [
-//        .init(\.name, order: .forward)
-//    ]
+
 
     
     //  ########################################################################################
@@ -58,6 +53,19 @@ struct PolicyActionsDetailTableView: View {
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
     @State private var isAscending = true
+    
+    @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
+    
+//    @State private var sortOrder2 = [KeyPathComparator(\General.name, order: .forward)]
+//    @State private var sortOrder2: [KeyPathComparator\General.enabled] = [
+//        .init(\.name, order: .forward)
+//    ]
+//    @State private var sortOrder: [KeyPathComparator<Item>] = [
+//        .init(\.name, order: .forward)
+//    ]
+            @State private var sortOrder2: [KeyPathComparator<General>] = [
+        .init(\.name, order: .forward)
+    ]
 
     
     var body: some View {
@@ -65,23 +73,26 @@ struct PolicyActionsDetailTableView: View {
         
 //        Button("Sort by Active") {
 //            isAscending.toggle()
-//            networkController.allPoliciesDetailedGeneral.sort { isAscending ? $0.enabled && !$1.enabled : !$0.enabled && $1.enabled }
+//            networkController.allPoliciesDetailedGeneral.sort { isAscending ? $0.General.enabled && !$1.General.enabled : !$0.General.enabled && $1.General.enabled }
 //        }
-        
-        Table(networkController.allPoliciesDetailedGeneral, sortOrder: $sortOrder2) {
+//        
+//        Table(searchResults, sortOrder: $sortOrder2) {
 //            TableColumn("Name", value: \.name)
-//            TableColumn("Active") { item in
-//                Text(item.isActive ? "Yes" : "No")
+////            TableColumn("Active") { item in
+////                Text(item.isActive ? "Yes" : "No")
+////            }
+////            Text(policy.enabled ? "true" : "false")
+//
+//            TableColumn("Category", value: \.category!.name)
+//
+//            TableColumn("Enabled") {
+//                policy in
+//                Text(policy.enabled ?? true ? "true" : "false")
 //            }
-            
-            TableColumn("Enabled") {
-                policy in
-                Text(policy.enabled ?? true ? "true" : "false")
-            }
-        }
-        .onChange(of: sortOrder) { newOrder in
-            networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
-        }
+//        }
+//        .onChange(of: sortOrder2) { newOrder in
+//            networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
+//        }
         
 //        .onChange(of: sortOrder) { newOrder in
 //            items.sort(using: newOrder)

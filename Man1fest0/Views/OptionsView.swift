@@ -227,6 +227,12 @@ struct OptionsView: View {
                                 NavigationLink(destination: DepartmentsView(selectedResourceType: ResourceType.department, server: server )) {
                                     Text("Departments")
                                 }
+                                //  ###########################################################################
+                                //  Icons
+                                //  ###########################################################################
+                                NavigationLink(destination: IconsView( server: server )) {
+                                    Text("Icons")
+                                }
                             }
                         }
                         

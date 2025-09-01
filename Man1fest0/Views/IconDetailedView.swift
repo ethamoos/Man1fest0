@@ -8,25 +8,28 @@
 
 import SwiftUI
 //import URLImage
-import Foundation
+//import Foundation
 
 struct IconDetailedView: View {
     
-    var selectedResourceType: ResourceType
     @State var server: String
-    
-    @State var iconID: String
-    @State var icons: [Icon] = []
-    @State var icon = Icon(id: 0, url: "", name: "")
+//    @State var iconID: String
+//    @State var icons: [Icon] = []
+//    @State var icon = Icon(id: 0, url: "", name: "")
     @State var selectedIcon: Icon?
+//    @State var selection: [Icon] = []
     
-    @State var selection: [Icon] = []
     
     @EnvironmentObject var networkController: NetBrain
     
     var body: some View {
         
         VStack() {
+            
+            
+            
+            
+            
                 LazyVGrid(columns: [GridItem(.flexible())]) {
                 VStack(alignment: .leading) {
                     HStack(spacing:20) {
@@ -39,6 +42,10 @@ struct IconDetailedView: View {
                         }
                         .frame(width: 128, height: 128)
                         .clipShape(.rect(cornerRadius: 25))
+                        Text("File name is:\(String(describing: selectedIcon?.name ?? ""))")
+                        Text("Url is:\(String(describing: selectedIcon?.url ?? ""))")
+                        Text("ID is:\(String(describing: selectedIcon?.id ?? 0))")
+
                     }
                     
                     Button(action: { print("Pressing button")
@@ -72,20 +79,22 @@ struct IconDetailedView: View {
         .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
         
         .onAppear {
-            print("icon appeared. Running onAppear")
-            print("\(selectedResourceType) View appeared - connecting")
-            print("Searching for \(selectedResourceType)")
+            print("Icon detailed view appeared. Running onAppear")
+//            print("selectedIcon is set as:\(String(describing: selectedIcon ?? 0))")
             handleConnect(server: server)
         }
     }
     
     func handleConnect(server: String) {
         print("Handling connection")
-//        networkController.getIconDetails(jamfURL: server, itemID: iconID, authToken: networkController.authToken)
+        Task {
+            try await networkController.getDetailedIcon(server: server, authToken: networkController.authToken, iconID: String(describing: selectedIcon?.id ?? 0))
+        }
+       
     }
 }
 
-//struct IconView_Previews: PreviewProvider {
+//struct  IconsView_Previews: PreviewProvider {
 //    static var previews: some View {
 //        IconDetailedView()
 //    }
