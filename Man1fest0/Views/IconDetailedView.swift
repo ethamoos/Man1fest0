@@ -7,8 +7,6 @@
 
 
 import SwiftUI
-//import URLImage
-//import Foundation
 
 struct IconDetailedView: View {
     
@@ -17,20 +15,14 @@ struct IconDetailedView: View {
 //    @State var icons: [Icon] = []
 //    @State var icon = Icon(id: 0, url: "", name: "")
     @State var selectedIcon: Icon?
-//    @State var selection: [Icon] = []
-    
-    
+    @State private var exporting = false
+
     @EnvironmentObject var networkController: NetBrain
     
     var body: some View {
         
         VStack() {
-            
-            
-            
-            
-            
-                LazyVGrid(columns: [GridItem(.flexible())]) {
+            LazyVGrid(columns: [GridItem(.flexible())]) {
                 VStack(alignment: .leading) {
                     HStack(spacing:20) {
                     }
@@ -45,7 +37,6 @@ struct IconDetailedView: View {
                         Text("File name is:\(String(describing: selectedIcon?.name ?? ""))")
                         Text("Url is:\(String(describing: selectedIcon?.url ?? ""))")
                         Text("ID is:\(String(describing: selectedIcon?.id ?? 0))")
-
                     }
                     
                     Button(action: { print("Pressing button")
@@ -60,17 +51,53 @@ struct IconDetailedView: View {
                     .cornerRadius(8)
                     .foregroundColor(Color.white)
                     
-//                    Button(action: { print("Downloading icon")
-//                        networkController.downloadIcon(jamfURL: server, itemID: iconID, authToken: networkController.authToken)
-//                    }) {
-//                        HStack(spacing:50) {
-//                            Image(systemName: "tortoise")
-//                            Text("Download")
+                    Button(action: { print("Downloading icon")
+                        networkController.downloadIcon(jamfURL: server, itemID: String(describing: selectedIcon?.id ?? 0), authToken: networkController.authToken)
+                    }) {
+                        HStack(spacing:50) {
+                            Image(systemName: "tortoise")
+                            Text("Download")
+                        }
+                    }
+                    .background(Color.blue)
+                    .cornerRadius(8)
+                    .foregroundColor(Color.white)
+                    
+                    
+    //              ################################################################################
+    //              DOWNLOAD OPTION
+    //              ################################################################################
+
+    #if os(macOS)
+                    
+                    Button("Export") {
+                        exporting = true
+                        networkController.separationLine()
+//                        print("Printing text to export:\(text)")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.yellow)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    
+//                    .fileExporter(
+//                        isPresented: $exporting,
+//                        document: document,
+//                        contentType: .xml
+//                    ) { result in
+//                        switch result {
+//                        case .success(let file):
+//                            print("Printing file to export:\(file)")
+//                        case .failure(let error):
+//                            print(error)
 //                        }
 //                    }
-//                    .background(Color.blue)
-//                    .cornerRadius(8)
-//                    .foregroundColor(Color.white)
+#endif
+
+                    
+                    
+                    
+                    
+                    
                     
                 }
                 .frame(minWidth: 100, maxWidth: .infinity)
@@ -90,7 +117,6 @@ struct IconDetailedView: View {
         Task {
             try await networkController.getDetailedIcon(server: server, authToken: networkController.authToken, iconID: String(describing: selectedIcon?.id ?? 0))
         }
-       
     }
 }
 

@@ -4309,7 +4309,6 @@ import AEXML
     
     
     
-    
     func downloadIcon(jamfURL: String, itemID: String, authToken: String){
         
         let jamfURLQuery = jamfURL + "/api/v1/icon/" + itemID + "?res=original&scale=0"

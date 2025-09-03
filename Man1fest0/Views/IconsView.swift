@@ -11,19 +11,32 @@ import SwiftUI
 struct  IconsView: View {
     
     
+    
+
+//    @StateObject private var viewModel = PhotoViewModel()
+
+    
+    
+    
+    
+    
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var importExportController: ImportExportBrain
     
+    @State private var selectedImageURL: URL?
     @State var server: String
-    //    @State var icons: [Icon] = []
     @State var selectedIcon: Icon = Icon(id: 0, url: "", name: "")
-    
+    @State var path = ""
+    @State private var showList = false
+    @State private var allItemsList = [""]
+    @State private var selectedItem = ""
     
     var body: some View {
         
         VStack {
-            //
+            
             if networkController.allIconsDetailed.count > 0 {
                 
                 NavigationView {
@@ -36,22 +49,71 @@ struct  IconsView: View {
                             }
                         }
                         .cornerRadius(8)
-                        .frame(minWidth: 300, maxWidth: .infinity, alignment: .leading)
-                        
                     }
-                    Text("\(networkController.allIconsDetailed.count) total icons")
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
             } else {
                 ProgressView {
                     Text("Loading")
                         .font(.title)
-                    //                    .progressViewStyle(.horizontal)
+                        .progressViewStyle(.horizontal)
                 }
                 .padding()
                 Spacer()
             }
         }
+        .frame(minWidth: 300, maxWidth: .infinity, alignment: .leading)
+        Text("\(networkController.allIconsDetailed.count) total icons")
+            .padding()
+        
+        
+        VStack(spacing: 20) {
+            
+            Button(action: {
+                
+                selectPhoto()
+
+            }) {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Select Icon")
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(
+                        Color.black.opacity(0.4),
+                        style: StrokeStyle()
+                    )
+            )
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
+            if let url = selectedImageURL {
+                Text("Selected: \(url.lastPathComponent)")
+            }
+            
+            Button(action: {
+                
+                importExportController.uploadPhoto(server: server, authToken: networkController.authToken, selectedImageURL: selectedImageURL)
+                
+                progress.showProgress()
+                progress.waitForABit()
+                
+            }, label: {
+                HStack {
+                    Text("Upload")
+                }
+            })
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
+            .disabled(selectedImageURL == nil || importExportController.isUploading)
+            Text(importExportController.uploadStatus)
+                .foregroundColor(importExportController.uploadStatus.contains("Success") ? .green : .red)
+        }
+        .padding()
+        .frame(width: 400, height: 200)
+        
+ 
         
         .onAppear() {
             if networkController.allIconsDetailed.count <= 1 {
@@ -63,4 +125,19 @@ struct  IconsView: View {
             }
         }
     }
+    
+    func selectPhoto() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.allowedFileTypes = ["png", "jpg", "jpeg", "heic"]
+        panel.directoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
+        
+        if panel.runModal() == .OK {
+            selectedImageURL = panel.url
+            importExportController.uploadStatus = ""
+        }
+    }
+    
 }
+//}
+
