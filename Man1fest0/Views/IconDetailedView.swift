@@ -7,85 +7,91 @@
 
 
 import SwiftUI
-//import URLImage
-import Foundation
 
 struct IconDetailedView: View {
     
-    var selectedResourceType: ResourceType
     @State var server: String
-    
-    @State var iconID: String
-    @State var icons: [Icon] = []
-    @State var icon = Icon(id: 0, url: "", name: "")
     @State var selectedIcon: Icon?
-    
-    @State var selection: [Icon] = []
-    
+    @State private var exporting = false
+
     @EnvironmentObject var networkController: NetBrain
-    
+    @EnvironmentObject var progress: Progress
+    @EnvironmentObject var layout: Layout
+    @StateObject private var viewModel = PhotoViewModel()
+
     var body: some View {
         
-        VStack() {
-                LazyVGrid(columns: [GridItem(.flexible())]) {
+        VStack(alignment: .leading) {
+            
+            LazyVGrid(columns: layout.columnsWide, spacing: 10) {
+                
                 VStack(alignment: .leading) {
-                    HStack(spacing:20) {
-                    }
+                    
                     if let currentIconUrl = selectedIcon?.url {
                         AsyncImage(url: URL(string: currentIconUrl)) { image in
                             image.resizable()
                         } placeholder: {
                             Color.red
                         }
-                        .frame(width: 128, height: 128)
+                        .frame(width: 100, height: 100)
                         .clipShape(.rect(cornerRadius: 25))
-                    }
-                    
-                    Button(action: { print("Pressing button")
-                        handleConnect(server: server)
-                    }) {
-                        HStack(spacing:20) {
-                            Image(systemName: "tortoise")
-                            Text("Update")
+                        
+                        Text("Filename:\t\t\(String(describing: selectedIcon?.name ?? ""))")
+                        Text("ID:\t\t\t\t\(String(describing: selectedIcon?.id ?? 0))")
+                        Text("Url:\t\t\t\t\(String(describing: selectedIcon?.url ?? ""))")
+                        
+                        Button(action: { print("Pressing button")
+                            handleConnect(server: server)
+                        }) {
+                            HStack(spacing:20) {
+                                Text("Refresh")
+                            }
                         }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        
+                        //  ################################################################################
+                        //              DOWNLOAD OPTION
+                        //  ################################################################################
+                        
+#if os(macOS)
+                        
+                        Button("Export") {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            exporting = true
+                            networkController.separationLine()
+                            viewModel.downloadIcon(url: selectedIcon?.url ?? "", filename: selectedIcon?.name ?? "" )
+                            //                        print("Printing text to export:\(text)")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.yellow)
+                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
+#endif
                     }
-                    .background(Color.blue)
-                    .cornerRadius(8)
-                    .foregroundColor(Color.white)
-                    
-//                    Button(action: { print("Downloading icon")
-//                        networkController.downloadIcon(jamfURL: server, itemID: iconID, authToken: networkController.authToken)
-//                    }) {
-//                        HStack(spacing:50) {
-//                            Image(systemName: "tortoise")
-//                            Text("Download")
-//                        }
-//                    }
-//                    .background(Color.blue)
-//                    .cornerRadius(8)
-//                    .foregroundColor(Color.white)
-                    
                 }
-                .frame(minWidth: 100, maxWidth: .infinity)
             }
         }
-        .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
-        
+//        .frame(minWidth: 400, maxWidth: .infinity, alignment: .leading)
+    
+        .padding()
+
         .onAppear {
-            print("icon appeared. Running onAppear")
-            print("\(selectedResourceType) View appeared - connecting")
-            print("Searching for \(selectedResourceType)")
+            print("Icon detailed view appeared. Running onAppear")
+            print("selectedIcon is set as:\(String(describing: selectedIcon?.name ?? ""))")
             handleConnect(server: server)
         }
     }
     
     func handleConnect(server: String) {
         print("Handling connection")
-//        networkController.getIconDetails(jamfURL: server, itemID: iconID, authToken: networkController.authToken)
+        Task {
+            try await networkController.getDetailedIcon(server: server, authToken: networkController.authToken, iconID: String(describing: selectedIcon?.id ?? 0))
+        }
     }
 }
 
-//struct IconView_Previews: PreviewProvider {
+//struct  IconsView_Previews: PreviewProvider {
 //    static var previews: some View {
 //        IconDetailedView()
 //    }

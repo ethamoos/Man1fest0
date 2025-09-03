@@ -39,7 +39,6 @@ struct ImportView: View {
                     allItemsList.insert(path,at: 0)
                     selectedItem = path
                     self.showList.toggle()
-                    
                     do {
                         importExportBrain.importedString = try String(contentsOfFile: path, encoding: .ascii)
                         print("Data imported")

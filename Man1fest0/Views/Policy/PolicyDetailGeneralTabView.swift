@@ -69,9 +69,9 @@ struct PolicyDetailGeneralTabView: View {
         var sortedIcons: [Icon?] {
             switch sortOption {
             case .alphabetical:
-                return networkController.allIconsDetailed.sorted { $0?.name ?? "" < $1?.name ?? "" }
+                return networkController.allIconsDetailed.sorted { $0.name ?? "" < $1.name ?? "" }
             case .reverseAlphabetical:
-                return networkController.allIconsDetailed.sorted { $0?.name ?? "" > $1?.name ?? ""}
+                return networkController.allIconsDetailed.sorted { $0.name ?? "" > $1.name ?? ""}
             }
         }
     
@@ -239,9 +239,9 @@ struct PolicyDetailGeneralTabView: View {
                     //                            Text("").tag("")
                     ForEach(networkController.allIconsDetailed, id: \.self) { icon in
                         HStack {
-                            Text(String(describing: icon?.name ?? ""))
+                            Text(String(describing: icon.name ?? ""))
                             
-                            AsyncImage(url: URL(string: icon?.url ?? "" ))  { image in
+                            AsyncImage(url: URL(string: icon.url ?? "" ))  { image in
                                 image
                                     .resizable()
                                     .scaledToFill()

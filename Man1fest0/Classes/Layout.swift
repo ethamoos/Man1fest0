@@ -90,6 +90,7 @@ class Layout: ObservableObject {
       
     let columnsFlexNarrow = [
         GridItem(.flexible(minimum: 20), alignment: .leading),
+        GridItem(.flexible(minimum: 20), alignment: .leading)
     ]
     let threeColumnsFlexNarrow = [
         GridItem(.flexible(minimum: 20), alignment: .leading),

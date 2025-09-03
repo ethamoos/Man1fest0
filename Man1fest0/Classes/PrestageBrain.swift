@@ -220,8 +220,6 @@ import SwiftUI
     // This sets the property selectedPrestageScope to contain these pre-stages
     
     func getPrestageCurrentScopeToAdd(jamfURL: String, prestageID: String, authToken: String) async throws {
-
-//    func getPrestageCurrentScopeToAdd(jamfURL: String, prestageID: String, authToken: String, callback: @escaping () -> ()){
         
         let jamfURLQuery = jamfURL + "/api/v2/computer-prestages/" + prestageID + "/scope"
         let url = URL(string: jamfURLQuery)!
@@ -233,7 +231,6 @@ import SwiftUI
         separationLine()
         print("Running:getPrestageCurrentScopeToAdd for prestage id:\(prestageID)")
         //        print("Get devices assigned to prestage id:\(prestageID)")
-        
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -255,56 +252,14 @@ import SwiftUI
             
         }
     }
-        
-//        
-//        
-//        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-//            if let error = error {
-//                print("handle error")
-//                print("Error is:\(error)")
-//            } else if (response as? HTTPURLResponse)?.statusCode != 200 {
-//                print("Code not 200")
-//                print(error ?? "Unknown error")
-//                
-//            } else {
-//                
-//                if let data = data {
-//                    //                    print("Raw json is:")
-//                    //                    print(String(data: data, encoding: .utf8)!)
-//                    let decoder = JSONDecoder()
-//                    if let decodedPrestages = try? decoder.decode(ComputerPrestageCurrentScope.self, from: data) {
-//                        print("getPrestageCurrentScopeToAdd is decoding an object")
-//                        //                        print("All decodedPrestages ComputerPrestageCurrentScope are :")
-//                        //                        print(decodedPrestages)
-//                        
-//                        DispatchQueue.main.async {
-//                            self.depVersionLock = decodedPrestages.versionLock
-//                            print("depVersionLock is now set to:\(self.depVersionLock)")
-//                            self.selectedPrestageScope = decodedPrestages
-//                            callback()
-//                            
-//                        }
-//                    } else {
-//                        print("Decoding failed")
-//                    }
-//                }
-//            }
-//        }
-//        task.resume()
-//    }
-//    
-    
     
     // #######################################################################################
     // ADD DEVICE TO PRESTAGE
     // #######################################################################################
     
-    
-    //    func getPrestageCurrentScopeToAdd(jamfURL: String, prestageID: String, authToken: String, callback: @escaping () -> ()){
+
     func addDeviceToPrestage(server: String, prestageID: String, serial: String, authToken: String, depVersionLock: Int) async throws {
 
-    
-//    func addDeviceToPrestage(server: String, prestageID: String, serial: String, authToken: String, depVersionLock: Int, callback: @escaping () -> ()) {
         let jamfURLQuery = server + "/api/v2/computer-prestages/" + prestageID + "/scope"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
@@ -312,10 +267,8 @@ import SwiftUI
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
         let json: [String: Any] = ["serialNumbers": [serial],
                                    "versionLock": depVersionLock]
-        
         // ################################################
         //        TURN ON DEBUGGING
         // ################################################
@@ -328,12 +281,8 @@ import SwiftUI
         
         let jsonData = try? JSONSerialization.data(withJSONObject: json)
         if let jsonData = jsonData {
-            
-            //            DispatchQueue.main.async {
             request.httpBody = jsonData
-            //            }
         }
-        
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
@@ -342,13 +291,10 @@ import SwiftUI
     }
     
     
-    
-    //Function to remove the computer from a specified computer pre-stage
-    
-//    func getPrestageCurrentScopeToAdd(jamfURL: String, prestageID: String, authToken: String, callback: @escaping () -> ()){
+//  Function to remove the computer from a specified computer pre-stage
+
     func removeDeviceFromPrestage(server: String, removeComputerPrestageID: String, serial: String, authToken: String, depVersionLock: Int) async throws {
         
-        //        func remove/*D*/eviceFromPrestage(server: String, removeComputerPrestageID: String, serial: String, authToken: String,depVersionLock: Int, callback: @escaping () -> ()){
         let jamfURLQuery = server + "/api/v2/computer-prestages/" + removeComputerPrestageID + "/scope/delete-multiple"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
@@ -374,34 +320,8 @@ import SwiftUI
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - response is:\(response)")
             throw JamfAPIError.badResponseCode
-            
-            
-            
-            //        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-            //            if let error = error {
-            //                print("Error is:\(error)")
-            //            } else if (response as? HTTPURLResponse)?.statusCode != 200 {
-            //                //handle error
-            //                let responseCode = (response as? HTTPURLResponse)?.statusCode
-            //                print("Status is not 200 but is:\(String(describing: error))")
-            //                print("Response is: \(String(describing: response))")
-            //                print("Response code is:\(responseCode ?? 0)")
-            //                self.separationLine()
-            //                print("url is:\(url)")
-            //                print("Serial is:\(serial)")
-            //                print("targetComputerPrestageID is:\(removeComputerPrestageID)")
-            //            } else {
-            //                print("We removed device from the prestage - now adding")
-            //                callback()
-            //
-            //                //                getPrestageAssignmentsTarget(jamfURL: jamfURL, targetComputerPrestageID: targetComputerPrestageID, initialComputerPrestageID: initialComputerPrestageID, chosenPrestageID: targetComputerPrestageID, serial: computerSerialNumber, authToken: authToken)
-            //
-            //            }
-            //        }
-            //        task.resume()
         }
     }
-    
     
     func printAllPrestages() {
         separationLine()
@@ -422,7 +342,6 @@ import SwiftUI
         //        }
     }
     
-    
     func printSpecificPrestage() {
         separationLine()
         print("Running: printSpecificPrestage")
@@ -441,7 +360,6 @@ import SwiftUI
         print("DEBUGGING END #######################")
         separationLine()
     }
-    
 }
 
 

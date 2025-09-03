@@ -127,14 +127,14 @@ struct PolicySelfServiceTabView: View {
                     List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
-                            Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                            Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
+                            AsyncImage(url: URL(string: icon.url ?? "" )) { image in
                                 image.resizable().frame(width: 15, height: 15)
                             } placeholder: {
                             }
                         }
                         .foregroundColor(.gray)
-                        .listRowBackground(selectedIconString == icon?.name
+                        .listRowBackground(selectedIconString == icon.name
                                            ? Color.green.opacity(0.3)
                                            : Color.clear)
                         .tag(icon)
@@ -147,7 +147,7 @@ struct PolicySelfServiceTabView: View {
                         HStack {
                             Image(systemName: "photo.circle")
                             Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                            AsyncImage(url: URL(string: icon.url ?? "" )) { image in
                                 image.resizable().frame(width: 15, height: 15)
                             } placeholder: {
                             }
@@ -166,15 +166,15 @@ struct PolicySelfServiceTabView: View {
                         //                            Text("").tag("")
                         ForEach(networkController.allIconsDetailed, id: \.self) { icon in
                             HStack {
-                                Text(String(describing: icon?.name ?? ""))
-                                AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                                Text(String(describing: icon.name ?? ""))
+                                AsyncImage(url: URL(string: icon.url ?? "" )) { image in
                                     image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
                                 } placeholder: {
                                     //                        Color.red
                                 }
                             }
                             
-                            Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
+                            Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon.name)
                             
                             
                         }
