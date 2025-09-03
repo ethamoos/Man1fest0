@@ -23,7 +23,7 @@ struct IconDetailedView: View {
         
         VStack(alignment: .leading) {
             
-            LazyVGrid(columns: layout.columnsFlexNarrow, spacing: 10) {
+            LazyVGrid(columns: layout.columnsWide, spacing: 10) {
                 
                 VStack(alignment: .leading) {
                     
