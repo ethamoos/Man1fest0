@@ -11,103 +11,74 @@ import SwiftUI
 struct IconDetailedView: View {
     
     @State var server: String
-//    @State var iconID: String
-//    @State var icons: [Icon] = []
-//    @State var icon = Icon(id: 0, url: "", name: "")
     @State var selectedIcon: Icon?
     @State private var exporting = false
 
     @EnvironmentObject var networkController: NetBrain
-    
+    @EnvironmentObject var progress: Progress
+    @EnvironmentObject var layout: Layout
+    @StateObject private var viewModel = PhotoViewModel()
+
     var body: some View {
         
-        VStack() {
-            LazyVGrid(columns: [GridItem(.flexible())]) {
+        VStack(alignment: .leading) {
+            
+            LazyVGrid(columns: layout.columnsFlexNarrow, spacing: 10) {
+                
                 VStack(alignment: .leading) {
-                    HStack(spacing:20) {
-                    }
+                    
                     if let currentIconUrl = selectedIcon?.url {
                         AsyncImage(url: URL(string: currentIconUrl)) { image in
                             image.resizable()
                         } placeholder: {
                             Color.red
                         }
-                        .frame(width: 128, height: 128)
+                        .frame(width: 100, height: 100)
                         .clipShape(.rect(cornerRadius: 25))
-                        Text("File name is:\(String(describing: selectedIcon?.name ?? ""))")
-                        Text("Url is:\(String(describing: selectedIcon?.url ?? ""))")
-                        Text("ID is:\(String(describing: selectedIcon?.id ?? 0))")
-                    }
-                    
-                    Button(action: { print("Pressing button")
-                        handleConnect(server: server)
-                    }) {
-                        HStack(spacing:20) {
-                            Image(systemName: "tortoise")
-                            Text("Update")
+                        
+                        Text("Filename:\t\t\(String(describing: selectedIcon?.name ?? ""))")
+                        Text("ID:\t\t\t\t\(String(describing: selectedIcon?.id ?? 0))")
+                        Text("Url:\t\t\t\t\(String(describing: selectedIcon?.url ?? ""))")
+                        
+                        Button(action: { print("Pressing button")
+                            handleConnect(server: server)
+                        }) {
+                            HStack(spacing:20) {
+                                Text("Refresh")
+                            }
                         }
-                    }
-                    .background(Color.blue)
-                    .cornerRadius(8)
-                    .foregroundColor(Color.white)
-                    
-                    Button(action: { print("Downloading icon")
-                        networkController.downloadIcon(jamfURL: server, itemID: String(describing: selectedIcon?.id ?? 0), authToken: networkController.authToken)
-                    }) {
-                        HStack(spacing:50) {
-                            Image(systemName: "tortoise")
-                            Text("Download")
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        
+                        //  ################################################################################
+                        //              DOWNLOAD OPTION
+                        //  ################################################################################
+                        
+#if os(macOS)
+                        
+                        Button("Export") {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            exporting = true
+                            networkController.separationLine()
+                            viewModel.downloadIcon(url: selectedIcon?.url ?? "", filename: selectedIcon?.name ?? "" )
+                            //                        print("Printing text to export:\(text)")
                         }
-                    }
-                    .background(Color.blue)
-                    .cornerRadius(8)
-                    .foregroundColor(Color.white)
-                    
-                    
-    //              ################################################################################
-    //              DOWNLOAD OPTION
-    //              ################################################################################
-
-    #if os(macOS)
-                    
-                    Button("Export") {
-                        exporting = true
-                        networkController.separationLine()
-//                        print("Printing text to export:\(text)")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.yellow)
-                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                    
-//                    .fileExporter(
-//                        isPresented: $exporting,
-//                        document: document,
-//                        contentType: .xml
-//                    ) { result in
-//                        switch result {
-//                        case .success(let file):
-//                            print("Printing file to export:\(file)")
-//                        case .failure(let error):
-//                            print(error)
-//                        }
-//                    }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.yellow)
+                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
 #endif
-
-                    
-                    
-                    
-                    
-                    
-                    
+                    }
                 }
-                .frame(minWidth: 100, maxWidth: .infinity)
             }
         }
-        .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
-        
+//        .frame(minWidth: 400, maxWidth: .infinity, alignment: .leading)
+    
+        .padding()
+
         .onAppear {
             print("Icon detailed view appeared. Running onAppear")
-//            print("selectedIcon is set as:\(String(describing: selectedIcon ?? 0))")
+            print("selectedIcon is set as:\(String(describing: selectedIcon?.name ?? ""))")
             handleConnect(server: server)
         }
     }

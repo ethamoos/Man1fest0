@@ -10,15 +10,7 @@ import SwiftUI
 
 struct  IconsView: View {
     
-    
-    
-
-//    @StateObject private var viewModel = PhotoViewModel()
-
-    
-    
-    
-    
+    @StateObject private var viewModel = PhotoViewModel()
     
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
@@ -36,94 +28,108 @@ struct  IconsView: View {
     var body: some View {
         
         VStack {
-            
-            if networkController.allIconsDetailed.count > 0 {
+            VStack {
                 
-                NavigationView {
-                    List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-                        NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
-                            
-                            HStack {
-                                Image(systemName: "photo.circle")
-                                Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
+                if networkController.allIconsDetailed.count > 0 {
+                    
+                    NavigationView {
+                        List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
+                            NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
+                                
+                                HStack {
+                                    Image(systemName: "photo.circle")
+                                    Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
+                                }
                             }
+                            .cornerRadius(8)
                         }
-                        .cornerRadius(8)
                     }
+                    .navigationViewStyle(DefaultNavigationViewStyle())
+                } else {
+                    ProgressView {
+                        Text("Loading")
+                            .font(.title)
+                            .progressViewStyle(.horizontal)
+                    }
+                    .padding()
+                    Spacer()
                 }
-                .navigationViewStyle(DefaultNavigationViewStyle())
-            } else {
-                ProgressView {
-                    Text("Loading")
-                        .font(.title)
-                        .progressViewStyle(.horizontal)
-                }
-                .padding()
-                Spacer()
             }
-        }
-        .frame(minWidth: 300, maxWidth: .infinity, alignment: .leading)
-        Text("\(networkController.allIconsDetailed.count) total icons")
-            .padding()
-        
-        
-        VStack(spacing: 20) {
+            .frame(minWidth: 300, maxWidth: .infinity, alignment: .leading)
             
-            Button(action: {
-                
-                selectPhoto()
-
-            }) {
-                HStack(spacing: 10) {
-                    Image(systemName: "square.and.arrow.up")
-                    Text("Select Icon")
-                }
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(
-                        Color.black.opacity(0.4),
-                        style: StrokeStyle()
-                    )
-            )
-            .buttonStyle(.borderedProminent)
-            .tint(.blue)
-            if let url = selectedImageURL {
-                Text("Selected: \(url.lastPathComponent)")
-            }
+            Text("\(networkController.allIconsDetailed.count) total icons")
             
-            Button(action: {
+            VStack(spacing: 10) {
                 
-                importExportController.uploadPhoto(server: server, authToken: networkController.authToken, selectedImageURL: selectedImageURL)
-                
-                progress.showProgress()
-                progress.waitForABit()
-                
-            }, label: {
                 HStack {
-                    Text("Upload")
+                    
+                    Button(action: {
+                        
+                        selectPhoto()
+                        
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Select Icon")
+                        }
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(
+                                Color.black.opacity(0.4),
+                                style: StrokeStyle()
+                            )
+                    )
+                    .buttonStyle(.borderedProminent)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    .tint(.blue)
+                    if let url = selectedImageURL {
+                        Text("Selected: \(url.lastPathComponent)")
+                    }
+                    
+                    Button(action: {
+                        
+                        importExportController.uploadPhoto(server: server, authToken: networkController.authToken, selectedImageURL: selectedImageURL)
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                    }, label: {
+                        HStack {
+                            Text("Upload")
+                        }
+                    })
+                    .buttonStyle(.borderedProminent)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    .tint(.blue)
+//                    .disabled(selectedImageURL == nil || importExportController.isUploading)
+                    
+                    Button("Download All Icons") {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        viewModel.downloadAllIcons(allIcons: networkController.allIconsDetailed)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    .tint(.yellow)
                 }
-            })
-            .buttonStyle(.borderedProminent)
-            .tint(.blue)
-            .disabled(selectedImageURL == nil || importExportController.isUploading)
-            Text(importExportController.uploadStatus)
-                .foregroundColor(importExportController.uploadStatus.contains("Success") ? .green : .red)
+                
+                Text(importExportController.uploadStatus)
+                    .foregroundColor(importExportController.uploadStatus.contains("Success") ? .green : .red)
+              
+            }
+            .frame(width: 400, height: 50)
+            .onAppear() {
+                if networkController.allIconsDetailed.count <= 1 {
+                    print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+                } else {
+                    print("getAllIconsDetailed has already run")
+                    print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                }
+            }
         }
         .padding()
-        .frame(width: 400, height: 200)
-        
- 
-        
-        .onAppear() {
-            if networkController.allIconsDetailed.count <= 1 {
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
-            } else {
-                print("getAllIconsDetailed has already run")
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-            }
-        }
     }
     
     func selectPhoto() {
@@ -137,7 +143,5 @@ struct  IconsView: View {
             importExportController.uploadStatus = ""
         }
     }
-    
 }
-//}
 
