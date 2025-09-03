@@ -146,7 +146,6 @@ struct ConnectSheet: View {
             networkController.password = pwFromKeychain
             print("pwFromKeychain succeeded")
 #endif
-            
         }
         networkController.atSeparationLine()
         print("Handling connection - initial connection to Jamf")
