@@ -190,7 +190,11 @@ import AEXML
     //    Icons
     //    #################################################################################
     
-    @Published var allIconsDetailed: [Icon?] = [Icon(id: 0, url: "", name: "")]
+//    @Published var allIconsDetailed: [Icon?] = [Icon(id: 0, url: "", name: "")]
+//    @Published var allIconsDetailed: [Icon?] = []
+    @Published var allIconsDetailed: [Icon] = []
+
+
     @Published var iconDetailed: Icon = Icon(id: 0, url: "", name: "")
     
     //    #################################################################################
@@ -4234,32 +4238,60 @@ import AEXML
     
     
     func getDetailedIcon(server: String, authToken: String, iconID: String) async throws {
+        
         let jamfURLQuery = server + "/api/v1/icon/" + iconID
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        print("Running getDetailedIcon - iconID is:\(iconID)")
+        print("Running getDetailedIcon - iconID is:\(iconID)")
+        print("url is:\(url)")
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200 - Response is:\(String(describing: responseCode ?? 0))")
+            print("Code not 200 - Response is:\(String(describing: responseCode ?? 0))")
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
         if let decodedData = try? decoder.decode(Icon.self, from: data) {
             self.iconDetailed = decodedData
 //            separationLine()
-            //        print("Running getDetailedIcon - iconID is:\(iconID)")
-            //        print("Response is:\(String(describing: responseCode))")
-//            print("Add to:allIconsDetailed: Icon id is:\(iconID)")
+        print("Decoding getDetailedIcon - iconID is:\(iconID)")
+        print("Response is:\(String(describing: responseCode ?? 0))")
+        print("Add to:allIconsDetailed: Icon id is:\(iconID)")
             self.allIconsDetailed.insert(self.iconDetailed, at: 0)
         } else {
             print("Decoding failed")
         }
         //        print("All icons are:\(self.allIconsDetailed)")
     }
+    
+//    func getAllIcons(server: String) async throws {
+//        let jamfURLQuery = server + "/JSSResource/packages"
+//        let url = URL(string: jamfURLQuery)!
+//        var request = URLRequest(url: url)
+//        request.httpMethod = "GET"
+//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+//  
+//        request.setValue("application/json", forHTTPHeaderField: "Accept")
+//        separationLine()
+//        print("Running func: getAllPackages")
+//        
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+//            print("Code not 200")
+//            throw JamfAPIError.badResponseCode
+//        }
+//        let decoder = JSONDecoder()
+//        self.allPackages = try decoder.decode(Packages.self, from: data).packages
+//        allPackagesComplete = true
+//        print("allPackagesComplete status is set to:\(allPackagesComplete)")
+//        
+//    }
+    
+    
     
     func getAllIconsDetailed(server: String, authToken: String, loopTotal: Int){
         
@@ -4274,6 +4306,8 @@ import AEXML
             }
         }
     }
+    
+    
     
     func downloadIcon(jamfURL: String, itemID: String, authToken: String){
         

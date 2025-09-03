@@ -374,8 +374,8 @@ struct CreatePolicyView: View {
                     ForEach(networkController.allIconsDetailed, id: \.self) { icon in
                         
                             HStack {
-                                Text(String(describing: icon?.name ?? ""))
-                                AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
+                                Text(String(describing: icon.name))
+                                AsyncImage(url: URL(string: icon.url )) { image in
                                     image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
                                 } placeholder: {
                                     //                        Color.red

@@ -5,13 +5,16 @@ import SwiftUI
 @main
 struct Man1fest0App: App {
     
+//    #################################################################################
 //    Order of classes is based on the order in which they were added
-    
-    
+//    #################################################################################
+
+    let photoController: PhotoViewModel
+//    #################################################################################
 //    Core data for persistent notes
+//    #################################################################################
     private let coreDataStack = CoreDataStack(modelName: "NotesModel")
     @Environment(\.scenePhase) var scenePhase
-    
     let pushController: PushBrain
     let extensionAttributeController: EaBrain
     let networkController: NetBrain
@@ -29,8 +32,8 @@ struct Man1fest0App: App {
     let exportController: ImportExportBrain
     
     init() {
+        self.photoController = PhotoViewModel()
         self.pushController = PushBrain()
-
         self.extensionAttributeController = EaBrain()
 //        self.jamfController = JamfController()
         self.networkController = NetBrain()
@@ -48,10 +51,10 @@ struct Man1fest0App: App {
         WindowGroup {
             ContentView()
             
+//                .environmentObject(photoController)
                 .environmentObject(coreDataStack)
                 .environment(\.managedObjectContext,
                              coreDataStack.managedObjectContext)
-            
                 .environmentObject(pushController)
                 .environmentObject(extensionAttributeController)
                 .environmentObject(networkController)
@@ -69,7 +72,7 @@ struct Man1fest0App: App {
                 .environmentObject(policyController)
                 .environmentObject(exportController)
         }.commands {
-            SidebarCommands() // 1
+            SidebarCommands() 
         }
         .onChange(of: scenePhase) { _ in
             coreDataStack.save()
