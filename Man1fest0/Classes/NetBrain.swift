@@ -3244,6 +3244,49 @@ import AEXML
                 appendStatus("Connecting to \(url)...")
             }
         }
+    }    
+    //    #################################################################################
+    //    enableAllComputers  - enable AllComputers
+    //    #################################################################################
+    
+    func enableAllComputers(server: String, authToken: String, resourceType: ResourceType, itemID: Int, selfServiceToggle: Bool) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let itemIDString = String(itemID)
+        var xml: String
+        print("Running enableSelfService")
+        xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
+                print("ItemID is set as:\(itemIDString)")
+                print("resourceType is set as:\(resourceType)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+    
+    //    #################################################################################
+    //    enableAllUsers - enable All Users
+    //    #################################################################################
+    
+    func enableAllUsers(server: String, authToken: String, resourceType: ResourceType, policyID: Int, enableAllUsers: Bool) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let policyIDString = String(policyID)
+        var xml: String
+        print("Running enableSelfService")
+        xml = "<policy><scope><all_jss_users>true</all_jss_users></scope></policy>"
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyIDString)
+                print("ItemID is set as:\(policyIDString)")
+                print("resourceType is set as:\(resourceType)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
     }
     
     //    #################################################################################

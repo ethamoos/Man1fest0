@@ -86,6 +86,10 @@ struct PolicyScopeTabView: View {
     @State private var showingWarningLimitScope = false
     
     @State private var showingWarningClearLimit = false
+    
+    @State private var showingWarningAllUsers = false
+    
+    @State private var showingWarningAllComputers = false
 
     //  ########################################################################################
     
@@ -110,21 +114,21 @@ struct PolicyScopeTabView: View {
                             Divider()
                             Text("Scoping").font(.system(size: 14, weight: .bold, design: .default))
                             
-        //  ################################################################################
-        //  Show All Computers scoping
-        //  ################################################################################
-       
+                            //  ################################################################################
+                            //  Show All Computers scoping
+                            //  ################################################################################
+                            
                             Divider()
                             if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
                                 Text("Scoped To All Computers").font(.subheadline)
                             } else {
                                 Text("All Computers is not enabled").font(.subheadline)
                             }
-
-        //  ################################################################################
-        //  Show computer scoping
-        //  ################################################################################
-            
+                            
+                            //  ################################################################################
+                            //  Show computer scoping
+                            //  ################################################################################
+                            
                             Divider()
                             if networkController.currentDetailedPolicy?.policy.scope?.computers?.count == 0 {
                                 Text("Not Scoped to any individual Computers").font(.subheadline)
@@ -136,9 +140,9 @@ struct PolicyScopeTabView: View {
                                 .padding()
                             }
                             
-                        //  ################################################################################
-                        //  Show Department scoping
-                        //  ################################################################################
+                            //  ################################################################################
+                            //  Show Department scoping
+                            //  ################################################################################
                             
                             Divider()
                             if networkController.currentDetailedPolicy?.policy.scope?.departments?.count == 0 {
@@ -151,9 +155,9 @@ struct PolicyScopeTabView: View {
                                 .padding()
                             }
                             
-                //  ################################################################################
-                //  Show Group scoping
-                //  ################################################################################
+                            //  ################################################################################
+                            //  Show Group scoping
+                            //  ################################################################################
                             
                             Divider()
                             if networkController.currentDetailedPolicy?.policy.scope?.computerGroups?.count == 0 {
@@ -166,9 +170,9 @@ struct PolicyScopeTabView: View {
                                 .padding()
                             }
                             
-                //  ################################################################################
-                //  Show Building scoping
-                //  ################################################################################
+                            //  ################################################################################
+                            //  Show Building scoping
+                            //  ################################################################################
                             
                             Divider()
                             if networkController.currentDetailedPolicy?.policy.scope?.buildings?.count == 0 {
@@ -181,12 +185,15 @@ struct PolicyScopeTabView: View {
                                 .padding()
                             }
                             
-                        //  ################################################################################
-                        //              Clear Scope
-                        //  ################################################################################
+                            
+                            
+                            
+                            //  ################################################################################
+                            //              Clear Scope
+                            //  ################################################################################
                             
                             Divider()
-                                
+                            
                             Button(action: {
                                 showingWarningClearScope = true
                                 progress.showProgress()
@@ -197,8 +204,8 @@ struct PolicyScopeTabView: View {
                                     Image(systemName: "eraser")
                                     Text("Clear Scope")
                                 }
-                            
-                            
+                                
+                                
                                 .alert(isPresented: $showingWarningClearScope) {
                                     Alert(
                                         title: Text("Caution!"),
@@ -214,7 +221,40 @@ struct PolicyScopeTabView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
+                            //                        }
+                            
+                            VStack {
+                                Button(action: {
+                                    showingWarningAllUsers = true
+                                    progress.showProgress()
+                                    progress.waitForABit()
+                                }) {
+                                    
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "eraser")
+                                        Text("Enable All Users")
+                                    }
+                                    
+                                    
+                                    .alert(isPresented: $showingWarningAllUsers) {
+                                        Alert(
+                                            title: Text("Caution!"),
+                                            message: Text("This action will enable the policy scoping for all users.\n This might cause the policy to run immediately to many devices"),
+                                            primaryButton: .destructive(Text("I understand!")) {
+                                                // Code to execute when "Yes" is tapped
+                                                networkController.enableAllUsers(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID, enableAllUsers: true) )
+                                                print("Yes tapped")
+                                            },
+                                            secondaryButton: .cancel()
+                                        )
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.red)
+                            }
+                            
                         }
+                        
                     }
                 }
                         //
@@ -223,8 +263,10 @@ struct PolicyScopeTabView: View {
                         //  ################################################################################
                         
                 Group {
+                
+//
                             
-                            VStack(alignment:.leading){
+                    VStack(alignment:.leading){
                                 
                            
                             Divider()
