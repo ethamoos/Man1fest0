@@ -72,7 +72,6 @@ struct IconDetailedView: View {
                 }
             }
         }
-//        .frame(minWidth: 400, maxWidth: .infinity, alignment: .leading)
     
         .padding()
 

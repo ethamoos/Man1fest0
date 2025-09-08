@@ -3214,7 +3214,7 @@ import AEXML
                     print("Running togglePolicyOnOff policy function - url is set as:\(url)")
                     print("resourceType is set as:\(resourceType)")
                     // print("xml is set as:\(xml)")
-
+                    
                     self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
                     
                     appendStatus("Connecting to \(url)...")
@@ -3224,23 +3224,41 @@ import AEXML
     }
     
     
+    //    #################################################################################
+    //    enableSelfService - enable SelfService
+    //    #################################################################################
+    
+    func enableSelfService(server: String, authToken: String, resourceType: ResourceType, itemID: Int, selfServiceToggle: Bool) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let itemIDString = String(itemID)
+        var xml: String
+        print("Running enableSelfService")
+        xml = "<policy><self_service><use_for_self_service>true</use_for_self_service></self_service></policy>"
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
+                print("ItemID is set as:\(itemIDString)")
+                print("resourceType is set as:\(resourceType)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
     
     //    #################################################################################
     //    togglePolicyAllComputers - yes/no
     //    #################################################################################
-    
     
     func toggleScopeAllComputers(server: String, authToken: String, resourceType: ResourceType, itemID: Int, policyToggle: Bool) {
         
         let resourcePath = getURLFormat(data: (resourceType))
         let itemIDString = String(itemID)
         var xml: String
-        
         print("Running toggleScopeAllComputers")
         if policyToggle == false {
             
-            print("Enabling")
-            
+            print("Enabling SelfService")
             xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
             
             if URL(string: server) != nil {
@@ -3256,7 +3274,7 @@ import AEXML
         }
         
         else {
-            print("Disabling")
+            print("Disabling SelfService")
             xml = "<policy><scope><all_computers>false</all_computers></scope></policy>"
             
             if URL(string: server) != nil {

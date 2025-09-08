@@ -161,24 +161,23 @@ struct PolicySelfServiceTabView: View {
                 //                        Icons - picker
                 // ##########################################################################################
                 
-                LazyVGrid(columns: columns, spacing: 30) {
+                LazyVGrid(columns: columns, spacing: 10) {
                     Picker(selection: $selectedIcon, label: Text("Icon:")) {
-                        //                            Text("").tag("")
                         ForEach(networkController.allIconsDetailed, id: \.self) { icon in
                             HStack {
-                                Text(String(describing: icon.name ?? ""))
-                                AsyncImage(url: URL(string: icon.url ?? "" )) { image in
-                                    image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
+                                Text(String(describing: icon.name))
+                                AsyncImage(url: URL(string: icon.url )) { image in
+//                                    image.resizable()
+//                                    image.fixed().frame(width: 20, height: 20)
+                                    image.resizable()
+//                                    .aspectRatio(contentMode: .fill)
+//                                        .clipShape(Circle()
+//                                        .aspectRatio(contentMode: .fill)
                                 } placeholder: {
-                                    //                        Color.red
                                 }
                             }
-                            
-                            Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon.name)
-                            
-                            
+                            Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black).tag(icon.name)
                         }
-                        
                         //  ################################################################################
                         //  Update Icon Button
                         //  ################################################################################
@@ -197,9 +196,23 @@ struct PolicySelfServiceTabView: View {
                         .tint(.blue)
                     }
                 }
+                Button(action: {
+                    
+                    progress.showProgress()
+                    progress.waitForABit()
+                    
+                    networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
+                }) {
+                    Text("Enable Self-Service")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
             }
             .frame(minHeight: 1)
             .padding()
+            
+            
+            
         }
     }
 }

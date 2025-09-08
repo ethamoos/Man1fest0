@@ -419,6 +419,16 @@ struct PolicyDetailView: View {
                             } else {
                                 Text("Disabled")
                             }
+                            
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
+                            }) {
+                                Text("Enable")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
 #endif
                         }
                     }

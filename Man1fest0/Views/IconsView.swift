@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-//import URLImage
 
 struct  IconsView: View {
     
@@ -35,7 +34,6 @@ struct  IconsView: View {
                     NavigationView {
                         List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                             NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
-                                
                                 HStack {
                                     Image(systemName: "photo.circle")
                                     Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
@@ -64,9 +62,7 @@ struct  IconsView: View {
                 HStack {
                     
                     Button(action: {
-                        
                         selectPhoto()
-                        
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "square.and.arrow.up")
@@ -88,12 +84,9 @@ struct  IconsView: View {
                     }
                     
                     Button(action: {
-                        
                         importExportController.uploadPhoto(server: server, authToken: networkController.authToken, selectedImageURL: selectedImageURL)
-                        
                         progress.showProgress()
                         progress.waitForABit()
-                        
                     }, label: {
                         HStack {
                             Text("Upload")
