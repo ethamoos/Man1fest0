@@ -47,7 +47,7 @@ struct PolicyDetailView: View {
     //  ########################################################################################
     
     @State var computerGroupFilter = ""
-        
+
     //  ########################################################################################
     //  Packages
     //  ########################################################################################
@@ -151,7 +151,7 @@ struct PolicyDetailView: View {
     //    ########################################################################################
     
     var body: some View {
-
+        
         let text = String(describing: xmlController.currentPolicyAsXML)
         
         let document = TextDocument(text: text)
@@ -174,24 +174,24 @@ struct PolicyDetailView: View {
                     Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
                     Text("Current Icon:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon?.filename ?? "No icon set")")
-
+                    
                 }
                 .textSelection(.enabled)
                 .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
                 
-//              ################################################################################
-//              Toolbar
-//              ################################################################################
+                //              ################################################################################
+                //              Toolbar
+                //              ################################################################################
                 
                 .toolbar {
                     
                 }
 #endif
             }
-
-// ################################################################################
-//              ENABLE/DISABLE
-// ################################################################################
+            
+            // ################################################################################
+            //              ENABLE/DISABLE
+            // ################################################################################
             
             HStack(spacing: 20) {
                 
@@ -203,17 +203,17 @@ struct PolicyDetailView: View {
                     }
                 
 #if os(macOS)
-
+                
                 if enableDisableButton == true {
                     Text("Enabled")
                 } else {
                     Text("Disabled")
                 }
                 
-//              ##########################################################################
-//              CLONE
-//              ##########################################################################
-
+                //              ##########################################################################
+                //              CLONE
+                //              ##########################################################################
+                
                 Button(action: {
                     print("Cloning policy:\(policyName)")
                     progress.showProgress()
@@ -236,10 +236,10 @@ struct PolicyDetailView: View {
                 .tint(.orange)
 #endif
                 
-//  ##########################################################################
-//              DELETE
-//  ##########################################################################
-
+                //  ##########################################################################
+                //              DELETE
+                //  ##########################################################################
+                
                 Button(action: {
                     
                     progress.showProgress()
@@ -273,10 +273,10 @@ struct PolicyDetailView: View {
                 .tint(.red)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 
-//              ################################################################################
-//              DOWNLOAD OPTION
-//              ################################################################################
-
+                //              ################################################################################
+                //              DOWNLOAD OPTION
+                //              ################################################################################
+                
 #if os(macOS)
                 
                 Button("Export") {
@@ -323,66 +323,40 @@ struct PolicyDetailView: View {
             
             .textSelection(.enabled)
             
-//  ##########################################################################
-//              UPDATE NAME
-//  ##########################################################################
-
+            //  ##########################################################################
+            //              UPDATE NAME
+            //  ##########################################################################
+            
             Divider()
+            
+            //            VStack(alignment: .leading) {
             
             VStack(alignment: .leading) {
                 
-                VStack(alignment: .leading) {
+                Text("Edit Names:").fontWeight(.bold)
+                
+                LazyVGrid(columns: layout.fourColumns, spacing: 20) {
                     
-                    Text("Edit Names:").fontWeight(.bold)
-                    
-                    LazyVGrid(columns: layout.fourColumns, spacing: 20) {
+                    HStack {
                         
-                        HStack {
-                            
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyNameInitial, text: $policyName)
-                                .textSelection(.enabled)
-                            
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.updateName(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyName, policyID: String(describing: policyID))
-                         
-                                networkController.separationLine()
-                                print("Renaming Policy:\(policyName)")
-                            }) {
-                                Text("Rename")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                        }
+                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyNameInitial, text: $policyName)
+                            .textSelection(.enabled)
                         
-//  ##########################################################################
-//              UPDATE Trigger
-//  ##########################################################################
-
-                        HStack {
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updateName(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyName, policyID: String(describing: policyID))
                             
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
-                                .textSelection(.enabled)
-                            
-                            Button(action: {
-                                
-                                progress.showProgress()
-                                progress.waitForABit()
-                                
-                                networkController.updateCustomTrigger(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyCustomTrigger: policyCustomTrigger, policyID: String(describing: policyID))
-                                
-                                networkController.separationLine()
-                                print("Updating Policy Trigger to:\(policyName)")
-                                
-                            }) {
-                                Text("Trigger")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
+                            networkController.separationLine()
+                            print("Renaming Policy:\(policyName)")
+                        }) {
+                            Text("Rename")
                         }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
                     }
                     
+
 //  ##########################################################################
 //              UPDATE Self-Service
 //  ##########################################################################
@@ -438,93 +412,169 @@ struct PolicyDetailView: View {
 //  ##########################################################################
 
                     Divider()
+
+                    //  ##########################################################################
+                    //              UPDATE Trigger
+                    //  ##########################################################################
+
                     
-                    LazyVGrid(columns: layout.columnsFlex) {
-                        HStack {
+                    HStack {
+                        
+                        TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
+                            .textSelection(.enabled)
+                        
+                        Button(action: {
                             
-                            Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                                ForEach(networkController.categories, id: \.self) { category in
-                                    Text(String(describing: category.name))
-                                        .tag(category as Category?)
-                                        .tag(selectedCategory as Category?)
-                                }
-                            }
-                            .onAppear {
-                                
-                                if networkController.categories.isEmpty != true {
-                                    print("Setting categories picker default")
-                                    selectedCategory = networkController.categories[0] }
-                            }
+                            progress.showProgress()
+                            progress.waitForABit()
                             
-                            Button(action: {
-                                
-                                progress.showProgress()
-                                progress.waitForABit()
-                                
-                                networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
-                            }) {
-                                HStack(spacing: 10) {
-                                    Text("Update")
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
+                            networkController.updateCustomTrigger(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyCustomTrigger: policyCustomTrigger, policyID: String(describing: policyID))
+                            
+                            networkController.separationLine()
+                            print("Updating Policy Trigger to:\(policyName)")
+                            
+                        }) {
+                            Text("Trigger")
                         }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
                     }
                 }
-                .padding()
                 
                 //  ##########################################################################
-                //              DELETE POLICY
-                //  ##########################################################################
-
-                //  ##########################################################################
-                //  Manually add to assigned list
-                //  ##########################################################################
-
-                //  ##########################################################################
-                //  TabView - TAB
+                //              UPDATE Self-Service
                 //  ##########################################################################
                 
+                LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
+                    
+                    HStack {
+                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $policyName)
+                            .textSelection(.enabled)
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyNameInitial, policyID: String(describing: policyID))
+                            
+                            networkController.separationLine()
+                            print("Name Self-Service to:\(policyName)")
+                        }) {
+                            Text("Self-Service")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        Toggle("", isOn: $enableDisableSelfService)
+                            .toggleStyle(SwitchToggleStyle(tint: .red))
+                            .onChange(of: enableDisableSelfService) { value in
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
+                                print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
+                            }
 #if os(macOS)
-                TabView {
-                    
-                    PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
-                        .tabItem {
-                            Label("Packages", systemImage: "square.and.pencil")
+                        if enableDisableSelfService == true {
+                            Text("Enabled")
+                        } else {
+                            Text("Disabled")
                         }
-                    
-                    PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                        .tabItem {
-                            Label("Scoping", systemImage: "square.and.pencil")
-                        }
-                    
-                    PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                        .tabItem {
-                            Label("Scripts", systemImage: "square.and.pencil")
-                        }
-                    
-                    PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail)
-                        .tabItem {
-                            Label("Triggers", systemImage: "square.and.pencil")
-                        }
-                    
-                    PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail,policyID: policyID )
-                        .tabItem {
-                            Label("Self Service", systemImage: "square.and.pencil")
-                        }
-                    PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
-                        .tabItem {
-                            Label("Remove Items", systemImage: "square.and.pencil")
-                        }
-                }
 #endif
+                    }
+                }
+                
+                //  ##########################################################################
+                //              CATEGORY
+                //  ##########################################################################
+                
+                Divider()
+                
+                LazyVGrid(columns: layout.columnsFlex) {
+                    HStack {
+                        
+                        Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                            ForEach(networkController.categories, id: \.self) { category in
+                                Text(String(describing: category.name))
+                                    .tag(category as Category?)
+                                    .tag(selectedCategory as Category?)
+                            }
+                        }
+                        .onAppear {
+                            
+                            if networkController.categories.isEmpty != true {
+                                print("Setting categories picker default")
+                                selectedCategory = networkController.categories[0] }
+                        }
+                        
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
+                        }) {
+                            HStack(spacing: 10) {
+                                Text("Update")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                }
             }
+            .padding()
+            
+            //  ##########################################################################
+            //              DELETE POLICY
+            //  ##########################################################################
+            
+            //  ##########################################################################
+            //  Manually add to assigned list
+            //  ##########################################################################
+            
+            //  ##########################################################################
+            //  TabView - TAB
+            //  ##########################################################################
+            
+#if os(macOS)
+            TabView {
+                
+                PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
+                    .tabItem {
+                        Label("Packages", systemImage: "square.and.pencil")
+                    }
+                
+                PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                    .tabItem {
+                        Label("Scoping", systemImage: "square.and.pencil")
+                    }
+                
+                PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                    .tabItem {
+                        Label("Scripts", systemImage: "square.and.pencil")
+                    }
+                
+                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.currentDetailedPolicy?.policy.general?.triggerLogin ?? false, trigger_checkin: networkController.currentDetailedPolicy?.policy.general?.triggerCheckin ?? false, trigger_startup: networkController.currentDetailedPolicy?.policy.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.currentDetailedPolicy?.policy.general?.triggerEnrollmentComplete ?? false )
+                    .tabItem {
+                        Label("Triggers", systemImage: "square.and.pencil")
+                    }
+                
+                PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
+                    .tabItem {
+                        Label("Self Service", systemImage: "square.and.pencil")
+                    }
+                
+                PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
+                    .tabItem {
+                        Label("Remove Items", systemImage: "square.and.pencil")
+                    }
+            }
+            //            }
+#endif
+            
             
             //  ##########################################################################
             //  Progress view via showProgress
             //  ##########################################################################
-
+            
             if progress.showProgressView == true {
                 
                 ProgressView {
@@ -544,10 +594,10 @@ struct PolicyDetailView: View {
         
         .onAppear {
             
-    //  ##########################################################################
-    //  PolicyDetailView
-    //  ##########################################################################
-
+            //  ##########################################################################
+            //  PolicyDetailView
+            //  ##########################################################################
+            
             networkController.separationLine()
             print("PolicyDetailView appeared - running detailed policy connect function")
             
@@ -563,24 +613,24 @@ struct PolicyDetailView: View {
                 if !xmlController.currentPolicyAsXML.isEmpty {
                     print("Reading XML into AEXML - networkController")
                     
-//  ##########################################################################
-//  NOTE: CHANGED FROM XML CONTROLLER BELOW
-//  ##########################################################################
-
-//                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                    //  ##########################################################################
+                    //  NOTE: CHANGED FROM XML CONTROLLER BELOW
+                    //  ##########################################################################
+                    
+                    //                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                     
                     xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-
-//  ##########################################################################
-//  NOTE: CHANGED FROM XML CONTROLLER - END
-//  ##########################################################################
-
+                    
+                    //  ##########################################################################
+                    //  NOTE: CHANGED FROM XML CONTROLLER - END
+                    //  ##########################################################################
+                    
                 }
             }
             
-//            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
-
-//            The property networkController.policyDetailed will be used
+            //            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
+            
+            //            The property networkController.policyDetailed will be used
             
             networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
             
@@ -606,7 +656,7 @@ struct PolicyDetailView: View {
             }
             
             if networkController.buildings.count <= 1 {
-//                networkController.connect(server: server,resourceType: ResourceType.building, authToken: networkController.authToken)
+                //                networkController.connect(server: server,resourceType: ResourceType.building, authToken: networkController.authToken)
                 Task {
                     try await networkController.getBuildings(server: server, authToken: networkController.authToken)
                 }
@@ -620,18 +670,18 @@ struct PolicyDetailView: View {
                 print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
             }
             
-//  ##########################################################################
-//  getAllGroups
-//  ##########################################################################
-
+            //  ##########################################################################
+            //  getAllGroups
+            //  ##########################################################################
+            
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
             
-//  ##########################################################################
-//  Add current packages to packagesAssignedToPolicy list on appear of View
-//  ##########################################################################
-
+            //  ##########################################################################
+            //  Add current packages to packagesAssignedToPolicy list on appear of View
+            //  ##########################################################################
+            
             networkController.getPackagesAssignedToPolicy()
             networkController.addExistingPackages()
             fetchData()
