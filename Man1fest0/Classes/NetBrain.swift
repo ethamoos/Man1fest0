@@ -1533,6 +1533,42 @@ import AEXML
     
     
     
+    //    #################################################################################
+    //    batchScopeAllComputers
+    //    #################################################################################
+    
+    
+    func batchScopeAllComputers(policiesSelection: Set<Policy>, server: String, authToken: String) {
+        self.separationLine()
+        print("Running: batchScopeAllComputers")
+        for eachItem in policiesSelection {
+            self.separationLine()
+            let jamfID: Int = eachItem.jamfId ?? 0
+            print("Current jamfID is:\(String(describing: jamfID))")
+            self.scopeAllComputers(server: server, authToken: authToken, policyID: String(describing: jamfID) )
+        }
+    }
+    
+    //    #################################################################################
+    //    batchScopeAllUsers
+    //    #################################################################################
+    
+    
+    func batchScopeAllUsers(policiesSelection: Set<Policy>, server: String, authToken: String) {
+        self.separationLine()
+        print("Running: batchScopeAllComputers")
+        for eachItem in policiesSelection {
+            self.separationLine()
+            let jamfID: Int = eachItem.jamfId ?? 0
+            print("Current jamfID is:\(String(describing: jamfID))")
+            self.scopeAllUsers(server: server, authToken: authToken, policyID: String(describing: jamfID) )
+        }
+    }
+    
+    
+    
+    
+    
     
     func getBuildings(server: String, authToken: String) async throws {
         let jamfURLQuery = server + "/JSSResource/buildings"
@@ -3246,44 +3282,42 @@ import AEXML
         }
     }    
     //    #################################################################################
-    //    enableAllComputers  - enable AllComputers
+    //    scopeAllComputers  - enable AllComputers
     //    #################################################################################
     
-    func enableAllComputers(server: String, authToken: String, resourceType: ResourceType, itemID: Int, selfServiceToggle: Bool) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        let itemIDString = String(itemID)
+    func scopeAllComputers(server: String, authToken: String, policyID: String) {
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
+//        let policyIDString = String(policyID)
         var xml: String
         print("Running enableSelfService")
         xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-                print("ItemID is set as:\(itemIDString)")
-                print("resourceType is set as:\(resourceType)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("ItemID is set as:\(policyID)")
+                print("resourceType is set as:\(ResourceType.policyDetail)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
             }
         }
     }
     
     //    #################################################################################
-    //    enableAllUsers - enable All Users
+    //    scopeAllUsers - enable All Users
     //    #################################################################################
     
-    func enableAllUsers(server: String, authToken: String, resourceType: ResourceType, policyID: Int, enableAllUsers: Bool) {
+    func scopeAllUsers(server: String, authToken: String, policyID: String) {
         
-        let resourcePath = getURLFormat(data: (resourceType))
-        let policyIDString = String(policyID)
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
         var xml: String
         print("Running enableSelfService")
         xml = "<policy><scope><all_jss_users>true</all_jss_users></scope></policy>"
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyIDString)
-                print("ItemID is set as:\(policyIDString)")
-                print("resourceType is set as:\(resourceType)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("ItemID is set as:\(policyID)")
+                print("resourceType is set as:\(ResourceType.policyDetail)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
             }
         }

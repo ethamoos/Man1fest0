@@ -109,103 +109,103 @@ struct PolicyScopeTabView: View {
                 
                 Group {
                     VStack(alignment: .leading) {
-                        Text("Scoping").font(.system(size: 22, weight: .bold, design: .default))
-                        VStack(alignment:.leading){
-                            Divider()
-                            Text("Scoping").font(.system(size: 14, weight: .bold, design: .default))
-                            
-                            //  ################################################################################
-                            //  Show All Computers scoping
-                            //  ################################################################################
-                            
-                            Divider()
-                            if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
-                                Text("Scoped To All Computers").font(.subheadline)
-                            } else {
-                                Text("All Computers is not enabled").font(.subheadline)
-                            }
-                            
-                            //  ################################################################################
-                            //  Show computer scoping
-                            //  ################################################################################
-                            
-                            Divider()
-                            if networkController.currentDetailedPolicy?.policy.scope?.computers?.count == 0 {
-                                Text("Not Scoped to any individual Computers").font(.subheadline)
-                            } else {
-                                VStack(alignment:.leading){
-                                    Text("Computers: ").font(.headline)
-                                    ForEach(networkController.currentDetailedPolicy?.policy.scope?.computers ?? []) {computer in
-                                        Text(String(computer.name)).font(.subheadline)}}
-                                .padding()
-                            }
-                            
-                            //  ################################################################################
-                            //  Show Department scoping
-                            //  ################################################################################
-                            
-                            Divider()
-                            if networkController.currentDetailedPolicy?.policy.scope?.departments?.count == 0 {
-                                Text("Not Scoped to any Departments").font(.subheadline)
-                            } else {
-                                VStack(alignment:.leading){
-                                    Text("Departments: ").font(.headline)
-                                    ForEach(networkController.currentDetailedPolicy?.policy.scope?.departments ?? []) {department in
-                                        Text(String(department.name)).font(.subheadline)}}
-                                .padding()
-                            }
-                            
-                            //  ################################################################################
-                            //  Show Group scoping
-                            //  ################################################################################
-                            
-                            Divider()
-                            if networkController.currentDetailedPolicy?.policy.scope?.computerGroups?.count == 0 {
-                                Text("Not Scoped to any Groups").font(.subheadline)
-                            } else {
-                                VStack(alignment:.leading){
-                                    Text("Computer Groups: ").font(.headline)
-                                    ForEach(networkController.currentDetailedPolicy?.policy.scope?.computerGroups ?? []) {computerGroups in
-                                        Text(String(computerGroups.name ?? "")).font(.subheadline)}}
-                                .padding()
-                            }
-                            
-                            //  ################################################################################
-                            //  Show Building scoping
-                            //  ################################################################################
-                            
-                            Divider()
-                            if networkController.currentDetailedPolicy?.policy.scope?.buildings?.count == 0 {
-                                Text("Not Scoped to any Buildings").font(.subheadline)
-                            } else {
-                                VStack(alignment:.leading){
-                                    Text("Buildings: ").font(.headline)
-                                    ForEach(networkController.currentDetailedPolicy?.policy.scope?.buildings ?? []) {building in
-                                        Text(String(building.name)).font(.subheadline)}}
-                                .padding()
-                            }
-                            
-                            
-                            
-                            
-                            //  ################################################################################
-                            //              Clear Scope
-                            //  ################################################################################
-                            
-                            Divider()
+                        //                        VStack(alignment:.leading){
+//                        Text("Scoping").font(.system(size: 22, weight: .bold, design: .default))
+//                        
+//                        Divider()
+//                        Text("Scoping").font(.system(size: 14, weight: .bold, design: .default))
+//                        
+                        //  ################################################################################
+                        //  Show All Computers scoping
+                        //  ################################################################################
+                        
+//                        Divider()
+                        if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
+                            Text("Scoped To All Computers").font(.subheadline)
+                        } else {
+                            Text("All Computers is not enabled").font(.subheadline)
+                        }
+                        
+                        //  ################################################################################
+                        //  Show computer scoping
+                        //  ################################################################################
+                        
+                        Divider()
+                        if networkController.currentDetailedPolicy?.policy.scope?.computers?.count == 0 {
+                            Text("Not Scoped to any individual Computers").font(.subheadline)
+                        } else {
+                            VStack(alignment:.leading){
+                                Text("Computers: ").font(.headline)
+                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.computers ?? []) {computer in
+                                    Text(String(computer.name)).font(.subheadline)}}
+                            .padding()
+                        }
+                        
+                        //  ################################################################################
+                        //  Show Department scoping
+                        //  ################################################################################
+                        
+                        Divider()
+                        if networkController.currentDetailedPolicy?.policy.scope?.departments?.count == 0 {
+                            Text("Not Scoped to any Departments").font(.subheadline)
+                        } else {
+                            VStack(alignment:.leading){
+                                Text("Departments: ").font(.headline)
+                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.departments ?? []) {department in
+                                    Text(String(department.name)).font(.subheadline)}}
+                            .padding()
+                        }
+                        
+                        //  ################################################################################
+                        //  Show Group scoping
+                        //  ################################################################################
+                        
+                        Divider()
+                        if networkController.currentDetailedPolicy?.policy.scope?.computerGroups?.count == 0 {
+                            Text("Not Scoped to any Groups").font(.subheadline)
+                        } else {
+                            VStack(alignment:.leading){
+                                Text("Computer Groups: ").font(.headline)
+                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.computerGroups ?? []) {computerGroups in
+                                    Text(String(computerGroups.name ?? "")).font(.subheadline)}}
+                            .padding()
+                        }
+                        
+                        //  ################################################################################
+                        //  Show Building scoping
+                        //  ################################################################################
+                        
+                        Divider()
+                        if networkController.currentDetailedPolicy?.policy.scope?.buildings?.count == 0 {
+                            Text("Not Scoped to any Buildings").font(.subheadline)
+                        } else {
+                            VStack(alignment:.leading){
+                                Text("Buildings: ").font(.headline)
+                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.buildings ?? []) {building in
+                                    Text(String(building.name)).font(.subheadline)}}
+                            .padding()
+                        }
+                        
+                        
+                        
+                        
+                        //  ################################################################################
+                        //              Clear Scope
+                        //  ################################################################################
+                        
+                        Divider()
+                        
+                        HStack {
                             
                             Button(action: {
                                 showingWarningClearScope = true
                                 progress.showProgress()
                                 progress.waitForABit()
                             }) {
-                                
                                 HStack(spacing: 10) {
                                     Image(systemName: "eraser")
                                     Text("Clear Scope")
                                 }
-                                
-                                
                                 .alert(isPresented: $showingWarningClearScope) {
                                     Alert(
                                         title: Text("Caution!"),
@@ -221,40 +221,70 @@ struct PolicyScopeTabView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
-                            //                        }
-                            
-                            VStack {
-                                Button(action: {
-                                    showingWarningAllUsers = true
-                                    progress.showProgress()
-                                    progress.waitForABit()
-                                }) {
-                                    
-                                    HStack(spacing: 10) {
-                                        Image(systemName: "eraser")
-                                        Text("Enable All Users")
-                                    }
-                                    
-                                    
-                                    .alert(isPresented: $showingWarningAllUsers) {
-                                        Alert(
-                                            title: Text("Caution!"),
-                                            message: Text("This action will enable the policy scoping for all users.\n This might cause the policy to run immediately to many devices"),
-                                            primaryButton: .destructive(Text("I understand!")) {
-                                                // Code to execute when "Yes" is tapped
-                                                networkController.enableAllUsers(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID, enableAllUsers: true) )
-                                                print("Yes tapped")
-                                            },
-                                            secondaryButton: .cancel()
-                                        )
-                                    }
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.red)
-                            }
-                            
-                        }
                         
+                            
+                            
+                            //  ################################################################################
+                            //              scopeAllUsers
+                            //  ################################################################################
+                            
+                            
+                            Button(action: {
+                                showingWarningAllUsers = true
+                                progress.showProgress()
+                                progress.waitForABit()
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "eraser")
+                                    Text("Enable All Users")
+                                }
+                                .alert(isPresented: $showingWarningAllUsers) {
+                                    Alert(
+                                        title: Text("Caution!"),
+                                        message: Text("This action will enable the policy scoping for all users.\n This might cause the policy to run immediately to many devices"),
+                                        primaryButton: .destructive(Text("I understand!")) {
+                                            // Code to execute when "Yes" is tapped
+                                            networkController.scopeAllUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            print("Yes tapped")
+                                        },
+                                        secondaryButton: .cancel()
+                                    )
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            
+                            
+                            //  ################################################################################
+                            //              scopeAllComputers
+                            //  ################################################################################
+                            
+                            
+                            Button(action: {
+                                showingWarningAllComputers = true
+                                progress.showProgress()
+                                progress.waitForABit()
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "eraser")
+                                    Text("Enable All Computers")
+                                }
+                                .alert(isPresented: $showingWarningAllComputers) {
+                                    Alert(
+                                        title: Text("Caution!"),
+                                        message: Text("This action will enable the policy scoping for all computers.\n This might cause the policy to run immediately to many devices"),
+                                        primaryButton: .destructive(Text("I understand!")) {
+                                            // Code to execute when "Yes" is tapped
+                                            networkController.scopeAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            print("Yes tapped")
+                                        },
+                                        secondaryButton: .cancel()
+                                    )
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                        }
                     }
                 }
                         //
