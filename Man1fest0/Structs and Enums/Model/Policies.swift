@@ -236,7 +236,7 @@ struct Scope: Codable, Hashable, Identifiable  {
     var id = UUID()
     let allComputers: Bool?
     //        let all_mobile_devices: Bool?
-    //        let all_jss_users:Bool?
+            let all_jss_users:Bool?
     //        let mobile_device_groups: [ComputerGroups]?
     //        let jss_users:[GenericItem]?
     //        //  let jss_user_groups:[GenericItem]?
@@ -252,7 +252,7 @@ struct Scope: Codable, Hashable, Identifiable  {
     enum CodingKeys: String, CodingKey {
         case allComputers = "all_computers"
         //            case all_mobile_devices = "all_mobile_devices"
-        //            case all_jss_users = "all_jss_users"
+                    case all_jss_users = "all_jss_users"
         //            case mobile_device_groups = "mobile_device_groups"
         //            case jss_users = "jss_users"
         //            //   case jss_user_groups = "jss_user_groups"

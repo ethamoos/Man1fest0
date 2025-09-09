@@ -244,9 +244,9 @@ struct PoliciesActionView: View {
                             }
                         }
                         
-                        //              ################################################################################
+                        //  ################################################################################
                         //              DOWNLOAD OPTION
-                        //              ################################################################################
+                        //  ################################################################################
                         
                         Button(action: {
                             
@@ -273,9 +273,9 @@ struct PoliciesActionView: View {
 
                     }
                     
-                    //              ################################################################################
+                    //  ################################################################################
                     //              Category
-                    //              ################################################################################
+                    //  ################################################################################
                     
                     Divider()
                     
@@ -293,9 +293,9 @@ struct PoliciesActionView: View {
                         }
                     }
                     
-                    //              ################################################################################
+                    //  ################################################################################
                     //              UPDATE POLICY - COMPLETE
-                    //              ################################################################################
+                    //  ################################################################################
                     
                     Divider()
                     VStack(alignment: .leading) {
@@ -329,6 +329,49 @@ struct PoliciesActionView: View {
                         
                         Divider()
                         Text("Scoping").fontWeight(.bold)
+                        
+                        
+                        Divider()
+
+                        //  ################################################################################
+                        //            Batch Scope All users and computers
+                        //  ################################################################################
+                                             
+                        HStack {
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.batchScopeAllComputers(policiesSelection:policiesSelection, server: server, authToken: networkController.authToken)
+                            }) {
+                                Image(systemName: "plus.square.fill.on.square.fill")
+                                Text("Scope To All Computers")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                            }) {
+                                Image(systemName: "plus.square.fill.on.square.fill")
+                                Text("Scope To All Users")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                            }) {
+                                Image(systemName: "plus.square.fill.on.square.fill")
+                                Text("Scope To All Computers & Users")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                        }
                         
                         LazyVGrid(columns: layout.fourColumns, spacing: 10) {
                             Picker(selection: $computerGroupSelection, label:Label("Static Groups", systemImage: "person.3")
