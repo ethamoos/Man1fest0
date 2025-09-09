@@ -10,27 +10,18 @@ import AEXML
     // Global Variables
     // #########################################################################
     let debug_enabled = false
-    
-    
-    
     // #########################################################################
     //  Build identifiers
     // #########################################################################
-
-        
         let product_name = Bundle.main.infoDictionary!["CFBundleName"] as? String
         let product_version = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String
         let build_version = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
-    
     //    let buildString = "Version: \(appVersion ?? "").\(build ?? "")"
-    
     //  #############################################################################
     //  Login
     //  #############################################################################
-    
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
-    
     //  #############################################################################
     //  Login and Tokens Confirmations
     //  #############################################################################
@@ -42,16 +33,12 @@ import AEXML
     var encoded = ""
     var initialDataLoaded = false
     
-    
     //  #############################################################################
     //    Alerts
     @Published var showAlert = false
     var alertMessage = ""
     var alertTitle = ""
     var showActivity = false
-    
-    
-    
     
     //  #############################################################################
     //    Error Codes
@@ -107,9 +94,7 @@ import AEXML
     @Published var allPackagesAssignedToAPolicyGlobal: [Package?] = []
     @Published var packages: [Package] = []
     @Published var packagesAssignedToPolicy: [ Package ] = []
-    
     @Published var allPackages: [Package] = []
-    //    @Published var packageDetailed: PackageDetailed? = PackageDetailed(id: "", name: "", category: "", filename: "" , info: "", notes: "", priority: "", rebootRequired: "")
     
     @Published var packageDetailed: PackageDetailed? = PackageDetailed(id: 0, name: "", category: "", filename: "" , info: "", notes: "", priority: 0, rebootRequired: false,fillUserTemplate: false, fillExistingUsers: false, allowUninstalled: false,
                                                                        osRequirements: "", requiredProcessor: "", hashType: "", hashValue: "", switchWithPackage: "",
@@ -153,7 +138,6 @@ import AEXML
     //  #############################################################################
 
     @Published var scripts: [ScriptClassic] = []
-    //    @Published var ScriptResults: ScriptResults = ScriptResults(totalCount: 0, results: Script(id: "", name: "", info: "", notes: "", priority: Script.Priority(rawValue: "") ?? .after, parameter4: "", parameter5: "", parameter6: "", parameter7: "", parameter8: "", parameter9: "", parameter10: "", parameter11: "", osRequirements: "", scriptContents: "", categoryId: "", categoryName: ""))
     @Published var allScripts: [ScriptClassic] = []
     @Published var allScriptsVeryDetailed: [Scripts] = []
     @Published var allScriptsDetailed: [Script] = []
@@ -184,7 +168,7 @@ import AEXML
     //  #############################################################################
 
     @Published var department: [Department] = []
-    @Published var departments: [Department] 
+    @Published var departments: [Department] = []
     //  #############################################################################
     //    Icons
 
@@ -243,9 +227,9 @@ import AEXML
     // ResourceType.scripts
     //
     
-    //    #################################################################################
-//  Initialisers
-    //    #################################################################################
+//    #################################################################################
+//    Initialisers
+//    #################################################################################
 
     private let minInterval: TimeInterval
     private var lastRequestDate: Date?
@@ -254,17 +238,9 @@ import AEXML
         self.minInterval = minInterval
     }
     
-    
-    
     //    #################################################################################
     //    Functions
     //    #################################################################################
-    
-
-    
-    
-    
-    
     
     func getComputersBasic(server: String, authToken: String) async throws {
         
@@ -286,7 +262,6 @@ import AEXML
         
         self.allComputersBasic = try decoder.decode(ComputerBasic.self, from: data)
         
-        //        DispatchQueue.main.async {
         
         self.allComputersBasicDict = self.allComputersBasic.computers
         

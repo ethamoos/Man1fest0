@@ -329,38 +329,63 @@ struct PolicyDetailView: View {
             
             Divider()
             
-            //            VStack(alignment: .leading) {
-            
-            VStack(alignment: .leading) {
                 
-                Text("Edit Names:").fontWeight(.bold)
-                
-                LazyVGrid(columns: layout.fourColumns, spacing: 20) {
+                VStack(alignment: .leading) {
                     
-                    HStack {
+                    Text("Edit Names:").fontWeight(.bold)
+                    
+                    LazyVGrid(columns: layout.fourColumns, spacing: 20) {
                         
-                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyNameInitial, text: $policyName)
-                            .textSelection(.enabled)
-                        
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            networkController.updateName(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyName, policyID: String(describing: policyID))
+                        HStack {
                             
-                            networkController.separationLine()
-                            print("Renaming Policy:\(policyName)")
-                        }) {
-                            Text("Rename")
+                            TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyNameInitial, text: $policyName)
+                                .textSelection(.enabled)
+                            
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.updateName(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyName, policyID: String(describing: policyID))
+                                
+                                networkController.separationLine()
+                                print("Renaming Policy:\(policyName)")
+                            }) {
+                                Text("Rename")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                        
+                        //  ##########################################################################
+                        //              UPDATE Trigger
+                        //  ##########################################################################
+                        
+                        HStack {
+                            
+                            TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
+                                .textSelection(.enabled)
+                            
+                            Button(action: {
+                                
+                                progress.showProgress()
+                                progress.waitForABit()
+                                
+                                networkController.updateCustomTrigger(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyCustomTrigger: policyCustomTrigger, policyID: String(describing: policyID))
+                                
+                                networkController.separationLine()
+                                print("Updating Policy Trigger to:\(policyName)")
+                                
+                            }) {
+                                Text("Trigger")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                        }
                     }
                     
-
-//  ##########################################################################
-//              UPDATE Self-Service
-//  ##########################################################################
-
+                    //  ##########################################################################
+                    //              UPDATE Self-Service
+                    //  ##########################################################################
+                    
                     LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
                         HStack {
@@ -406,88 +431,16 @@ struct PolicyDetailView: View {
 #endif
                         }
                     }
- 
-//  ##########################################################################
-//              CATEGORY
-//  ##########################################################################
-
-                    Divider()
-
-                    //  ##########################################################################
-                    //              UPDATE Trigger
-                    //  ##########################################################################
-
-                    
-                    HStack {
-                        
-                        TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
-                            .textSelection(.enabled)
-                        
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            networkController.updateCustomTrigger(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyCustomTrigger: policyCustomTrigger, policyID: String(describing: policyID))
-                            
-                            networkController.separationLine()
-                            print("Updating Policy Trigger to:\(policyName)")
-                            
-                        }) {
-                            Text("Trigger")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                    }
                 }
-                
-                //  ##########################################################################
-                //              UPDATE Self-Service
-                //  ##########################################################################
-                
-                LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
-                    
-                    HStack {
-                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $policyName)
-                            .textSelection(.enabled)
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyNameInitial, policyID: String(describing: policyID))
-                            
-                            networkController.separationLine()
-                            print("Name Self-Service to:\(policyName)")
-                        }) {
-                            Text("Self-Service")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        Toggle("", isOn: $enableDisableSelfService)
-                            .toggleStyle(SwitchToggleStyle(tint: .red))
-                            .onChange(of: enableDisableSelfService) { value in
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
-                                print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
-                            }
-#if os(macOS)
-                        if enableDisableSelfService == true {
-                            Text("Enabled")
-                        } else {
-                            Text("Disabled")
-                        }
-#endif
-                    }
-                }
+
                 
                 //  ##########################################################################
                 //              CATEGORY
                 //  ##########################################################################
                 
-                Divider()
+            Divider()
                 
-                LazyVGrid(columns: layout.columnsFlex) {
+            LazyVGrid(columns: layout.columnsFlex) {
                     HStack {
                         
                         Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
@@ -519,7 +472,7 @@ struct PolicyDetailView: View {
                         .tint(.blue)
                     }
                 }
-            }
+//            }
             .padding()
             
             //  ##########################################################################
@@ -567,9 +520,8 @@ struct PolicyDetailView: View {
                         Label("Remove Items", systemImage: "square.and.pencil")
                     }
             }
-            //            }
-#endif
-            
+
+#endif            
             
             //  ##########################################################################
             //  Progress view via showProgress
