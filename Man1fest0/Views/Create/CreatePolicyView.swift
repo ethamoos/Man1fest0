@@ -418,6 +418,7 @@ struct CreatePolicyView: View {
                 }
             }
             Divider()
+
             Group {
                 
                 LazyVGrid(columns: columns, spacing: 20) {
