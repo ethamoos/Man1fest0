@@ -189,17 +189,8 @@ import AEXML
     //    Icons
 
     //  #############################################################################
-
-    @Published var allIconsDetailed: [Icon?] = [Icon(id: 0, url: "", name: "")]
-
-    //    #################################################################################
-    
-//    @Published var allIconsDetailed: [Icon?] = [Icon(id: 0, url: "", name: "")]
-//    @Published var allIconsDetailed: [Icon?] = []
-//    @Published var allIconsDetailed: [Icon] = []
-
-
-//>>>>>>> main
+    //  #################################################################################
+    @Published var allIconsDetailed: [Icon] = []
     @Published var iconDetailed: Icon = Icon(id: 0, url: "", name: "")
     
     //  #############################################################################
@@ -208,7 +199,7 @@ import AEXML
 
     @Published var selectedSimpleComputer: Computer = Computer(id: 0, name: "")
     @Published var selectedCategory: Category = Category(jamfId: 0, name: "")
-    //    @Published var computerGroupSelection: ComputerGroup = ComputerGroup(id: 0, name: "", isSmart: false name: "")
+
     
     //  #############################################################################
     //    ############ BOOLEAN - TOGGLES
@@ -251,6 +242,19 @@ import AEXML
     // ResourceType.script
     // ResourceType.scripts
     //
+    
+    //    #################################################################################
+//  Initialisers
+    //    #################################################################################
+
+    private let minInterval: TimeInterval
+    private var lastRequestDate: Date?
+    
+    init(minInterval: TimeInterval = 3.0) { // 2 seconds between requests
+        self.minInterval = minInterval
+    }
+    
+    
     
     //    #################################################################################
     //    Functions
@@ -1756,13 +1760,7 @@ import AEXML
 //        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
 //    }
      
-    private let minInterval: TimeInterval
-    private var lastRequestDate: Date?
-    
-    init(minInterval: TimeInterval = 3.0) { // 2 seconds between requests
-        self.minInterval = minInterval
-    }
-    
+  
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
         if self.debug_enabled == true {
             print("Running getDetailedPolicy - policyID is:\(policyID)")
