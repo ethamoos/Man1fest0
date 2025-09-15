@@ -99,13 +99,17 @@ struct CreatePolicyView: View {
     
     @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
     
+    @State var selectedIcon: Icon? = nil
+    
+    //              ################################################################################
+    //              Multi Selections
+    //              ################################################################################
+    
     @State var packageMultiSelection = Set<Package>()
     
     @State var iconMultiSelection = Set<String>()
     
     @State var selectedIconString = ""
-    
-    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
@@ -124,6 +128,9 @@ struct CreatePolicyView: View {
     
         
     var body: some View {
+        
+        @State var selectedIcon: Icon? = networkController.allIconsDetailed.first ?? Icon(id: 0, url: "", name: "")
+
         
         VStack(alignment: .leading) {
             
@@ -535,9 +542,25 @@ struct CreatePolicyView: View {
         // ######################################################################################
         
         .onAppear {
-            print("CreateView appeared - connecting")
-            handleConnect()
-        }
+             print("CreateView appeared - connecting")
+             if selectedIcon == nil {
+                 selectedIcon = networkController.allIconsDetailed.first ?? Icon(id: 0, url: "", name: "")
+             }
+            if selectedScript == nil {
+                selectedScript = networkController.scripts.first ?? ScriptClassic(name: "", jamfId: 0)
+             }
+            if selectedPackage == nil {
+                selectedPackage = networkController.packages.first ?? Package(jamfId: 0, name: "", udid: nil)
+             }
+            if selectedDepartment == nil {
+                selectedDepartment = networkController.departments.first ?? Department(jamfId: 0, name: "")
+             }
+            if selectedCategory == nil {
+                selectedCategory = networkController.categories.first ?? Category(jamfId: 0, name: "")
+             }
+            
+             handleConnect()
+         }
         .padding()
         
         if progress.showProgressView == true {
