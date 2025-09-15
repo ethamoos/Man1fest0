@@ -555,7 +555,7 @@ struct CreatePolicyView: View {
         networkController.fetchStandardData()
         if networkController.allIconsDetailed.count <= 1 {
             print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 10000)
         } else {
             print("getAllIconsDetailed has already run")
             print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
