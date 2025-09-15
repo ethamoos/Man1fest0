@@ -28,9 +28,13 @@ struct CreatePolicyView: View {
     @EnvironmentObject var networkController: NetBrain
     
     //              ################################################################################
-    //              Variables
+    //              Various Variables
     //              ################################################################################
     @State private var searchText = ""
+    
+    //              ################################################################################
+    //              Booleans and Toggles
+    //              ################################################################################
     @State private var showingWarning = false
     @State var enableDisable: Bool = true
     @State private var selfServiceEnable = true

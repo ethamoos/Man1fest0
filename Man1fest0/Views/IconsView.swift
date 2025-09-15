@@ -23,7 +23,8 @@ struct  IconsView: View {
     @State private var showList = false
     @State private var allItemsList = [""]
     @State private var selectedItem = ""
-    
+    @State private var searchText = ""
+
     var body: some View {
         
         VStack {
@@ -32,7 +33,7 @@ struct  IconsView: View {
                 if networkController.allIconsDetailed.count > 0 {
                     
                     NavigationView {
-                        List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
+                        List(searchResults, id: \.self, selection: $selectedIcon) { icon in
                             NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
                                 HStack {
                                     Image(systemName: "photo.circle")
@@ -41,6 +42,7 @@ struct  IconsView: View {
                             }
                             .cornerRadius(8)
                         }
+                        .searchable(text: $searchText)
                     }
                     .navigationViewStyle(DefaultNavigationViewStyle())
                 } else {
@@ -115,7 +117,7 @@ struct  IconsView: View {
             .onAppear() {
                 if networkController.allIconsDetailed.count <= 1 {
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 3000)
                 } else {
                     print("getAllIconsDetailed has already run")
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
@@ -134,6 +136,14 @@ struct  IconsView: View {
         if panel.runModal() == .OK {
             selectedImageURL = panel.url
             importExportController.uploadStatus = ""
+        }
+    }
+    
+    var searchResults: [Icon] {
+        if searchText.isEmpty {
+            return networkController.allIconsDetailed
+        } else {
+            return networkController.allIconsDetailed.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
     }
 }
