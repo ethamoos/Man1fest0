@@ -161,27 +161,62 @@ struct PolicySelfServiceTabView: View {
                 //                        Icons - picker
                 // ##########################################################################################
                 
-                LazyVGrid(columns: columns, spacing: 10) {
-                    Picker(selection: $selectedIcon, label: Text("Icon:")) {
-                        ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-                            HStack {
-                                Text(String(describing: icon.name))
-                                AsyncImage(url: URL(string: icon.url )) { image in
+//<<<<<<< HEAD:Man1fest0/Views/Policy/PolicySelfServiceTabView.swift
+//                LazyVGrid(columns: columns, spacing: 10) {
+//                    Picker(selection: $selectedIcon, label: Text("Icon:")) {
+//                        ForEach(networkController.allIconsDetailed, id: \.self) { icon in
+//                            HStack {
+//                                Text(String(describing: icon.name))
+//                                AsyncImage(url: URL(string: icon.url )) { image in
+////                                    image.resizable()
+////                                    image.fixed().frame(width: 20, height: 20)
 //                                    image.resizable()
-//                                    image.fixed().frame(width: 20, height: 20)
-                                    image.resizable()
-//                                    .aspectRatio(contentMode: .fill)
-//                                        .clipShape(Circle()
-//                                        .aspectRatio(contentMode: .fill)
-                                } placeholder: {
-                                }
-                            }
-                            Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black).tag(icon.name)
-                        }
-                        //  ################################################################################
-                        //  Update Icon Button
-                        //  ################################################################################
-                    }
+////                                    .aspectRatio(contentMode: .fill)
+////                                        .clipShape(Circle()
+////                                        .aspectRatio(contentMode: .fill)
+//                                } placeholder: {
+//=======
+           
+             
+                
+                LazyVGrid(columns: layout.columns, spacing: 10) {
+                    
+                    HStack {
+                        TextField("Filter", text: $iconFilter)
+                        Picker(selection: $selectedIcon, label: Text("").bold()) {
+                                
+                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter)}), id: \.self) { icon in
+                                HStack {
+                                    Text(String(describing: icon.name))
+                                        .tag(icon as Icon?)
+                                        .tag(selectedIcon as Icon?)
+                                    AsyncImage(url: URL(string: icon.url ))  { image in
+                                        image.resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                                                     .frame(maxWidth: 30, maxHeight: 10)
+
+                                    } placeholder: {
+                                        ProgressView()
+                                    }
+                                    .frame(width: 05, height: 05)
+                                    .background(Color.gray)
+                                    .clipShape(Circle())
+//>>>>>>> 2fa67182152e20bfb24168352da4ea78674ed6df:Man1fest0/Views/Policy/PolicyDetailed/PolicySelfServiceTabView.swift
+//                                }
+//                            }
+//                            Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black).tag(icon.name)
+//                        }
+//                        //  ################################################################################
+//                        //  Update Icon Button
+//                        //  ################################################################################
+//                    }
+//<<<<<<< HEAD:Man1fest0/Views/Policy/PolicySelfServiceTabView.swift
+//=======
+//  ################################################################################
+//                        //  Update Icon Button
+//                        //  ################################################################################
+//                    }
+//>>>>>>> 2fa67182152e20bfb24168352da4ea78674ed6df:Man1fest0/Views/Policy/PolicyDetailed/PolicySelfServiceTabView.swift
                     HStack {
                         Button(action: {
                             
@@ -194,24 +229,37 @@ struct PolicySelfServiceTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+//<<<<<<< HEAD:Man1fest0/Views/Policy/PolicySelfServiceTabView.swift
+//=======
+//                    }
+//                    HStack {
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                            Text("Refresh Icons")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+//>>>>>>> 2fa67182152e20bfb24168352da4ea78674ed6df:Man1fest0/Views/Policy/PolicyDetailed/PolicySelfServiceTabView.swift
                     }
                 }
-                Button(action: {
-                    
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                }) {
-                    Text("Enable Self-Service")
+                HStack {
+                    Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
+                    }) {
+                        Text("Enable Self-Service")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
             }
             .frame(minHeight: 1)
             .padding()
-            
-            
             
         }
     }
