@@ -13,15 +13,8 @@
 		A813124229D4B10100BB1C9F /* ScriptsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */; };
 		A813124429D4B50800BB1C9F /* PackagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124329D4B50800BB1C9F /* PackagesView.swift */; };
 		A813124629D4B52800BB1C9F /* PackagesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124529D4B52800BB1C9F /* PackagesDetailView.swift */; };
-		A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */; };
-		A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */; };
-		A813C12B2E54873000735884 /* PolicyDetailScopeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */; };
-		A813C12D2E548C3B00735884 /* PolicyDetailGeneralTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */; };
-		A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */; };
 		A81B58092C4A5E83008C1C25 /* Policies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B58082C4A5E83008C1C25 /* Policies.swift */; };
-		A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */; };
 		A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D0D432D429F8C0074E422 /* PackageTableView.swift */; };
-		A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */; };
 		A8359CE72AE70D2400438AFA /* PoliciesActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */; };
 		A83898132C6686F3003D3F95 /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83898122C6686F3003D3F95 /* Buttons.swift */; };
 		A83C94582D79D9BD00F639A1 /* ResponseCodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83C94572D79D9B500F639A1 /* ResponseCodes.swift */; };
@@ -34,12 +27,9 @@
 		A852DB672C80F0C8005D153F /* Building.swift in Sources */ = {isa = PBXBuildFile; fileRef = A852DB662C80F0C8005D153F /* Building.swift */; };
 		A8533C3E2CA42EA900E6678F /* KeychainWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */; };
 		A857A4282E2566B900A96F3A /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A857A4272E2566B300A96F3A /* NotesView.swift */; };
-		A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */; };
 		A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25629D7447A0075D622 /* ComputersBasicView.swift */; };
 		A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */; };
 		A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533ED2C3C22DB002894B2 /* XmlBrain.swift */; };
-		A86533F02C3E98D0002894B2 /* PolicyScopeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */; };
-		A86533F22C3E99C2002894B2 /* PolicyPackageTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */; };
 		A866AE222DBAA35600675075 /* ScriptDetailTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A866AE212DBAA35600675075 /* ScriptDetailTableView.swift */; };
 		A86AF37B2C3FE282009349C4 /* JamfAuthToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86AF3772C3FE282009349C4 /* JamfAuthToken.swift */; };
 		A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */; };
@@ -48,7 +38,6 @@
 		A86CB8652D3E618000D8F22F /* ReportsExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB8642D3E617A00D8F22F /* ReportsExport.swift */; };
 		A86CB89E2D3E711D00D8F22F /* ReportsExportCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB89D2D3E711100D8F22F /* ReportsExportCSV.swift */; };
 		A86F4DEF2C78ED6200D5518B /* ComputerExtAttributeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */; };
-		A87004362C81C48700C1AB97 /* PolicyActionsDetailTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */; };
 		A871904A2B6CF74500FC8FB2 /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87190492B6CF74500FC8FB2 /* GroupsView.swift */; };
 		A87445CB2E2AACFB00BCB41B /* NotesModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A87445C82E2AACFB00BCB41B /* NotesModel.xcdatamodeld */; };
 		A87445CD2E2AAD3500BCB41B /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87445CC2E2AAD3500BCB41B /* CoreDataStack.swift */; };
@@ -109,7 +98,6 @@
 		E4CE364529D1C43200533707 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4CE364429D1C43200533707 /* Preview Assets.xcassets */; };
 		E4CE368529D336C100533707 /* NetBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368429D336C100533707 /* NetBrain.swift */; };
 		E4CE369129D3372400533707 /* ComputerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368F29D3372400533707 /* ComputerView.swift */; };
-		E4CE369229D3372400533707 /* PolicyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368E29D3372400533707 /* PolicyDetailView.swift */; };
 		E4CE369329D3372400533707 /* PolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368D29D3372400533707 /* PolicyView.swift */; };
 		E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */; };
 		E4D434502C7FBDF600E90BAE /* ComputersBasicTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */; };
@@ -124,16 +112,9 @@
 		A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsDetailView.swift; sourceTree = "<group>"; };
 		A813124329D4B50800BB1C9F /* PackagesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesView.swift; sourceTree = "<group>"; };
 		A813124529D4B52800BB1C9F /* PackagesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesDetailView.swift; sourceTree = "<group>"; };
-		A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyRemoveItemsTabView.swift; sourceTree = "<group>"; };
-		A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailClearItemsTabView.swift; sourceTree = "<group>"; };
-		A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailScopeTabView.swift; sourceTree = "<group>"; };
-		A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailGeneralTabView.swift; sourceTree = "<group>"; };
-		A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailExportTabView.swift; sourceTree = "<group>"; };
 		A81B58082C4A5E83008C1C25 /* Policies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Policies.swift; sourceTree = "<group>"; };
-		A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyScriptsTabView.swift; sourceTree = "<group>"; };
 		A8297EBC2CBFF4C700840E8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A82D0D432D429F8C0074E422 /* PackageTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageTableView.swift; sourceTree = "<group>"; };
-		A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyTriggersTabView.swift; sourceTree = "<group>"; };
 		A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoliciesActionView.swift; sourceTree = "<group>"; };
 		A83898122C6686F3003D3F95 /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
 		A83C94572D79D9B500F639A1 /* ResponseCodes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseCodes.swift; sourceTree = "<group>"; };
@@ -146,12 +127,9 @@
 		A852DB662C80F0C8005D153F /* Building.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Building.swift; sourceTree = "<group>"; };
 		A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainWrapper.swift; sourceTree = "<group>"; };
 		A857A4272E2566B300A96F3A /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
-		A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicySelfServiceTabView.swift; sourceTree = "<group>"; };
 		A861F25629D7447A0075D622 /* ComputersBasicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicView.swift; sourceTree = "<group>"; };
 		A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicDetailedView.swift; sourceTree = "<group>"; };
 		A86533ED2C3C22DB002894B2 /* XmlBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XmlBrain.swift; sourceTree = "<group>"; };
-		A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyScopeTabView.swift; sourceTree = "<group>"; };
-		A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyPackageTabView.swift; sourceTree = "<group>"; };
 		A866AE212DBAA35600675075 /* ScriptDetailTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDetailTableView.swift; sourceTree = "<group>"; };
 		A86AF3772C3FE282009349C4 /* JamfAuthToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JamfAuthToken.swift; sourceTree = "<group>"; };
 		A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JamfAPIError.swift; sourceTree = "<group>"; };
@@ -160,7 +138,6 @@
 		A86CB8642D3E617A00D8F22F /* ReportsExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsExport.swift; sourceTree = "<group>"; };
 		A86CB89D2D3E711100D8F22F /* ReportsExportCSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsExportCSV.swift; sourceTree = "<group>"; };
 		A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerExtAttributeView.swift; sourceTree = "<group>"; };
-		A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyActionsDetailTableView.swift; sourceTree = "<group>"; };
 		A87190492B6CF74500FC8FB2 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
 		A87445CA2E2AACFB00BCB41B /* NotesModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = NotesModel.xcdatamodel; sourceTree = "<group>"; };
 		A87445CC2E2AAD3500BCB41B /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
@@ -223,7 +200,6 @@
 		E4CE364429D1C43200533707 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		E4CE368429D336C100533707 /* NetBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetBrain.swift; sourceTree = "<group>"; };
 		E4CE368D29D3372400533707 /* PolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyView.swift; sourceTree = "<group>"; };
-		E4CE368E29D3372400533707 /* PolicyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailView.swift; sourceTree = "<group>"; };
 		E4CE368F29D3372400533707 /* ComputerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerView.swift; sourceTree = "<group>"; };
 		E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageUsageView.swift; sourceTree = "<group>"; };
 		E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicTableView.swift; sourceTree = "<group>"; };
@@ -232,6 +208,8 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A812EFAA2E78604000BD3412 /* PolicyActionsTableView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicyActionsTableView; sourceTree = "<group>"; };
+		A812EFAB2E78608500BD3412 /* PolicyDetailed */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicyDetailed; sourceTree = "<group>"; };
 		A83D011A2D7850E40091B794 /* JamfObjects */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JamfObjects; sourceTree = "<group>"; };
 		A857A3E72E1FF9A000A96F3A /* ConfigProfiles */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ConfigProfiles; sourceTree = "<group>"; };
 		A857A3E82E1FFA0B00A96F3A /* Structures */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Structures; sourceTree = "<group>"; };
@@ -398,19 +376,9 @@
 			isa = PBXGroup;
 			children = (
 				E4CE368D29D3372400533707 /* PolicyView.swift */,
-				E4CE368E29D3372400533707 /* PolicyDetailView.swift */,
 				A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */,
-				A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */,
-				A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */,
-				A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */,
-				A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */,
-				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
-				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
-				A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */,
-				A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */,
-				A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */,
-				A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */,
-				A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */,
+				A812EFAB2E78608500BD3412 /* PolicyDetailed */,
+				A812EFAA2E78604000BD3412 /* PolicyActionsTableView */,
 				A857A4272E2566B300A96F3A /* NotesView.swift */,
 			);
 			path = Policy;
@@ -539,6 +507,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				A812EFAA2E78604000BD3412 /* PolicyActionsTableView */,
+				A812EFAB2E78608500BD3412 /* PolicyDetailed */,
 				A83D011A2D7850E40091B794 /* JamfObjects */,
 				A857A3E72E1FF9A000A96F3A /* ConfigProfiles */,
 				A857A3E82E1FFA0B00A96F3A /* Structures */,
@@ -560,7 +530,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1420;
-				LastUpgradeCheck = 1530;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					E4CE363829D1C43100533707 = {
 						CreatedOnToolsVersion = 14.2;
@@ -609,7 +579,6 @@
 			files = (
 				A89876642D53D4FC002CC9CF /* ComputerExtAttDetailView.swift in Sources */,
 				E4CE369129D3372400533707 /* ComputerView.swift in Sources */,
-				E4CE369229D3372400533707 /* PolicyDetailView.swift in Sources */,
 				E49319892B6797D800B58519 /* PrestagesEditView.swift in Sources */,
 				E4DA780E2C5F94A800C5CE27 /* ComputerGroup.swift in Sources */,
 				A88491952C8AE45900C37DB7 /* IconDetailedView.swift in Sources */,
@@ -620,14 +589,11 @@
 				A87445CD2E2AAD3500BCB41B /* CoreDataStack.swift in Sources */,
 				A8B4EA6E2B04E473000F059F /* ResourceTypeEnums.swift in Sources */,
 				A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */,
-				A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */,
-				A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */,
 				A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */,
 				A8ECF6512C6D275F0082BE21 /* Ldap.swift in Sources */,
 				E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */,
 				A86CB8652D3E618000D8F22F /* ReportsExport.swift in Sources */,
 				A866AE222DBAA35600675075 /* ScriptDetailTableView.swift in Sources */,
-				A86533F02C3E98D0002894B2 /* PolicyScopeTabView.swift in Sources */,
 				A8AB48FB2B07D92D004C3675 /* CreateView.swift in Sources */,
 				A877BED12E60F3400041D3C9 /* Sorting.swift in Sources */,
 				E48D59DD2C5A457D00E1E35B /* CreateGeneralTabView.swift in Sources */,
@@ -650,14 +616,11 @@
 				E433D9DE2B58488C005727E1 /* TestOptionsView.swift in Sources */,
 				A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */,
 				A8B4EA6C2B04E46F000F059F /* Responses.swift in Sources */,
-				A813C12B2E54873000735884 /* PolicyDetailScopeTabView.swift in Sources */,
-				A813C12D2E548C3B00735884 /* PolicyDetailGeneralTabView.swift in Sources */,
 				E45E13292C53B27F007C175F /* ConnectSheet.swift in Sources */,
 				E45E13272C53B22F007C175F /* ContentView.swift in Sources */,
 				A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */,
 				A840186D2D4BCA6B00C09FD3 /* ImportView.swift in Sources */,
 				A83D00DB2D774FCA0091B794 /* ErrorView.swift in Sources */,
-				A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */,
 				A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */,
 				E493197F2B6429C300B58519 /* PrestageBrain.swift in Sources */,
 				A83898132C6686F3003D3F95 /* Buttons.swift in Sources */,
@@ -670,7 +633,6 @@
 				E48D59D82C5A403B00E1E35B /* CreatePushPackageTabView.swift in Sources */,
 				E493198B2B67990A00B58519 /* PrestageDetailView2.swift in Sources */,
 				A813124229D4B10100BB1C9F /* ScriptsDetailView.swift in Sources */,
-				A86533F22C3E99C2002894B2 /* PolicyPackageTabView.swift in Sources */,
 				A83D21072DE6125F00D9AD2F /* GroupsSmartView.swift in Sources */,
 				A81B58092C4A5E83008C1C25 /* Policies.swift in Sources */,
 				A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */,
@@ -690,11 +652,8 @@
 				E4CE363D29D1C43100533707 /* Man1fest0App.swift in Sources */,
 				A813124429D4B50800BB1C9F /* PackagesView.swift in Sources */,
 				A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */,
-				A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */,
 				E493198D2B679BE400B58519 /* PrestageRemoveDeviceView.swift in Sources */,
-				A87004362C81C48700C1AB97 /* PolicyActionsDetailTableView.swift in Sources */,
 				A8ECB7C12C88492700FAFDC2 /* PushBrain.swift in Sources */,
-				A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */,
 				E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */,
 				A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */,
 				E45E132B2C53B2CA007C175F /* OptionsView.swift in Sources */,
@@ -703,7 +662,6 @@
 				A8C4EAC72D53BCF90022E0ED /* ComputerExtensionAttribute.swift in Sources */,
 				A86F4DEF2C78ED6200D5518B /* ComputerExtAttributeView.swift in Sources */,
 				A86CB8612D3E596200D8F22F /* ImportExportBrain.swift in Sources */,
-				A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */,
 				A83D210B2DE627AD00D9AD2F /* ComputerExtAttributeActionView.swift in Sources */,
 				A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */,
 				A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */,
@@ -752,6 +710,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -814,6 +773,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -843,7 +803,6 @@
 				CURRENT_PROJECT_VERSION = 1.39.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
-				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -886,7 +845,6 @@
 				CURRENT_PROJECT_VERSION = 1.39.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
-				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

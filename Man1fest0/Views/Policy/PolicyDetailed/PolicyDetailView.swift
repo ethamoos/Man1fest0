@@ -152,6 +152,7 @@ struct PolicyDetailView: View {
     
     var body: some View {
         
+        
         let text = String(describing: xmlController.currentPolicyAsXML)
         
         let document = TextDocument(text: text)
@@ -597,6 +598,11 @@ struct PolicyDetailView: View {
                 print("No categories - fetching")
                 networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
             }
+            
+            if selectedCategory == nil {
+                selectedCategory = networkController.categories.first ?? Category(jamfId: 0, name: "")
+             }
+            
             
             if networkController.packages.count <= 1 {
                 networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
