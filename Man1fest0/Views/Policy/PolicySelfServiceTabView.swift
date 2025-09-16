@@ -44,6 +44,8 @@ struct PolicySelfServiceTabView: View {
     
     @State var computerFilter = ""
     
+    @State var iconFilter = ""
+    
     //  ########################################################################################
     //    Policy
     //  ########################################################################################
@@ -161,21 +163,6 @@ struct PolicySelfServiceTabView: View {
                 //                        Icons - picker
                 // ##########################################################################################
                 
-//<<<<<<< HEAD:Man1fest0/Views/Policy/PolicySelfServiceTabView.swift
-//                LazyVGrid(columns: columns, spacing: 10) {
-//                    Picker(selection: $selectedIcon, label: Text("Icon:")) {
-//                        ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-//                            HStack {
-//                                Text(String(describing: icon.name))
-//                                AsyncImage(url: URL(string: icon.url )) { image in
-////                                    image.resizable()
-////                                    image.fixed().frame(width: 20, height: 20)
-//                                    image.resizable()
-////                                    .aspectRatio(contentMode: .fill)
-////                                        .clipShape(Circle()
-////                                        .aspectRatio(contentMode: .fill)
-//                                } placeholder: {
-//=======
            
              
                 
@@ -201,22 +188,14 @@ struct PolicySelfServiceTabView: View {
                                     .frame(width: 05, height: 05)
                                     .background(Color.gray)
                                     .clipShape(Circle())
-//>>>>>>> 2fa67182152e20bfb24168352da4ea78674ed6df:Man1fest0/Views/Policy/PolicyDetailed/PolicySelfServiceTabView.swift
-//                                }
-//                            }
-//                            Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black).tag(icon.name)
-//                        }
-//                        //  ################################################################################
-//                        //  Update Icon Button
-//                        //  ################################################################################
-//                    }
-//<<<<<<< HEAD:Man1fest0/Views/Policy/PolicySelfServiceTabView.swift
-//=======
+                                }
+                            }
+                        }
+                    }
 //  ################################################################################
 //                        //  Update Icon Button
 //                        //  ################################################################################
 //                    }
-//>>>>>>> 2fa67182152e20bfb24168352da4ea78674ed6df:Man1fest0/Views/Policy/PolicyDetailed/PolicySelfServiceTabView.swift
                     HStack {
                         Button(action: {
                             
@@ -229,8 +208,6 @@ struct PolicySelfServiceTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-//<<<<<<< HEAD:Man1fest0/Views/Policy/PolicySelfServiceTabView.swift
-//=======
 //                    }
 //                    HStack {
                         Button(action: {
@@ -241,7 +218,6 @@ struct PolicySelfServiceTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-//>>>>>>> 2fa67182152e20bfb24168352da4ea78674ed6df:Man1fest0/Views/Policy/PolicyDetailed/PolicySelfServiceTabView.swift
                     }
                 }
                 HStack {
@@ -260,6 +236,8 @@ struct PolicySelfServiceTabView: View {
             }
             .frame(minHeight: 1)
             .padding()
+            
+            
             
         }
     }
