@@ -3201,7 +3201,10 @@ import AEXML
         var xml: String
         
         print("Running toggleSelfServiceOnOff")
-        if selfServiceToggle == false {
+        print("selfServiceToggle is currently\(selfServiceToggle)")
+        
+        
+        if selfServiceToggle == true {
             print("Enabling")
             xml = "<policy><self_service><use_for_self_service>true</use_for_self_service></self_service></policy>"
             
@@ -3211,7 +3214,8 @@ import AEXML
                     print("Running toggleSelfServiceOnOff policy function - url is set as:\(url)")
                     print("ItemID is set as:\(itemIDString)")
                     print("resourceType is set as:\(resourceType)")
-                    // print("xml is set as:\(xml)")
+                    self.separationLine()
+                    print("xml is set as:\(xml)")
                     sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
                     appendStatus("Connecting to \(url)...")
                 }
@@ -3227,8 +3231,8 @@ import AEXML
                     let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
                     print("Running togglePolicyOnOff policy function - url is set as:\(url)")
                     print("resourceType is set as:\(resourceType)")
-                    // print("xml is set as:\(xml)")
-                    
+                    self.separationLine()
+                    print("xml is set as:\(xml)")
                     self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
                     
                     appendStatus("Connecting to \(url)...")

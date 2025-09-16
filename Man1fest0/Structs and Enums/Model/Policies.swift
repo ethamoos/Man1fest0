@@ -63,6 +63,38 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
         //        case files_processes = "files_processes"
         //        case printer
     }
+    
+    
+    // MARK: - Departments
+    struct Departments: Codable, Hashable {
+        let size: String
+        let department: [Department]
+    }
+
+    // MARK: - DEPARTMENT
+    struct Department: Codable, Hashable, Identifiable {
+        
+        var id = UUID()
+        let jamfId: Int?
+        let name: String
+        
+        enum CodingKeys: String, CodingKey {
+            case jamfId = "id"
+            case name = "name"
+        }
+    }
+    
+    
+    // MARK: - Buildings
+    struct Buildings: Codable {
+        let buildings: [Building]
+    }
+
+    // MARK: - Building
+    struct Building: Codable, Hashable, Identifiable {
+        let id: Int
+        let name: String
+    }
 }
 
 // MARK: - PackageConfiguration
@@ -276,14 +308,6 @@ struct GenericItem: Codable, Hashable, Identifiable {
     }
 }
 
-//struct Category: Codable, Hashable, Identifiable {
-//    var id = UUID()
-//    var name: String?
-//    enum CodingKeys: String, CodingKey {
-//        case name = "name"
-//    }
-//}
-
 
 // MARK: - Location
 struct Location: Codable, Identifiable, Hashable {
@@ -404,61 +428,7 @@ struct SelfService: Codable, Hashable, Identifiable  {
             let id: Int?
             let uri: String?
         }
-
 }
-//
-    
-
-
-
-
-
-
-//
-//
-//    
-//}
-
-
-//// MARK: - SelfService
-//struct SelfService: Codable, Hashable, Identifiable  {
-//    
-//    var id = UUID()
-// let selfServiceDisplayName, installButtonText, reinstallButtonText: String
-////    let selfServiceDescription, forceUsersToViewDescription: String
-//    let selfServiceIcon: SelfServiceIcon
-//    let useForSelfService: Bool
-////    let featureOnMainPage: String
-////    let selfServiceCategories: SelfServiceCategories
-////    let notification: [String]
-////    let notificationSubject, notificationMessage: String
-//    
-//    enum CodingKeys:String, CodingKey {
-//        case useForSelfService = "use_for_self_service"
-//        case selfServiceDisplayName = "self_service_display_name"
-//        case installButtonText = "install_button_text"
-//        case reinstallButtonText = "reinstall_button_text"
-////        case selfServiceDescription = "self_service_description"
-////        case forceUsersToViewDescription = "force_users_to_view_description"
-//        case selfServiceIcon = "self_service_icon"
-////        case featureOnMainPage = "feature_on_main_page"
-////        case selfServiceCategories = "self_service_categories"
-////        case notification = "notification"
-////        case notificationSubject = "notification_subject"
-////        case notificationMessage = "notification_message"
-//    }
-//              
-//    
-//    // MARK: - SelfServiceCategories
-//        struct SelfServiceCategories: Codable {
-//        let category: SelfServiceCategoriesCategory
-//    }
-//
-//    // MARK: - SelfServiceCategoriesCategory
-//    struct SelfServiceCategoriesCategory: Codable, Hashable, Identifiable {
-//        let id, name, displayIn, featureIn: String
-//    }
-
 
 
 
@@ -488,24 +458,3 @@ struct UserGroups: Codable, Hashable, Identifiable {
 }
 
 // ################# END OF DETAILED POLICY ####################
-
-
-
-//struct AllPolicies: Codable {
-//    let policies: [Policy]
-//}
-//struct Policy: Codable, Hashable, Identifiable {
-//    //    let id: Int
-//    let name: String
-//    //    let enabled: Bool
-//    var id = UUID()
-//    var jamfId: Int?
-//    //    var name: String
-//    enum CodingKeys:String, CodingKey{
-//        case jamfId = "id"
-//        case name = "name"
-//    }
-//
-//
-//
-//}

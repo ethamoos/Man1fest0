@@ -18,7 +18,7 @@ struct ConfigurationProfiles: Codable, Identifiable, Hashable {
         var id = UUID()
         var jamfId: Int?
         var name: String
-
+        
         enum CodingKeys: String, CodingKey {
             case jamfId = "id"
             case name = "name"
@@ -38,15 +38,15 @@ struct MobileConfigurationProfile: Codable, Hashable {
 
 struct ConfigurationProfile: Codable, Hashable {
     var general: General?
-//    var scope: Scope?
-//    var selfService: SelfService?
-//    var payloads: ConfigPayload?
+    //    var scope: Scope?
+    //    var selfService: SelfService?
+    //    var payloads: ConfigPayload?
     
     enum CodingKeys: String, CodingKey {
         case general = "general"
-//        case scope = "scope"
-//        case selfService = "self_service"
-//        case payloads = "payloads"
+        //        case scope = "scope"
+        //        case selfService = "self_service"
+        //        case payloads = "payloads"
     }
 }
 
@@ -173,9 +173,9 @@ struct PackageDetailed: Codable, Hashable, Identifiable {
     let rebootRequired, fillUserTemplate, fillExistingUsers, allowUninstalled: Bool
     let osRequirements, requiredProcessor, hashType, hashValue: String
     let switchWithPackage, installIfReportedAvailable, reinstallOption: String
-//    let triggeringFiles: TriggeringFiles
+    //    let triggeringFiles: TriggeringFiles
     let sendNotification: Bool
-
+    
     enum CodingKeys: String, CodingKey {
         case id, name, category, filename, info, notes, priority
         case rebootRequired = "reboot_required"
@@ -189,7 +189,7 @@ struct PackageDetailed: Codable, Hashable, Identifiable {
         case switchWithPackage = "switch_with_package"
         case installIfReportedAvailable = "install_if_reported_available"
         case reinstallOption = "reinstall_option"
-//        case triggeringFiles = "triggering_files"
+        //        case triggeringFiles = "triggering_files"
         case sendNotification = "send_notification"
     }
 }
@@ -203,34 +203,34 @@ struct TriggeringFiles: Codable {
 //MARK: - SCRIPTS
 struct Scripts: Codable, Identifiable, Hashable {
     var id = UUID()
-//    var totalCount: Int
+    //    var totalCount: Int
     var scripts: [ScriptClassic]
-        enum CodingKeys:String, CodingKey{
-//            case totalCount = "totalCount"
-            case scripts = "scripts"
-        }
+    enum CodingKeys:String, CodingKey{
+        //            case totalCount = "totalCount"
+        case scripts = "scripts"
+    }
 }
 
 struct ScriptClassic: Codable, Identifiable, Hashable {
     var id = UUID()
     var name: String
     var jamfId: Int
-//    var categoryId: String
-//    var categoryName: String
-//    var info: String
-//    var notes: String
-//    var priority: String
-//    var scriptContents: String
+    //    var categoryId: String
+    //    var categoryName: String
+    //    var info: String
+    //    var notes: String
+    //    var priority: String
+    //    var scriptContents: String
     
     enum  CodingKeys:String, CodingKey{
         case name = "name"
         case jamfId = "id"
-//        case categoryId = "categoryId"
-//        case categoryName = "categoryName"
-//        case info = "info"
-//        case notes = "notes"
-//        case priority = "priority"
-//        case scriptContents = "scriptContents"
+        //        case categoryId = "categoryId"
+        //        case categoryName = "categoryName"
+        //        case info = "info"
+        //        case notes = "notes"
+        //        case priority = "priority"
+        //        case scriptContents = "scriptContents"
     }
 }
 
