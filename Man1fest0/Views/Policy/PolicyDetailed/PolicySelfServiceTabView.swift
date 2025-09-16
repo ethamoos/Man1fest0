@@ -166,7 +166,7 @@ struct PolicySelfServiceTabView: View {
            
              
                 
-                LazyVGrid(columns: columns, spacing: 10) {
+                LazyVGrid(columns: layout.columns, spacing: 10) {
                     
                     HStack {
                         TextField("Filter", text: $iconFilter)
@@ -192,24 +192,7 @@ struct PolicySelfServiceTabView: View {
                             }
                         }
                     }
-                    
-                    
-//                    Picker(selection: $selectedIcon, label: Text("Icon:")) {
-//                        ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-//                            HStack {
-//                                Text(String(describing: icon.name))
-//                                AsyncImage(url: URL(string: icon.url )) { image in
-//
-//                                    image.resizable()
-////                                    .aspectRatio(contentMode: .fill)
-////                                        .clipShape(Circle()
-////                                        .aspectRatio(contentMode: .fill)
-//                                } placeholder: {
-//                                }
-//                            }
-//                            Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black).tag(icon.name)
-//                        }
-//                        //  ################################################################################
+//  ################################################################################
 //                        //  Update Icon Button
 //                        //  ################################################################################
 //                    }
@@ -225,8 +208,8 @@ struct PolicySelfServiceTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                    }
-                    HStack {
+//                    }
+//                    HStack {
                         Button(action: {
                             progress.showProgress()
                             progress.waitForABit()
@@ -237,17 +220,19 @@ struct PolicySelfServiceTabView: View {
                         .tint(.blue)
                     }
                 }
-                Button(action: {
-                    
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                }) {
-                    Text("Enable Self-Service")
+                HStack {
+                    Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
+                    }) {
+                        Text("Enable Self-Service")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
             }
             .frame(minHeight: 1)
             .padding()
