@@ -15,21 +15,15 @@ struct  IconsView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var importExportController: ImportExportBrain
-    @State var server: String
-
-    //      ################################################################################
-    //      Selections parameters
-    //      ################################################################################
     
     @State private var selectedImageURL: URL?
+    @State var server: String
     @State var selectedIcon: Icon = Icon(id: 0, url: "", name: "")
-    @State private var selectedItem = ""
-
     @State var path = ""
     @State private var showList = false
     @State private var allItemsList = [""]
-    @State private var searchText = ""
-
+    @State private var selectedItem = ""
+    
     var body: some View {
         
         VStack {
@@ -38,7 +32,7 @@ struct  IconsView: View {
                 if networkController.allIconsDetailed.count > 0 {
                     
                     NavigationView {
-                        List(searchResults, id: \.self, selection: $selectedIcon) { icon in
+                        List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                             NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
                                 HStack {
                                     Image(systemName: "photo.circle")
@@ -47,7 +41,6 @@ struct  IconsView: View {
                             }
                             .cornerRadius(8)
                         }
-                        .searchable(text: $searchText)
                     }
                     .navigationViewStyle(DefaultNavigationViewStyle())
                 } else {
@@ -121,10 +114,8 @@ struct  IconsView: View {
             .frame(width: 400, height: 50)
             .onAppear() {
                 if networkController.allIconsDetailed.count <= 1 {
-//                    if networkController.allIconsDetailed.count > 0 {
-
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
                 } else {
                     print("getAllIconsDetailed has already run")
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
@@ -143,14 +134,6 @@ struct  IconsView: View {
         if panel.runModal() == .OK {
             selectedImageURL = panel.url
             importExportController.uploadStatus = ""
-        }
-    }
-    
-    var searchResults: [Icon] {
-        if searchText.isEmpty {
-            return networkController.allIconsDetailed
-        } else {
-            return networkController.allIconsDetailed.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
     }
 }

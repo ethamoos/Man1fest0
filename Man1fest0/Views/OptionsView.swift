@@ -374,7 +374,6 @@ struct OptionsView: View {
             .padding()
             .frame(minWidth: 220)
         }
-        
     }
 }
 

@@ -18,8 +18,6 @@ struct PolicyDetailGeneralTabView: View {
     
     var server: String
     var selectedPoliciesInt: [Int?]
-    @State var iconFilter = ""
-
     
     //  ####################################################################################
     //  BOOLS
@@ -237,68 +235,31 @@ struct PolicyDetailGeneralTabView: View {
 //                }
                 
                 
-//                Picker(selection: $selectedIcon, label: Text("Icon:")) {
-//                    //                            Text("").tag("")
-//                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-//                        HStack {
-//                            Text(String(describing: icon.name ?? ""))
-//                            
-//                            AsyncImage(url: URL(string: icon.url ?? "" ))  { image in
-//                                image
-//                                    .resizable()
-//                                    .scaledToFill()
-//                            } placeholder: {
-//                                ProgressView()
-//                            }
-//                            .frame(width: 05, height: 05)
-//                            .background(Color.gray)
-//                            .clipShape(Circle())
-//                        }
-//                        .frame(width: 05, height: 05)
-//                    }
-//                    //
-//                    //                ############################################################
-//                    //                Update Icon Button
-//                    //                ############################################################
-//                    
-//                }
-//                
-                
-                
-                HStack {
-                    TextField("Filter", text: $iconFilter)
-                    Picker(selection: $selectedIcon, label: Text("").bold()) {
+                Picker(selection: $selectedIcon, label: Text("Icon:")) {
+                    //                            Text("").tag("")
+                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
+                        HStack {
+                            Text(String(describing: icon.name ?? ""))
                             
-                        ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter)}), id: \.self) { icon in
-                            HStack {
-                                Text(String(describing: icon.name))
-                                    .tag(icon as Icon?)
-                                    .tag(selectedIcon as Icon?)
-                                AsyncImage(url: URL(string: icon.url ))  { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    ProgressView()
-                                }
-                                .frame(width: 05, height: 05)
-                                .background(Color.gray)
-                                .clipShape(Circle())
+                            AsyncImage(url: URL(string: icon.url ?? "" ))  { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                ProgressView()
                             }
+                            .frame(width: 05, height: 05)
+                            .background(Color.gray)
+                            .clipShape(Circle())
                         }
+                        .frame(width: 05, height: 05)
                     }
+                    //
+                    //                ############################################################
+                    //                Update Icon Button
+                    //                ############################################################
+                    
                 }
-                //
-                //                ############################################################
-                //                Update Icon Button
-                //                ############################################################
-                
-                
-                
-                
-                
-                
-                
                 HStack {
                     Button(action: {
                         
@@ -312,16 +273,6 @@ struct PolicyDetailGeneralTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                }
-                HStack {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
-                            Text("Refresh Icons")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
                 }
             }
                     Spacer()
