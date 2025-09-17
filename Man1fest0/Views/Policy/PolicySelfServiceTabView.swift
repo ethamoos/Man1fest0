@@ -71,14 +71,13 @@ struct PolicySelfServiceTabView: View {
     @State  var selectionBuilding: Building = Building(id: 0, name: "")
     
     
-    @State var iconMultiSelection = Set<String>()
-    
-    @State var selectedIconString = ""
-    
     @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
+    @State var iconMultiSelection = Set<String>()
+    
+    @State var selectedIconString = ""
     
     //  ########################################################################################
     //  LDAP

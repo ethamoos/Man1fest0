@@ -305,8 +305,8 @@ struct PolicyScopeTabView: View {
                                 
                                 Group {
                                     VStack(alignment: .leading) {
-                                        LazyVGrid(columns: layout.columns, spacing: 10) {
-                                            HStack(spacing: 10) {
+                                        LazyVGrid(columns: layout.column, spacing: 10) {
+//                                            HStack(spacing: 10) {
                                                 Toggle("", isOn: $allComputersButton)
                                                     .toggleStyle(SwitchToggleStyle(tint: .red))
                                                     .onChange(of: allComputersButton) { value in
@@ -321,48 +321,65 @@ struct PolicyScopeTabView: View {
 #if os(macOS)
                                                 if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
                                                     Text("All Computers")
+                                                    
                                                 } else {
                                                     Text("Specific Computers")
+                                                    
+                                                   
+                                                    
+                                                    HStack {
+                                                        LazyVGrid(columns: layout.threeColumns, spacing: 10) {
+                                                            Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
+                                                                ForEach(networkController.computers, id: \.self) { comp in
+                                                                    Text(String(describing: comp.name)).tag("")
+                                                                        .tag(comp as Computer?)
+                                                                }
+                                                            }
+                                                            
+                                                            //                                                        .onAppear {
+                                                            //
+                                                            
+                                                            //                                                                selectionComp = networkController.computers[0]}
+                                                            
+                                                            
+                                                            Button(action: {
+                                                                
+                                                                progress.showProgress()
+                                                                progress.waitForABit()
+                                                                
+                                                                networkController.separationLine()
+                                                                print("addComputerToPolicyScope policy:\(String(describing: policyID))")
+                                                                
+                                                                print("Run getPolicyAsXML to ensure we have the latest version of the policy")
+                                                                xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+                                                                
+                                                                xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
+                                                            }) {
+                                                                HStack(spacing: 10) {
+                                                                    Image(systemName: "plus.square.fill.on.square.fill")
+                                                                    Text("Add Computer")
+                                                                }
+                                                            }
+                                                        }
+                                                    }
                                                 }
 #endif
-                                            }
+//                                            }
                                         }
                                     }
-                                    
-                                    if networkController.computers.count > 0 {
-                                        
-                                        LazyVGrid(columns: layout.threeColumns, spacing: 20) {
-                                            Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
-                                                ForEach(networkController.computers, id: \.self) { comp in
-                                                    Text(String(describing: comp.name)).tag("")
-                                                        .tag(comp as Computer?)
-                                                }
-                                            }
-                                            
-                                            .onAppear {selectionComp = networkController.computers[0]}
-                                            
-                                            Button(action: {
-                                                
-                                                progress.showProgress()
-                                                progress.waitForABit()
-                                                
-                                                networkController.separationLine()
-                                                print("addComputerToPolicyScope policy:\(String(describing: policyID))")
-                                                
-                                                xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
-                                            }) {
-                                                HStack(spacing: 10) {
-                                                    Image(systemName: "plus.square.fill.on.square.fill")
-                                                    Text("Add Computer")
-                                                }
-                                            }
-                                        }
-                                    }
+//                                    .onAppear() {
+//                                        if networkController.computers.count < 0 {
+//                                            print("Fetching computers for policy scope view")
+//                                            networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+//                                        }
+//                                        
+//                                    }
+//
                                 }
                               
-                    //  ################################################################################
+                    //  ############################################################################
                     //  Set Scoping - Department
-                    //  ################################################################################
+                    //  ############################################################################
                                 
                                 Group {
                                     
@@ -386,6 +403,9 @@ struct PolicyScopeTabView: View {
                                             
                                             layout.separationLine()
                                             print("addDepartmentToPolicyScope for policy:\(String(describing: policyID))")
+                                            
+                                            print("Run getPolicyAsXML to ensure we have the latest version of the policy")
+                                            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                                             
                                             xmlController.addDepartmentToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, departmentName: selectionDepartment.name, departmentId: String(describing:selectionDepartment.jamfId ?? 0), authToken: networkController.authToken, policyId: String(describing: policyID), resourceType: selectedResourceType, server: server)
                                         }) {
@@ -421,6 +441,9 @@ struct PolicyScopeTabView: View {
                                             
                                             networkController.separationLine()
                                             print("addBuildingToPolicyScope - policy is:\(String(describing: policyID))")
+                                            
+                                            print("Run getPolicyAsXML to ensure we have the latest version of the policy")
+                                            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                                             
                                             xmlController.addBuildingToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, buildingName: selectionBuilding.name, buildingId: String(describing: selectionBuilding.id), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, server: server, authToken: networkController.authToken)
                                             
@@ -481,9 +504,9 @@ struct PolicyScopeTabView: View {
                                 }
                             }
                    
-                    //  ################################################################################
+                    //  ############################################################################
                     //  SET LIMITATIONS
-                    //  ################################################################################
+                    //  ############################################################################
                     
                             Group {
                                 
@@ -583,9 +606,9 @@ struct PolicyScopeTabView: View {
                                         }
                                     }
                                     
-                        //  ################################################################################
+                        //  ########################################################################
                         //  Select Ldap server
-                        //  ################################################################################
+                        //  ########################################################################
                                     
                                     LazyVGrid(columns: layout.threeColumns, spacing: 20) {
                                         Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:")) {
@@ -596,9 +619,9 @@ struct PolicyScopeTabView: View {
                                         }
                                     }
                                         
-                                        //  ################################################################################
+                                        //  ########################################################
                                         //  Select Ldap group
-                                        //  ################################################################################
+                                        //  ########################################################
                                         
                                         LazyVGrid(columns: layout.threeColumns, spacing: 20) {
                                             
@@ -626,9 +649,9 @@ struct PolicyScopeTabView: View {
                                         }
                                 }
 
-                //   ################################################################################
+                //  ################################################################################
                 //   Exclusions
-                //   ################################################################################
+                //  ################################################################################
 
                                     Group {
                                 
@@ -664,16 +687,33 @@ struct PolicyScopeTabView: View {
                                     }
                                 }
                             }
+                                    .onAppear() {
+                                        
+                                        if networkController.computers.count == 0 {
+                                            print("Fetching computers for policy scope view")
+                                            networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+                                        }
+                                        
+                                    }
                         }
                     
-                    //  ################################################################################
+                    //  ############################################################################
                     //  END
-                    //  ################################################################################
+                    //  ############################################################################
                 }
             }
+            
         }
         .frame(minHeight: 1)
         .padding()
+        .onAppear() {
+            
+            if networkController.computers.count < 0 {
+                print("Fetching computers for policy scope view")
+                networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+            }
+
+        }
     }
 }
 

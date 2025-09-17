@@ -2456,9 +2456,11 @@ class XmlBrain: ObservableObject {
         let policyID = policyID
         var xml: String
         self.separationLine()
-        print("updateName XML")
-//        print("policyName is set as:\(policyName)")
-//        <name>\(policyName)</name>
+        print("Running updateIcon")
+        print("iconID is set as:\(iconID)")
+        print("policyID is set as:\(policyID)")
+        print("iconFilename is set as:\(iconFilename)")
+        print("iconURI is set as:\(iconURI)")
         
         xml = """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -2492,7 +2494,6 @@ class XmlBrain: ObservableObject {
                 print("resourceType is set as:\(resourceType)")
                 //                // print("xml is set as:\(xml)")
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-//                appendStatus("Connecting to \(url)...")
                 print("Set updateXML to true ")
                 self.updateXML = true
             }
