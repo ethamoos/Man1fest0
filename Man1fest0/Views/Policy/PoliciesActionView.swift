@@ -150,7 +150,7 @@ struct PoliciesActionView: View {
                         networkController.connect(server: server,resourceType:  ResourceType.policies, authToken: networkController.authToken)
                         
                         getDetailedPolicies(policiesSelection: policiesSelection)
-                        print("Refresh")
+                        print("Refresh button clicked on PoliciesAction View")
                         
                     }) {
                         HStack(spacing: 10) {
@@ -655,7 +655,7 @@ struct PoliciesActionView: View {
             
             let policyID = eachItem.jamfId
             let policyName: String = String(describing:eachItem.name)
-            print("Current policyID is:\(String(describing: policyID))")
+            print("Current policyID is:\(String(describing: policyID ?? 0))")
             print("Current policyName is:\(String(describing: policyName))")
             print("Run:getPolicyAsXML")
             

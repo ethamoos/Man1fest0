@@ -200,6 +200,26 @@ struct PolicyPackageTabView: View {
                     .tint(.red)
                     
                     
+                     Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        networkController.separationLine()
+                        print("Refresh packages")
+
+                         networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                        
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "plus.square.fill.on.square.fill")
+                            Text("Refresh Packages")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    
+                    
                     
                     
 //                }

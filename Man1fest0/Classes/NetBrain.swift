@@ -837,15 +837,13 @@ import AEXML
     func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
-        
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
             separationLine()
-            print("Running delete policy function - url is set as:\(url)")
+            print("Running deletePolicy function - url is set as:\(url)")
             print("resourceType is set as:\(resourceType)")
             requestDelete(url: url, authToken: authToken, resourceType: resourceType)
-            appendStatus("Connecting to \(url)...")
-            
+//            appendStatus("Connecting to \(url)...")
             print("deletePolicy has finished for:\(itemID)")
             print("Set processingComplete to true")
             self.processingComplete = true
@@ -1975,17 +1973,17 @@ import AEXML
         print("Set processingComplete to false")
         self.processingComplete = true
         print(String(describing: self.processingComplete))
-        print("selection is:\(selection)")
+//        print("selection is:\(selection)")
 
         for eachItem in selection {
             separationLine()
-            print("Processing items from Dictionary:\(eachItem)")
+//            print("Processing items from Dictionary:\(eachItem)")
             let policyID = String(describing:eachItem.id)
             let jamfID: String = String(describing:eachItem.jamfId ?? 0)
-            print("Current policyID is:\(policyID)")
-            print("Current jamfID is:\(String(describing: jamfID))")
+//            print("Current policyID is:\(policyID)")
+            print("processDeletePolicies jamfID is:\(String(describing: jamfID))")
             deletePolicy(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
-            print("List is:\(packageProcessList)")
+//            print("List is:\(packageProcessList)")
         }
         separationLine()
         print("Finished - Set processingComplete to true")
