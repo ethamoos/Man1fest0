@@ -201,8 +201,7 @@ struct ComputerActionView: View {
                 
                 Button(action: {
                     
-                    networkController.connect(server: server, resourceType: ResourceType.computer, authToken: networkController.authToken)
-                    print("Refresh")
+                     print("Refresh")
                     progress.showProgress()
                     progress.waitForABit()
                     

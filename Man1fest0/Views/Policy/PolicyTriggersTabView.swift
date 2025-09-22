@@ -22,12 +22,16 @@ struct PolicyTriggersTabView: View {
     @EnvironmentObject var xmlController: XmlBrain
     
     @EnvironmentObject var layout: Layout
+    
+    
+    //  ################################################################################
+    //  Triggers
+    //  ################################################################################
+    
     @State var trigger_login: Bool
-
     @State var trigger_checkin: Bool
     @State var trigger_startup: Bool
     @State var trigger_enrollment_complete: Bool
-
     @State var trigger_other: String = ""
     
     var body: some View {
@@ -36,7 +40,7 @@ struct PolicyTriggersTabView: View {
         let currentTrigger_checkin = networkController.currentDetailedPolicy?.policy.general?.triggerCheckin ?? false
         let currentTrigger_startup = networkController.currentDetailedPolicy?.policy.general?.triggerStartup ?? false
         let currentTrigger_enrollment_complete = networkController.currentDetailedPolicy?.policy.general?.triggerEnrollmentComplete ?? false
-        let currentTrigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "No custom trigger set"
+        let currentTrigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? ""
         
         VStack(alignment: .leading) {
             
@@ -99,27 +103,26 @@ struct PolicyTriggersTabView: View {
                 }
                 .toggleStyle(.checkbox)
                 
-                    if currentTrigger_other.isEmpty != true {
+//                    if currentTrigger_other.isEmpty != true {
                         
                         HStack {
                             Text("Custom Trigger")
-                            TextField(currentTrigger_other, text: $trigger_other)
-//                            Text("Custom Trigger is:\(currentTrigger_other)")
+                            TextField(trigger_other, text: $trigger_other)
                                 .textSelection(.enabled)
                         }
                         .frame(width: 250)
                         
                         
-                    } else {
-                        
-                        Text("Custom Trigger not configured")
-                    }
+//                    } else {
+//                        
+//                        Text("Custom Trigger not configured")
+//                    }
             }
             Spacer()
         }
         .padding()
         .onAppear() {
-            trigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "No custom trigger set"
+            trigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? ""
         }
     }
 }

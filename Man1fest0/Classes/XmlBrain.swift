@@ -1813,9 +1813,13 @@ class XmlBrain: ObservableObject {
                 print("Removing:\(_trigger_other.xml)")
                 _trigger_other.removeFromParent()
                 policyGeneral.addChild(name: "trigger_other", value: String(describing: trigger_other))
-                print("Setting trigger_checkin as:\(trigger_other)")
+                print("Setting trigger_other as:\(trigger_other)")
             } else {
-                print("trigger_checkin is set as false")
+                print("trigger_other is set as false")
+                print("Remove current trigger_other")
+                let _trigger_other = policyGeneral["trigger_other"].last!
+                print("Removing:\(_trigger_other.xml)")
+                _trigger_other.removeFromParent()
             }
             
             //    #################################################################################

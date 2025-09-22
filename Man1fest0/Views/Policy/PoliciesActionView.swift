@@ -54,7 +54,20 @@ struct PoliciesActionView: View {
     
     @State var status: Bool = true
     
+    
+    //  ########################################################################################
+    //  Warnings
+    //  ########################################################################################
+    
+    
     @State private var showingWarning = false
+    
+    @State private var showingWarningAllUsers = false
+    
+    @State private var showingWarningAllComputers = false
+    
+    @State private var showingWarningAllComputersAndUsers = false
+
     
     
     //  ########################################################################################
@@ -164,15 +177,15 @@ struct PoliciesActionView: View {
                 }
                 
                 
-                //              ################################################################################
+                //  ##############################################################################
                 //              BUTTONS  -   Delete, Update, Disable & Download
-                //              ################################################################################
+                // ##############################################################################
                 
                 
-                //              ################################################################################
+                //  ##############################################################################
                 //              DELETE
-                //              ################################################################################
-                
+                // ##############################################################################
+
                 VStack(alignment: .leading) {
                     
                     HStack(spacing:20) {
@@ -229,10 +242,10 @@ struct PoliciesActionView: View {
                         .tint(.blue)
                         
                         
-                        //  ################################################################################
+                        // ######################################################################
                         //  Enable or Disable Policies Toggle
-                        //  ################################################################################
-                        
+                        // ######################################################################
+
                         HStack {
                             
                             Toggle("", isOn: $enableDisable)
@@ -244,10 +257,10 @@ struct PoliciesActionView: View {
                             }
                         }
                         
-                        //  ################################################################################
+                        // ######################################################################
                         //              DOWNLOAD OPTION
-                        //  ################################################################################
-                        
+                        // ######################################################################
+
                         Button(action: {
                             
                             progress.showProgress()
@@ -273,10 +286,10 @@ struct PoliciesActionView: View {
 
                     }
                     
-                    //  ################################################################################
+                    // ######################################################################
                     //              Category
-                    //  ################################################################################
-                    
+                    // ######################################################################
+
                     Divider()
                     
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 300)), GridItem(.flexible(minimum: 200))], spacing: 20) {
@@ -293,10 +306,10 @@ struct PoliciesActionView: View {
                         }
                     }
                     
-                    //  ################################################################################
+                    // ######################################################################
                     //              UPDATE POLICY - COMPLETE
-                    //  ################################################################################
-                    
+                    // ######################################################################
+
                     Divider()
                     VStack(alignment: .leading) {
                         
@@ -311,66 +324,150 @@ struct PoliciesActionView: View {
                     }
                     
                     
-                    //  ################################################################################
+                    // ######################################################################
                     //  Set Scoping - Group
-                    //  ################################################################################
-                    
+                    // ######################################################################
+
                     Group {
                         
-                        //  ################################################################################
+                        // ######################################################################
                         //  Group picker
-                        //  ################################################################################
+                        // ######################################################################
+
                         
                         //                        Divider()
                         
-                        //  ################################################################################
+                        // ######################################################################
                         //  add selected groups
-                        //  ################################################################################
-                        
+                        // ######################################################################
+
                         Divider()
                         Text("Scoping").fontWeight(.bold)
                         
                         
                         Divider()
 
-                        //  ################################################################################
+                        // ######################################################################
                         //            Batch Scope All users and computers
-                        //  ################################################################################
-                                             
+                        // ######################################################################
+
                         HStack {
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.batchScopeAllComputers(policiesSelection:policiesSelection, server: server, authToken: networkController.authToken)
-                            }) {
-                                Image(systemName: "plus.square.fill.on.square.fill")
-                                Text("Scope To All Computers")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
+//                            Button(action: {
+//                                progress.showProgress()
+//                                progress.waitForABit()
+//                                networkController.batchScopeAllComputers(policiesSelection:policiesSelection, server: server, authToken: networkController.authToken)
+//                            }) {
+//                                Image(systemName: "plus.square.fill.on.square.fill")
+//                                Text("Scope To All Computers")
+//                            }
+//                            .buttonStyle(.borderedProminent)
+//                            .tint(.red)
+                            
+//                            Button(action: {
+//                                progress.showProgress()
+//                                progress.waitForABit()
+//                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+//                            }) {
+//                                Image(systemName: "plus.square.fill.on.square.fill")
+//                                Text("Scope To All Users")
+//                            }
+//                            .buttonStyle(.borderedProminent)
+//                            .tint(.red)
                             
                             Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                            }) {
-                                Image(systemName: "plus.square.fill.on.square.fill")
-                                Text("Scope To All Users")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
+                               showingWarningAllComputers = true
+                               progress.showProgress()
+                               progress.waitForABit()
+                           }) {
+                               HStack(spacing: 10) {
+                                   Image(systemName: "eraser")
+                                   Text("Scope To All Computers")
+                               }
+                               .alert(isPresented: $showingWarningAllComputersAndUsers) {
+                                   Alert(
+                                       title: Text("Caution!"),
+                                       message: Text("This action will enable the policy scoping for all computers.\n This might cause the policy to run immediately to many devices"),
+                                       primaryButton: .destructive(Text("I understand!")) {
+                                           // Code to execute when "Yes" is tapped
+                                        
+                                           networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                           print("Yes tapped")
+                                       },
+                                       secondaryButton: .cancel()
+                                   )
+                               }
+                           }
+                           .buttonStyle(.borderedProminent)
+                           .tint(.red)
                             
                             Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                                networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                            }) {
-                                Image(systemName: "plus.square.fill.on.square.fill")
-                                Text("Scope To All Computers & Users")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
+                               showingWarningAllComputers = true
+                               progress.showProgress()
+                               progress.waitForABit()
+                           }) {
+                               HStack(spacing: 10) {
+                                   Image(systemName: "eraser")
+                                   Text("Scope To All Users")
+                               }
+                               .alert(isPresented: $showingWarningAllComputersAndUsers) {
+                                   Alert(
+                                       title: Text("Caution!"),
+                                       message: Text("This action will enable the policy scoping for all users.\n This might cause the policy to run immediately to many devices"),
+                                       primaryButton: .destructive(Text("I understand!")) {
+                                           // Code to execute when "Yes" is tapped
+                                           networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                         
+                                           print("Yes tapped")
+                                       },
+                                       secondaryButton: .cancel()
+                                   )
+                               }
+                           }
+                           .buttonStyle(.borderedProminent)
+                           .tint(.red)
+                            
+                            
+//                            Button(action: {
+//                                progress.showProgress()
+//                                progress.waitForABit()
+//                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+//                                networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+//                            }) {
+//                                Image(systemName: "plus.square.fill.on.square.fill")
+//                                Text("Scope To All Computers & Users")
+//                            }
+//                            .buttonStyle(.borderedProminent)
+//                            .tint(.red)
+                            
+                            Button(action: {
+                               showingWarningAllComputers = true
+                               progress.showProgress()
+                               progress.waitForABit()
+                           }) {
+                               HStack(spacing: 10) {
+                                   Image(systemName: "eraser")
+                                   Text("Scope To All Computers & Users")
+                               }
+                               .alert(isPresented: $showingWarningAllComputersAndUsers) {
+                                   Alert(
+                                       title: Text("Caution!"),
+                                       message: Text("This action will enable the policy scoping for all computers and all users.\n This might cause the policy to run immediately to many devices"),
+                                       primaryButton: .destructive(Text("I understand!")) {
+                                           // Code to execute when "Yes" is tapped
+                                           networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                           networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                           print("Yes tapped")
+                                       },
+                                       secondaryButton: .cancel()
+                                   )
+                               }
+                           }
+                           .buttonStyle(.borderedProminent)
+                           .tint(.red)
+                            
+                            
+                            
+                            
                         }
                         
                         LazyVGrid(columns: layout.fourColumns, spacing: 10) {

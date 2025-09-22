@@ -79,6 +79,11 @@ struct PolicyScopeTabView: View {
     
     @State var allComputersButton: Bool = true
     
+    //  ########################################################################################
+    //  Warnings
+    //  ########################################################################################
+    
+    
     @State private var showingWarningDelete = false
     
     @State private var showingWarningClearScope = false
@@ -90,6 +95,9 @@ struct PolicyScopeTabView: View {
     @State private var showingWarningAllUsers = false
     
     @State private var showingWarningAllComputers = false
+    
+    @State private var showingWarningAllComputersAndUsers = false
+    
 
     //  ########################################################################################
     
@@ -276,6 +284,32 @@ struct PolicyScopeTabView: View {
                                         primaryButton: .destructive(Text("I understand!")) {
                                             // Code to execute when "Yes" is tapped
                                             networkController.scopeAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            print("Yes tapped")
+                                        },
+                                        secondaryButton: .cancel()
+                                    )
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            
+                             Button(action: {
+                                showingWarningAllComputers = true
+                                progress.showProgress()
+                                progress.waitForABit()
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "eraser")
+                                    Text("Enable All Computers & Users")
+                                }
+                                .alert(isPresented: $showingWarningAllComputers) {
+                                    Alert(
+                                        title: Text("Caution!"),
+                                        message: Text("This action will enable the policy scoping for all computers and all users.\n This might cause the policy to run immediately to many devices"),
+                                        primaryButton: .destructive(Text("I understand!")) {
+                                            // Code to execute when "Yes" is tapped
+                                            networkController.scopeAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            networkController.scopeAllUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                                             print("Yes tapped")
                                         },
                                         secondaryButton: .cancel()
