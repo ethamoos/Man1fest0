@@ -1662,6 +1662,47 @@ import AEXML
     }
     
     
+    
+    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String) async throws {
+        
+        let xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <script>
+            <name>\(scriptName)</name>
+            <script_contents>\(scriptContent)</script_contents>
+        </script>
+        """
+
+        
+        separationLine()
+        print("Running func: updateScript")
+        print("scriptName is set to:\(scriptName)")
+        print("scriptID is set to:\(scriptId)")
+        separationLine()
+        print("scriptContent is\(scriptContent)")
+        
+//        let scriptData = Data(scriptContent.utf8)
+        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
+//        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: URL(string: jamfURLQuery)!)
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "PUT"
+        request.httpBody = xml.data(using: .utf8)
+
+//        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+    }
+    
+    
+    
+    
+    
     func getAllPolicies(server: String) async throws {
         let jamfURLQuery = server + "/JSSResource/policies"
         let url = URL(string: jamfURLQuery)!

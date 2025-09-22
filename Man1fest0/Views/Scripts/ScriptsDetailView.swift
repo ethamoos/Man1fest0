@@ -7,11 +7,15 @@ struct ScriptsDetailView: View {
     var scriptID: Int
     var server: String
     
-    @State private var title: String = ""
+//    @State private var title: String = ""
     @State private var bodyText: String = ""
+    @State private var scriptName: String = ""
 
-//    @Binding var isNewNotePresented: Bool
+    //    ########################################################################################
+    //    EnvironmentObject
+    //    ########################################################################################
     
+    @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
     
@@ -53,51 +57,40 @@ struct ScriptsDetailView: View {
                 }
             }
             
-            
             VStack(spacing: 12) {
-                TextField("Title", text: $title)
+                TextField(scriptName, text: $scriptName)
                     .padding(4)
                     .border(Color.gray)
                 TextEditor(text: $bodyText)
                     .border(Color.gray)
             }
             .padding(32)
+            
             Button {
-            //                    repository.newNote(title: title,
-            //                                            date: Date(),
-            //                                            body: bodyText)
-            //                    isNewNotePresented.toggle()
-//                xmlController.createScript(name: currentScript.name, category: <#String#>, filename: <#String#>, info: <#String#>, notes: <#String#>, priority: <#String#>, parameter4: <#String#>, parameter5: <#String#>, parameter6: <#String#>, parameter7: <#String#>, parameter8: <#String#>, parameter9: <#String#>, parameter10: <#String#>, parameter11: <#String#>, os_requirements: <#String#>, script_contents: <#String#>, script_contents_encoded: <#Script#>, scriptID: <#Script#>, server: <#String#>)
                 
-                            } label: {
-                                Image(systemName: "checkmark")
-                                    .font(.headline)
-                            }
-                            .disabled(title.isEmpty)
-//            .navigationBarTitle("New Note", displayMode: .inline)
-//            .navigationBarItems(trailing:
-//                Button {
-////                    repository.newNote(title: title,
-////                                            date: Date(),
-////                                            body: bodyText)
-////                    isNewNotePresented.toggle()
-//                } label: {
-//                    Image(systemName: "checkmark")
-//                        .font(.headline)
-//                }
-//                .disabled(title.isEmpty)
-//            )
-
+                progress.showProgress()
+                progress.waitForABit()
+                
+                Task {
+                    try await networkController.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing:scriptID), authToken: networkController.authToken)
+                }
+            } label: {
+//                Image(systemName: "paperplane")
+                Text("Update")
+                    .font(.headline)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
+//            .disabled(title.isEmpty)
         }
         .padding()
-
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(
                     Color.black.opacity(0.4),
                     style: StrokeStyle()
                 )
-        )        
+        )
         .multilineTextAlignment(.leading)
         .padding(30)
         .frame(minWidth: 140, alignment: .leading)
@@ -110,6 +103,8 @@ struct ScriptsDetailView: View {
             
             Task {
                 try await networkController.getDetailedScript(server: server, scriptID: scriptID, authToken: networkController.authToken)
+                bodyText = networkController.scriptDetailed.scriptContents
+                scriptName = networkController.scriptDetailed.name
             }
         }
     }
