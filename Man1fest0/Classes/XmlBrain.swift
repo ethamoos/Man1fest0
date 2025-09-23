@@ -2402,6 +2402,34 @@ class XmlBrain: ObservableObject {
             print("currentScript is set as:\(currentScript.xml)")
         }
         
+        if parameter5.isEmpty != true {
+            let selectedScriptParameter5 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter5"]
+            self.separationLine()
+            print("Parameter5 is set - Remove selectedScriptParameter5")
+            let removeSelectedScriptParameter5: () = selectedScriptParameter5.removeFromParent()
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+            print("Replace the attribute with parameter:\(parameter5)")
+            _ = selectedScript.addChild(name: "parameter5", value: parameter5)
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+        }
+        
+        if parameter6.isEmpty != true {
+            let selectedScriptParameter6 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter5"]
+            self.separationLine()
+            print("Parameter5 is set - Remove selectedScriptParameter5")
+            let removeSelectedScriptParameter6: () = selectedScriptParameter6.removeFromParent()
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+            print("Replace the attribute with parameter:\(parameter6)")
+            _ = selectedScript.addChild(name: "parameter5", value: parameter5)
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+        }
+        
+      
+        
         self.separationLine()
         print("Listing scripts after edit")
         print(self.aexmlDoc.root["scripts"].children.description.utf8)
