@@ -71,9 +71,9 @@ struct PolicyDetailGeneralTabView: View {
         var sortedIcons: [Icon?] {
             switch sortOption {
             case .alphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name ?? "" < $1.name ?? "" }
+                return networkController.allIconsDetailed.sorted { $0.name < $1.name }
             case .reverseAlphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name ?? "" > $1.name ?? ""}
+                return networkController.allIconsDetailed.sorted { $0.name > $1.name}
             }
         }
     
@@ -268,23 +268,28 @@ struct PolicyDetailGeneralTabView: View {
                 HStack {
                     TextField("Filter", text: $iconFilter)
                     Picker(selection: $selectedIcon, label: Text("").bold()) {
-                            
                         ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter)}), id: \.self) { icon in
-                            HStack {
-                                Text(String(describing: icon.name))
-                                    .tag(icon as Icon?)
-                                    .tag(selectedIcon as Icon?)
-                                AsyncImage(url: URL(string: icon.url ))  { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                } placeholder: {
-                                    ProgressView()
+                            HStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.15))
+                                        .frame(width: 28, height: 28)
+                                    AsyncImage(url: URL(string: icon.url ))  { image in
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 24, height: 24)
+                                    } placeholder: {
+                                        ProgressView()
+                                            .frame(width: 24, height: 24)
+                                    }
                                 }
-                                .frame(width: 05, height: 05)
-                                .background(Color.gray)
-                                .clipShape(Circle())
+                                Text(String(describing: icon.name))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.primary)
                             }
+                            .frame(height: 32)
+                            .tag(icon as Icon?)
                         }
                     }
                 }
