@@ -93,9 +93,9 @@ struct PolicyScriptsTabView: View {
 //              SCRIPTS
 // ################################################################################
 
-//              ################################################################################
+// ################################################################################
 //              List scripts
-//              ################################################################################
+// ################################################################################
 
                 if networkController.currentDetailedPolicy?.policy.scripts?.count ?? 0 > 0 {
                     
@@ -109,33 +109,40 @@ struct PolicyScriptsTabView: View {
                             
                             Text(script.name ?? "")
                             if script.parameter4 != "" {
-                                Text("\t\tParams:").bold()
+//                                Text("\t\tParams:").bold()
 
-                                Image(systemName: "1.circle")
+                                Image(systemName: "1.circle").bold()
+                                    .foregroundColor(.red)
                                 Text(script.parameter4 ?? "" )
                             }
                             if script.parameter5 != "" {
-                                Image(systemName: "2.circle")
+                                Image(systemName: "2.circle").bold()
+                                    .foregroundColor(.red)
                                 Text(script.parameter5 ?? "" )
                             }
                             if script.parameter6 != "" {
-                                Image(systemName: "3.circle")
+                                Image(systemName: "3.circle").bold()
+                                    .foregroundColor(.red)
                                 Text(script.parameter6 ?? "" )
                             }
                             if script.parameter7 != "" {
-                                Image(systemName: "4.circle")
+                                Image(systemName: "4.circle").bold()
+                                    .foregroundColor(.red)
                                 Text(script.parameter7 ?? "" )
                             }
                             if script.parameter8 != "" {
-                                Image(systemName: "5.circle")
+                                Image(systemName: "5.circle").bold()
+                                    .foregroundColor(.red)
                                 Text(script.parameter8 ?? "" )
                             }
                             if script.parameter9 != "" {
-                                Image(systemName: "6.circle")
+                                Image(systemName: "6.circle").bold()
+                                    .foregroundColor(.red)
                                 Text(script.parameter9 ?? "" )
                             }
                             if script.parameter10 != "" {
-                                Image(systemName: "7.circle")
+                                Image(systemName: "7.circle").bold()
+                                    .foregroundColor(.red)
                                 Text(script.parameter10 ?? "" )
                             }
                         }

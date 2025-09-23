@@ -232,6 +232,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A808A62E2E82F7C500672EED /* PolicyTableView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicyTableView; sourceTree = "<group>"; };
+		A808A62F2E82F7F100672EED /* PolicyDetailView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicyDetailView; sourceTree = "<group>"; };
+		A808A6302E82F80D00672EED /* PoliciesActionView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PoliciesActionView; sourceTree = "<group>"; };
 		A83D011A2D7850E40091B794 /* JamfObjects */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JamfObjects; sourceTree = "<group>"; };
 		A857A3E72E1FF9A000A96F3A /* ConfigProfiles */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ConfigProfiles; sourceTree = "<group>"; };
 		A857A3E82E1FFA0B00A96F3A /* Structures */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Structures; sourceTree = "<group>"; };
@@ -398,14 +401,17 @@
 			isa = PBXGroup;
 			children = (
 				E4CE368D29D3372400533707 /* PolicyView.swift */,
+				A808A62F2E82F7F100672EED /* PolicyDetailView */,
 				E4CE368E29D3372400533707 /* PolicyDetailView.swift */,
-				A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */,
 				A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */,
 				A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */,
 				A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */,
 				A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */,
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
 				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
+				A808A6302E82F80D00672EED /* PoliciesActionView */,
+				A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */,
+				A808A62E2E82F7C500672EED /* PolicyTableView */,
 				A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */,
 				A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */,
 				A813C0D82E5482B100735884 /* PolicyDetailClearItemsTabView.swift */,
@@ -539,6 +545,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				A808A62E2E82F7C500672EED /* PolicyTableView */,
+				A808A62F2E82F7F100672EED /* PolicyDetailView */,
+				A808A6302E82F80D00672EED /* PoliciesActionView */,
 				A83D011A2D7850E40091B794 /* JamfObjects */,
 				A857A3E72E1FF9A000A96F3A /* ConfigProfiles */,
 				A857A3E82E1FFA0B00A96F3A /* Structures */,

@@ -538,7 +538,7 @@ struct PolicyDetailView: View {
             }
         }
         . padding()
-        .frame(minWidth: 150, maxWidth: 850, minHeight: 70, maxHeight: .infinity)
+        .frame(minWidth: 150, maxWidth: .infinity, minHeight: 70, maxHeight: .infinity)
         
         //        if progress.debugMode == true {
         //            .background(Color.blue)

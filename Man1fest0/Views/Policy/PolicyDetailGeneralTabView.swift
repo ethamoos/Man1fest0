@@ -268,27 +268,29 @@ struct PolicyDetailGeneralTabView: View {
                 HStack {
                     TextField("Filter", text: $iconFilter)
                     Picker(selection: $selectedIcon, label: Text("").bold()) {
-                        ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter)}), id: \.self) { icon in
+                        ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }, id: \.self) { icon in
                             HStack(spacing: 10) {
                                 ZStack {
                                     Circle()
                                         .fill(Color.gray.opacity(0.15))
-                                        .frame(width: 28, height: 28)
+                                        .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
                                     AsyncImage(url: URL(string: icon.url ))  { image in
                                         image
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
-                                            .frame(width: 24, height: 24)
+                                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                                            .clipped()
                                     } placeholder: {
                                         ProgressView()
-                                            .frame(width: 24, height: 24)
+                                            .frame(width: 32, height: 32)
                                     }
                                 }
                                 Text(String(describing: icon.name))
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.primary)
                             }
-                            .frame(height: 32)
+                            .frame(height: 36)
+                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
                             .tag(icon as Icon?)
                         }
                     }
