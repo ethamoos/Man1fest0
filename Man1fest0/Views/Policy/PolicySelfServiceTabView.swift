@@ -128,8 +128,8 @@ struct PolicySelfServiceTabView: View {
                     List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
-                            Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                            Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black)
+                            AsyncImage(url: URL(string: icon.url )) { image in
                                 image.resizable().frame(width: 15, height: 15)
                             } placeholder: {
                             }

@@ -537,7 +537,7 @@ import AEXML
         let decoder = JSONDecoder()
         if let decodedData = try? decoder.decode(PackageDetailedResponse.self, from: data) {
             self.packageDetailed = decodedData.package
-            let packageName = String(describing: decodedData.package.name)
+//            let packageName = String(describing: decodedData.package.name)
             separationLine()
             print("Response code is:\(String(describing: responseCode ?? 0))")
             print("packageDetailed is:\(String(describing: self.packageDetailed))")
@@ -1978,7 +1978,7 @@ import AEXML
         for eachItem in selection {
             separationLine()
 //            print("Processing items from Dictionary:\(eachItem)")
-            let policyID = String(describing:eachItem.id)
+//            let policyID = String(describing:eachItem.id)
             let jamfID: String = String(describing:eachItem.jamfId ?? 0)
 //            print("Current policyID is:\(policyID)")
             print("processDeletePolicies jamfID is:\(String(describing: jamfID))")
@@ -4016,7 +4016,6 @@ import AEXML
                 print("Doing processing of NetBrain sendRequestAsXML:\(httpMethod)")
                 print("Data is:\(data)")
                 print("Data is:\(response)")
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             } else {
                 if let error = error {
                     var text = "\n\nError encountered:"

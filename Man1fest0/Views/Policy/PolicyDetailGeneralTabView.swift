@@ -71,9 +71,9 @@ struct PolicyDetailGeneralTabView: View {
         var sortedIcons: [Icon?] {
             switch sortOption {
             case .alphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name ?? "" < $1.name ?? "" }
+                return networkController.allIconsDetailed.sorted { $0.name < $1.name }
             case .reverseAlphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name ?? "" > $1.name ?? ""}
+                return networkController.allIconsDetailed.sorted { $0.name > $1.name}
             }
         }
     

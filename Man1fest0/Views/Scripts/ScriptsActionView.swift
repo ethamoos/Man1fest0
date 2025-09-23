@@ -106,7 +106,7 @@ struct ScriptsActionView: View {
                                     progress.showProgressView = true
                                     progress.waitForABit()
                                     Task {
-                                        try await networkController.batchDeleteScripts(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.script)
+                                       networkController.batchDeleteScripts(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.script)
                                     }
                                     print("Yes tapped")
                                 },
