@@ -1566,7 +1566,7 @@ class XmlBrain: ObservableObject {
         let printers = aexmlDoc.root["printers"]
         printers.removeFromParent()
         self.readBackUpdatedXML()
-    }        
+    }
     func clearReboot() {
         self.separationLine()
         print("Removing reboot")
@@ -2418,12 +2418,12 @@ class XmlBrain: ObservableObject {
         if parameter6.isEmpty != true {
             let selectedScriptParameter6 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter5"]
             self.separationLine()
-            print("Parameter5 is set - Remove selectedScriptParameter5")
+            print("Parameter6 is set - Remove selectedScriptParameter6")
             let removeSelectedScriptParameter6: () = selectedScriptParameter6.removeFromParent()
             self.separationLine()
             print("currentScript is set as:\(currentScript.xml)")
             print("Replace the attribute with parameter:\(parameter6)")
-            _ = selectedScript.addChild(name: "parameter5", value: parameter5)
+            _ = selectedScript.addChild(name: "parameter6", value: parameter6)
             self.separationLine()
             print("currentScript is set as:\(currentScript.xml)")
         }
@@ -2635,7 +2635,7 @@ class XmlBrain: ObservableObject {
     //    #############################################################################
     
 //    func getGroupMembersXML(server: String, groupId: Int) {
-//        
+//
 //        let groupIdString = String(describing: groupId )
 //        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupIdString)"
 //        let url = URL(string: jamfURLQuery)!
@@ -2648,7 +2648,7 @@ class XmlBrain: ObservableObject {
 //        print("Running: getGroupMembersXML")
 //        print("groupId set as: \(groupId)")
 //        print("jamfURLQuery set as: \(jamfURLQuery)")
-//        
+//
 //        let task = URLSession.shared.dataTask(with: request) { data, response, error in
 //            guard let data = data else {
 //                //                self.separationLine()
