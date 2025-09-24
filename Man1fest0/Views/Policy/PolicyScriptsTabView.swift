@@ -304,10 +304,12 @@ struct PolicyScriptsTabView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     
-                    xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+//                    xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken,  server: server, policyId: String(describing: policyID))
+                    
+                    xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken,  server: server, policyId: String(describing: policyID), selectedScriptNumber: selectedScript.jamfId)
                     
                     print("Removing script:\(selectedScript.name)")
-                    print("parameter 4 is :\(scriptParameter4)")
+//                    print("policyId is :\(policyId)")
                 }) {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.app.fill")
@@ -329,7 +331,7 @@ struct PolicyScriptsTabView: View {
                     networkController.separationLine()
                     print("Removing all scripts in policy:\(String(describing: policyID))")
                     
-                    xmlController.removeScriptsFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                    xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
                     
                 }) {
                     HStack(spacing: 10) {
@@ -370,19 +372,12 @@ struct PolicyScriptsTabView: View {
             if  networkController.scripts.count <= 1 {
                 print("Fetching scripts")
                 print("Script count is:\(networkController.scripts.count))")
-    //            print(networkController.packages.count)
                 networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
 
             } else {
                 
                 print("script data is available")
-//                print("Count is:\(networkController.scripts.count))")
-                
             }
-//            if networkController.scripts.count == 0 {
-//                      print("Fetching scripts")
-//                networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
-//            }
         }
     }
 }

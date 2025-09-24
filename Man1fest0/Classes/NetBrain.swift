@@ -2948,6 +2948,7 @@ import AEXML
         }
     }
     
+    
     //    #################################################################################
     //    Remove All Scoping
     //    #################################################################################
@@ -4079,7 +4080,7 @@ import AEXML
     
     
     func sendRequestAsXMLAsync(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) async throws {
-        //        func getPolicyAsXMLaSync(server: String, policyID: Int, authToken: String) async throws -> String{
+    
         
         let xml = xml
         let xmldata = xml.data(using: .utf8)

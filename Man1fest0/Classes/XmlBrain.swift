@@ -703,7 +703,7 @@ class XmlBrain: ObservableObject {
     
     
     //    #################################################################################
-    //    try await get Group Members - simple auth
+    //    try await get Group Members
     //    #################################################################################
     
     
@@ -839,12 +839,6 @@ class XmlBrain: ObservableObject {
                     </scripts>
                 </policy>
                 """
-            //                <general>
-            //                    <category>
-            //                        <id>\(categoryID)</id>
-            //                        <name>\(categoryName)</name>
-            //                    </category>
-            //                </general>
             
             if URL(string: server) != nil {
                 if let serverURL = URL(string: server) {
@@ -935,62 +929,6 @@ class XmlBrain: ObservableObject {
     }
     
     
-    
-    
-    
-    
-    //    #################################################################################
-    //    UNUSED
-    //    #################################################################################
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    //    #################################################################################
-    //   getGroupMembersXML - getAsXML
-    //    #################################################################################
-    
-    //    func getGroupMembersXML(server: String, groupId: Int) {
-    //
-    //        let groupIdString = String(describing: groupId )
-    //        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupIdString)"
-    //        let url = URL(string: jamfURLQuery)!
-    //        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
-    //        request.addValue("application/xml", forHTTPHeaderField: "Accept")
-    //        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-    //        request.httpMethod = "GET"
-    //       separationLine()
-    //        print("Running: getGroupMembersXML")
-    //        print("groupId set as: \(groupId)")
-    //        print("jamfURLQuery set as: \(jamfURLQuery)")
-    //
-    //        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-    //            guard let data = data else {
-    ////               separationLine()
-    //                print("getGroupMembersXML failed")
-    //                print(String(describing: error))
-    //                return
-    //            }
-    ////           separationLine()
-    //            print("getGroupMembersXML data is:")
-    //            print(String(data: data, encoding: .utf8)!)
-    //            DispatchQueue.main.async {
-    //                self.computerGroupMembersXML = (String(data: data, encoding: .utf8)!)
-    //            }
-    //        }
-    //        task.resume()
-    //    }
-    
-    
     //   #################################################################################
     //   getPolicyAsXML
     //   #################################################################################
@@ -1038,26 +976,6 @@ class XmlBrain: ObservableObject {
         task.resume()
     }
     
-    
-    
-    
-    //    func readXMLDataFromString(xmlContent: String) {
-    //        self.separationLine()
-    //        print("Running readXMLDataFromString")
-    //        print("xmlContent is:\(xmlContent)")
-    //
-    //        guard let data = try? Data(xmlContent.utf8)
-    //        else {
-    //            print("Sample XML Data error.")
-    //            return
-    //        }
-    //        do {
-    //            xmlDoc = try AEXMLDocument(xml: data)
-    //        }
-    //        catch {
-    //            print("\(error)")
-    //        }
-    //    }
     
     func createScript(name: String, category: String, filename: String, info: String, notes: String, priority: String, parameter4: String, parameter5: String, parameter6: String, parameter7: String, parameter8: String, parameter9: String,parameter10: String,parameter11: String, os_requirements: String,script_contents: String,script_contents_encoded: String,scriptID: String, server: String, authToken: String) {
         
@@ -1345,15 +1263,47 @@ class XmlBrain: ObservableObject {
         
     }
     // ######################################################################################
-    // removeScriptsFromPolicy
+    // removeScriptFromPolicy
     // ######################################################################################
     
-    func removeScriptsFromPolicy(xmlContent: AEXMLDocument,  authToken: String, server: String, policyId: String) {
+    
+    func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server: String, policyId: String, selectedScriptNumber: Int) {
         
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
         let url = URL(string: jamfURLQuery)!
         self.separationLine()
-        print("Running removeScriptsFromPolicy - XML brain")
+        print("Running removeAllScriptsFromPolicy - XML brain")
+        print("Initial xmlContent is:")
+        self.atSeparationLine()
+        print(xmlContent.xml)
+        self.atSeparationLine()
+        print("url is:\(url)")
+        self.atSeparationLine()
+        let scripts = xmlContent.root["scripts"]["script"]
+        let scriptsRoot = xmlContent.root["scripts"]
+        print("Current scripts are:\(scripts.xml)")
+        let currentScript = self.aexmlDoc.root
+        let selectedScript = self.aexmlDoc.root["scripts"].children[selectedScriptNumber]
+        self.separationLine()
+        print("Parameter4 is set - Remove selectedScriptParameter4")
+        let removeSelectedScript: () = selectedScript.removeFromParent()
+        self.separationLine()
+        print("currentScript is set as:\(currentScript.xml)")
+
+    }
+    
+    
+    
+    // ######################################################################################
+    // removeAllScriptsFromPolicy
+    // ######################################################################################
+    
+    func removeAllScriptsFromPolicy(xmlContent: AEXMLDocument,  authToken: String, server: String, policyId: String) {
+        
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
+        let url = URL(string: jamfURLQuery)!
+        self.separationLine()
+        print("Running removeAllScriptsFromPolicy - XML brain")
         print("Initial xmlContent is:")
         self.atSeparationLine()
         print(xmlContent.xml)
@@ -2519,15 +2469,10 @@ class XmlBrain: ObservableObject {
     
     func updateIconBatch(selectedPoliciesInt: [Int?], server: String,authToken: String, iconFilename: String, iconID: String, iconURI: String) {
         
-        
-        
         for eachItem in selectedPoliciesInt {
-            
             let currentPolicyID = (eachItem ?? 0)
             self.separationLine()
             print("currentPolicyID is: \(String(describing: currentPolicyID))")
-            
-            
             Task {
                 do {
                     let policyAsXML = try await getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: authToken)
@@ -2727,6 +2672,49 @@ class XmlBrain: ObservableObject {
 //        }
 //        task.resume()
 //    }
+    
+    
+    //    #################################################################################
+    //    Remove Exclusions
+    //    #################################################################################
+    
+    func removeExclusions(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        
+        var xml: String
+        
+        xml = """
+                       <policy>
+                           <scope>
+                               <exclusions>
+                                   <computers/>
+                                   <computer_groups/>
+                                   <buildings/>
+                                   <departments/>
+                                   <users/>
+                                   <user_groups/>
+                                   <network_segments/>
+                                   <ibeacons/>
+                               </exclusions>
+                           </scope>
+                       </policy>
+                       """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Making removeExclusions request")
+                print("resourceType is set as:\(resourceType)")
+                print("xml is set as:\(xml)")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
+            }
+        }
+        else {
+            print("removeExclusions request failed")
+        }
+    }
     
     
 }
