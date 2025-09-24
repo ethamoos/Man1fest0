@@ -59,6 +59,7 @@ struct PolicyScriptsTabView: View {
     @State var replacementParameter8 = ""
     @State var replacementParameter9 = ""
     @State var replacementParameter10 = ""
+    @State var priority = ""
 
     //  ########################################################################################
     //  Selections
@@ -81,7 +82,7 @@ struct PolicyScriptsTabView: View {
     @State var scriptParameter9: String = ""
     @State var scriptParameter10: String = ""
     @State var scriptParameter11: String = ""
-    @State var priority: String = "Before"
+//    @State var priority: String = "Before"
     
     var body: some View {
         
@@ -111,39 +112,44 @@ struct PolicyScriptsTabView: View {
                             if script.parameter4 != "" {
 //                                Text("\t\tParams:").bold()
 
-                                Image(systemName: "1.circle").bold()
+                                Image(systemName: "4.circle").bold()
                                     .foregroundColor(.red)
                                 Text(script.parameter4 ?? "" )
                             }
                             if script.parameter5 != "" {
-                                Image(systemName: "2.circle").bold()
+                                Image(systemName: "5.circle").bold()
                                     .foregroundColor(.red)
                                 Text(script.parameter5 ?? "" )
                             }
                             if script.parameter6 != "" {
-                                Image(systemName: "3.circle").bold()
+                                Image(systemName: "6.circle").bold()
                                     .foregroundColor(.red)
                                 Text(script.parameter6 ?? "" )
                             }
                             if script.parameter7 != "" {
-                                Image(systemName: "4.circle").bold()
+                                Image(systemName: "7.circle").bold()
                                     .foregroundColor(.red)
                                 Text(script.parameter7 ?? "" )
                             }
                             if script.parameter8 != "" {
-                                Image(systemName: "5.circle").bold()
+                                Image(systemName: "8.circle").bold()
                                     .foregroundColor(.red)
                                 Text(script.parameter8 ?? "" )
                             }
                             if script.parameter9 != "" {
-                                Image(systemName: "6.circle").bold()
+                                Image(systemName: "9.circle").bold()
                                     .foregroundColor(.red)
                                 Text(script.parameter9 ?? "" )
                             }
                             if script.parameter10 != "" {
-                                Image(systemName: "7.circle").bold()
+                                Image(systemName: "10.circle").bold()
                                     .foregroundColor(.red)
                                 Text(script.parameter10 ?? "" )
+                            }
+                            if script.priority != "" {
+//                                Image(systemName: "10.circle").bold()
+//                                    .foregroundColor(.red)
+                                Text(script.priority ?? "" )
                             }
                         }
                     }
@@ -180,7 +186,7 @@ struct PolicyScriptsTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                         
-                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10)
+                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10, priority: priority )
                     }) {
                         Text("Update Parameter")
                     }
@@ -206,7 +212,7 @@ struct PolicyScriptsTabView: View {
 //                                print("Setting numbers picker default")
 //                                pickerSelectedScript = 0 }
                         }
-                        TextField("", text: $replacementParameter4)
+                        TextField("parameter4", text: $replacementParameter4)
                     }
                 }
                 
@@ -214,7 +220,7 @@ struct PolicyScriptsTabView: View {
                         
                         HStack {
                             LazyVGrid(columns: layout.columns) {
-                                TextField("parameter5", text: $replacementParameter6)
+                                TextField("parameter5", text: $replacementParameter5)
                                 TextField("parameter6", text: $replacementParameter6)
                             }
                         }
@@ -230,6 +236,12 @@ struct PolicyScriptsTabView: View {
                             LazyVGrid(columns: layout.columns) {
                                 TextField("parameter9", text: $replacementParameter9)
                                 TextField("parameter10", text: $replacementParameter10)
+                            }
+                        }
+                        
+                        HStack {
+                            LazyVGrid(columns: layout.columns) {
+                                TextField("before/after", text: $priority)
                             }
                         }
                     }

@@ -2373,7 +2373,7 @@ class XmlBrain: ObservableObject {
     //    replaceScriptParameter
     //    ##################################################
     
-    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, selectedScriptNumber: Int, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String) {
+    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, selectedScriptNumber: Int, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String, priority: String) {
         
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
         let url = URL(string: jamfURLQuery)!
@@ -2385,7 +2385,9 @@ class XmlBrain: ObservableObject {
         print("Select the script and attribute")
         let scripts = self.aexmlDoc.root["scripts"]
         let currentScript = self.aexmlDoc.root
-        let selectedScript = self.aexmlDoc.root["scripts"].children[selectedScriptNumber ?? 1]
+        let selectedScript = self.aexmlDoc.root["scripts"].children[selectedScriptNumber]
+        let priorityValue = self.aexmlDoc.root["scripts"]["priority"]
+
         self.separationLine()
         
         if parameter4.isEmpty != true {
@@ -2416,7 +2418,7 @@ class XmlBrain: ObservableObject {
         }
         
         if parameter6.isEmpty != true {
-            let selectedScriptParameter6 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter5"]
+            let selectedScriptParameter6 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter6"]
             self.separationLine()
             print("Parameter6 is set - Remove selectedScriptParameter6")
             let removeSelectedScriptParameter6: () = selectedScriptParameter6.removeFromParent()
@@ -2427,8 +2429,68 @@ class XmlBrain: ObservableObject {
             self.separationLine()
             print("currentScript is set as:\(currentScript.xml)")
         }
-        
       
+        if parameter7.isEmpty != true {
+            let selectedScriptParameter7 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter7"]
+            self.separationLine()
+            print("Parameter7 is set - Remove selectedScriptParameter7")
+            let removeSelectedScriptParameter7: () = selectedScriptParameter7.removeFromParent()
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+            print("Replace the attribute with parameter:\(parameter7)")
+            _ = selectedScript.addChild(name: "parameter7", value: parameter7)
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+        }
+        if parameter8.isEmpty != true {
+            let selectedScriptParameter8 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter8"]
+            self.separationLine()
+            print("Parameter8 is set - Remove selectedScriptParameter8")
+            let removeSelectedScriptParameter8: () = selectedScriptParameter8.removeFromParent()
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+            print("Replace the attribute with parameter:\(parameter8)")
+            _ = selectedScript.addChild(name: "parameter8", value: parameter8)
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+        }
+        if parameter9.isEmpty != true {
+            let selectedScriptParameter9 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter9"]
+            self.separationLine()
+            print("Parameter9 is set - Remove selectedScriptParameter9")
+            let removeSelectedScriptParameter9: () = selectedScriptParameter9.removeFromParent()
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+            print("Replace the attribute with parameter:\(parameter9)")
+            _ = selectedScript.addChild(name: "parameter9", value: parameter9)
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+        }
+        if parameter10.isEmpty != true {
+            let selectedScriptParameter10 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter10"]
+            self.separationLine()
+            print("Parameter10 is set - Remove selectedScriptParameter10")
+            let removeSelectedScriptParameter10: () = selectedScriptParameter10.removeFromParent()
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+            print("Replace the attribute with parameter:\(parameter10)")
+            _ = selectedScript.addChild(name: "parameter10", value: parameter10)
+            self.separationLine()
+            print("currentScript is set as:\(currentScript.xml)")
+        }
+        
+        if priority.isEmpty != true {
+            self.separationLine()
+            print("priority is set - Remove priority")
+            let removePriority: () = priorityValue.removeFromParent()
+            self.separationLine()
+            print("priorityValue is set as:\(priorityValue.xml)")
+            print("Replace the attribute with priority:\(priority)")
+            _ = priorityValue.addChild(name: "priority", value: priority)
+            self.separationLine()
+            print("priorityValue is set as:\(priorityValue.xml)")
+        }
+        
         
         self.separationLine()
         print("Listing scripts after edit")
