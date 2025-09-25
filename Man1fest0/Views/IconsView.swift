@@ -40,9 +40,18 @@ struct  IconsView: View {
                     NavigationView {
                         List(searchResults, id: \.self, selection: $selectedIcon) { icon in
                             NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
+//                                HStack {
+//                                    Image(systemName: "photo.circle")
+//                                    Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
+//                                }
+                                
                                 HStack {
                                     Image(systemName: "photo.circle")
-                                    Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
+                                    Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black)
+                                    AsyncImage(url: URL(string: icon.url )) { image in
+                                        image.resizable().frame(width: 15, height: 15)
+                                    } placeholder: {
+                                    }
                                 }
                             }
                             .cornerRadius(8)
@@ -112,6 +121,14 @@ struct  IconsView: View {
                     .buttonStyle(.borderedProminent)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     .tint(.yellow)
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                        Text("Refresh Icons")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
                 
                 Text(importExportController.uploadStatus)

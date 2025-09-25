@@ -70,7 +70,6 @@ import AEXML
     @Published var departments: [Department] = []
     //  #############################################################################
     //    Icons
-
     //  #############################################################################
     //  #################################################################################
     @Published var allIconsDetailed: [Icon] = []
@@ -1737,46 +1736,6 @@ import AEXML
         print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
     }
     
-//    func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
-//        if self.debug_enabled == true {
-//            print("Running getDetailedPolicy - policyID is:\(policyID)")
-//        }
-//        let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
-//        let url = URL(string: jamfURLQuery)!
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "GET"
-//        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-//            self.currentResponseCode = String(describing: statusCode)
-//            print("getDetailedPolicy request error - code is:\(statusCode)")
-//            throw JamfAPIError.http(statusCode)
-//        }
-//        
-////        ########################################################
-////        DEBUG
-////        ########################################################
-////        separationLine()
-////        print("Raw data is:")
-////        print(String(data: data, encoding: .utf8)!)
-////        ########################################################
-////        DEBUG
-////        ########################################################
-//    
-//        let decoder = JSONDecoder()
-//        let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
-//        self.policyDetailed = decodedData
-//
-//        if self.debug_enabled == true {
-//            separationLine()
-//            print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
-//        }
-////      On completion add policy to array of detailed policies
-//        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-//    }
      
   
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
@@ -4275,6 +4234,23 @@ import AEXML
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         print("Running getDetailedIcon - iconID is:\(iconID)")
         print("url is:\(url)")
+        
+        //        ########################################################
+        //        Rate limiting
+        //        ########################################################
+
+        let now = Date()
+        if let last = lastRequestDate {
+            print("Last request ran at:\(String(describing: last))")
+            let elapsed = now.timeIntervalSince(last)
+            if elapsed < minInterval {
+                let delay = minInterval - elapsed
+                print("Waiting:\(String(describing: delay))")
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+        }
+        lastRequestDate = Date()
+        
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
