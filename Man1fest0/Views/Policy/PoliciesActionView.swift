@@ -67,6 +67,8 @@ struct PoliciesActionView: View {
     @State private var showingWarningAllComputers = false
     
     @State private var showingWarningAllComputersAndUsers = false
+    
+    @State private var showingWarningClearExclusions = false
 
     
     
@@ -634,6 +636,42 @@ struct PoliciesActionView: View {
                         .tint(.red)
                         
                     }
+                    
+                    //            ################################################################################
+                    //            Exclusions - Clear
+                    //            ################################################################################
+                    
+                    
+                    Button(action: {
+                        
+                        showingWarningClearExclusions = true
+                        progress.showProgressView = true
+                        print("Set showProgressView to true")
+                        print(progress.showProgressView)
+                        progress.waitForABit()
+//                        print("Check processingComplete")
+//                        print(String(describing: networkController.processingComplete))
+                        
+                    }) {
+                        Text("Clear Exclusions")
+                    }
+                    
+                    .alert(isPresented: $showingWarningClearExclusions) {
+                        Alert(
+                            title: Text("Caution!"),
+                            message: Text("This action will remove any devices excluded from the current policy scoping.\n Policies may deploy immediately to devices previously excluded!"),
+                            primaryButton: .destructive(Text("I understand!")) {
+                                // Code to execute when "Yes" is tapped
+                                xmlController.clearExclusionsBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
+                                print("Yes tapped")
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    
                            
 //  ################################################################################
 //  Select Ldap group

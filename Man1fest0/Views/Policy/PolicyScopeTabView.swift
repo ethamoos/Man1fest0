@@ -740,7 +740,7 @@ struct PolicyScopeTabView: View {
                                                 message: Text("This action will clear any current exclusions on the policy scoping.\n Some devices previously blocked may now receive the policy"),
                                                 primaryButton: .destructive(Text("I understand!")) {
                                                     // Code to execute when "Yes" is tapped
-                                                    xmlController.removeExclusions(server: server, resourceType: ResourceType.policyDetail,  policyID: String(describing:policyID), authToken: networkController.authToken)
+                                                    xmlController.removeExclusions(server: server, policyID: String(describing:policyID), authToken: networkController.authToken)
                                                     print("Yes tapped")
                                                 },
                                                 secondaryButton: .cancel()

@@ -1469,6 +1469,19 @@ class XmlBrain: ObservableObject {
             print(String(describing: self.processingComplete))
         }
     
+    func clearExclusionsBatch(selectedPolicies: Set<Policy>, server: String, authToken: String) {
+        
+        separationLine()
+        print("Running: clearExclusionsBatch")
+        for eachItem in selectedPolicies {
+            let currentPolicyID = (eachItem.jamfId ?? 0)
+            print("Updating for \(eachItem.name)")
+            print("currentPolicyID is: \(currentPolicyID)")
+            self.removeExclusions(server: server, policyID: String(describing: currentPolicyID ), authToken: authToken)
+        }
+    }
+ 
+
     func clearScope() {
         self.separationLine()
         print("Removing scope")
@@ -2678,9 +2691,9 @@ class XmlBrain: ObservableObject {
     //    Remove Exclusions
     //    #################################################################################
     
-    func removeExclusions(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
+    func removeExclusions(server: String, policyID: String, authToken: String) {
         
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
         
         var xml: String
         
@@ -2705,9 +2718,8 @@ class XmlBrain: ObservableObject {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
                 print("Making removeExclusions request")
-                print("resourceType is set as:\(resourceType)")
                 print("xml is set as:\(xml)")
-                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
 //                appendStatus("Connecting to \(url)...")
             }
         }
