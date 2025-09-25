@@ -620,7 +620,7 @@ struct PolicyScopeTabView: View {
                                                     progress.waitForABit()
                                                     showingWarningClearLimit = true
                                                 }) {
-                                                    Text("Clear")
+                                                    Text("Clear Limitations")
                                                 }
                                                 .buttonStyle(.borderedProminent)
                                                 .tint(.red)
@@ -683,43 +683,70 @@ struct PolicyScopeTabView: View {
                                         }
                                 }
 
-                //  ################################################################################
+                //  #####################################################################
                 //   Exclusions
-                //  ################################################################################
+                //  #####################################################################
 
                                     Group {
                                 
                                 Divider()
                                 Text("Exclusions: ").font(.headline)
                                 Divider()
-
-                                    if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computers?.count == 0 {
-                                        Text("No Computers Excluded").font(.subheadline).padding(.bottom,10)
-                                    } else {
-                                        VStack(alignment:.leading){
-                                            ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computers ?? []) {computer in
-                                                Text(computer.name ?? "")}.padding(.bottom,10)
+                                        
+                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computers?.count == 0 {
+                                            Text("No Computers Excluded").font(.subheadline).padding(.bottom,10)
+                                        } else {
+                                            
+                                            Text("Excluded Computers").font(.subheadline.bold()).padding(.bottom,10)
+                                            VStack(alignment:.leading){
+                                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computers ?? []) {computer in
+                                                    Text(computer.name ?? "")}.padding(.bottom,10)
+                                            }
                                         }
-                                        .padding()
-                                    if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computerGroups?.count == 0 {
-                                        Text("No Computer Groups Excluded").font(.subheadline).padding(.bottom,10)
-                                    } else {
-                                        ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computerGroups ?? []) {computerGroup in
-                                            Text(computerGroup.name ?? "")}.padding(.bottom,10)
-                                    }
-                                    if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments?.count == 0 {
-                                        Text("No Departments Excluded").font(.subheadline).padding(.bottom,10)
-                                    } else {
-                                        ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments ?? []) {department in
-                                            Text(department.name ?? "")}.padding(.bottom,10)
-                                    }
-                                    if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments?.count == 0 {
-                                        Text("No Buildings Excluded").font(.subheadline).padding(.bottom,10)
-                                    } else {
-                                        ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.buildings ?? []) {building in
-                                            Text(building.name ?? "")}.padding(.bottom,10)
-                                    }
-                                }
+                                        //                                        .padding()
+                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computerGroups?.count == 0 {
+                                            Text("No Computer Groups Excluded").font(.subheadline).padding(.bottom,10)
+                                        } else {
+                                            Text("Excluded Computer Groups").font(.subheadline.bold()).padding(.bottom,10)
+                                            ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computerGroups ?? []) {computerGroup in
+                                                Text(computerGroup.name ?? "")}.padding(.bottom,10)
+                                        }
+                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments?.count == 0 {
+                                            Text("No Departments Excluded").font(.subheadline).padding(.bottom,10)
+                                        } else {
+                                            Text("Excluded Departments").font(.subheadline.bold()).padding(.bottom,10)
+                                            ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments ?? []) {department in
+                                                Text(department.name ?? "")}.padding(.bottom,10)
+                                        }
+                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments?.count == 0 {
+                                            Text("No Buildings Excluded").font(.subheadline).padding(.bottom,10)
+                                        } else {
+                                            Text("Excluded Buildings").font(.subheadline.bold()).padding(.bottom,10)
+                                            ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.buildings ?? []) {building in
+                                                Text(building.name ?? "")}.padding(.bottom,10)
+                                        }
+                                        Button(action: {
+                                            progress.showProgress()
+                                            progress.waitForABit()
+                                            showingWarningClearLimit = true
+                                        }) {
+                                            Text("Clear Exclusions")
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .tint(.red)
+                                        .alert(isPresented: $showingWarningClearLimit) {
+                                            Alert(
+                                                title: Text("Caution!"),
+                                                message: Text("This action will clear any current exclusions on the policy scoping.\n Some devices previously blocked may now receive the policy"),
+                                                primaryButton: .destructive(Text("I understand!")) {
+                                                    // Code to execute when "Yes" is tapped
+                                                    xmlController.removeExclusions(server: server, resourceType: ResourceType.policyDetail,  policyID: String(describing:policyID), authToken: networkController.authToken)
+                                                    print("Yes tapped")
+                                                },
+                                                secondaryButton: .cancel()
+                                            )
+                                        }
+//                                }
                             }
                                     .onAppear() {
                                         

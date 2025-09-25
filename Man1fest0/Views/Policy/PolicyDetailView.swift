@@ -309,6 +309,7 @@ struct PolicyDetailView: View {
                     
                     xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                     networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                     print("Refresh detailPolicyView")
                     
                 }) {
@@ -546,9 +547,9 @@ struct PolicyDetailView: View {
         
         .onAppear {
             
-            //  ##########################################################################
+            //  #########################################################################
             //  PolicyDetailView
-            //  ##########################################################################
+            //  #########################################################################
             
             networkController.separationLine()
             print("PolicyDetailView appeared - running detailed policy connect function")
@@ -562,22 +563,20 @@ struct PolicyDetailView: View {
                 
                 try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                 
-                if !xmlController.currentPolicyAsXML.isEmpty {
+//                if !xmlController.currentPolicyAsXML.isEmpty {
                     print("Reading XML into AEXML - networkController")
                     
-                    //  ##########################################################################
+                    //  #################################################################
                     //  NOTE: CHANGED FROM XML CONTROLLER BELOW
-                    //  ##########################################################################
-                    
-                    //                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                    //  #################################################################
                     
                     xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                     
-                    //  ##########################################################################
+                    //  #################################################################
                     //  NOTE: CHANGED FROM XML CONTROLLER - END
-                    //  ##########################################################################
+                    //  #################################################################
                     
-                }
+//                }
             }
             
             //            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
@@ -622,17 +621,17 @@ struct PolicyDetailView: View {
                 print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
             }
             
-            //  ##########################################################################
+            //  #########################################################################
             //  getAllGroups
-            //  ##########################################################################
+            //  #########################################################################
             
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
             
-            //  ##########################################################################
+            //  #########################################################################
             //  Add current packages to packagesAssignedToPolicy list on appear of View
-            //  ##########################################################################
+            //  #########################################################################
             
             networkController.getPackagesAssignedToPolicy()
             networkController.addExistingPackages()
