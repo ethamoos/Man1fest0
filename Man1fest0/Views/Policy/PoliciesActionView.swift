@@ -354,27 +354,6 @@ struct PoliciesActionView: View {
                         // ######################################################################
 
                         HStack {
-//                            Button(action: {
-//                                progress.showProgress()
-//                                progress.waitForABit()
-//                                networkController.batchScopeAllComputers(policiesSelection:policiesSelection, server: server, authToken: networkController.authToken)
-//                            }) {
-//                                Image(systemName: "plus.square.fill.on.square.fill")
-//                                Text("Scope To All Computers")
-//                            }
-//                            .buttonStyle(.borderedProminent)
-//                            .tint(.red)
-                            
-//                            Button(action: {
-//                                progress.showProgress()
-//                                progress.waitForABit()
-//                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-//                            }) {
-//                                Image(systemName: "plus.square.fill.on.square.fill")
-//                                Text("Scope To All Users")
-//                            }
-//                            .buttonStyle(.borderedProminent)
-//                            .tint(.red)
                             
                             Button(action: {
                                showingWarningAllComputers = true
@@ -385,13 +364,12 @@ struct PoliciesActionView: View {
                                    Image(systemName: "eraser")
                                    Text("Scope To All Computers")
                                }
-                               .alert(isPresented: $showingWarningAllComputersAndUsers) {
+                               .alert(isPresented: $showingWarningAllComputers) {
                                    Alert(
                                        title: Text("Caution!"),
                                        message: Text("This action will enable the policy scoping for all computers.\n This might cause the policy to run immediately to many devices"),
                                        primaryButton: .destructive(Text("I understand!")) {
                                            // Code to execute when "Yes" is tapped
-                                        
                                            networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
                                            print("Yes tapped")
                                        },
@@ -403,7 +381,7 @@ struct PoliciesActionView: View {
                            .tint(.red)
                             
                             Button(action: {
-                               showingWarningAllComputers = true
+                               showingWarningAllUsers = true
                                progress.showProgress()
                                progress.waitForABit()
                            }) {
@@ -411,7 +389,7 @@ struct PoliciesActionView: View {
                                    Image(systemName: "eraser")
                                    Text("Scope To All Users")
                                }
-                               .alert(isPresented: $showingWarningAllComputersAndUsers) {
+                               .alert(isPresented: $showingWarningAllUsers) {
                                    Alert(
                                        title: Text("Caution!"),
                                        message: Text("This action will enable the policy scoping for all users.\n This might cause the policy to run immediately to many devices"),
@@ -428,21 +406,8 @@ struct PoliciesActionView: View {
                            .buttonStyle(.borderedProminent)
                            .tint(.red)
                             
-                            
-//                            Button(action: {
-//                                progress.showProgress()
-//                                progress.waitForABit()
-//                                networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-//                                networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-//                            }) {
-//                                Image(systemName: "plus.square.fill.on.square.fill")
-//                                Text("Scope To All Computers & Users")
-//                            }
-//                            .buttonStyle(.borderedProminent)
-//                            .tint(.red)
-                            
                             Button(action: {
-                               showingWarningAllComputers = true
+                                showingWarningAllComputersAndUsers = true
                                progress.showProgress()
                                progress.waitForABit()
                            }) {
@@ -466,13 +431,11 @@ struct PoliciesActionView: View {
                            }
                            .buttonStyle(.borderedProminent)
                            .tint(.red)
-                            
-                            
-                            
-                            
                         }
                         
-                        LazyVGrid(columns: layout.fourColumns, spacing: 10) {
+                        Text("Scope to Group").fontWeight(.bold)
+                        
+                        LazyVGrid(columns: layout.columns, spacing: 10) {
                             Picker(selection: $computerGroupSelection, label:Label("Static Groups", systemImage: "person.3")
                             ) {
                                 Text("").tag("")
@@ -483,11 +446,10 @@ struct PoliciesActionView: View {
                                 }
                             }
                             
-                            Toggle(isOn: $allComputersStaticEnable) {
-                                Text("All Computers")
-                            }
-                            .toggleStyle(.checkbox)
-                            
+//                            Toggle(isOn: $allComputersStaticEnable) {
+//                                Text("All Computers")
+//                            }
+//                            .toggleStyle(.checkbox)
                             
                             Button(action: {
                                 
@@ -510,7 +472,7 @@ struct PoliciesActionView: View {
                             .tint(.blue)
                         }
                         
-                        LazyVGrid(columns: layout.fourColumns, spacing: 10) {
+                        LazyVGrid(columns: layout.columns, spacing: 10) {
                             
                             Picker(selection: $computerGroupSelection, label:Label("Smart Groups", systemImage: "person.3")
                             ) {
@@ -522,10 +484,10 @@ struct PoliciesActionView: View {
                                 }
                             }
                             
-                            Toggle(isOn: $allComputersSmartEnable) {
-                                Text("All Computers")
-                            }
-                            .toggleStyle(.checkbox)
+//                            Toggle(isOn: $allComputersSmartEnable) {
+//                                Text("All Computers")
+//                            }
+//                            .toggleStyle(.checkbox)
                             
                             Button(action: {
                                 
@@ -546,7 +508,6 @@ struct PoliciesActionView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
-                            
                         }
                     }
                     
@@ -555,9 +516,9 @@ struct PoliciesActionView: View {
                     //  ################################################################################
                     
                     Divider()
-                    LazyVGrid(columns: layout.fourColumns, spacing: 10) {
+                    LazyVGrid(columns: layout.columns, spacing: 10) {
                         //                                            TextField("Filter", text: $allLdapServersFilter)
-                        Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Select Limitations:").bold()) {
+                        Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Limitations:").bold()) {
                             //                            Text("").tag("") //basically added empty tag and it solve the case
                             ForEach(scopingController.allLdapCustomGroupsCombinedArray, id: \.self) { group in
                                 Text(String(describing: group.name))
@@ -600,24 +561,19 @@ struct PoliciesActionView: View {
                         //            Limitations - Clear
                         //            ################################################################################
                         
-                        //                    LazyVGrid(columns: layout.threeColumns, spacing: 20) {
-                        
                         Button(action: {
                             
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            
                             for eachItem in policiesSelection {
                                 
                                 let currentPolicyID = (eachItem.jamfId ?? 0)
-                                
                                 layout.separationLine()
                                 print("Button pressed")
                                 print("Updating for \(eachItem.name)")
                                 print("currentPolicyID is: \(currentPolicyID)")
                                 print("jamfId is \(String(describing: eachItem.jamfId ?? 0))")
-                                
                                 
                                 Task {
                                     do {
@@ -630,49 +586,12 @@ struct PoliciesActionView: View {
                             }
                         }) {
                             Image(systemName: "minus.circle")
-                            Text("Clear")
+                            Text("Clear Limitations")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
-                        
                     }
-                    
-                    //            ################################################################################
-                    //            Exclusions - Clear
-                    //            ################################################################################
-                    
-                    
-                    Button(action: {
-                        
-                        showingWarningClearExclusions = true
-                        progress.showProgressView = true
-                        print("Set showProgressView to true")
-                        print(progress.showProgressView)
-                        progress.waitForABit()
-//                        print("Check processingComplete")
-//                        print(String(describing: networkController.processingComplete))
-                        
-                    }) {
-                        Text("Clear Exclusions")
-                    }
-                    
-                    .alert(isPresented: $showingWarningClearExclusions) {
-                        Alert(
-                            title: Text("Caution!"),
-                            message: Text("This action will remove any devices excluded from the current policy scoping.\n Policies may deploy immediately to devices previously excluded!"),
-                            primaryButton: .destructive(Text("I understand!")) {
-                                // Code to execute when "Yes" is tapped
-                                xmlController.clearExclusionsBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
-                                print("Yes tapped")
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                    
-                           
+                  
 //  ################################################################################
 //  Select Ldap group
 //  ################################################################################
@@ -720,6 +639,43 @@ struct PoliciesActionView: View {
 //  END
 //  ################################################################################
                     
+                    
+                    //            ################################################################################
+                    //            Exclusions - Clear
+                    //            ################################################################################
+                    
+                    Divider()
+                    
+                    Text("Exclusions").fontWeight(.bold)
+                    
+                    Button(action: {
+                        
+                        showingWarningClearExclusions = true
+                        progress.showProgressView = true
+                        print("Set showProgressView to true")
+                        print(progress.showProgressView)
+                        progress.waitForABit()
+//                        print("Check processingComplete")
+//                        print(String(describing: networkController.processingComplete))
+                    }) {
+                        Text("Clear Exclusions")
+                    }
+                    .alert(isPresented: $showingWarningClearExclusions) {
+                        Alert(
+                            title: Text("Caution!"),
+                            message: Text("This action will remove any devices excluded from the current policy scoping.\n Policies may deploy immediately to devices previously excluded!"),
+                            primaryButton: .destructive(Text("I understand!")) {
+                                // Code to execute when "Yes" is tapped
+                                xmlController.clearExclusionsBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
+                                print("Yes tapped")
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                           
                     LazyVGrid(columns: columns) {
                     }
                 }
