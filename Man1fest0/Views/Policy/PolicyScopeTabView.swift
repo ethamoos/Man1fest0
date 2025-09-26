@@ -100,11 +100,16 @@ struct PolicyScopeTabView: View {
     
 
     //  ########################################################################################
+    // Interval picker state and options for logFlushInterval
+    @State private var selectedIntervalNumber = "Three"
+    @State private var selectedIntervalUnit = "Months"
+    private let intervalNumbers = ["Zero", "One", "Two", "Three", "Six"]
+    private let intervalUnits = ["Days", "Weeks", "Months", "Years"]
+//    Computed property to combine number and unit
+    private var combinedInterval: String { "\(selectedIntervalNumber)+\(selectedIntervalUnit)" }
     
     var body: some View {
-        
         ScrollView {
-            
             VStack(alignment: .leading) {
                 
                 //  ################################################################################
@@ -117,17 +122,11 @@ struct PolicyScopeTabView: View {
                 
                 Group {
                     VStack(alignment: .leading) {
-                        //                        VStack(alignment:.leading){
-//                        Text("Scoping").font(.system(size: 22, weight: .bold, design: .default))
-//                        
-//                        Divider()
-//                        Text("Scoping").font(.system(size: 14, weight: .bold, design: .default))
-//                        
+
                         //  ################################################################################
                         //  Show All Computers scoping
                         //  ################################################################################
                         
-//                        Divider()
                         if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
                             Text("Scoped To All Computers").font(.subheadline)
                         } else {
@@ -194,9 +193,6 @@ struct PolicyScopeTabView: View {
                             .padding()
                         }
                         
-                        
-                        
-                        
                         //  ################################################################################
                         //              Clear Scope
                         //  ################################################################################
@@ -229,7 +225,6 @@ struct PolicyScopeTabView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
-                        
                             
                             
                             //  ################################################################################
@@ -318,6 +313,7 @@ struct PolicyScopeTabView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
+                                                        
                         }
                     }
                 }
@@ -328,10 +324,8 @@ struct PolicyScopeTabView: View {
                         
                 Group {
                 
-//
                             
                     VStack(alignment:.leading){
-                                
                            
                             Divider()
 
@@ -359,7 +353,6 @@ struct PolicyScopeTabView: View {
                                                 } else {
                                                     Text("Specific Computers")
                                                     
-                                                   
                                                     
                                                     HStack {
                                                         LazyVGrid(columns: layout.threeColumns, spacing: 10) {
@@ -370,12 +363,7 @@ struct PolicyScopeTabView: View {
                                                                 }
                                                             }
                                                             
-                                                            //                                                        .onAppear {
-                                                            //
-                                                            
-                                                            //                                                                selectionComp = networkController.computers[0]}
-                                                            
-                                                            
+                                                         
                                                             Button(action: {
                                                                 
                                                                 progress.showProgress()
@@ -401,14 +389,6 @@ struct PolicyScopeTabView: View {
 //                                            }
                                         }
                                     }
-//                                    .onAppear() {
-//                                        if networkController.computers.count < 0 {
-//                                            print("Fetching computers for policy scope view")
-//                                            networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-//                                        }
-//                                        
-//                                    }
-//
                                 }
                               
                     //  ############################################################################
@@ -746,7 +726,6 @@ struct PolicyScopeTabView: View {
                                                 secondaryButton: .cancel()
                                             )
                                         }
-//                                }
                             }
                                     .onAppear() {
                                         
@@ -763,7 +742,47 @@ struct PolicyScopeTabView: View {
                     //  ############################################################################
                 }
             }
-            
+            Spacer(minLength: 30)
+            Divider()
+            LazyVGrid(columns: layout.columns, spacing: 20) {
+                
+                Text("Flush Log Interval").font(.headline)
+                HStack {
+                    Picker("Interval Number", selection: $selectedIntervalNumber) {
+                        ForEach(intervalNumbers, id: \.self) { number in
+                            Text(number)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    Text("+")
+                    Picker("Interval Unit", selection: $selectedIntervalUnit) {
+                        ForEach(intervalUnits, id: \.self) { unit in
+                            Text(unit)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                }
+                Button(action: {
+                    
+                    progress.showProgress()
+                    progress.waitForABit()
+                    
+                    Task {
+                        try await scopingController.logFlushInterval(server: server, policyId: String(describing: policyID), logType: "policy", interval: combinedInterval,authToken: networkController.authToken)
+                    }
+                    //              
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Text("Flush Log Interval")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+            }
+//            }
+//            .padding(.top, 24)
+//            .padding(.bottom, 32)
         }
         .frame(minHeight: 1)
         .padding()
