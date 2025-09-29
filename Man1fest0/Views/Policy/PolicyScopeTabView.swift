@@ -226,11 +226,9 @@ struct PolicyScopeTabView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
                             
-                            
                             //  ################################################################################
                             //              scopeAllUsers
                             //  ################################################################################
-                            
                             
                             Button(action: {
                                 showingWarningAllUsers = true
@@ -257,11 +255,9 @@ struct PolicyScopeTabView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
                             
-                            
                             //  ################################################################################
                             //              scopeAllComputers
                             //  ################################################################################
-                            
                             
                             Button(action: {
                                 showingWarningAllComputers = true
@@ -313,11 +309,10 @@ struct PolicyScopeTabView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
-                                                        
                         }
                     }
                 }
-                        //
+                        
                         //  ################################################################################
                         //  EDIT SCOPING - Computer
                         //  ################################################################################
@@ -362,7 +357,6 @@ struct PolicyScopeTabView: View {
                                                                         .tag(comp as Computer?)
                                                                 }
                                                             }
-                                                            
                                                          
                                                             Button(action: {
                                                                 
@@ -386,7 +380,6 @@ struct PolicyScopeTabView: View {
                                                     }
                                                 }
 #endif
-//                                            }
                                         }
                                     }
                                 }
@@ -770,7 +763,7 @@ struct PolicyScopeTabView: View {
                     Task {
                         try await scopingController.logFlushInterval(server: server, policyId: String(describing: policyID), logType: "policy", interval: combinedInterval,authToken: networkController.authToken)
                     }
-                    //              
+                    //
                 }) {
                     HStack {
                         Image(systemName: "arrow.triangle.2.circlepath")
