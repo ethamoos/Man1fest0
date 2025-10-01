@@ -11,8 +11,8 @@ import AEXML
 
 class PolicyBrain: ObservableObject {
     
-    @EnvironmentObject var layout: Layout
-    @EnvironmentObject var xmlBrain: XmlBrain
+//    @EnvironmentObject var layout: Layout
+//    @EnvironmentObject var xmlBrain: XmlBrain
     @EnvironmentObject var networkController: NetBrain
     
     @State var debugStatus = true

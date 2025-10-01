@@ -20,10 +20,10 @@ import AEXML
     //    Environment objects
     //    #################################################################################
     
-    @EnvironmentObject var layout: Layout
-    @EnvironmentObject var xmlBrain: XmlBrain
+//    @EnvironmentObject var layout: Layout
+//    @EnvironmentObject var xmlBrain: XmlBrain
 //    // @EnvironmentObject var controller: JamfController
-    @EnvironmentObject var networkController: NetBrain
+//    @EnvironmentObject var networkController: NetBrain
     
     //    #################################################################################
     //    Policies
@@ -303,7 +303,7 @@ import AEXML
                 print("Running updateSSName name function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
                 // print("xml is set as:\(xml)")
-                networkController.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
             }
         }
         else {
@@ -370,7 +370,7 @@ import AEXML
                 self.separationLine()
                 print("Passing to sendRequestAsXML")
                 // print("xml is set as:\(xml)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
                 //                    appendStatus("Connecting to \(url)...")
             }
         }
