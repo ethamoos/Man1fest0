@@ -1489,6 +1489,21 @@ class XmlBrain: ObservableObject {
         scope.removeFromParent()
         self.readBackUpdatedXML()
     }
+    
+    func clearComputers() {
+        self.separationLine()
+        print("Removing computers")
+        let computers = aexmlDoc.root["scope"]["computers"]
+        computers.removeFromParent()
+        self.readBackUpdatedXML()
+    }  
+    func clearComputerGroups() {
+        self.separationLine()
+        print("Removing computer groups")
+        let computer_groups = aexmlDoc.root["scope"]["computer_groups"]
+        computer_groups.removeFromParent()
+        self.readBackUpdatedXML()
+    }
 
     func clearCategory() {
         self.separationLine()
