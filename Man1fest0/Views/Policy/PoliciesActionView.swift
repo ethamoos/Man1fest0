@@ -155,6 +155,8 @@ struct PoliciesActionView: View {
                         print("xmlController.currentPolicyAsXML is populated")
                     }
                 }
+                
+                
                 .toolbar {
                     
                     Button(action: {

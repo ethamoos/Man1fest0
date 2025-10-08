@@ -149,6 +149,7 @@ import AEXML
     @Published var allPolicies: PolicyBasic? = nil
     @Published var allPoliciesConverted: [Policy] = []
     @Published var currentDetailedPolicy: PoliciesDetailed? = nil
+    @Published var currentDetailedPolicy2: PolicyDetailed? = nil
     @Published var policyDetailed: PolicyDetailed? = nil
     @Published var allPoliciesDetailed: [PolicyDetailed?] = []
     @Published var allPoliciesDetailedGeneral: [General] = []
@@ -497,8 +498,8 @@ import AEXML
     
     func getPackagesAssignedToPolicy() {
         
-        if let detailed = self.currentDetailedPolicy {
-            if let policyPackages = detailed.policy.package_configuration?.packages {
+        if let detailed = self.policyDetailed {
+            if let policyPackages = detailed.package_configuration?.packages {
                 self.separationLine()
                 print("Running: getPackagesAssignedToPolicy")
                 print("Adding currently assigned packages to packagesAssignedToPolicy:")
@@ -510,7 +511,7 @@ import AEXML
             }
         } else {
             self.separationLine()
-            print("No detailed policy response yet")
+            print("No getPackagesAssignedToPolicy response yet")
         }
     }
     
@@ -1148,22 +1149,22 @@ import AEXML
     }
     
     
-    func connectDetailed(server: String, authToken: String, resourceType: ResourceType, itemID: Int) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        let itemIDString = String(itemID)
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-            asteriskSeparationLine()
-            doubleSeparationLine()
-            print("Running connectDetailed function")
-            print("URL is set as:\n\(url)")
-            print("resourceType is set as:\(resourceType)")
-            detailedRequest(url: url, resourceType: resourceType, authToken: authToken)
-            appendStatus("Connecting to \(url)...")
-        }
-    }
+//    func connectDetailed(server: String, authToken: String, resourceType: ResourceType, itemID: Int) {
+//        
+//        let resourcePath = getURLFormat(data: (resourceType))
+//        let itemIDString = String(itemID)
+//        
+//        if let serverURL = URL(string: server) {
+//            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
+//            asteriskSeparationLine()
+//            doubleSeparationLine()
+//            print("Running connectDetailed function")
+//            print("URL is set as:\n\(url)")
+//            print("resourceType is set as:\(resourceType)")
+//            detailedRequest(url: url, resourceType: resourceType, authToken: authToken)
+//            appendStatus("Connecting to \(url)...")
+//        }
+//    }
     
     
     func handleConnect(server: String, authToken: String,resourceType: ResourceType) {
@@ -1177,47 +1178,47 @@ import AEXML
     //    #################################################################################
     
     
-    func detailedRequest(url: URL,resourceType: ResourceType, authToken: String) {
-        
-        asteriskSeparationLine()
-        print("Running detailedRequest function - resourceType is set as:\(resourceType)")
-        print("URL is set as:\n\(url)")
-        let headers = [
-            "Accept": "application/json",
-            "Authorization": "Bearer \(self.authToken)"
-        ]
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.allHTTPHeaderFields = headers
-        
-        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let data = data, let response = response {
-                //                self.separationLine()
-                //                self.doubleSeparationLine()
-                print("Data returned - processing detailed request")
-                
-                DispatchQueue.main.async {
-                    
-                    self.processPolicyDetail(data: data, response: response, resourceType: resourceType)
-                    
-                }
-                            
-            } else {
-                
-                var text = "\n\nDetailed Request Failed."
-                print(text)
-                print("Request is:")
-                //                print(request)
-                if let error = error {
-                    text += " \(error)."
-                }
-                DispatchQueue.main.async {
-                    self.appendStatus(text)
-                }
-            }
-        }
-        dataTask.resume()
-    }
+//    func detailedRequest(url: URL,resourceType: ResourceType, authToken: String) {
+//        
+//        asteriskSeparationLine()
+//        print("Running detailedRequest function - resourceType is set as:\(resourceType)")
+//        print("URL is set as:\n\(url)")
+//        let headers = [
+//            "Accept": "application/json",
+//            "Authorization": "Bearer \(self.authToken)"
+//        ]
+//        
+//        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+//        request.allHTTPHeaderFields = headers
+//        
+//        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
+//            if let data = data, let response = response {
+//                //                self.separationLine()
+//                //                self.doubleSeparationLine()
+//                print("Data returned - processing detailed request")
+//                
+//                DispatchQueue.main.async {
+//                    
+//                    self.processPolicyDetail(data: data, response: response, resourceType: resourceType)
+//                    
+//                }
+//                            
+//            } else {
+//                
+//                var text = "\n\nDetailed Request Failed."
+//                print(text)
+//                print("Request is:")
+//                //                print(request)
+//                if let error = error {
+//                    text += " \(error)."
+//                }
+//                DispatchQueue.main.async {
+//                    self.appendStatus(text)
+//                }
+//            }
+//        }
+//        dataTask.resume()
+//    }
     
     
     
@@ -1443,16 +1444,16 @@ import AEXML
         }
     }
     
-    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
-        DispatchQueue.main.async {
-            self.currentDetailedPolicy = policyDetailed
-            // self.status = "Computers retrieved"
-            //        self.status = ""
-            print("Adding:policyDetailed to: allPoliciesDetailed ")
-            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-            
-        }
-    }
+//    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
+//        DispatchQueue.main.async {
+//            self.policyDetailed = policyDetailed
+//            // self.status = "Computers retrieved"
+//            //        self.status = ""
+//            print("Adding:policyDetailed to: allPoliciesDetailed ")
+//            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+//            
+//        }
+//    }
     
     
     //    #################################################################################
@@ -1500,8 +1501,8 @@ import AEXML
     
     func addExistingPackages() {
         
-        if let detailed = self.currentDetailedPolicy {
-            if let policyPackages = detailed.policy.package_configuration?.packages {
+        if let detailed = self.policyDetailed {
+            if let policyPackages = detailed.package_configuration?.packages {
                 self.separationLine()
                 print("Adding currently assigned packages to packagesAssignedToPolicy:")
                 for package in policyPackages {
@@ -1512,7 +1513,7 @@ import AEXML
             }
         } else {
             self.separationLine()
-            print("No detailed policy response yet")
+            print("No addExistingPackages response yet")
         }
     }
     
@@ -1739,9 +1740,9 @@ import AEXML
      
   
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
-        if self.debug_enabled == true {
+//        if self.debug_enabled == true {
             print("Running getDetailedPolicy - policyID is:\(policyID)")
-        }
+//        }
         let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
@@ -1773,7 +1774,6 @@ import AEXML
             print("getDetailedPolicy request error - code is:\(statusCode)")
             throw JamfAPIError.http(statusCode)
         }
-        
 //        ########################################################
 //        DEBUG
 //        ########################################################
@@ -1786,14 +1786,22 @@ import AEXML
     
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
+//        let secondDecodedData = try decoder.decode(PoliciesDetailed.self, from: data)
+
+//        var newCurrentDetailedPolicy: PolicyDetailed = decodedData
+        
         self.policyDetailed = decodedData
 
-        if self.debug_enabled == true {
+//        if self.debug_enabled == true {
             separationLine()
             print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
-        }
+        print("Policy Trigger:\t\t\t\(self.policyDetailed?.general?.triggerOther ?? "")\n")
+
+//        }
 //      On completion add policy to array of detailed policies
         self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+      
+//        self.policyDetailed2? = newCurrentDetailedPolicy
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
@@ -2087,25 +2095,25 @@ import AEXML
     
     
     
-    func processComputerDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-        
-        separationLine()
-        print("Running: processComputerDetail")
-        
-        let decoded = PoliciesDetailReply.decode(data)
-        
-        
-        switch decoded {
-        case .success(let policyDetailed):
-            receivedPolicyDetail(policyDetailed: policyDetailed)
-            //            separationLine()
-            //            print("policyDetailed is:\(String(describing: policyDetailed.policy.general?.name ?? nil))")
-        case .failure(let error):
-            print("Decoding failed - Corrupt data. \(response) \(error)")
-            separationLine()
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
+//    func processComputerDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
+//        
+//        separationLine()
+//        print("Running: processComputerDetail")
+//        
+//        let decoded = PoliciesDetailReply.decode(data)
+//        
+//        
+//        switch decoded {
+//        case .success(let policyDetailed):
+//            receivedPolicyDetail(policyDetailed: policyDetailed)
+//            //            separationLine()
+//            //            print("policyDetailed is:\(String(describing: policyDetailed.policy.general?.name ?? nil))")
+//        case .failure(let error):
+//            print("Decoding failed - Corrupt data. \(response) \(error)")
+//            separationLine()
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
     
     
     
@@ -2151,25 +2159,25 @@ import AEXML
     //    #################################################################################
     
     
-    func processPolicyDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-        
-        separationLine()
-        print("Running: processPolicyDetail")
-        print("ResourceType is:\(String(describing: ResourceType.self))")
-        
-        let decoded = PoliciesDetailReply.decode(data)
-        
-        switch decoded {
-        case .success(let policyDetailed):
-            receivedPolicyDetail(policyDetailed: policyDetailed)
-            separationLine()
-
-        case .failure(let error):
-            print("Decoding failed - Corrupt data. \(response) \(error)")
-            separationLine()
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
+//    func processPolicyDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
+//        
+//        separationLine()
+//        print("Running: processPolicyDetail")
+//        print("ResourceType is:\(String(describing: ResourceType.self))")
+//        
+//        let decoded = PoliciesDetailReply.decode(data)
+//        
+//        switch decoded {
+//        case .success(let policyDetailed):
+//            receivedPolicyDetail(policyDetailed: policyDetailed)
+//            separationLine()
+//
+//        case .failure(let error):
+//            print("Decoding failed - Corrupt data. \(response) \(error)")
+//            separationLine()
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
     
     
     //    #################################################################################
@@ -2195,7 +2203,7 @@ import AEXML
             print("policyID is:\(policyID)")
             print("policyName is:\(policyName)")
             
-            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: Int(policyID) ?? 0)
+//            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: Int(policyID) ?? 0)
             
             let newCategoryName: String = self.selectedCategory.name
             let newCategoryID: String = String(describing: self.selectedCategory.jamfId)
@@ -2205,9 +2213,9 @@ import AEXML
             print("New categoryID is:\(newCategoryID)")
             print("policyEnDisable is:\(policyEnDisable)")
             
-            if self.currentDetailedPolicy != nil {
-                if let categoryName = self.currentDetailedPolicy?.policy.general?.category?.name {
-                    let categoryID = self.currentDetailedPolicy?.policy.general?.category?.jamfId
+            if self.policyDetailed != nil {
+                if let categoryName = self.policyDetailed?.general?.category?.name {
+                    let categoryID = self.policyDetailed?.general?.category?.jamfId
                     print("Old categoryName is:\(categoryName)")
                     print("Old categoryID is:\(String(describing: categoryID))")
                 }
@@ -2248,7 +2256,7 @@ import AEXML
             separationLine()
             print("policyID is:\(String(describing: policyID))")
             
-            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
+//            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
             
             let newCategoryName: String = self.selectedCategory.name
             let newCategoryID: String = String(describing: self.selectedCategory.jamfId)
@@ -2291,7 +2299,7 @@ import AEXML
             separationLine()
             print("policyID is:\(String(describing: policyID))")
             
-            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
+//            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
             
 //            let newCategoryName: String = self.selectedCategory.name
 //            let newCategoryID: String = String(describing: self.selectedCategory.jamfId)

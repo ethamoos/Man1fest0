@@ -36,11 +36,11 @@ struct PolicyTriggersTabView: View {
     
     var body: some View {
         
-        let currentTrigger_login = networkController.currentDetailedPolicy?.policy.general?.triggerLogin ?? false
-        let currentTrigger_checkin = networkController.currentDetailedPolicy?.policy.general?.triggerCheckin ?? false
-        let currentTrigger_startup = networkController.currentDetailedPolicy?.policy.general?.triggerStartup ?? false
-        let currentTrigger_enrollment_complete = networkController.currentDetailedPolicy?.policy.general?.triggerEnrollmentComplete ?? false
-        let currentTrigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? ""
+        let currentTrigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
+        let currentTrigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
+        let currentTrigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
+        let currentTrigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+        let currentTrigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
         
         VStack(alignment: .leading) {
             
@@ -122,7 +122,7 @@ struct PolicyTriggersTabView: View {
         }
         .padding()
         .onAppear() {
-            trigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? ""
+            trigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
         }
     }
 }
