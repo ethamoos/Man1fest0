@@ -60,7 +60,7 @@ struct PolicyPackageTabView: View {
             //              List packages
             //              ################################################################################
             
-            if let currentPolicyPackages = networkController.currentDetailedPolicy?.policy.package_configuration?.packages {
+            if let currentPolicyPackages = networkController.policyDetailed?.package_configuration?.packages {
                 
                 if currentPolicyPackages.count >= 1 {
                     
