@@ -96,6 +96,10 @@ struct PolicyScopeTabView: View {
     
     @State private var showingWarningAllComputers = false
     
+    @State private var showingWarningClearComputers = false
+    
+    @State private var showingWarningClearComputerGroups = false
+    
     @State private var showingWarningAllComputersAndUsers = false
     
 
@@ -378,6 +382,59 @@ struct PolicyScopeTabView: View {
                                                             }
                                                         }
                                                     }
+                                                    
+                                                    HStack {
+                                                        Button(action: {
+                                                            showingWarningClearComputers = true
+                                                            progress.showProgress()
+                                                            progress.waitForABit()
+                                                        }) {
+                                                            HStack(spacing: 10) {
+                                                                Image(systemName: "eraser")
+                                                                Text("Clear Computers")
+                                                            }
+                                                            .alert(isPresented: $showingWarningClearComputers) {
+                                                                Alert(
+                                                                    title: Text("Caution!"),
+                                                                    message: Text("This action will clear any individually assigned computers from this policy scoping.\n You will need to rescope in order to deploy"),
+                                                                    primaryButton: .destructive(Text("I understand!")) {
+                                                                        // Code to execute when "Yes" is tapped
+                                                                        networkController.clearComputers(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
+                                                                        print("Yes tapped")
+                                                                    },
+                                                                    secondaryButton: .cancel()
+                                                                )
+                                                            }
+                                                        }
+                                                        .buttonStyle(.borderedProminent)
+                                                        .tint(.red)
+                                                        
+                                                        Button(action: {
+                                                            showingWarningClearComputerGroups = true
+                                                            progress.showProgress()
+                                                            progress.waitForABit()
+                                                        }) {
+                                                            HStack(spacing: 10) {
+                                                                Image(systemName: "eraser")
+                                                                Text("Clear Computer Groups")
+                                                            }
+                                                            .alert(isPresented: $showingWarningClearComputerGroups) {
+                                                                Alert(
+                                                                    title: Text("Caution!"),
+                                                                    message: Text("This action will clear all static or smart computer groups from this policy scoping.\n You will need to rescope in order to deploy"),
+                                                                    primaryButton: .destructive(Text("I understand!")) {
+                                                                        // Code to execute when "Yes" is tapped
+                                                                        networkController.clearComputerGroups(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
+                                                                        print("Yes tapped")
+                                                                    },
+                                                                    secondaryButton: .cancel()
+                                                                )
+                                                            }
+                                                        }
+                                                        .buttonStyle(.borderedProminent)
+                                                        .tint(.red)
+                                                    }
+                                                   
                                                 }
                                             }
 #endif

@@ -2937,7 +2937,7 @@ import AEXML
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("Making removeLimitations request")
+                print("Making clearScope request")
                 print("resourceType is set as:\(resourceType)")
                 print("xml is set as:\(xml)")
                 self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
@@ -2945,9 +2945,80 @@ import AEXML
             }
         }
         else {
-            print("removeLimitations request failed")
+            print("clearScope request failed")
         }
     }
+    
+    
+    //    #################################################################################
+    //    Remove All individual computers
+    //    #################################################################################
+    
+    func clearComputers(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        
+        var xml: String
+        
+        xml = """
+                       <policy>
+                           <scope>
+                               <computers/>
+                           </scope>
+                       </policy>
+                       """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Making clearComputers request")
+                print("resourceType is set as:\(resourceType)")
+                print("xml is set as:\(xml)")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+        else {
+            print("clearComputers request failed")
+        }
+    }
+    
+      
+    //    #################################################################################
+    //    Remove All computer groups - static and smart groups
+    //    #################################################################################
+    
+    func clearComputerGroups(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        
+        var xml: String
+        
+        xml = """
+                       <policy>
+                           <scope>
+                               <computer_groups/>
+                           </scope>
+                       </policy>
+                       """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Making clearComputerGroups request")
+                print("resourceType is set as:\(resourceType)")
+                print("xml is set as:\(xml)")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+        else {
+            print("clearComputerGroups request failed")
+        }
+    }
+    
+    
+    
     
     
     //    Update Extension Attribute

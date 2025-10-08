@@ -1,5 +1,3 @@
-
-
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -522,7 +520,7 @@ struct PolicyDetailView: View {
                     }
             }
 
-#endif            
+#endif
             
             //  ##########################################################################
             //  Progress view via showProgress
@@ -546,97 +544,60 @@ struct PolicyDetailView: View {
         //        }
         
         .onAppear {
-            
-            //  #########################################################################
-            //  PolicyDetailView
-            //  #########################################################################
-            
             networkController.separationLine()
             print("PolicyDetailView appeared - running detailed policy connect function")
-            
             progress.showProgress()
             progress.waitForNotVeryLong()
-            
-            let currentPolicyAsXMLLocal = Task {
-                
-                print("getPolicyAsXML - running get policy as xml function")
-                
-                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                
-//                if !xmlController.currentPolicyAsXML.isEmpty {
-                    print("Reading XML into AEXML - networkController")
-                    
-                    //  #################################################################
-                    //  NOTE: CHANGED FROM XML CONTROLLER BELOW
-                    //  #################################################################
-                    
-                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-                    
-                    //  #################################################################
-                    //  NOTE: CHANGED FROM XML CONTROLLER - END
-                    //  #################################################################
-                    
-//                }
-            }
-            
-            //            This is fetching the detailed policy - which is already happening - eventually, this can be removed and instead of using the property: networkController.currentDetailedPolicy?.policy
-            
-            //            The property networkController.policyDetailed will be used
-            
-            networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
-            
             Task {
-                
+                print("getPolicyAsXML - running get policy as xml function")
+                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+            }
+            Task {
+                networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+            }
+            Task {
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
-            
             if networkController.categories.count <= 1 {
                 print("No categories - fetching")
-                networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                Task {
+                    networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                }
             }
-            
             if networkController.packages.count <= 1 {
-                networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                Task {
+                    networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                }
             }
-            
             if networkController.departments.count <= 1 {
-                
-                networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                Task {
+                    networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                }
             }
-            
             if networkController.buildings.count <= 1 {
-                //                networkController.connect(server: server,resourceType: ResourceType.building, authToken: networkController.authToken)
                 Task {
                     try await networkController.getBuildings(server: server, authToken: networkController.authToken)
                 }
             }
-            
             if networkController.allIconsDetailed.count <= 1 {
                 print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+                Task {
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+                }
             } else {
                 print("getAllIconsDetailed has already run")
                 print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
             }
-            
-            //  #########################################################################
-            //  getAllGroups
-            //  #########################################################################
-            
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
-            
-            //  #########################################################################
-            //  Add current packages to packagesAssignedToPolicy list on appear of View
-            //  #########################################################################
-            
-            networkController.getPackagesAssignedToPolicy()
-            networkController.addExistingPackages()
-            fetchData()
-            
+            Task {
+                networkController.getPackagesAssignedToPolicy()
+                networkController.addExistingPackages()
+                fetchData()
+            }
         }
         .padding()
         .textSelection(.enabled)
@@ -655,7 +616,6 @@ struct PolicyDetailView: View {
 }
 
 
-
 //struct PolicyDetailView_Previews: PreviewProvider {
 //    static var previews: some View {
 //        PolicyDetailView(server: "", username: "", password: "", policy: PolicyDetailed(id:11111111-1111-1111-1111-111111111111, name: "", policyID: 1), policyID: 01)
@@ -664,4 +624,3 @@ struct PolicyDetailView: View {
 //
 //    }
 //}
-
