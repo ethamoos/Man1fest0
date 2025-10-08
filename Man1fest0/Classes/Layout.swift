@@ -213,6 +213,11 @@ class Layout: ObservableObject {
         GridItem(.fixed(200), alignment: .leading)
     ]
     
+    let threeColumnsFixed = [
+        GridItem(.fixed(200), alignment: .leading),
+        GridItem(.fixed(200), alignment: .leading),
+        GridItem(.fixed(200), alignment: .leading)
+    ]
     
     func separationLine() {
         print("------------------------------------------------")

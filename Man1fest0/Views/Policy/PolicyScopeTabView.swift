@@ -332,53 +332,53 @@ struct PolicyScopeTabView: View {
                                 
                                 Group {
                                     VStack(alignment: .leading) {
-                                        LazyVGrid(columns: layout.column, spacing: 10) {
-//                                            HStack(spacing: 10) {
-                                                Toggle("", isOn: $allComputersButton)
-                                                    .toggleStyle(SwitchToggleStyle(tint: .red))
-                                                    .onChange(of: allComputersButton) { value in
-                                                        print("allComputersButton changed - value is now:\(value) for policy:\(policyID)")
-                                                        
-                                                        if value == true {
-                                                            xmlController.enableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
-                                                        } else {
-                                                            xmlController.disableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
-                                                        }
+//                                        LazyVGrid(columns: layout.column, spacing: 10) {
+                                            //                                            HStack(spacing: 10) {
+                                            Toggle("", isOn: $allComputersButton)
+                                                .toggleStyle(SwitchToggleStyle(tint: .red))
+                                                .onChange(of: allComputersButton) { value in
+                                                    print("allComputersButton changed - value is now:\(value) for policy:\(policyID)")
+                                                    
+                                                    if value == true {
+                                                        xmlController.enableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                    } else {
+                                                        xmlController.disableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
                                                     }
+                                                }
 #if os(macOS)
-                                                if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
-                                                    Text("All Computers")
-                                                    
-                                                } else {
-                                                    Text("Specific Computers")
-                                                    
-                                                    
-                                                    HStack {
-                                                        LazyVGrid(columns: layout.threeColumns, spacing: 10) {
-                                                            Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
-                                                                ForEach(networkController.computers, id: \.self) { comp in
-                                                                    Text(String(describing: comp.name)).tag("")
-                                                                        .tag(comp as Computer?)
-                                                                }
+                                            if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
+                                                Text("All Computers")
+                                                
+                                            } else {
+                                                Text("Specific Computers")
+                                                
+                                                
+                                                HStack {
+                                                    LazyVGrid(columns: layout.threeColumnsFixed, spacing: 10) {
+                                                        TextField("Filter computers", text: $computerFilter)
+                                                        Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
+                                                            ForEach(networkController.computers.filter { computerFilter.isEmpty ? true : $0.name.localizedCaseInsensitiveContains(computerFilter) }, id: \ .self) { comp in
+                                                                Text(String(describing: comp.name))
+                                                                    .tag(comp as Computer?)
                                                             }
-                                                         
-                                                            Button(action: {
-                                                                
-                                                                progress.showProgress()
-                                                                progress.waitForABit()
-                                                                
-                                                                networkController.separationLine()
-                                                                print("addComputerToPolicyScope policy:\(String(describing: policyID))")
-                                                                
-                                                                print("Run getPolicyAsXML to ensure we have the latest version of the policy")
-                                                                xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                                                                
-                                                                xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
-                                                            }) {
-                                                                HStack(spacing: 10) {
-                                                                    Image(systemName: "plus.square.fill.on.square.fill")
-                                                                    Text("Add Computer")
-                                                                }
+                                                        }
+                                                        
+                                                        Button(action: {
+                                                            
+                                                            progress.showProgress()
+                                                            progress.waitForABit()
+                                                            
+                                                            networkController.separationLine()
+                                                            print("addComputerToPolicyScope policy:\(String(describing: policyID))")
+                                                            
+                                                            print("Run getPolicyAsXML to ensure we have the latest version of the policy")
+                                                            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+                                                            
+                                                            xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
+                                                        }) {
+                                                            HStack(spacing: 10) {
+                                                                Image(systemName: "plus.square.fill.on.square.fill")
+                                                                Text("Add Computer")
                                                             }
                                                         }
                                                     }
@@ -436,8 +436,9 @@ struct PolicyScopeTabView: View {
                                                     }
                                                    
                                                 }
+                                            }
 #endif
-                                        }
+//                                        }
                                     }
                                 }
                               
