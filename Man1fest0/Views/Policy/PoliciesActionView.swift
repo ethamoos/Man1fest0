@@ -34,7 +34,7 @@ struct PoliciesActionView: View {
     
     @State var categories: [Category] = []
     
-    @State  var categorySelection: Category = Category(jamfId: 0, name: "")
+    @State  var categorySelection: Category? = nil
     
     @State var enableDisable: Bool = true
     
@@ -233,10 +233,13 @@ struct PoliciesActionView: View {
                             progress.showProgressView = true
                             networkController.processingComplete = false
                             progress.waitForABit()
-                            print("Setting category to:\(String(describing: categorySelection))")
+                            if let selectedCategory = categorySelection {
+                                print("Setting category to:\(String(describing: selectedCategory))")
+                                networkController.selectedCategory = selectedCategory
+                            } else {
+                                print("No category selected")
+                            }
                             print("Policy enable/disable status is set as:\(String(describing: enableDisable))")
-                            
-                            networkController.selectedCategory = categorySelection
                             networkController.processUpdatePolicies(selection: policiesSelection, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
                             
                         }) {
@@ -299,18 +302,19 @@ struct PoliciesActionView: View {
                         HStack {
                             if !networkController.categories.isEmpty {
                                 Picker(selection: $categorySelection, label: Text("Category:\t\t")) {
+                                    Text("No category selected").tag(nil as Category?)
                                     ForEach(networkController.categories, id: \.self) { category in
-                                        Text(category.name).tag(category)
+                                        Text(category.name).tag(category as Category?)
                                     }
                                 }
                                 .onAppear {
                                     if !networkController.categories.isEmpty {
-                                        categorySelection = networkController.categories.first!
+                                        categorySelection = networkController.categories.first
                                     }
                                 }
                                 .onChange(of: networkController.categories) { newCategories in
                                     if !newCategories.isEmpty {
-                                        categorySelection = newCategories.first!
+                                        categorySelection = newCategories.first
                                     }
                                 }
                             } else {
