@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A801D8EB2B7E178600E9D5B0 /* GroupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */; };
+		A80DE2CB2E97D69800509F4F /* Structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80DE2CA2E97D69800509F4F /* Structures.swift */; };
 		A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */; };
 		A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813123F29D4A7C400BB1C9F /* ScriptsView.swift */; };
 		A813124229D4B10100BB1C9F /* ScriptsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */; };
@@ -119,6 +120,7 @@
 
 /* Begin PBXFileReference section */
 		A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupDetailView.swift; sourceTree = "<group>"; };
+		A80DE2CA2E97D69800509F4F /* Structures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Structures.swift; sourceTree = "<group>"; };
 		A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopingBrain.swift; sourceTree = "<group>"; };
 		A813123F29D4A7C400BB1C9F /* ScriptsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsView.swift; sourceTree = "<group>"; };
 		A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsDetailView.swift; sourceTree = "<group>"; };
@@ -319,6 +321,7 @@
 		A86AF3842C3FE64A009349C4 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				A80DE2CA2E97D69800509F4F /* Structures.swift */,
 				A8BC96A72E6825670078AF53 /* Photo.swift */,
 				A83D011A2D7850E40091B794 /* JamfObjects */,
 				A8C4EAC62D53BCBF0022E0ED /* ComputerExtensionAttribute.swift */,
@@ -714,6 +717,7 @@
 				A83D210B2DE627AD00D9AD2F /* ComputerExtAttributeActionView.swift in Sources */,
 				A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */,
 				A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */,
+				A80DE2CB2E97D69800509F4F /* Structures.swift in Sources */,
 				A87445CB2E2AACFB00BCB41B /* NotesModel.xcdatamodeld in Sources */,
 				A8BAD2D52DE074D7006C9B34 /* CreateScriptView.swift in Sources */,
 				E49319872B6797B400B58519 /* PrestagesAssignedView.swift in Sources */,
