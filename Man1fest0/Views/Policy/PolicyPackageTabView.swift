@@ -47,10 +47,7 @@ struct PolicyPackageTabView: View {
 //              ################################################################################
 
 
-    
     @State var selectedPackage: Package? = nil
-    
-    @State private var selection: Package? = nil
     
     var body: some View {
         
@@ -64,7 +61,7 @@ struct PolicyPackageTabView: View {
                 
                 if currentPolicyPackages.count >= 1 {
                     
-                    List(currentPolicyPackages, id: \.self, selection: $selection) { package in
+                    List(currentPolicyPackages, id: \.self) { package in
                         
                         HStack {
                             Image(systemName: "suitcase")
@@ -105,22 +102,28 @@ struct PolicyPackageTabView: View {
                 //  ################################################################################
                 
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
-                
                 HStack {
                     TextField("Filter", text: $packageFilter)
                     Picker(selection: $selectedPackage, label: Text("").bold()) {
-                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)}), id: \.self) { package in
+                        Text("No package selected").tag(nil as Package?)
+                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)}), id: \ .self) { package in
                             Text(String(describing: package.name))
                                 .tag(package as Package?)
-                                .tag(selectedPackage as Package?)
                         }
                     }
-                    
                     .onAppear {
-                        
-                        if networkController.packages.count >= 1 {
-                            print("Setting package picker default")
-                            selectedPackage = networkController.packages[0] }
+                        if !networkController.packages.isEmpty {
+                            selectedPackage = networkController.packages.first
+                        } else {
+                            selectedPackage = nil
+                        }
+                    }
+                    .onChange(of: networkController.packages) { newPackages in
+                        if !newPackages.isEmpty {
+                            selectedPackage = newPackages.first
+                        } else {
+                            selectedPackage = nil
+                        }
                     }
                 }
             }
