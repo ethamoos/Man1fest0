@@ -106,23 +106,32 @@ struct PolicyPackageTabView: View {
                     TextField("Filter", text: $packageFilter)
                     Picker(selection: $selectedPackage, label: Text("").bold()) {
                         Text("No package selected").tag(nil as Package?)
-                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)}), id: \ .self) { package in
+                        ForEach(networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }, id: \ .self) { package in
                             Text(String(describing: package.name))
                                 .tag(package as Package?)
                         }
                     }
                     .onAppear {
-                        if !networkController.packages.isEmpty {
-                            selectedPackage = networkController.packages.first
-                        } else {
+                        let filtered = networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
+                        selectedPackage = filtered.first
+                    }
+                    .onChange(of: networkController.packages) { newPackages in
+                        let filtered = newPackages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
+                        selectedPackage = filtered.first
+                    }
+                    .onChange(of: packageFilter) { newFilter in
+                        let filtered = networkController.packages.filter { newFilter.isEmpty ? true : $0.name.contains(newFilter) }
+                        if let selected = selectedPackage, !filtered.contains(selected) {
+                            selectedPackage = filtered.first
+                        }
+                        if filtered.isEmpty {
                             selectedPackage = nil
                         }
                     }
-                    .onChange(of: networkController.packages) { newPackages in
-                        if !newPackages.isEmpty {
-                            selectedPackage = newPackages.first
-                        } else {
-                            selectedPackage = nil
+                    .onChange(of: selectedPackage) { newSelection in
+                        let filtered = networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
+                        if let selected = newSelection, !filtered.contains(selected) {
+                            selectedPackage = filtered.first
                         }
                     }
                 }
