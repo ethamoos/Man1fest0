@@ -446,26 +446,33 @@ struct PolicyDetailView: View {
             LazyVGrid(columns: layout.columnsFlex) {
                     HStack {
                         
-                        Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                            ForEach(networkController.categories, id: \.self) { category in
-                                Text(String(describing: category.name))
-                                    .tag(category as Category?)
-                                    .tag(selectedCategory as Category?)
+                        if !networkController.categories.isEmpty {
+                            Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                                ForEach(networkController.categories, id: \.self) { category in
+                                    Text(category.name).tag(category)
+                                }
                             }
+                            .onAppear {
+                                if !networkController.categories.isEmpty {
+                                    if !networkController.categories.contains(selectedCategory) {
+                                        selectedCategory = networkController.categories.first!
+                                    }
+                                }
+                            }
+                            .onChange(of: networkController.categories) { newCategories in
+                                if !newCategories.isEmpty {
+                                    if !newCategories.contains(selectedCategory) {
+                                        selectedCategory = newCategories.first!
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("No categories available")
                         }
-                        .onAppear {
-                            
-                            if networkController.categories.isEmpty != true {
-                                print("Setting categories picker default")
-                                selectedCategory = networkController.categories[0] }
-                        }
-                        
                         Button(action: {
-                            
                             progress.showProgress()
                             progress.waitForABit()
-                            
-                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
+                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
                         }) {
                             HStack(spacing: 10) {
                                 Text("Update")
@@ -473,6 +480,7 @@ struct PolicyDetailView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        .disabled(networkController.categories.isEmpty)
                     }
                 }
 //            }
