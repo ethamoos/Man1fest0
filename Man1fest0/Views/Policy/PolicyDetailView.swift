@@ -76,7 +76,7 @@ struct PolicyDetailView: View {
     //    ########################################################################################
     //    ########################################################################################
     
-    @State var currentDetailedPolicy: PoliciesDetailed? = nil
+//    @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
     @State var scriptName = ""
     
@@ -160,18 +160,18 @@ struct PolicyDetailView: View {
             //              Top
             //  ################################################################################
             
-            if networkController.currentDetailedPolicy != nil {
+            if networkController.policyDetailed != nil {
                 
 #if os(macOS)
                 VStack(alignment: .leading) {
-                    Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.name ?? "Blank")\n")
-                    Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.enabled ?? true))\n")
-                    Text("Self Service Name:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.selfServiceDisplayName ?? ""))\n")
-                    Text("Self Service Status:\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.self_service?.useForSelfService ?? true))\n")
-                    Text("Policy Trigger:\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
-                    Text("Category:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.self_service?.selfServiceIcon?.filename ?? "No icon set")")
+                    Text("Jamf Name:\t\t\t\t\(networkController.policyDetailed?.general?.name ?? "Blank")\n")
+                    Text("Enabled Status:\t\t\t\(String(describing: networkController.policyDetailed?.general?.enabled ?? true))\n")
+                    Text("Self Service Name:\t\t\(String(describing: networkController.policyDetailed?.self_service?.selfServiceDisplayName ?? ""))\n")
+                    Text("Self Service Status:\t\t\(String(describing: networkController.policyDetailed?.self_service?.useForSelfService ?? true))\n")
+                    Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
+                    Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
+                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
+                    Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")")
                     
                 }
                 .textSelection(.enabled)
@@ -217,7 +217,7 @@ struct PolicyDetailView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     if policyName.isEmpty == true {
-                        policyNameInitial = networkController.currentDetailedPolicy?.policy.general?.name ?? ""
+                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
                         let newPolicyName = "\(policyNameInitial)1"
                         print("No name provided - policy is:\(newPolicyName)")
                         policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
@@ -304,9 +304,13 @@ struct PolicyDetailView: View {
                     print("Refresh detailPolicyView")
                     progress.showProgress()
                     progress.waitForABit()
-                    
+                    Task {
+                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    }
                     xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                    networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+//                       Task {
+//                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+//                    }
                     xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                     print("Refresh detailPolicyView")
                     
@@ -337,7 +341,7 @@ struct PolicyDetailView: View {
                         
                         HStack {
                             
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyNameInitial, text: $policyName)
+                            TextField(networkController.policyDetailed?.general?.name ?? policyNameInitial, text: $policyName)
                                 .textSelection(.enabled)
                             
                             Button(action: {
@@ -360,7 +364,7 @@ struct PolicyDetailView: View {
                         
                         HStack {
                             
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
+                            TextField(networkController.policyDetailed?.general?.triggerOther ?? "", text: $policyCustomTrigger)
                                 .textSelection(.enabled)
                             
                             Button(action: {
@@ -388,7 +392,7 @@ struct PolicyDetailView: View {
                     LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
                         HStack {
-                            TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $policyName)
+                            TextField(networkController.policyDetailed?.general?.name ?? policyName, text: $policyName)
                                 .textSelection(.enabled)
                             Button(action: {
                                 
@@ -442,26 +446,33 @@ struct PolicyDetailView: View {
             LazyVGrid(columns: layout.columnsFlex) {
                     HStack {
                         
-                        Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                            ForEach(networkController.categories, id: \.self) { category in
-                                Text(String(describing: category.name))
-                                    .tag(category as Category?)
-                                    .tag(selectedCategory as Category?)
+                        if !networkController.categories.isEmpty {
+                            Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                                ForEach(networkController.categories, id: \.self) { category in
+                                    Text(category.name).tag(category)
+                                }
                             }
+                            .onAppear {
+                                if !networkController.categories.isEmpty {
+                                    if !networkController.categories.contains(selectedCategory) {
+                                        selectedCategory = networkController.categories.first!
+                                    }
+                                }
+                            }
+                            .onChange(of: networkController.categories) { newCategories in
+                                if !newCategories.isEmpty {
+                                    if !newCategories.contains(selectedCategory) {
+                                        selectedCategory = newCategories.first!
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("No categories available")
                         }
-                        .onAppear {
-                            
-                            if networkController.categories.isEmpty != true {
-                                print("Setting categories picker default")
-                                selectedCategory = networkController.categories[0] }
-                        }
-                        
                         Button(action: {
-                            
                             progress.showProgress()
                             progress.waitForABit()
-                            
-                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: policyID))
+                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
                         }) {
                             HStack(spacing: 10) {
                                 Text("Update")
@@ -469,6 +480,7 @@ struct PolicyDetailView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        .disabled(networkController.categories.isEmpty)
                     }
                 }
 //            }
@@ -504,7 +516,7 @@ struct PolicyDetailView: View {
                         Label("Scripts", systemImage: "square.and.pencil")
                     }
                 
-                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.currentDetailedPolicy?.policy.general?.triggerLogin ?? false, trigger_checkin: networkController.currentDetailedPolicy?.policy.general?.triggerCheckin ?? false, trigger_startup: networkController.currentDetailedPolicy?.policy.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.currentDetailedPolicy?.policy.general?.triggerEnrollmentComplete ?? false )
+                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
                     .tabItem {
                         Label("Triggers", systemImage: "square.and.pencil")
                     }
@@ -553,9 +565,11 @@ struct PolicyDetailView: View {
                 try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
             }
-            Task {
-                networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
-            }
+//            Task {
+//                   Task {
+//                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+//                    }
+//            }
             Task {
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
@@ -581,15 +595,7 @@ struct PolicyDetailView: View {
                     try await networkController.getBuildings(server: server, authToken: networkController.authToken)
                 }
             }
-            if networkController.allIconsDetailed.count <= 1 {
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                Task {
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
-                }
-            } else {
-                print("getAllIconsDetailed has already run")
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-            }
+        
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }

@@ -38,7 +38,7 @@ struct PolicyDetailGeneralTabView: View {
     //  ####################################################################################
     
     @State var categories: [Category] = []
-    @State  var selectedCategory: Category = Category(jamfId: 0, name: "")
+    @State  var selectedCategory: Category? = nil
     
     //  ########################################################################################
     //  SELECTIONS
@@ -50,9 +50,7 @@ struct PolicyDetailGeneralTabView: View {
     
     @State var selectedIconString = ""
     
-    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
-    
-    @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
+    @State var selectedIcon: Icon? = nil
     
 //  ############################################################################
 //  Sort order
@@ -89,19 +87,29 @@ struct PolicyDetailGeneralTabView: View {
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
                     Picker(selection: $selectedCategory, label: Text("Category:")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
+                        Text("No category selected").tag(nil as Category?)
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
+                            Text(String(describing: category.name)).tag(category as Category?)
                         }
                     }
-                    
+                    .onAppear {
+                        if !networkController.categories.isEmpty {
+                            selectedCategory = networkController.categories.first
+                        }
+                    }
+                    .onChange(of: networkController.categories) { newCategories in
+                        if !newCategories.isEmpty {
+                            selectedCategory = newCategories.first
+                        }
+                    }
                     Button(action: {
-                        
                         progress.showProgress()
                         progress.waitForABit()
-                        
-                        networkController.processBatchUpdateCategory(selection: selectedPoliciesInt, server: server,  resourceType: ResourceType.policyDetail, authToken: networkController.authToken, newCategoryName: String(describing: selectedCategory.name), newCategoryID:  String(describing: selectedCategory.jamfId))
-                        
+                        if let category = selectedCategory {
+                            networkController.processBatchUpdateCategory(selection: selectedPoliciesInt, server: server,  resourceType: ResourceType.policyDetail, authToken: networkController.authToken, newCategoryName: String(describing: category.name), newCategoryID:  String(describing: category.jamfId))
+                        } else {
+                            print("No category selected")
+                        }
                     }) {
                         HStack(spacing: 10) {
                             Text("Update")
@@ -120,16 +128,19 @@ struct PolicyDetailGeneralTabView: View {
             //  ####################################################################
             
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
-                
                 HStack {
                     Button(action: {
                         progress.showProgressView = true
                         networkController.processingComplete = false
                         progress.waitForABit()
-                        print("Setting category to:\(String(describing: selectedCategory))")
+                        if let category = selectedCategory {
+                            print("Setting category to:\(String(describing: category))")
+                            networkController.selectedCategory = category
+                            networkController.processUpdatePoliciesCombined(selection: selectedPoliciesInt, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
+                        } else {
+                            print("No category selected")
+                        }
                         print("Policy enable/disable status is set as:\(String(describing: enableDisable))")
-                        networkController.selectedCategory = selectedCategory
-                        networkController.processUpdatePoliciesCombined(selection: selectedPoliciesInt, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
                     }) {
                         Text("Update Category/Enable")
                             .help("This updates the category and also applies the enable/disable settings")
@@ -268,6 +279,7 @@ struct PolicyDetailGeneralTabView: View {
                 HStack {
                     TextField("Filter", text: $iconFilter)
                     Picker(selection: $selectedIcon, label: Text("").bold()) {
+                        Text("No icon selected").tag(nil as Icon?)
                         ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }, id: \.self) { icon in
                             HStack(spacing: 10) {
                                 ZStack {
@@ -294,6 +306,21 @@ struct PolicyDetailGeneralTabView: View {
                             .tag(icon as Icon?)
                         }
                     }
+                    .onAppear {
+                        if !networkController.allIconsDetailed.isEmpty {
+                            // Only set selectedIcon if the first icon exists
+                            selectedIcon = networkController.allIconsDetailed.first
+                        } else {
+                            selectedIcon = nil
+                        }
+                    }
+                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+                        if !newIcons.isEmpty {
+                            selectedIcon = newIcons.first
+                        } else {
+                            selectedIcon = nil
+                        }
+                    }
                 }
                 //
                 //                ############################################################
@@ -308,12 +335,13 @@ struct PolicyDetailGeneralTabView: View {
                 
                 HStack {
                     Button(action: {
-                        
                         progress.showProgress()
                         progress.waitForABit()
-                        
-                        xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
-                        
+                        if let icon = selectedIcon {
+                            xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
+                        } else {
+                            print("No icon selected")
+                        }
                     }) {
                         Text("Update Icon")
                     }

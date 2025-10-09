@@ -21,7 +21,7 @@ struct BuildingsView: View {
         
         VStack(alignment: .leading) {
             
-            NavigationView() {
+            NavigationView {
         
                 
                 List(searchResults, id: \.self, selection: $selection) { building in
@@ -39,16 +39,14 @@ struct BuildingsView: View {
                         .navigationTitle("Buildings")
 #endif
                     }
-                    .searchable(text: $searchText)
                 }
+                .searchable(text: $searchText)
 #if os(macOS)
-                        .frame(minWidth: 300, maxWidth: .infinity)
+                .frame(minWidth: 300, maxWidth: .infinity)
 #endif
                 Text("\(networkController.buildings.count) total buildings")
-                
             }
             .navigationViewStyle(DefaultNavigationViewStyle())
-            .searchable(text: $searchText)
             
             //              ################################################################################
             //              Toolbar

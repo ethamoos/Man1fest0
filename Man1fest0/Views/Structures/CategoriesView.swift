@@ -50,15 +50,14 @@ struct CategoriesView: View {
                             .navigationTitle("Categories")
 #endif
                         }
-                        .searchable(text: $searchText)
                     }
+                    .searchable(text: $searchText)
 #if os(macOS)
                         .frame(minWidth: 300, maxWidth: .infinity)
 #endif
                     Text("\(networkController.categories.count) total categories")
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
-                .searchable(text: $searchText)
 
             } else {
                 ProgressView {
@@ -73,9 +72,9 @@ struct CategoriesView: View {
         
         .onAppear {
             print("Categories View appeared. Running onAppear")
-   
-            networkController.connect(server: server,resourceType: ResourceType.category, authToken: authToken)
-
+            Task {
+                try await networkController.getCategories(server: server, authToken: networkController.authToken)
+            }
         }
     }
     
@@ -100,5 +99,3 @@ struct CategoriesView: View {
 //    static var previews: some View {
 //        CategoriesView()
 //    }
-
-

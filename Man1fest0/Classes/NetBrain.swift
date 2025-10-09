@@ -149,6 +149,7 @@ import AEXML
     @Published var allPolicies: PolicyBasic? = nil
     @Published var allPoliciesConverted: [Policy] = []
     @Published var currentDetailedPolicy: PoliciesDetailed? = nil
+    @Published var currentDetailedPolicy2: PolicyDetailed? = nil
     @Published var policyDetailed: PolicyDetailed? = nil
     @Published var allPoliciesDetailed: [PolicyDetailed?] = []
     @Published var allPoliciesDetailedGeneral: [General] = []
@@ -417,13 +418,13 @@ import AEXML
         self.categories = try decoder.decode([Category].self, from: data)
     }
     
-    func getCategories(server: String) async throws {
+    func getCategories(server: String, authToken: String) async throws {
         
         let jamfURLQuery = server + "/JSSResource/categories"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
   
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -440,7 +441,19 @@ import AEXML
         print("processDetail Json data as text is:")
         print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
-        self.categories = try decoder.decode([Category].self, from: data)
+            
+           do {
+               let response = try decoder.decode(AllCategories.self, from: data)
+               self.categories = response.categories
+               self.separationLine()
+               print("getCategories Decoding succeeded")
+               
+           } catch {
+               self.separationLine()
+               print("getCategories Decoding failed - error is:")
+               print(error)
+           }
+           
     }
     
     func getDepartments(server: String) async throws {
@@ -491,14 +504,279 @@ import AEXML
         self.allConfigProfiles = try decoder.decode(ConfigurationProfiles.self, from: data)
     }
     
+    
+    
+    
+    func getBuildings(server: String, authToken: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/buildings"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        self.separationLine()
+        print("Running func: getBuildings")
+        print("url is set to:\(url)")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        //        print("Json data is:")
+        //        print(String(data: data, encoding: .utf8)!)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        let allBuildings = try decoder.decode(Buildings.self, from: data)
+        self.buildings = allBuildings.buildings
+        //        print("buildings is set to:\(self.buildings)")
+    }
+    
+    
+    
+    func getAllPackages(server: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/packages"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getAllPackages")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        self.allPackages = try decoder.decode(Packages.self, from: data).packages
+        allPackagesComplete = true
+        print("allPackagesComplete status is set to:\(allPackagesComplete)")
+        
+    }
+    
+    func getAllScripts(server: String, authToken: String) async throws {
+        
+        print("Running func: getAllScripts")
+        
+        let jamfURLQuery = server + "/api/v1/scripts?page=0&page-size=500"
+        
+        let url = URL(string: jamfURLQuery)!
+        print("url is set to:\(url)")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getAllScripts")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        separationLine()
+        //        print("Json data is:")
+        //                  print(String(data: data, encoding: .utf8)!)
+        let decoder = JSONDecoder()
+        //        let allScriptResults = try decoder.decode(ScriptResults.self, from: data)
+        //        let localScriptsDetailed = allScriptResults.results
+        
+        //        print("localScriptsDetailed status is set to:\(localScriptsDetailed)")
+        //        let allScriptsFullyDetailed = self.allScriptsVeryDetailed.results
+        
+    }
+    
+    func getDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
+        
+        separationLine()
+        print("Running func: getDetailedScript")
+        print("scriptID is set to:\(scriptID)")
+        
+        let jamfURLQuery = server + "/api/v1/scripts/" + String(describing: scriptID)
+        
+        let url = URL(string: jamfURLQuery)!
+        print("url is set to:\(url)")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+
+        let decoder = JSONDecoder()
+        scriptDetailed = try decoder.decode(Script.self, from: data)
+        //        print("scriptDetailed is set to:\(scriptDetailed)")
+    }
+    
+    
+    
+    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String) async throws {
+        
+        let xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <script>
+            <name>\(scriptName)</name>
+            <script_contents>\(scriptContent)</script_contents>
+        </script>
+        """
+
+        
+        separationLine()
+        print("Running func: updateScript")
+        print("scriptName is set to:\(scriptName)")
+        print("scriptID is set to:\(scriptId)")
+        separationLine()
+        print("scriptContent is\(scriptContent)")
+        
+//        let scriptData = Data(scriptContent.utf8)
+        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
+//        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: URL(string: jamfURLQuery)!)
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "PUT"
+        request.httpBody = xml.data(using: .utf8)
+
+//
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+    }
+    
+    
+    
+    
+    
+    func getAllPolicies(server: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/policies"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getAllPolicies")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            print(response)
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
+        let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
+        self.allPoliciesConverted = decodedData
+        allPoliciesComplete = true
+        separationLine()
+        //        atSeparationLine()
+        print("getAllPolicies status is set to:\(allPoliciesComplete)")
+        print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
+        print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
+    }
+    
+     
+  
+    func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
+//        if self.debug_enabled == true {
+            print("Running getDetailedPolicy - policyID is:\(policyID)")
+//        }
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        //        ########################################################
+        //        Rate limiting
+        //        ########################################################
+
+        let now = Date()
+        if let last = lastRequestDate {
+            print("Last request ran at:\(String(describing: last))")
+            let elapsed = now.timeIntervalSince(last)
+            if elapsed < minInterval {
+                let delay = minInterval - elapsed
+                print("Waiting:\(String(describing: delay))")
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+        }
+        lastRequestDate = Date()
+                
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            self.currentResponseCode = String(describing: statusCode)
+            print("getDetailedPolicy request error - code is:\(statusCode)")
+            throw JamfAPIError.http(statusCode)
+        }
+//        ########################################################
+//        DEBUG
+//        ########################################################
+//        separationLine()
+//        print("Raw data is:")
+//        print(String(data: data, encoding: .utf8)!)
+//        ########################################################
+//        DEBUG
+//        ########################################################
+    
+        let decoder = JSONDecoder()
+        let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
+//        let secondDecodedData = try decoder.decode(PoliciesDetailed.self, from: data)
+
+//        var newCurrentDetailedPolicy: PolicyDetailed = decodedData
+        
+        self.policyDetailed = decodedData
+
+//        if self.debug_enabled == true {
+            separationLine()
+            print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
+        print("Policy Trigger:\t\t\t\(self.policyDetailed?.general?.triggerOther ?? "")\n")
+
+//        }
+//      On completion add policy to array of detailed policies
+        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+      
+//        self.policyDetailed2? = newCurrentDetailedPolicy
+    }
+    
+    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
+        
+        self.separationLine()
+        print("Running func: getAllPoliciesDetailed")
+        for policy in policies {
+            Task {
+                try await getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: policy.jamfId ?? 1))
+                
+                if policyDetailed != nil {
+                    print("Policy is:\(policy.name) - ID is:\(String(describing: policy.jamfId ?? 0))")
+                }
+            }
+        }
+    }
     //    #################################################################################
     //    FUNCTIONS
     //    #################################################################################
     
     func getPackagesAssignedToPolicy() {
         
-        if let detailed = self.currentDetailedPolicy {
-            if let policyPackages = detailed.policy.package_configuration?.packages {
+        if let detailed = self.policyDetailed {
+            if let policyPackages = detailed.package_configuration?.packages {
                 self.separationLine()
                 print("Running: getPackagesAssignedToPolicy")
                 print("Adding currently assigned packages to packagesAssignedToPolicy:")
@@ -510,7 +788,7 @@ import AEXML
             }
         } else {
             self.separationLine()
-            print("No detailed policy response yet")
+            print("No getPackagesAssignedToPolicy response yet")
         }
     }
     
@@ -1148,22 +1426,22 @@ import AEXML
     }
     
     
-    func connectDetailed(server: String, authToken: String, resourceType: ResourceType, itemID: Int) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        let itemIDString = String(itemID)
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-            asteriskSeparationLine()
-            doubleSeparationLine()
-            print("Running connectDetailed function")
-            print("URL is set as:\n\(url)")
-            print("resourceType is set as:\(resourceType)")
-            detailedRequest(url: url, resourceType: resourceType, authToken: authToken)
-            appendStatus("Connecting to \(url)...")
-        }
-    }
+//    func connectDetailed(server: String, authToken: String, resourceType: ResourceType, itemID: Int) {
+//        
+//        let resourcePath = getURLFormat(data: (resourceType))
+//        let itemIDString = String(itemID)
+//        
+//        if let serverURL = URL(string: server) {
+//            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
+//            asteriskSeparationLine()
+//            doubleSeparationLine()
+//            print("Running connectDetailed function")
+//            print("URL is set as:\n\(url)")
+//            print("resourceType is set as:\(resourceType)")
+//            detailedRequest(url: url, resourceType: resourceType, authToken: authToken)
+//            appendStatus("Connecting to \(url)...")
+//        }
+//    }
     
     
     func handleConnect(server: String, authToken: String,resourceType: ResourceType) {
@@ -1177,47 +1455,47 @@ import AEXML
     //    #################################################################################
     
     
-    func detailedRequest(url: URL,resourceType: ResourceType, authToken: String) {
-        
-        asteriskSeparationLine()
-        print("Running detailedRequest function - resourceType is set as:\(resourceType)")
-        print("URL is set as:\n\(url)")
-        let headers = [
-            "Accept": "application/json",
-            "Authorization": "Bearer \(self.authToken)"
-        ]
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.allHTTPHeaderFields = headers
-        
-        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let data = data, let response = response {
-                //                self.separationLine()
-                //                self.doubleSeparationLine()
-                print("Data returned - processing detailed request")
-                
-                DispatchQueue.main.async {
-                    
-                    self.processPolicyDetail(data: data, response: response, resourceType: resourceType)
-                    
-                }
-                            
-            } else {
-                
-                var text = "\n\nDetailed Request Failed."
-                print(text)
-                print("Request is:")
-                //                print(request)
-                if let error = error {
-                    text += " \(error)."
-                }
-                DispatchQueue.main.async {
-                    self.appendStatus(text)
-                }
-            }
-        }
-        dataTask.resume()
-    }
+//    func detailedRequest(url: URL,resourceType: ResourceType, authToken: String) {
+//        
+//        asteriskSeparationLine()
+//        print("Running detailedRequest function - resourceType is set as:\(resourceType)")
+//        print("URL is set as:\n\(url)")
+//        let headers = [
+//            "Accept": "application/json",
+//            "Authorization": "Bearer \(self.authToken)"
+//        ]
+//        
+//        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+//        request.allHTTPHeaderFields = headers
+//        
+//        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
+//            if let data = data, let response = response {
+//                //                self.separationLine()
+//                //                self.doubleSeparationLine()
+//                print("Data returned - processing detailed request")
+//                
+//                DispatchQueue.main.async {
+//                    
+//                    self.processPolicyDetail(data: data, response: response, resourceType: resourceType)
+//                    
+//                }
+//                            
+//            } else {
+//                
+//                var text = "\n\nDetailed Request Failed."
+//                print(text)
+//                print("Request is:")
+//                //                print(request)
+//                if let error = error {
+//                    text += " \(error)."
+//                }
+//                DispatchQueue.main.async {
+//                    self.appendStatus(text)
+//                }
+//            }
+//        }
+//        dataTask.resume()
+//    }
     
     
     
@@ -1443,16 +1721,16 @@ import AEXML
         }
     }
     
-    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
-        DispatchQueue.main.async {
-            self.currentDetailedPolicy = policyDetailed
-            // self.status = "Computers retrieved"
-            //        self.status = ""
-            print("Adding:policyDetailed to: allPoliciesDetailed ")
-            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-            
-        }
-    }
+//    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
+//        DispatchQueue.main.async {
+//            self.policyDetailed = policyDetailed
+//            // self.status = "Computers retrieved"
+//            //        self.status = ""
+//            print("Adding:policyDetailed to: allPoliciesDetailed ")
+//            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+//            
+//        }
+//    }
     
     
     //    #################################################################################
@@ -1500,8 +1778,8 @@ import AEXML
     
     func addExistingPackages() {
         
-        if let detailed = self.currentDetailedPolicy {
-            if let policyPackages = detailed.policy.package_configuration?.packages {
+        if let detailed = self.policyDetailed {
+            if let policyPackages = detailed.package_configuration?.packages {
                 self.separationLine()
                 print("Adding currently assigned packages to packagesAssignedToPolicy:")
                 for package in policyPackages {
@@ -1512,7 +1790,7 @@ import AEXML
             }
         } else {
             self.separationLine()
-            print("No detailed policy response yet")
+            print("No addExistingPackages response yet")
         }
     }
     
@@ -1553,263 +1831,6 @@ import AEXML
     
     
     
-    
-    
-    func getBuildings(server: String, authToken: String) async throws {
-        let jamfURLQuery = server + "/JSSResource/buildings"
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        self.separationLine()
-        print("Running func: getBuildings")
-        print("url is set to:\(url)")
-        let (data, response) = try await URLSession.shared.data(for: request)
-        //        print("Json data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-        let decoder = JSONDecoder()
-        let allBuildings = try decoder.decode(Buildings.self, from: data)
-        self.buildings = allBuildings.buildings
-        //        print("buildings is set to:\(self.buildings)")
-    }
-    
-    
-    
-    func getAllPackages(server: String) async throws {
-        let jamfURLQuery = server + "/JSSResource/packages"
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-  
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running func: getAllPackages")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-        let decoder = JSONDecoder()
-        self.allPackages = try decoder.decode(Packages.self, from: data).packages
-        allPackagesComplete = true
-        print("allPackagesComplete status is set to:\(allPackagesComplete)")
-        
-    }
-    
-    func getAllScripts(server: String, authToken: String) async throws {
-        
-        print("Running func: getAllScripts")
-        
-        let jamfURLQuery = server + "/api/v1/scripts?page=0&page-size=500"
-        
-        let url = URL(string: jamfURLQuery)!
-        print("url is set to:\(url)")
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running func: getAllScripts")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-        separationLine()
-        //        print("Json data is:")
-        //                  print(String(data: data, encoding: .utf8)!)
-        let decoder = JSONDecoder()
-        //        let allScriptResults = try decoder.decode(ScriptResults.self, from: data)
-        //        let localScriptsDetailed = allScriptResults.results
-        
-        //        print("localScriptsDetailed status is set to:\(localScriptsDetailed)")
-        //        let allScriptsFullyDetailed = self.allScriptsVeryDetailed.results
-        
-    }
-    
-    func getDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
-        
-        separationLine()
-        print("Running func: getDetailedScript")
-        print("scriptID is set to:\(scriptID)")
-        
-        let jamfURLQuery = server + "/api/v1/scripts/" + String(describing: scriptID)
-        
-        let url = URL(string: jamfURLQuery)!
-        print("url is set to:\(url)")
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-
-        let decoder = JSONDecoder()
-        scriptDetailed = try decoder.decode(Script.self, from: data)
-        //        print("scriptDetailed is set to:\(scriptDetailed)")
-    }
-    
-    
-    
-    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String) async throws {
-        
-        let xml = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <script>
-            <name>\(scriptName)</name>
-            <script_contents>\(scriptContent)</script_contents>
-        </script>
-        """
-
-        
-        separationLine()
-        print("Running func: updateScript")
-        print("scriptName is set to:\(scriptName)")
-        print("scriptID is set to:\(scriptId)")
-        separationLine()
-        print("scriptContent is\(scriptContent)")
-        
-//        let scriptData = Data(scriptContent.utf8)
-        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
-//        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: URL(string: jamfURLQuery)!)
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/xml", forHTTPHeaderField: "Accept")
-        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.httpMethod = "PUT"
-        request.httpBody = xml.data(using: .utf8)
-
-//        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-    }
-    
-    
-    
-    
-    
-    func getAllPolicies(server: String) async throws {
-        let jamfURLQuery = server + "/JSSResource/policies"
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-        
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running func: getAllPolicies")
-        let (data, response) = try await URLSession.shared.data(for: request)
-        self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            print(response)
-            throw JamfAPIError.badResponseCode
-        }
-        let decoder = JSONDecoder()
-        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
-        let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
-        self.allPoliciesConverted = decodedData
-        allPoliciesComplete = true
-        separationLine()
-        //        atSeparationLine()
-        print("getAllPolicies status is set to:\(allPoliciesComplete)")
-        print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
-        print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
-    }
-    
-     
-  
-    func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
-        if self.debug_enabled == true {
-            print("Running getDetailedPolicy - policyID is:\(policyID)")
-        }
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
-        //        ########################################################
-        //        Rate limiting
-        //        ########################################################
-
-        let now = Date()
-        if let last = lastRequestDate {
-            print("Last request ran at:\(String(describing: last))")
-            let elapsed = now.timeIntervalSince(last)
-            if elapsed < minInterval {
-                let delay = minInterval - elapsed
-                print("Waiting:\(String(describing: delay))")
-                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            }
-        }
-        lastRequestDate = Date()
-                
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-            self.currentResponseCode = String(describing: statusCode)
-            print("getDetailedPolicy request error - code is:\(statusCode)")
-            throw JamfAPIError.http(statusCode)
-        }
-        
-//        ########################################################
-//        DEBUG
-//        ########################################################
-//        separationLine()
-//        print("Raw data is:")
-//        print(String(data: data, encoding: .utf8)!)
-//        ########################################################
-//        DEBUG
-//        ########################################################
-    
-        let decoder = JSONDecoder()
-        let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
-        self.policyDetailed = decodedData
-
-        if self.debug_enabled == true {
-            separationLine()
-            print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
-        }
-//      On completion add policy to array of detailed policies
-        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-    }
-    
-    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
-        
-        self.separationLine()
-        print("Running func: getAllPoliciesDetailed")
-        for policy in policies {
-            Task {
-                try await getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: policy.jamfId ?? 1))
-                
-                if policyDetailed != nil {
-                    print("Policy is:\(policy.name) - ID is:\(String(describing: policy.jamfId ?? 0))")
-                }
-            }
-        }
-    }
     
     
     @Published var showProgressView: Bool = false
@@ -2087,25 +2108,25 @@ import AEXML
     
     
     
-    func processComputerDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-        
-        separationLine()
-        print("Running: processComputerDetail")
-        
-        let decoded = PoliciesDetailReply.decode(data)
-        
-        
-        switch decoded {
-        case .success(let policyDetailed):
-            receivedPolicyDetail(policyDetailed: policyDetailed)
-            //            separationLine()
-            //            print("policyDetailed is:\(String(describing: policyDetailed.policy.general?.name ?? nil))")
-        case .failure(let error):
-            print("Decoding failed - Corrupt data. \(response) \(error)")
-            separationLine()
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
+//    func processComputerDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
+//        
+//        separationLine()
+//        print("Running: processComputerDetail")
+//        
+//        let decoded = PoliciesDetailReply.decode(data)
+//        
+//        
+//        switch decoded {
+//        case .success(let policyDetailed):
+//            receivedPolicyDetail(policyDetailed: policyDetailed)
+//            //            separationLine()
+//            //            print("policyDetailed is:\(String(describing: policyDetailed.policy.general?.name ?? nil))")
+//        case .failure(let error):
+//            print("Decoding failed - Corrupt data. \(response) \(error)")
+//            separationLine()
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
     
     
     
@@ -2151,25 +2172,25 @@ import AEXML
     //    #################################################################################
     
     
-    func processPolicyDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-        
-        separationLine()
-        print("Running: processPolicyDetail")
-        print("ResourceType is:\(String(describing: ResourceType.self))")
-        
-        let decoded = PoliciesDetailReply.decode(data)
-        
-        switch decoded {
-        case .success(let policyDetailed):
-            receivedPolicyDetail(policyDetailed: policyDetailed)
-            separationLine()
-
-        case .failure(let error):
-            print("Decoding failed - Corrupt data. \(response) \(error)")
-            separationLine()
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
+//    func processPolicyDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
+//        
+//        separationLine()
+//        print("Running: processPolicyDetail")
+//        print("ResourceType is:\(String(describing: ResourceType.self))")
+//        
+//        let decoded = PoliciesDetailReply.decode(data)
+//        
+//        switch decoded {
+//        case .success(let policyDetailed):
+//            receivedPolicyDetail(policyDetailed: policyDetailed)
+//            separationLine()
+//
+//        case .failure(let error):
+//            print("Decoding failed - Corrupt data. \(response) \(error)")
+//            separationLine()
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
     
     
     //    #################################################################################
@@ -2195,7 +2216,7 @@ import AEXML
             print("policyID is:\(policyID)")
             print("policyName is:\(policyName)")
             
-            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: Int(policyID) ?? 0)
+//            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: Int(policyID) ?? 0)
             
             let newCategoryName: String = self.selectedCategory.name
             let newCategoryID: String = String(describing: self.selectedCategory.jamfId)
@@ -2205,9 +2226,9 @@ import AEXML
             print("New categoryID is:\(newCategoryID)")
             print("policyEnDisable is:\(policyEnDisable)")
             
-            if self.currentDetailedPolicy != nil {
-                if let categoryName = self.currentDetailedPolicy?.policy.general?.category?.name {
-                    let categoryID = self.currentDetailedPolicy?.policy.general?.category?.jamfId
+            if self.policyDetailed != nil {
+                if let categoryName = self.policyDetailed?.general?.category?.name {
+                    let categoryID = self.policyDetailed?.general?.category?.jamfId
                     print("Old categoryName is:\(categoryName)")
                     print("Old categoryID is:\(String(describing: categoryID))")
                 }
@@ -2248,7 +2269,7 @@ import AEXML
             separationLine()
             print("policyID is:\(String(describing: policyID))")
             
-            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
+//            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
             
             let newCategoryName: String = self.selectedCategory.name
             let newCategoryID: String = String(describing: self.selectedCategory.jamfId)
@@ -2291,7 +2312,7 @@ import AEXML
             separationLine()
             print("policyID is:\(String(describing: policyID))")
             
-            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
+//            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
             
 //            let newCategoryName: String = self.selectedCategory.name
 //            let newCategoryID: String = String(describing: self.selectedCategory.jamfId)
