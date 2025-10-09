@@ -79,6 +79,8 @@ struct PolicySelfServiceTabView: View {
     
     @State var selectedIconString = ""
     
+    @State var newSelfServiceName = ""
+    
     //  ########################################################################################
     //  LDAP
     //  ########################################################################################
@@ -231,6 +233,23 @@ struct PolicySelfServiceTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+//                    HStack {
+                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $newSelfServiceName)
+                            .textSelection(.enabled)
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: newSelfServiceName, policyID: String(describing: policyID))
+                            
+                            networkController.separationLine()
+                            print("Name Self-Service to:\(newSelfServiceName)")
+                        }) {
+                            Text("Set Name")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+//                    }
                 }
             }
             .frame(minHeight: 1)

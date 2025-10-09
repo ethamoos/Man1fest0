@@ -394,7 +394,7 @@ struct PolicyDetailView: View {
                                 
                                 progress.showProgress()
                                 progress.waitForABit()
-                                networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyNameInitial, policyID: String(describing: policyID))
+                                networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: policyNameInitial, policyID: String(describing: policyID))
                                 
                                 networkController.separationLine()
                                 print("Name Self-Service to:\(policyName)")

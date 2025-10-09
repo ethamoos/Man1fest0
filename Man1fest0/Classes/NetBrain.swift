@@ -2522,19 +2522,19 @@ import AEXML
         }
     }
     
-    func updateSSName(server: String, authToken: String, resourceType: ResourceType, policyName: String, policyID: String) {
+    func updateSSName(server: String, authToken: String, resourceType: ResourceType, providedName: String, policyID: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
         let policyID = policyID
         var xml: String
         self.separationLine()
         print("updateSSName XML")
-        print("updateSSName is set as:\(policyName)")
+        print("updateSSName is set as:\(providedName)")
         
         xml = """
                 <policy>
                     <self_service>
-                        <self_service_display_name>\(policyName)</self_service_display_name>
+                        <self_service_display_name>\(providedName)</self_service_display_name>
                     </self_service>
                 </policy>
                 """
