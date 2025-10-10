@@ -98,11 +98,11 @@ struct PolicyScriptsTabView: View {
 //              List scripts
 // ################################################################################
 
-                if networkController.currentDetailedPolicy?.policy.scripts?.count ?? 0 > 0 {
+                if networkController.policyDetailed?.scripts?.count ?? 0 > 0 {
                     
                     Text("Scripts").bold()
 #if os(macOS)
-                    List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
+                    List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
                         //                        if script != nil {
                         var currentScript = script
                         //                    }
@@ -156,7 +156,7 @@ struct PolicyScriptsTabView: View {
                     .frame(minHeight: 100)
                     .frame(minWidth: 120, maxWidth: .infinity)
 #else
-                    List(networkController.currentDetailedPolicy?.policy.scripts ?? [PolicyScripts](), id: \.self) { script in
+                    List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self) { script in
                         HStack {
                             Image(systemName: "applescript")
                             Text(script.name ?? "" )

@@ -145,7 +145,7 @@
 //                                   
 //    var body: some View {
 //        
-////        var currentSelectedPolicyID = String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0)
+////        var currentSelectedPolicyID = String(describing: networkController.policyDetailed?.general?.jamfId ?? 0)
 //
 //        VStack(alignment: .leading) {
 //            
@@ -159,11 +159,11 @@
 ////#if os(macOS)
 //                VStack(alignment: .leading) {
 //                    
-//                    Text("Jamf Name:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.name ?? "Blank")\n")
-//                    Text("Enabled Status:\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.enabled ?? true))\n")
-//                    Text("Policy Trigger:\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "")\n")
-//                    Text("Category:\t\t\t\t\t\(networkController.currentDetailedPolicy?.policy.general?.category?.name ?? "")\n")
-//                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))" )
+//                    Text("Jamf Name:\t\t\t\t\(networkController.policyDetailed?.general?.name ?? "Blank")\n")
+//                    Text("Enabled Status:\t\t\t\(String(describing: networkController.policyDetailed?.general?.enabled ?? true))\n")
+//                    Text("Policy Trigger:\t\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
+//                    Text("Category:\t\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
+//                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))" )
 //                }
 //                .textSelection(.enabled)
 //                .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
@@ -213,7 +213,7 @@
 //                        progress.waitForABit()
 //                        
 //                        if policyName.isEmpty == true {
-//                            policyNameInitial = networkController.currentDetailedPolicy?.policy.general?.name ?? ""
+//                            policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
 //                            let newPolicyName = "\(policyNameInitial)1"
 //                            print("No name provided - policy is:\(newPolicyName)")
 //                            policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
@@ -288,7 +288,7 @@
 //                    
 //                    HStack {
 //
-//                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyNameInitial, text: $policyName)
+//                        TextField(networkController.policyDetailed?.general?.name ?? policyNameInitial, text: $policyName)
 //                            .textSelection(.enabled)
 //                        
 //                        Button(action: {
@@ -308,7 +308,7 @@
 //                    //              ################################################################################
 //                    
 //                    HStack {
-//                        TextField(networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? "", text: $policyCustomTrigger)
+//                        TextField(networkController.policyDetailed?.general?.triggerOther ?? "", text: $policyCustomTrigger)
 //                            .textSelection(.enabled)
 //                        Button(action: {
 //                            
@@ -333,7 +333,7 @@
 ////                LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
 //                    
 //                    HStack {
-//                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $policyName)
+//                        TextField(networkController.policyDetailed?.general?.name ?? policyName, text: $policyName)
 //                            .textSelection(.enabled)
 //                        Button(action: {
 //                            
@@ -379,8 +379,8 @@
 //                            progress.showProgress()
 //                            progress.waitForABit()
 //                            
-//                            categoryID = (String(describing: networkController.currentDetailedPolicy?.policy.general?.jamfId ?? 0))
-//                            categoryName = networkController.currentDetailedPolicy?.policy.general?.category?.name ?? ""
+//                            categoryID = (String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))
+//                            categoryName = networkController.policyDetailed?.general?.category?.name ?? ""
 //                            
 //                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
 //                        }) {
@@ -486,14 +486,16 @@
 //
 //            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
 //  
-//            networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+//               Task {
+//                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+//                    }
 //            
 //            //  ################################################################################
 ////    ENABLE DISABLE
 //            //  ################################################################################
 //
 //            print("Setting policy enable status")
-//            enableDisableStatus = ((networkController.currentDetailedPolicy?.policy.general?.enabled) != nil)
+//            enableDisableStatus = ((networkController.policyDetailed?.general?.enabled) != nil)
 //            enableDisableButton = enableDisableStatus
 //            print("enableDisableStatus is:\(String(describing: enableDisableStatus)) for policy:\(policyID)")
 //            

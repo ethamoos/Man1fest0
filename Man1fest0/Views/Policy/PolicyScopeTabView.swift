@@ -112,6 +112,17 @@ struct PolicyScopeTabView: View {
 //    Computed property to combine number and unit
     private var combinedInterval: String { "\(selectedIntervalNumber)+\(selectedIntervalUnit)" }
     
+    @State var computerSearchText = ""
+
+    // Computed property to filter and limit computers for Picker
+    var filteredComputers: [Computer] {
+        if computerSearchText.isEmpty {
+            return Array(networkController.computers.prefix(100))
+        } else {
+            return networkController.computers.filter { $0.name.localizedCaseInsensitiveContains(computerSearchText) }
+        }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading) {
@@ -131,7 +142,7 @@ struct PolicyScopeTabView: View {
                         //  Show All Computers scoping
                         //  ################################################################################
                         
-                        if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
+                        if networkController.policyDetailed?.scope?.allComputers == true {
                             Text("Scoped To All Computers").font(.subheadline)
                         } else {
                             Text("All Computers is not enabled").font(.subheadline)
@@ -142,12 +153,12 @@ struct PolicyScopeTabView: View {
                         //  ################################################################################
                         
                         Divider()
-                        if networkController.currentDetailedPolicy?.policy.scope?.computers?.count == 0 {
+                        if networkController.policyDetailed?.scope?.computers?.count == 0 {
                             Text("Not Scoped to any individual Computers").font(.subheadline)
                         } else {
                             VStack(alignment:.leading){
                                 Text("Computers: ").font(.headline)
-                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.computers ?? []) {computer in
+                                ForEach(networkController.policyDetailed?.scope?.computers ?? []) {computer in
                                     Text(String(computer.name)).font(.subheadline)}}
                             .padding()
                         }
@@ -157,12 +168,12 @@ struct PolicyScopeTabView: View {
                         //  ################################################################################
                         
                         Divider()
-                        if networkController.currentDetailedPolicy?.policy.scope?.departments?.count == 0 {
+                        if networkController.policyDetailed?.scope?.departments?.count == 0 {
                             Text("Not Scoped to any Departments").font(.subheadline)
                         } else {
                             VStack(alignment:.leading){
                                 Text("Departments: ").font(.headline)
-                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.departments ?? []) {department in
+                                ForEach(networkController.policyDetailed?.scope?.departments ?? []) {department in
                                     Text(String(department.name)).font(.subheadline)}}
                             .padding()
                         }
@@ -172,12 +183,12 @@ struct PolicyScopeTabView: View {
                         //  ################################################################################
                         
                         Divider()
-                        if networkController.currentDetailedPolicy?.policy.scope?.computerGroups?.count == 0 {
+                        if networkController.policyDetailed?.scope?.computerGroups?.count == 0 {
                             Text("Not Scoped to any Groups").font(.subheadline)
                         } else {
                             VStack(alignment:.leading){
                                 Text("Computer Groups: ").font(.headline)
-                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.computerGroups ?? []) {computerGroups in
+                                ForEach(networkController.policyDetailed?.scope?.computerGroups ?? []) {computerGroups in
                                     Text(String(computerGroups.name ?? "")).font(.subheadline)}}
                             .padding()
                         }
@@ -187,12 +198,12 @@ struct PolicyScopeTabView: View {
                         //  ################################################################################
                         
                         Divider()
-                        if networkController.currentDetailedPolicy?.policy.scope?.buildings?.count == 0 {
+                        if networkController.policyDetailed?.scope?.buildings?.count == 0 {
                             Text("Not Scoped to any Buildings").font(.subheadline)
                         } else {
                             VStack(alignment:.leading){
                                 Text("Buildings: ").font(.headline)
-                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.buildings ?? []) {building in
+                                ForEach(networkController.policyDetailed?.scope?.buildings ?? []) {building in
                                     Text(String(building.name)).font(.subheadline)}}
                             .padding()
                         }
@@ -328,117 +339,105 @@ struct PolicyScopeTabView: View {
                            
                             Divider()
 
-                            DisclosureGroup("Edit Scoping") {
-                                
+                             DisclosureGroup("Edit Scoping") {
                                 Group {
                                     VStack(alignment: .leading) {
-//                                        LazyVGrid(columns: layout.column, spacing: 10) {
-                                            //                                            HStack(spacing: 10) {
+                                        LazyVGrid(columns: layout.column, spacing: 10) {
                                             Toggle("", isOn: $allComputersButton)
                                                 .toggleStyle(SwitchToggleStyle(tint: .red))
                                                 .onChange(of: allComputersButton) { value in
-                                                    print("allComputersButton changed - value is now:\(value) for policy:\(policyID)")
-                                                    
-                                                    if value == true {
-                                                        xmlController.enableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
-                                                    } else {
-                                                        xmlController.disableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                    Task {
+                                                        print("allComputersButton changed - value is now:\(value) for policy:\(policyID)")
+                                                        if value == true {
+                                                            await xmlController.enableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                        } else {
+                                                            await xmlController.disableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                        }
                                                     }
                                                 }
 #if os(macOS)
-                                            if networkController.currentDetailedPolicy?.policy.scope?.allComputers == true {
+                                            if networkController.policyDetailed?.scope?.allComputers == true {
                                                 Text("All Computers")
-                                                
                                             } else {
                                                 Text("Specific Computers")
-                                                
-                                                
                                                 HStack {
-                                                    LazyVGrid(columns: layout.threeColumnsFixed, spacing: 10) {
-                                                        TextField("Filter computers", text: $computerFilter)
+                                                    VStack(alignment: .leading) {
+                                                        TextField("Search Computers", text: $computerSearchText)
                                                         Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
-                                                            ForEach(networkController.computers.filter { computerFilter.isEmpty ? true : $0.name.localizedCaseInsensitiveContains(computerFilter) }, id: \ .self) { comp in
-                                                                Text(String(describing: comp.name))
-                                                                    .tag(comp as Computer?)
-                                                            }
-                                                        }
-                                                        
-                                                        Button(action: {
-                                                            
-                                                            progress.showProgress()
-                                                            progress.waitForABit()
-                                                            
-                                                            networkController.separationLine()
-                                                            print("addComputerToPolicyScope policy:\(String(describing: policyID))")
-                                                            
-                                                            print("Run getPolicyAsXML to ensure we have the latest version of the policy")
-                                                            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                                                            
-                                                            xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
-                                                        }) {
-                                                            HStack(spacing: 10) {
-                                                                Image(systemName: "plus.square.fill.on.square.fill")
-                                                                Text("Add Computer")
+                                                            ForEach(filteredComputers, id: \ .id) { comp in
+                                                                Text(comp.name).tag(comp)
                                                             }
                                                         }
                                                     }
+                                                    Button(action: {
+                                                        progress.showProgress()
+                                                        progress.waitForABit()
+                                                        networkController.separationLine()
+                                                        print("addComputerToPolicyScope policy:\(String(describing: policyID))")
+                                                        print("Run getPolicyAsXML to ensure we have the latest version of the policy")
+                                                        xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+                                                        xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
+                                                    }) {
+                                                        HStack(spacing: 10) {
+                                                            Image(systemName: "plus.square.fill.on.square.fill")
+                                                            Text("Add Computer")
+                                                        }
+                                                    }
+                                                }
+                                                HStack {
+                                                    Button(action: {
+                                                        showingWarningClearComputers = true
+                                                        progress.showProgress()
+                                                        progress.waitForABit()
+                                                    }) {
+                                                        HStack(spacing: 10) {
+                                                            Image(systemName: "eraser")
+                                                            Text("Clear Computers")
+                                                        }
+                                                        .alert(isPresented: $showingWarningClearComputers) {
+                                                            Alert(
+                                                                title: Text("Caution!"),
+                                                                message: Text("This action will clear any individually assigned computers from this policy scoping.\n You will need to rescope in order to deploy"),
+                                                                primaryButton: .destructive(Text("I understand!")) {
+                                                                    // Code to execute when "Yes" is tapped
+                                                                    networkController.clearComputers(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
+                                                                    print("Yes tapped")
+                                                                },
+                                                                secondaryButton: .cancel()
+                                                            )
+                                                        }
+                                                    }
+                                                    .buttonStyle(.borderedProminent)
+                                                    .tint(.red)
                                                     
-                                                    HStack {
-                                                        Button(action: {
-                                                            showingWarningClearComputers = true
-                                                            progress.showProgress()
-                                                            progress.waitForABit()
-                                                        }) {
-                                                            HStack(spacing: 10) {
-                                                                Image(systemName: "eraser")
-                                                                Text("Clear Computers")
-                                                            }
-                                                            .alert(isPresented: $showingWarningClearComputers) {
-                                                                Alert(
-                                                                    title: Text("Caution!"),
-                                                                    message: Text("This action will clear any individually assigned computers from this policy scoping.\n You will need to rescope in order to deploy"),
-                                                                    primaryButton: .destructive(Text("I understand!")) {
-                                                                        // Code to execute when "Yes" is tapped
-                                                                        networkController.clearComputers(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
-                                                                        print("Yes tapped")
-                                                                    },
-                                                                    secondaryButton: .cancel()
-                                                                )
-                                                            }
+                                                    Button(action: {
+                                                        showingWarningClearComputerGroups = true
+                                                        progress.showProgress()
+                                                        progress.waitForABit()
+                                                    }) {
+                                                        HStack(spacing: 10) {
+                                                            Image(systemName: "eraser")
+                                                            Text("Clear Computer Groups")
                                                         }
-                                                        .buttonStyle(.borderedProminent)
-                                                        .tint(.red)
-                                                        
-                                                        Button(action: {
-                                                            showingWarningClearComputerGroups = true
-                                                            progress.showProgress()
-                                                            progress.waitForABit()
-                                                        }) {
-                                                            HStack(spacing: 10) {
-                                                                Image(systemName: "eraser")
-                                                                Text("Clear Computer Groups")
-                                                            }
-                                                            .alert(isPresented: $showingWarningClearComputerGroups) {
-                                                                Alert(
-                                                                    title: Text("Caution!"),
-                                                                    message: Text("This action will clear all static or smart computer groups from this policy scoping.\n You will need to rescope in order to deploy"),
-                                                                    primaryButton: .destructive(Text("I understand!")) {
-                                                                        // Code to execute when "Yes" is tapped
-                                                                        networkController.clearComputerGroups(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
-                                                                        print("Yes tapped")
-                                                                    },
-                                                                    secondaryButton: .cancel()
-                                                                )
-                                                            }
+                                                        .alert(isPresented: $showingWarningClearComputerGroups) {
+                                                            Alert(
+                                                                title: Text("Caution!"),
+                                                                message: Text("This action will clear all static or smart computer groups from this policy scoping.\n You will need to rescope in order to deploy"),
+                                                                primaryButton: .destructive(Text("I understand!")) {
+                                                                    // Code to execute when "Yes" is tapped
+                                                                    networkController.clearComputerGroups(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
+                                                                    print("Yes tapped")
+                                                                },
+                                                                secondaryButton: .cancel()
+                                                            )
                                                         }
-                                                        .buttonStyle(.borderedProminent)
-                                                        .tint(.red)
                                                     }
-                                                   
+                                                    .buttonStyle(.borderedProminent)
+                                                    .tint(.red)
                                                 }
                                             }
 #endif
-//                                        }
+                                        }
                                     }
                                 }
                               
@@ -585,11 +584,11 @@ struct PolicyScopeTabView: View {
                                     
                                     Divider()
                                     
-                                    if networkController.currentDetailedPolicy?.policy.scope?.limitations?.userGroups?.count != 0 {
+                                    if networkController.policyDetailed?.scope?.limitations?.userGroups?.count != 0 {
                                             
                                             VStack(alignment:.leading){
                                                 
-                                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.limitations?.userGroups ?? []) {limitation in
+                                                ForEach(networkController.policyDetailed?.scope?.limitations?.userGroups ?? []) {limitation in
                                                     Text(String(limitation.name ?? "")).font(.subheadline)}
                                             }
                                             .padding()
@@ -724,36 +723,36 @@ struct PolicyScopeTabView: View {
                                 Text("Exclusions: ").font(.headline)
                                 Divider()
                                         
-                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computers?.count == 0 {
+                                        if networkController.policyDetailed?.scope?.exclusions?.computers?.count == 0 {
                                             Text("No Computers Excluded").font(.subheadline).padding(.bottom,10)
                                         } else {
                                             
                                             Text("Excluded Computers").font(.subheadline.bold()).padding(.bottom,10)
                                             VStack(alignment:.leading){
-                                                ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computers ?? []) {computer in
+                                                ForEach(networkController.policyDetailed?.scope?.exclusions?.computers ?? []) {computer in
                                                     Text(computer.name ?? "")}.padding(.bottom,10)
                                             }
                                         }
                                         //                                        .padding()
-                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computerGroups?.count == 0 {
+                                        if networkController.policyDetailed?.scope?.exclusions?.computerGroups?.count == 0 {
                                             Text("No Computer Groups Excluded").font(.subheadline).padding(.bottom,10)
                                         } else {
                                             Text("Excluded Computer Groups").font(.subheadline.bold()).padding(.bottom,10)
-                                            ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.computerGroups ?? []) {computerGroup in
+                                            ForEach(networkController.policyDetailed?.scope?.exclusions?.computerGroups ?? []) {computerGroup in
                                                 Text(computerGroup.name ?? "")}.padding(.bottom,10)
                                         }
-                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments?.count == 0 {
+                                        if networkController.policyDetailed?.scope?.exclusions?.departments?.count == 0 {
                                             Text("No Departments Excluded").font(.subheadline).padding(.bottom,10)
                                         } else {
                                             Text("Excluded Departments").font(.subheadline.bold()).padding(.bottom,10)
-                                            ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments ?? []) {department in
+                                            ForEach(networkController.policyDetailed?.scope?.exclusions?.departments ?? []) {department in
                                                 Text(department.name ?? "")}.padding(.bottom,10)
                                         }
-                                        if networkController.currentDetailedPolicy?.policy.scope?.exclusions?.departments?.count == 0 {
+                                        if networkController.policyDetailed?.scope?.exclusions?.departments?.count == 0 {
                                             Text("No Buildings Excluded").font(.subheadline).padding(.bottom,10)
                                         } else {
                                             Text("Excluded Buildings").font(.subheadline.bold()).padding(.bottom,10)
-                                            ForEach(networkController.currentDetailedPolicy?.policy.scope?.exclusions?.buildings ?? []) {building in
+                                            ForEach(networkController.policyDetailed?.scope?.exclusions?.buildings ?? []) {building in
                                                 Text(building.name ?? "")}.padding(.bottom,10)
                                         }
                                         Button(action: {

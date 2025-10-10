@@ -34,7 +34,7 @@ struct PoliciesActionView: View {
     
     @State var categories: [Category] = []
     
-    @State  var categorySelection: Category = Category(jamfId: 0, name: "")
+    @State  var categorySelection: Category? = nil
     
     @State var enableDisable: Bool = true
     
@@ -91,7 +91,7 @@ struct PoliciesActionView: View {
     
     @State var ldapUserGroupId2 = ""
     
-    @State var ldapServerSelection: LDAPServer = LDAPServer(id: 0, name: "")
+    @State var ldapServerSelection: LDAPServer? = nil
     
     @State var ldapSearchCustomGroupSelection = LDAPCustomGroup(uuid: "", ldapServerID: 0, id: "", name: "", distinguishedName: "")
     @State var ldapSearchCustomGroupSelection2 = LDAPCustomGroup(uuid: "", ldapServerID: 0, id: "", name: "", distinguishedName: "")
@@ -103,7 +103,7 @@ struct PoliciesActionView: View {
     //    SELECTIONS
     //    ########################################################################################
     
-    @State var computerGroupSelection = ComputerGroup(id: 0, name: "", isSmart: false)
+    @State var computerGroupSelection: ComputerGroup? = nil
     
     @State private var allComputersSmartEnable = false
     @State private var allComputersStaticEnable = false
@@ -155,6 +155,8 @@ struct PoliciesActionView: View {
                         print("xmlController.currentPolicyAsXML is populated")
                     }
                 }
+                
+                
                 .toolbar {
                     
                     Button(action: {
@@ -231,10 +233,13 @@ struct PoliciesActionView: View {
                             progress.showProgressView = true
                             networkController.processingComplete = false
                             progress.waitForABit()
-                            print("Setting category to:\(String(describing: categorySelection))")
+                            if let selectedCategory = categorySelection {
+                                print("Setting category to:\(String(describing: selectedCategory))")
+                                networkController.selectedCategory = selectedCategory
+                            } else {
+                                print("No category selected")
+                            }
                             print("Policy enable/disable status is set as:\(String(describing: enableDisable))")
-                            
-                            networkController.selectedCategory = categorySelection
                             networkController.processUpdatePolicies(selection: policiesSelection, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
                             
                         }) {
@@ -293,18 +298,28 @@ struct PoliciesActionView: View {
                     // ######################################################################
 
                     Divider()
-                    
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 300)), GridItem(.flexible(minimum: 200))], spacing: 20) {
-                        
                         HStack {
-                            Picker(selection: $categorySelection, label: Text("Category:\t\t")) {
-                                Text("").tag("") //basically added empty tag and it solve the case
-                                ForEach(networkController.categories, id: \.self) { category in
-                                    Text(String(describing: category.name))
+                            if !networkController.categories.isEmpty {
+                                Picker(selection: $categorySelection, label: Text("Category:\t\t")) {
+                                    Text("No category selected").tag(nil as Category?)
+                                    ForEach(networkController.categories, id: \.self) { category in
+                                        Text(category.name).tag(category as Category?)
+                                    }
                                 }
+                                .onAppear {
+                                    if !networkController.categories.isEmpty {
+                                        categorySelection = networkController.categories.first
+                                    }
+                                }
+                                .onChange(of: networkController.categories) { newCategories in
+                                    if !newCategories.isEmpty {
+                                        categorySelection = newCategories.first
+                                    }
+                                }
+                            } else {
+                                Text("No categories available")
                             }
-                            
-                            
                         }
                     }
                     
@@ -438,10 +453,10 @@ struct PoliciesActionView: View {
                         LazyVGrid(columns: layout.columns, spacing: 10) {
                             Picker(selection: $computerGroupSelection, label:Label("Static Groups", systemImage: "person.3")
                             ) {
-                                Text("").tag("")
+                                Text("No group selected").tag(nil as ComputerGroup?)
                                 ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
                                     if group.isSmart != true {
-                                        Text(String(describing: group.name))
+                                        Text(String(describing: group.name)).tag(group as ComputerGroup?)
                                     }
                                 }
                             }
@@ -461,7 +476,11 @@ struct PoliciesActionView: View {
 //            ################################################################################
                               
                                 Task {
-                                    await updateScopeCompGroupSet(groupSelection: computerGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: "true", all_computersStatus: allComputersStaticEnable)
+                                    if let groupSelection = computerGroupSelection {
+                                        await updateScopeCompGroupSet(groupSelection: groupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: "true", all_computersStatus: allComputersStaticEnable)
+                                    } else {
+                                        print("No group selected for updateScopeCompGroupSet")
+                                    }
                                 }
                                 
                             }) {
@@ -476,10 +495,10 @@ struct PoliciesActionView: View {
                             
                             Picker(selection: $computerGroupSelection, label:Label("Smart Groups", systemImage: "person.3")
                             ) {
-                                Text("").tag("")
+                                Text("No group selected").tag(nil as ComputerGroup?)
                                 ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
                                     if group.isSmart == true {
-                                        Text(String(describing: group.name))
+                                        Text(String(describing: group.name)).tag(group as ComputerGroup?)
                                     }
                                 }
                             }
@@ -499,7 +518,11 @@ struct PoliciesActionView: View {
 //            ################################################################################
                                 
                                 Task {
-                                    await updateScopeCompGroupSet(groupSelection: computerGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: "true", all_computersStatus: allComputersSmartEnable)
+                                    if let groupSelection = computerGroupSelection {
+                                        await updateScopeCompGroupSet(groupSelection: groupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: "true", all_computersStatus: allComputersSmartEnable)
+                                    } else {
+                                        print("No group selected for updateScopeCompGroupSet")
+                                    }
                                 }
                                 
                             }) {
@@ -629,9 +652,9 @@ struct PoliciesActionView: View {
                     
                     LazyVGrid(columns: layout.threeColumns, spacing: 20) {
                         Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:").bold()) {
-                            Text("").tag("") //basically added empty tag and it solve the case
-                            ForEach(scopingController.allLdapServers, id: \.self) { group in
-                                Text(String(describing: group.name))
+                            Text("No server selected").tag(nil as LDAPServer?)
+                            ForEach(scopingController.allLdapServers, id: \.self) { server in
+                                Text(String(describing: server.name)).tag(server as LDAPServer?)
                             }
                         }
                     }
@@ -851,7 +874,6 @@ struct PoliciesActionView: View {
         }
     }
 }
-
 
 
 //struct PoliciesActionView_Previews: PreviewProvider {
