@@ -75,7 +75,7 @@ struct PolicyActionsDetailTableView: View {
 //            isAscending.toggle()
 //            networkController.allPoliciesDetailedGeneral.sort { isAscending ? $0.General.enabled && !$1.General.enabled : !$0.General.enabled && $1.General.enabled }
 //        }
-//        
+//
 //        Table(searchResults, sortOrder: $sortOrder2) {
 //            TableColumn("Name", value: \.name)
 ////            TableColumn("Active") { item in
@@ -128,48 +128,26 @@ struct PolicyActionsDetailTableView: View {
         
         
         Table(searchResults, selection: $selectedPolicyIDs, sortOrder: $sortOrder) {
-            
-            TableColumn("Name", value: \.name!) {
-                policy in
+            TableColumn("Name") { policy in
                 Text(String(policy.name ?? ""))
+                    .textSelection(.enabled)
             }
-            
-//            TableColumn("Enabled") {
-//                policy in
-//                Text(policy.enabled ? "true" : "false")
-//            }
-            
-            TableColumn("Category", value: \.category!.name)
-
-            
-            TableColumn("Enabled") {
-                policy in
+            TableColumn("Category") { policy in
+                Text(policy.category?.name ?? "")
+                    .textSelection(.enabled)
+            }
+            TableColumn("Enabled") { policy in
                 Text(String(policy.enabled ?? true))
+                    .textSelection(.enabled)
             }
-            
-//            TableColumn("Active") { item in
-//                           Text(item.isActive ? "Yes" : "No")
-//                       }
-            
-            TableColumn("ID", value: \.jamfId!) {
-                policy in
+            TableColumn("ID") { policy in
                 Text(String(policy.jamfId ?? 0))
+                    .textSelection(.enabled)
             }
-            
-            //            TableColumn("Scope", value: \.scope!) {
-            //                policy in
-            //                Text(String(policy.scope ?? ""))
-            //            }
-            
-            TableColumn("Trigger", value: \.triggerOther!) {
-                policy in
-                Text(String(policy.triggerOther ?? ""))
+            TableColumn("Trigger") { policy in
+                Text(policy.triggerOther ?? "")
+                    .textSelection(.enabled)
             }
-            
-            //            TableColumn("Scripts", value: \.parameter4!) {
-            //                policy in
-            //                Text(String(policy.scripts ?? ""))
-            //            }
         }
         .searchable(text: $searchText)
         .onChange(of: sortOrder) { newOrder in
@@ -203,6 +181,26 @@ struct PolicyActionsDetailTableView: View {
                         Image(systemName: "arrow.clockwise")
                         Text("Reset")
                     }
+                    Button(action: {
+                        let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
+                        let rowsString = selectedRows.map { policy in
+                            [
+                                String(policy.name ?? ""),
+                                policy.category?.name ?? "",
+                                String(policy.enabled ?? true),
+                                String(policy.jamfId ?? 0),
+                                policy.triggerOther ?? ""
+                            ].joined(separator: "\t")
+                        }.joined(separator: "\n")
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.setString(rowsString, forType: .string)
+                    }) {
+                        Image(systemName: "doc.on.doc")
+                        Text("Copy Selected")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(selectedPolicyIDs.isEmpty)
                 }
             }
         }
