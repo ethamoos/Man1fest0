@@ -339,11 +339,13 @@ struct OptionsView: View {
                             networkController.needsCredentials = true
                         }) {
                             HStack {
-                                Label("Connect", systemImage: networkController.connected ? "bolt.horizontal.fill" : "bolt.horizontal")
+//                                Label("Connect", systemImage: networkController.connected ? "bolt.horizontal.fill" : "bolt.horizontal")
                                 Text("Connect")
                             }
                             .foregroundColor(.blue)
                         }
+                        
+                      
                     }
                  
                     ToolbarItem(id: "Status") {
@@ -355,6 +357,23 @@ struct OptionsView: View {
                                     .foregroundColor(.green)
                             }
                         }
+                    }
+                    
+                    ToolbarItem(id: "Refresh") {
+                        Button(action: {
+                            
+                            Task {
+                                try? await networkController.getToken(server: server, username: username, password: networkController.password)
+                            }
+                        }) {
+                            HStack {
+//                                Text("Refresh")
+                                Image(systemName: "arrow.clockwise")
+
+                            }
+                            .foregroundColor(.blue)
+                        }
+//                    }
                     }
                 }
                 .foregroundColor(.blue)

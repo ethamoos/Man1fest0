@@ -306,7 +306,15 @@ struct PolicyDetailView: View {
                     progress.waitForABit()
                     
                     xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                    networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+                    
+//                    networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+                    
+                    Task {
+                        
+                        
+                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    }
+                    
                     xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                     print("Refresh detailPolicyView")
                     
