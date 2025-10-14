@@ -258,6 +258,17 @@ struct PolicySelfServiceTabView: View {
             
             
         }
+        .onAppear{
+            if networkController.allIconsDetailed.count <= 1 {
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                Task {
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+                }
+            } else {
+                print("getAllIconsDetailed has already run")
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+            }
+        }
     }
 }
     

@@ -47,10 +47,7 @@ struct PolicyPackageTabView: View {
 //              ################################################################################
 
 
-    
     @State var selectedPackage: Package? = nil
-    
-    @State private var selection: Package? = nil
     
     var body: some View {
         
@@ -60,11 +57,11 @@ struct PolicyPackageTabView: View {
             //              List packages
             //              ################################################################################
             
-            if let currentPolicyPackages = networkController.currentDetailedPolicy?.policy.package_configuration?.packages {
+            if let currentPolicyPackages = networkController.policyDetailed?.package_configuration?.packages {
                 
                 if currentPolicyPackages.count >= 1 {
                     
-                    List(currentPolicyPackages, id: \.self, selection: $selection) { package in
+                    List(currentPolicyPackages, id: \.self) { package in
                         
                         HStack {
                             Image(systemName: "suitcase")
@@ -105,22 +102,37 @@ struct PolicyPackageTabView: View {
                 //  ################################################################################
                 
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
-                
                 HStack {
                     TextField("Filter", text: $packageFilter)
                     Picker(selection: $selectedPackage, label: Text("").bold()) {
-                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)}), id: \.self) { package in
+                        Text("No package selected").tag(nil as Package?)
+                        ForEach(networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }, id: \ .self) { package in
                             Text(String(describing: package.name))
                                 .tag(package as Package?)
-                                .tag(selectedPackage as Package?)
                         }
                     }
-                    
                     .onAppear {
-                        
-                        if networkController.packages.count >= 1 {
-                            print("Setting package picker default")
-                            selectedPackage = networkController.packages[0] }
+                        let filtered = networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
+                        selectedPackage = filtered.first
+                    }
+                    .onChange(of: networkController.packages) { newPackages in
+                        let filtered = newPackages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
+                        selectedPackage = filtered.first
+                    }
+                    .onChange(of: packageFilter) { newFilter in
+                        let filtered = networkController.packages.filter { newFilter.isEmpty ? true : $0.name.contains(newFilter) }
+                        if let selected = selectedPackage, !filtered.contains(selected) {
+                            selectedPackage = filtered.first
+                        }
+                        if filtered.isEmpty {
+                            selectedPackage = nil
+                        }
+                    }
+                    .onChange(of: selectedPackage) { newSelection in
+                        let filtered = networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
+                        if let selected = newSelection, !filtered.contains(selected) {
+                            selectedPackage = filtered.first
+                        }
                     }
                 }
             }
