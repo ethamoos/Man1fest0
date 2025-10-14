@@ -144,34 +144,7 @@ class XmlBrain: ObservableObject {
     }
     
     
-    func getPolicyAsXMLAwait(server: String, authToken: String, policyID: String) async throws {
-        
-        let policyIdString = String(describing: policyID )
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
-        let url = URL(string: jamfURLQuery)!
-        
-        let headers = [
-            "Accept": "application/xml",
-            "Content-Type": "application/xml",
-            "Authorization": "Bearer \(authToken)" ]
-        
-        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = "GET"
-        print("Running: getPolicyAsXMLAwait")
-        print("policyID set as: \(policyID)")
-        print("jamfURLQuery set as: \(jamfURLQuery)")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-        Task {
-            self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
-        }
-    }
-    
+   
     
     //    #################################################################################
     //    COMPUTER GROUPS
@@ -926,54 +899,6 @@ class XmlBrain: ObservableObject {
             }
         }
         dataTask.resume()
-    }
-    
-    
-    //   #################################################################################
-    //   getPolicyAsXML
-    //   #################################################################################
-    
-    func getPolicyAsXML(server: String, policyID: Int, authToken: String) {
-
-        let policyIdString = String(describing: policyID )
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
-        let url = URL(string: jamfURLQuery)!
-
-        let headers = [
-            "Accept": "application/xml",
-            "Content-Type": "application/xml",
-            "Authorization": "Bearer \(authToken)" ]
-
-        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = "GET"
-        separationLine()
-        print("Running: xmlController.getPolicyAsXML")
-        print("policyID set as: \(policyID)")
-        print("jamfURLQuery set as: \(jamfURLQuery)")
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data else {
-                //                separationLine()
-                print("getPolicyAsXML failed")
-                print(String(describing: error))
-                return
-            }
-
-            //            #########################################################################
-            //            DEBUG - CHECK XML
-            //            self.separationLine()
-            //                        print("xmlController.getPolicyAsXML data is:")
-            //                        print(String(data: data, encoding: .utf8)!)
-            //            #########################################################################
-
-            DispatchQueue.main.async {
-                self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
-                print("Set updateXML to false")
-                self.updateXML = false
-            }
-        }
-        task.resume()
     }
     
     
@@ -2026,8 +1951,89 @@ class XmlBrain: ObservableObject {
             throw JamfAPIError.badResponseCode
         }
         self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
-        return self.currentPolicyAsXML
+//        return self.currentPolicyAsXML
+        return (String(data: data, encoding: .utf8)!)
+
     }
+    
+    
+    
+    //   #################################################################################
+    //   getPolicyAsXML
+    //   #################################################################################
+    
+    func getPolicyAsXML(server: String, policyID: Int, authToken: String) {
+
+        let policyIdString = String(describing: policyID )
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
+        let url = URL(string: jamfURLQuery)!
+
+        let headers = [
+            "Accept": "application/xml",
+            "Content-Type": "application/xml",
+            "Authorization": "Bearer \(authToken)" ]
+
+        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
+        request.allHTTPHeaderFields = headers
+        request.httpMethod = "GET"
+        separationLine()
+        print("Running: xmlController.getPolicyAsXML")
+        print("policyID set as: \(policyID)")
+        print("jamfURLQuery set as: \(jamfURLQuery)")
+
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data else {
+                //                separationLine()
+                print("getPolicyAsXML failed")
+                print(String(describing: error))
+                return
+            }
+
+            //            #########################################################################
+            //            DEBUG - CHECK XML
+            //            self.separationLine()
+            //                        print("xmlController.getPolicyAsXML data is:")
+            //                        print(String(data: data, encoding: .utf8)!)
+            //            #########################################################################
+
+            DispatchQueue.main.async {
+                self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
+                print("Set updateXML to false")
+                self.updateXML = false
+            }
+        }
+        task.resume()
+    }
+    
+    func getPolicyAsXMLAwait(server: String, authToken: String, policyID: String) async throws {
+        
+        let policyIdString = String(describing: policyID )
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
+        let url = URL(string: jamfURLQuery)!
+        
+        let headers = [
+            "Accept": "application/xml",
+            "Content-Type": "application/xml",
+            "Authorization": "Bearer \(authToken)" ]
+        
+        var request = URLRequest(url: url,timeoutInterval: Double.infinity)
+        request.allHTTPHeaderFields = headers
+        request.httpMethod = "GET"
+        print("Running: getPolicyAsXMLAwait")
+        print("policyID set as: \(policyID)")
+        print("jamfURLQuery set as: \(jamfURLQuery)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        Task {
+            self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
+        }
+    }
+    
+    
     
     //    #################################################################################
     //    updateScopeCompGroupSingle

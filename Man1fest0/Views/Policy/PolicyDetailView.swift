@@ -304,19 +304,18 @@ struct PolicyDetailView: View {
                     print("Refresh detailPolicyView")
                     progress.showProgress()
                     progress.waitForABit()
-                    
-                    xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                    
-//                    networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID)
+
                     
                     Task {
-                        
-                        
-                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                        do {
+                            let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                            
+                            xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                        } catch {
+                            print("Fetching detailed policy as xml failed: \(error)")
+                        }
                     }
                     
-                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-                    print("Refresh detailPolicyView")
                     
                 }) {
                     HStack(spacing: 10) {
