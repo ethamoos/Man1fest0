@@ -189,6 +189,14 @@ struct General: Codable, Hashable, Identifiable {
         case ip_address = "ip_address"
 //        case payloads = "payloads"
     }
+    
+    var enabledInt: Int {
+        enabled == true ? 1 : 0
+    }
+    var categoryNameForSort: String { category?.name ?? "" }
+    var nameForSort: String { name ?? "" }
+    var triggerOtherForSort: String { triggerOther ?? "" }
+    var jamfIdForSort: Int { jamfId ?? 0 }
 }
 
 
@@ -458,3 +466,10 @@ struct UserGroups: Codable, Hashable, Identifiable {
 }
 
 // ################# END OF DETAILED POLICY ####################
+
+
+extension General {
+    var enabledForSort: Bool {
+        enabled ?? false
+    }
+}
