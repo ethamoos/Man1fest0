@@ -304,7 +304,6 @@ struct PolicyDetailView: View {
                     print("Refresh detailPolicyView")
                     progress.showProgress()
                     progress.waitForABit()
-
                     
                     Task {
                         do {
@@ -315,7 +314,12 @@ struct PolicyDetailView: View {
                             print("Fetching detailed policy as xml failed: \(error)")
                         }
                     }
-
+                    
+                    Task {
+                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                        policyName = networkController.policyDetailed?.general?.name ?? ""
+                        policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
+                    }
                     
                 }) {
                     HStack(spacing: 10) {
@@ -344,7 +348,7 @@ struct PolicyDetailView: View {
                         
                         HStack {
                             
-                            TextField(networkController.policyDetailed?.general?.name ?? policyNameInitial, text: $policyName)
+                            TextField(policyName, text: $policyName)
                                 .textSelection(.enabled)
                             
                             Button(action: {
@@ -367,7 +371,7 @@ struct PolicyDetailView: View {
                         
                         HStack {
                             
-                            TextField(networkController.policyDetailed?.general?.triggerOther ?? "", text: $policyCustomTrigger)
+                            TextField(policyCustomTrigger, text: $policyCustomTrigger)
                                 .textSelection(.enabled)
                             
                             Button(action: {
@@ -395,13 +399,13 @@ struct PolicyDetailView: View {
                     LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
                         HStack {
-                            TextField(networkController.policyDetailed?.general?.name ?? policyName, text: $policyName)
+                            TextField(policyName, text: $policyName)
                                 .textSelection(.enabled)
                             Button(action: {
                                 
                                 progress.showProgress()
                                 progress.waitForABit()
-                                networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: policyNameInitial, policyID: String(describing: policyID))
+                                networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: policyName, policyID: String(describing: policyID))
                                 
                                 networkController.separationLine()
                                 print("Name Self-Service to:\(policyName)")
@@ -568,14 +572,13 @@ struct PolicyDetailView: View {
                 try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
             }
-//            Task {
-//                   Task {
-//                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-//                    }
-//            }
+
             Task {
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                policyName = networkController.policyDetailed?.general?.name ?? ""
+                policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
+              
             }
             if networkController.categories.count <= 1 {
                 print("No categories - fetching")

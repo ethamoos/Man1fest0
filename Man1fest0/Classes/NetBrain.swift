@@ -728,9 +728,9 @@ import AEXML
 //        ########################################################
 //        DEBUG
 //        ########################################################
-//        separationLine()
-//        print("Raw data is:")
-//        print(String(data: data, encoding: .utf8)!)
+        separationLine()
+        print("Raw data is:")
+        print(String(data: data, encoding: .utf8)!)
 //        ########################################################
 //        DEBUG
 //        ########################################################
@@ -3306,6 +3306,38 @@ import AEXML
             }
         }
     }
+    
+    //    #################################################################################
+    //    scopeAllComputersAndU  - enable AllComputers and Allsers
+    //    #################################################################################
+    
+    func scopeAllComputersAndUsers(server: String, authToken: String, policyID: String) {
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
+//        let policyIDString = String(policyID)
+        var xml: String
+        print("Running enableSelfService")
+        
+                xml = """
+                        <policy>
+                            <scope>
+                                <all_computers>true</all_computers>
+                                <all_jss_users>true</all_jss_users>
+                            </scope>
+                        </policy>
+                    """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("ItemID is set as:\(policyID)")
+                print("resourceType is set as:\(ResourceType.policyDetail)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+    
+    
     
     //    #################################################################################
     //    togglePolicyAllComputers - yes/no

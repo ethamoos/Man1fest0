@@ -148,6 +148,18 @@ struct PolicyScopeTabView: View {
                             Text("All Computers is not enabled").font(.subheadline)
                         }
                         
+                        
+                        
+                        //  ################################################################################
+                        //  Show All Users scoping
+                        //  ################################################################################
+                        
+//                        if networkController.policyDetailed?.scope?.all_jss_users == true {
+//                            Text("Scoped To All Users").font(.subheadline)
+//                        } else {
+//                            Text("All Users is not enabled").font(.subheadline)
+//                        }
+                        
                         //  ################################################################################
                         //  Show computer scoping
                         //  ################################################################################
@@ -314,8 +326,10 @@ struct PolicyScopeTabView: View {
                                         message: Text("This action will enable the policy scoping for all computers and all users.\n This might cause the policy to run immediately to many devices"),
                                         primaryButton: .destructive(Text("I understand!")) {
                                             // Code to execute when "Yes" is tapped
-                                            networkController.scopeAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                                            networkController.scopeAllUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+//                                            networkController.scopeAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+//                                            networkController.scopeAllUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            
+                                            networkController.scopeAllComputersAndUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                                             print("Yes tapped")
                                         },
                                         secondaryButton: .cancel()
