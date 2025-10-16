@@ -141,6 +141,10 @@ class Layout: ObservableObject {
         GridItem(.flexible())
     ]
     
+    let columnFlexAdaptive = [
+        GridItem(.adaptive(minimum: 300), alignment: .leading)
+    ]
+    
     let columnsFlexAdaptive = [
         GridItem(.adaptive(minimum: 300), alignment: .leading),
         GridItem(.adaptive(minimum: 300))

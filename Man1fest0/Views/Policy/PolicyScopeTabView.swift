@@ -373,17 +373,19 @@ struct PolicyScopeTabView: View {
                         
                         DisclosureGroup("Edit Scoping") {
                             Group {
-//                                VStack(alignment: .leading) {
-                                    LazyVGrid(columns: layout.columns, spacing: 10) {
+                                LazyVGrid(columns: layout.columnFlex, spacing: 10) {
+                                    
+                                    //                                VStack(alignment: .leading) {
+
                                         Toggle("", isOn: $allComputersButton)
                                             .toggleStyle(SwitchToggleStyle(tint: .red))
                                             .onChange(of: allComputersButton) { value in
                                                 Task {
                                                     print("allComputersButton changed - value is now:\(value) for policy:\(policyID)")
                                                     if value == true {
-                                                        await xmlController.enableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                         xmlController.enableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
                                                     } else {
-                                                        await xmlController.disableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
+                                                         xmlController.disableAllComputersToScope(xmlContent: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID))
                                                     }
                                                 }
                                             }
@@ -393,14 +395,15 @@ struct PolicyScopeTabView: View {
                                         } else {
                                             Text("Specific Computers")
                                             HStack {
-//                                                VStack(alignment: .leading) {
-                                                    TextField("Search Computers", text: $computerSearchText)
-                                                    Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
-                                                        ForEach(filteredComputers, id: \ .id) { comp in
-                                                            Text(comp.name).tag(comp)
-                                                        }
+                                                //                                                VStack(alignment: .leading) {
+                                                TextField("Search Computers", text: $computerSearchText)
+                                                //                                                    Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
+                                                Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
+                                                    ForEach(filteredComputers, id: \ .id) { comp in
+                                                        Text(comp.name).tag(comp)
                                                     }
-//                                                }
+                                                }
+                                                //                                                }
                                                 Button(action: {
                                                     progress.showProgress()
                                                     progress.waitForABit()
@@ -412,9 +415,12 @@ struct PolicyScopeTabView: View {
                                                 }) {
                                                     HStack(spacing: 10) {
                                                         Image(systemName: "plus.square.fill.on.square.fill")
-                                                        Text("Add Computer")
+                                                        Text("Add")
                                                     }
                                                 }
+                                                .buttonStyle(.borderedProminent)
+                                                .tint(.red)
+                                                Spacer()
                                             }
                                             HStack {
                                                 Button(action: {
