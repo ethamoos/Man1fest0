@@ -278,16 +278,15 @@ struct ComputersBasicTableView: View {
     }
     
     var searchResults: [ComputerBasicRecord] {
-        
         let allComputers = networkController.allComputersBasic.computers
-        let allComputersArray = Array (allComputers)
-        
+        let allComputersArray = Array(allComputers)
+        let filtered: [ComputerBasicRecord]
         if searchText.isEmpty {
-            return networkController.allComputersBasic.computers
+            filtered = allComputersArray
         } else {
-            print("Search Added")
-            return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
+            filtered = allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased()) }
         }
+        return filtered.sorted(using: sortOrder)
     }
     
     var filteredDepartments: [Department] {

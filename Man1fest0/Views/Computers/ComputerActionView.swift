@@ -1,5 +1,3 @@
-
-
 import SwiftUI
 
 struct ComputerActionView: View {
@@ -126,7 +124,6 @@ struct ComputerActionView: View {
 #endif
                                 
                         }
-                        .searchable(text: $searchText)
                         .frame(width: 400, alignment: .leading)
                     }
                 
