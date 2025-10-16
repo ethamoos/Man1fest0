@@ -51,12 +51,21 @@ struct ScriptDetailTableView: View {
     //  ########################################################################################
     //  ########################################################################################
     
+    var searchResults: [ScriptClassic] {
+        let filtered: [ScriptClassic]
+        if searchText.isEmpty {
+            filtered = networkController.scripts
+        } else {
+            filtered = networkController.scripts.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+        }
+        return filtered.sorted(using: sortOrderScript)
+    }
         
     var body: some View {
         
         
 //        Table(networkController.scripts, sortOrder: $sortOrderScript, selection: $selection) {
-        Table(networkController.scripts, sortOrder: $sortOrderScript) {
+        Table(searchResults, sortOrder: $sortOrderScript) {
             
             TableColumn("name", value: \.name)
             
@@ -66,9 +75,6 @@ struct ScriptDetailTableView: View {
             }
         }
         .searchable(text: $searchText)
-        .onChange(of: sortOrderScript) { newOrder in
-            networkController.scripts.sort(using: newOrder)
-        }
         
         
         //  ########################################################################################
@@ -188,4 +194,3 @@ struct ScriptDetailTableView: View {
     //                }
     //            }
 }
-
