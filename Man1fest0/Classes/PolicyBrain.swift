@@ -791,8 +791,10 @@ class PolicyBrain: ObservableObject {
             print("policyGeneral IS:\(policyGeneral.xml)")
             let updatedPolicy = wholeDoc.xml
             separationLine()
-            atSeparationLine()
-            print("xml is set as:\(String(describing:updatedPolicy))")
+            
+//            DEBUG
+//            atSeparationLine()
+//            print("xml is set as:\(String(describing:updatedPolicy))")
             
             if URL(string: server) != nil {
                 if let serverURL = URL(string: server) {

@@ -728,9 +728,9 @@ import AEXML
 //        ########################################################
 //        DEBUG
 //        ########################################################
-        separationLine()
-        print("Raw data is:")
-        print(String(data: data, encoding: .utf8)!)
+//        separationLine()
+//        print("Raw data is:")
+//        print(String(data: data, encoding: .utf8)!)
 //        ########################################################
 //        DEBUG
 //        ########################################################
