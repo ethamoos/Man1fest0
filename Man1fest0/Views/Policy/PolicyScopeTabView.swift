@@ -37,6 +37,30 @@ struct PolicyScopeTabView: View {
     
     @State var computerFilter = ""
     
+    @State private var departmentFilter: String = ""
+
+    var filteredDepartments: [Department] {
+        if departmentFilter.isEmpty {
+            return networkController.departments
+        } else {
+            return networkController.departments.filter {
+                $0.name.localizedCaseInsensitiveContains(departmentFilter)
+            }
+        }
+    }
+    
+    @State private var buildingFilter: String = ""
+
+    var filteredBuildings: [Building] {
+        if buildingFilter.isEmpty {
+            return networkController.buildings
+        } else {
+            return networkController.buildings.filter {
+                $0.name.localizedCaseInsensitiveContains(buildingFilter)
+            }
+        }
+    }
+    
     //    ########################################################################################
     //    Policy
     //    ########################################################################################
@@ -465,14 +489,32 @@ struct PolicyScopeTabView: View {
                                     
                                     LazyVGrid(columns: layout.threeColumns, spacing: 20) {
                                         
+//                                        Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
+//                                            ForEach(networkController.departments, id: \.self) { department in
+//                                                Text(String(describing: department.name))
+//                                                    .tag(department as Department?)
+//                                                    .tag(selectionDepartment as Department?)
+//                                            }
+//                                            .onAppear { selectionDepartment = networkController.departments[0] }
+//                                        }
+//                                        
+                                       
+                                        TextField("Filter departments...", text: $departmentFilter)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                            .padding(.bottom, 4)
+
                                         Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                                            ForEach(networkController.departments, id: \.self) { department in
-                                                Text(String(describing: department.name))
+                                            ForEach(filteredDepartments, id: \.self) { department in
+                                                Text(department.name)
                                                     .tag(department as Department?)
-                                                    .tag(selectionDepartment as Department?)
                                             }
-                                            .onAppear { selectionDepartment = networkController.departments[0] }
                                         }
+                                        .onAppear {
+                                            if let first = networkController.departments.first {
+                                                selectionDepartment = first
+                                            }
+                                        }
+                                        
                                         
                                         Button(action: {
                                             
@@ -505,10 +547,20 @@ struct PolicyScopeTabView: View {
                                     
                                     Divider()
                                     LazyVGrid(columns: layout.threeColumns, spacing: 20) {
+                                        TextField("Filter buildings...", text: $buildingFilter)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                            .padding(.bottom, 4)
+
                                         Picker(selection: $selectionBuilding, label: Text("Building:").bold()) {
-                                            Text("").tag("") //basically added empty tag and it solve the case
-                                            ForEach(networkController.buildings, id: \.self) { building in
-                                                Text(String(describing: building.name)).tag("")
+                                            Text("").tag(Building(id: 0, name: "")) // Optional: empty tag for 'no selection'
+                                            ForEach(filteredBuildings, id: \.self) { building in
+                                                Text(building.name)
+                                                    .tag(building)
+                                            }
+                                        }
+                                        .onAppear {
+                                            if let first = networkController.buildings.first {
+                                                selectionBuilding = first
                                             }
                                         }
                                         
@@ -619,7 +671,7 @@ struct PolicyScopeTabView: View {
                                     
                                     VStack(alignment: .leading) {
                                         
-                                        LazyVGrid(columns: layout.threeColumnsWide, spacing: 20) {
+                                        LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
                                             
                                             HStack(spacing: 20) {
                                                 
@@ -688,7 +740,7 @@ struct PolicyScopeTabView: View {
                         //  Select Ldap server
                         //  ########################################################################
                                     
-                                    LazyVGrid(columns: layout.threeColumns, spacing: 20) {
+                                    LazyVGrid(columns: layout.threeColumnsFlex, spacing: 20) {
                                         Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:")) {
                                             ForEach(scopingController.allLdapServers, id: \.self) { group in
                                                 Text(String(describing: group.name))
@@ -701,7 +753,7 @@ struct PolicyScopeTabView: View {
                                         //  Select Ldap group
                                         //  ########################################################
                                         
-                                        LazyVGrid(columns: layout.threeColumns, spacing: 20) {
+                                        LazyVGrid(columns: layout.threeColumnsFlex, spacing: 20) {
                                             
                                             HStack {
                                                 Text("Search LDAP")
