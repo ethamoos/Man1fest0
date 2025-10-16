@@ -19,6 +19,7 @@ struct ComputersBasicTableView: View {
     
     @State private var showingWarning = false
     @State private var searchText = ""
+    @State private var departmentFilterText = ""
     
     @State var selection = Set<ComputerBasicRecord.ID>()
     @State var selectionComp = Set<Computer>()
@@ -178,17 +179,17 @@ struct ComputersBasicTableView: View {
                 //              ##########################################################################
                 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
-                    
-                    HStack {
-                        
+                    VStack(alignment: .leading) {
+                        TextField("Filter Departments", text: $departmentFilterText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
                         Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                            Text("").tag("") //basically added empty tag and it solve the case
-                            ForEach(networkController.departments, id: \.self) { department in
-                                Text(String(describing: department.name))
+                            Text("").tag(Department(jamfId: 0, name: ""))
+                            ForEach(filteredDepartments, id: \.self) { department in
+                                Text(String(describing: department.name)).tag(department)
                             }
                         }
-                        
-                        Button(action: {
+                    }
+                    Button(action: {
                             
                             //  ##########################################################################
                             //  processUpdateComputerDepartment
@@ -206,7 +207,6 @@ struct ComputersBasicTableView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                    }
                 }
                     
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
@@ -268,6 +268,9 @@ struct ComputersBasicTableView: View {
             
         .onAppear {
             
+            //                Task {
+            //                    try await networkController.getToken(server: server)
+            //                }
             networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
             handleConnect(resourceType: ResourceType.computerBasic)
 //                }
@@ -287,6 +290,13 @@ struct ComputersBasicTableView: View {
         }
     }
     
+    var filteredDepartments: [Department] {
+        if departmentFilterText.isEmpty {
+            return networkController.departments
+        } else {
+            return networkController.departments.filter { $0.name.lowercased().contains(departmentFilterText.lowercased()) }
+        }
+    }
     
     //}
     
