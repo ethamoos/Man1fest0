@@ -216,9 +216,9 @@ struct PolicyDetailView: View {
                     print("Cloning policy:\(policyName)")
                     progress.showProgress()
                     progress.waitForABit()
-                    if policyName.isEmpty != true {
+                    if policyName.isEmpty == true {
                         policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                        let newPolicyName = "\(policyNameInitial)1"
+                        let newPolicyName = "\(policyNameInitial)-1"
                         print("No name provided - policy is:\(newPolicyName)")
                         policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
                     } else {
