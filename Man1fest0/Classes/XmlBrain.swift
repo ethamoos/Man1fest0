@@ -761,8 +761,8 @@ class XmlBrain: ObservableObject {
         self.separationLine()
         print("Running readXMLDataFromString")
         if debugStatus == true {
-            self.separationLine()
-            print("xmlContent is:\(xmlContent)")
+//            self.separationLine()
+//            print("xmlContent is:\(xmlContent)")
         }
         guard let data = try? Data(xmlContent.utf8)
         else {
@@ -832,7 +832,7 @@ class XmlBrain: ObservableObject {
     
     func readXMLDataFromString(xmlContent: String) {
         //        self.separationLine()
-        print("Running readXMLDataFromString - NetBrain")
+//        print("Running readXMLDataFromString - NetBrain")
         //        print("xmlContent is:\(xmlContent)")
         guard let data = try? Data(xmlContent.utf8)
                 

@@ -37,7 +37,7 @@ struct ComputersBasicTableView: View {
             
             if networkController.allComputersBasic.computers.count > 0 {
                 
-                Table(networkController.allComputersBasicDict, selection: $selection, sortOrder: $sortOrder) {
+                Table(searchResults, selection: $selection, sortOrder: $sortOrder) {
                     
                     TableColumn("Name", value: \.name)
                     TableColumn("User", value: \.username)
@@ -67,7 +67,8 @@ struct ComputersBasicTableView: View {
                     }
                 }
                 .onChange(of: sortOrder) { newOrder in
-                    networkController.allComputersBasicDict.sort(using: newOrder)
+                    // Optionally, sort searchResults if needed
+                    // If sorting is required, implement sorting logic here
                 }
                 
             } else {
@@ -267,9 +268,6 @@ struct ComputersBasicTableView: View {
             
         .onAppear {
             
-            //                Task {
-            //                    try await networkController.getToken(server: server)
-            //                }
             networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
             handleConnect(resourceType: ResourceType.computerBasic)
 //                }

@@ -109,7 +109,6 @@
 		E4CE364129D1C43200533707 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4CE364029D1C43200533707 /* Assets.xcassets */; };
 		E4CE364529D1C43200533707 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4CE364429D1C43200533707 /* Preview Assets.xcassets */; };
 		E4CE368529D336C100533707 /* NetBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368429D336C100533707 /* NetBrain.swift */; };
-		E4CE369129D3372400533707 /* ComputerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368F29D3372400533707 /* ComputerView.swift */; };
 		E4CE369229D3372400533707 /* PolicyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368E29D3372400533707 /* PolicyDetailView.swift */; };
 		E4CE369329D3372400533707 /* PolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368D29D3372400533707 /* PolicyView.swift */; };
 		E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */; };
@@ -225,7 +224,6 @@
 		E4CE368429D336C100533707 /* NetBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetBrain.swift; sourceTree = "<group>"; };
 		E4CE368D29D3372400533707 /* PolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyView.swift; sourceTree = "<group>"; };
 		E4CE368E29D3372400533707 /* PolicyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailView.swift; sourceTree = "<group>"; };
-		E4CE368F29D3372400533707 /* ComputerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerView.swift; sourceTree = "<group>"; };
 		E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageUsageView.swift; sourceTree = "<group>"; };
 		E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicTableView.swift; sourceTree = "<group>"; };
 		E4D434512C7FBE2F00E90BAE /* Computers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Computers.swift; sourceTree = "<group>"; };
@@ -236,6 +234,7 @@
 		A83D011A2D7850E40091B794 /* JamfObjects */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JamfObjects; sourceTree = "<group>"; };
 		A857A3E72E1FF9A000A96F3A /* ConfigProfiles */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ConfigProfiles; sourceTree = "<group>"; };
 		A857A3E82E1FFA0B00A96F3A /* Structures */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Structures; sourceTree = "<group>"; };
+		A87BF46C2EA1530200E065BB /* Retired Files */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Retired Files"; sourceTree = "<group>"; };
 		A8C4B5B72E83EF33009893BB /* PolicyDetailView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicyDetailView; sourceTree = "<group>"; };
 		A8C4B5BA2E83EF63009893BB /* PolicyTableView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicyTableView; sourceTree = "<group>"; };
 		A8C4B5BC2E83EF80009893BB /* PoliciesActionView */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PoliciesActionView; sourceTree = "<group>"; };
@@ -306,11 +305,10 @@
 		A86AF37F2C3FE2C2009349C4 /* Computers */ = {
 			isa = PBXGroup;
 			children = (
-				E4CE368F29D3372400533707 /* ComputerView.swift */,
 				A8DD6B3A2A13CA890098563C /* ComputerActionView.swift */,
 				A861F25629D7447A0075D622 /* ComputersBasicView.swift */,
-				A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */,
 				E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */,
+				A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */,
 				A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */,
 				A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */,
 				A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */,
@@ -512,6 +510,7 @@
 				E49319822B642ADA00B58519 /* Structs and Enums */,
 				E4CD02852ADC3A2E00D210B2 /* Classes */,
 				E4CE364029D1C43200533707 /* Assets.xcassets */,
+				A87BF46C2EA1530200E065BB /* Retired Files */,
 				A8F16D712C621E5C00CC0751 /* ViewModifiers */,
 				A8682D2529F2FA78000645BF /* Views */,
 				E4CE364229D1C43200533707 /* Man1fest0.entitlements */,
@@ -549,6 +548,7 @@
 				A83D011A2D7850E40091B794 /* JamfObjects */,
 				A857A3E72E1FF9A000A96F3A /* ConfigProfiles */,
 				A857A3E82E1FFA0B00A96F3A /* Structures */,
+				A87BF46C2EA1530200E065BB /* Retired Files */,
 				A8C4B5B72E83EF33009893BB /* PolicyDetailView */,
 				A8C4B5BA2E83EF63009893BB /* PolicyTableView */,
 				A8C4B5BC2E83EF80009893BB /* PoliciesActionView */,
@@ -618,7 +618,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A89876642D53D4FC002CC9CF /* ComputerExtAttDetailView.swift in Sources */,
-				E4CE369129D3372400533707 /* ComputerView.swift in Sources */,
 				E4CE369229D3372400533707 /* PolicyDetailView.swift in Sources */,
 				E49319892B6797D800B58519 /* PrestagesEditView.swift in Sources */,
 				E4DA780E2C5F94A800C5CE27 /* ComputerGroup.swift in Sources */,
