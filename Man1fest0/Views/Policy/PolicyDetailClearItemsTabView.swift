@@ -231,7 +231,7 @@ struct PolicyDetailClearItemsTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        xmlController.removeMaintenanceBatch(selectedPoliciesInt: selectedPoliciesInt, server: server, authToken: networkController.authToken)
+                        xmlController.clearMaintenanceBatch(selectedPoliciesInt: selectedPoliciesInt, server: server, authToken: networkController.authToken)
                         
                     }) {
                         HStack(spacing: 10) {

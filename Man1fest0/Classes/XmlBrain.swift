@@ -1374,10 +1374,10 @@ class XmlBrain: ObservableObject {
     //  ################################################################################
     
     
-    func removeMaintenanceBatch(selectedPoliciesInt: [Int?], server: String, authToken: String) {
+    func clearMaintenanceBatch(selectedPoliciesInt: [Int?], server: String, authToken: String) {
             
             separationLine()
-            print("Running: removeMaintenanceBatch")
+            print("Running: clearMaintenanceBatch")
             print("Set processingComplete to false")
             self.processingComplete = true
             print(String(describing: self.processingComplete))
@@ -1407,8 +1407,54 @@ class XmlBrain: ObservableObject {
         }
     }
  
+    
+    func clearScopeBatch(selectedPolicies: Set<Policy>, server: String, authToken: String) {
+        
+        separationLine()
+        print("Running: clearExclusionsBatch")
+        for eachItem in selectedPolicies {
+            let currentPolicyID = (eachItem.jamfId ?? 0)
+            print("Updating for \(eachItem.name)")
+            print("currentPolicyID is: \(currentPolicyID)")
+            self.clearScope(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: currentPolicyID ), authToken: authToken)
+        }
+    }
+    
+    
+    func clearScope(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        
+        var xml: String
+        
+        xml = """
+                       <policy>
+                           <scope>
+                               <all_computers>false</all_computers>
+                               <computers/>
+                               <computer_groups/>
+                               <buildings/>
+                               <departments/>
+                           </scope>
+                       </policy>
+                       """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Making clearScope request")
+                print("resourceType is set as:\(resourceType)")
+                print("xml is set as:\(xml)")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
+            }
+        }
+        else {
+            print("clearScope request failed")
+        }
+    }
 
-    func clearScope() {
+    func clearScopeAlt() {
         self.separationLine()
         print("Removing scope")
         let scope = aexmlDoc.root["scope"]

@@ -69,6 +69,8 @@ struct PoliciesActionView: View {
     @State private var showingWarningAllComputersAndUsers = false
     
     @State private var showingWarningClearExclusions = false
+    
+    @State private var showingWarningClearScope = false
 
     
     
@@ -284,7 +286,7 @@ struct PoliciesActionView: View {
                             }
                             
                         }) {
-                            Image(systemName: "plus.square.fill.on.square.fill")
+                            Image(systemName: "plus.circle")
                             Text("Download")
                         }
                         .buttonStyle(.borderedProminent)
@@ -376,7 +378,7 @@ struct PoliciesActionView: View {
                                progress.waitForABit()
                            }) {
                                HStack(spacing: 10) {
-                                   Image(systemName: "eraser")
+                                   Image(systemName: "plus.circle")
                                    Text("Scope To All Computers")
                                }
                                .alert(isPresented: $showingWarningAllComputers) {
@@ -401,7 +403,7 @@ struct PoliciesActionView: View {
                                progress.waitForABit()
                            }) {
                                HStack(spacing: 10) {
-                                   Image(systemName: "eraser")
+                                   Image(systemName: "plus.circle")
                                    Text("Scope To All Users")
                                }
                                .alert(isPresented: $showingWarningAllUsers) {
@@ -427,7 +429,7 @@ struct PoliciesActionView: View {
                                progress.waitForABit()
                            }) {
                                HStack(spacing: 10) {
-                                   Image(systemName: "eraser")
+                                   Image(systemName: "plus.circle")
                                    Text("Scope To All Computers & Users")
                                }
                                .alert(isPresented: $showingWarningAllComputersAndUsers) {
@@ -438,6 +440,32 @@ struct PoliciesActionView: View {
                                            // Code to execute when "Yes" is tapped
                                            networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
                                            networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                           print("Yes tapped")
+                                       },
+                                       secondaryButton: .cancel()
+                                   )
+                               }
+                           }
+                           .buttonStyle(.borderedProminent)
+                           .tint(.red)
+                            
+                            Button(action: {
+                                showingWarningClearScope = true
+                               progress.showProgress()
+                               progress.waitForABit()
+                           }) {
+                               HStack(spacing: 10) {
+                                   Image(systemName: "eraser")
+                                   Text("Clear Scope")
+                               }
+                               .alert(isPresented: $showingWarningClearScope) {
+                                   Alert(
+                                       title: Text("Caution!"),
+                                       message: Text("This action will clear the policy scoping for all policies selected."),
+                                       primaryButton: .destructive(Text("I understand!")) {
+                                           // Code to execute when "Yes" is tapped
+                                           xmlController.clearScopeBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
+                                    
                                            print("Yes tapped")
                                        },
                                        secondaryButton: .cancel()
@@ -484,7 +512,7 @@ struct PoliciesActionView: View {
                                 }
                                 
                             }) {
-                                Image(systemName: "plus.square.fill.on.square.fill")
+                                Image(systemName: "plus.circle")
                                 Text("Update")
                             }
                             .buttonStyle(.borderedProminent)
@@ -526,7 +554,7 @@ struct PoliciesActionView: View {
                                 }
                                 
                             }) {
-                                Image(systemName: "plus.square.fill.on.square.fill")
+                                Image(systemName: "plus.circle")
                                 Text("Update")
                             }
                             .buttonStyle(.borderedProminent)
