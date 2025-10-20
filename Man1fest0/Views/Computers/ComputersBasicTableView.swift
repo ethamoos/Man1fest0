@@ -283,8 +283,11 @@ struct ComputersBasicTableView: View {
             // No group selected - nothing to do
             return
         }
-        networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
-        
+        Task {
+            
+//            try await networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)    
+            networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
+        }
 //        networkController.processAddComputersToGroup(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
         
         progress.showProgress()

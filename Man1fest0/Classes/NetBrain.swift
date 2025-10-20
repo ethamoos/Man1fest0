@@ -3155,15 +3155,25 @@ import AEXML
         print("computerID is set as:\(computerID)")
         print("groupID is set as:\(groupID)")
         
-        xml = """
-                   <computer_group>
-                       <computers>
-                               <computer>
-                               <id>\(computerID)</id>
-                               </computer>
-                       </computers>
-                   </computer_group>
-                   """
+//        xml = """
+//                    <computer_group>
+//                        <computers>
+//                            <computer>
+//                                <id>\(computerID)</id>
+//                            </computer>
+//                        </computers>
+//                    </computer_group>
+//            """
+        
+xml = """
+    <computer_group>
+        <computer_additions>
+            <computer>
+                <id>\(computerID)</id>
+            </computer>
+        </computer_additions>
+    </computer_group>'
+"""
         
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
@@ -3171,6 +3181,7 @@ import AEXML
                 print("Running update group function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
                 // print("xml is set as:\(xml)")
+                            
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
             }
@@ -3228,6 +3239,71 @@ import AEXML
         var count = 1
         
         for eachItem in selection {
+            
+            //        ########################################################
+            //        Rate limiting
+            //        ########################################################
+
+//            let now = Date()
+//            Task {
+//                if let last = lastRequestDate {
+//                    print("Last request ran at:\(String(describing: last))")
+//                    let elapsed = now.timeIntervalSince(last)
+//                    if elapsed < minInterval {
+//                        let delay = minInterval - elapsed
+//                        print("Waiting:\(String(describing: delay))")
+//                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+//                    }
+//                }
+//            }
+//            lastRequestDate = Date()
+            
+            separationLine()
+            print("Count is currently:\(count)")
+            print("Items as Dictionary is \(eachItem)")
+            let computerID = String(describing:eachItem)
+            print("Current computerID is:\(computerID)")
+            updateGroupID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
+            print("List is:\(computerProcessList)")
+            count = count + 1
+            print("Count is now:\(count)")
+        }
+        separationLine()
+        print("Finished - Set processingComplete to true")
+        self.processingComplete = true
+        print(String(describing: self.processingComplete))
+    }
+    
+    func processAddComputersToGroupAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) async {
+        
+        separationLine()
+        print("Running: processAddComputersToGroup")
+        print("Set is:\(selection)")
+//        print("Set processingComplete to false")
+//        self.processingComplete = true
+//        print(String(describing: self.processingComplete))
+        var count = 1
+        
+        for eachItem in selection {
+            
+            //        ########################################################
+            //        Rate limiting
+            //        ########################################################
+
+//            let now = Date()
+//            Task {
+//                if let last = lastRequestDate {
+//                    print("Last request ran at:\(String(describing: last))")
+//                    let elapsed = now.timeIntervalSince(last)
+//                    if elapsed < minInterval {
+//                        let delay = minInterval - elapsed
+//                        print("Waiting:\(String(describing: delay))")
+//                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+//                    }
+//                }
+//            }
+//            lastRequestDate = Date()
+            
             separationLine()
             print("Count is currently:\(count)")
             print("Items as Dictionary is \(eachItem)")
