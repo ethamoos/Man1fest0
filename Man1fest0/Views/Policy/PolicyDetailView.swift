@@ -631,16 +631,7 @@ struct PolicyDetailView: View {
                 }
             }
         
-<<<<<<< Updated upstream
-            Task {
-                try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-            }
-            Task {
-                networkController.getPackagesAssignedToPolicy()
-                networkController.addExistingPackages()
-                fetchData()
-            }
-            
+          
              trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
              trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
              trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
@@ -650,15 +641,11 @@ struct PolicyDetailView: View {
                 pushTriggerActiveWarning = true
                 print("Push trigger is active!")
             } else {
-                pushTriggerActiveWarning == false
+                pushTriggerActiveWarning = false
                 print("Push trigger has been deactivated")
 
             }
-            
-            
-            
-            
-=======
+          
             if networkController.packagesAssignedToPolicy.count <= 0 {
                 
                 Task {
@@ -666,8 +653,6 @@ struct PolicyDetailView: View {
                     networkController.addExistingPackages()
                     fetchData()
                 }
-//            }
->>>>>>> Stashed changes
         }
     }
         .padding()
