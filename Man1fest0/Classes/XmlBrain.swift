@@ -178,6 +178,52 @@ class XmlBrain: ObservableObject {
         print("jamfCount is:\(jamfCount)")
         self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
+
+    
+    
+    func addMultipleComputersToGroup(xmlContent: String, computers: Set<ComputerBasicRecord.ID>, authToken: String, computerId: String,groupId: String, resourceType: ResourceType, server: String) {
+        readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
+        
+        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
+        let url = URL(string: jamfURLQuery)!
+        separationLine()
+        print("Running addComputerToGroup XML brain")
+        separationLine()
+        print("xmlContent is:")
+        separationLine()
+        print(xmlContent)
+        separationLine()
+        print("url is:\(url)")
+//        print("computerName is:\(computerName)")
+        print("computerId is:\(computerId)")
+        print("groupId is:\(groupId)")
+        
+        for eachComputerID in computers {
+            
+            let computers = self.aexmlDoc.root["computers"]
+            computers.addChild(name: "id", value:String(describing: eachComputerID))
+//            computers.addChild(name: "name", value: computerName)
+            print("updatedContent is:")
+            separationLine()
+            print(self.aexmlDoc.root.xml)
+            
+        }
+        
+        
+        
+        
+            separationLine()
+            
+        print("Updated Final Content is:")
+        separationLine()
+        print(self.aexmlDoc.root.xml)
+        let jamfCount = computers.count
+        print("jamfCount is:\(jamfCount)")
+        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+    }
+    
+    
+    
     
     
     // ######################################################################################
