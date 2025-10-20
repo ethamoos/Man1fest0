@@ -70,6 +70,16 @@ struct PolicyDetailView: View {
     
     @State var policyCustomTrigger = ""
     
+    
+    //    ########################################################################################
+//    Triggers
+    //    ########################################################################################
+
+    @State var trigger_login: Bool = false
+    @State var trigger_checkin: Bool = false
+    @State var trigger_startup: Bool = false
+    @State var trigger_enrollment_complete: Bool = false
+    
     //    ########################################################################################
     //    ########################################################################################
     //    VARIABLES
@@ -89,6 +99,8 @@ struct PolicyDetailView: View {
     @State var enableDisableSelfServiceStatus: Bool = true
     
     @State var enableDisableSelfService: Bool = true
+    
+    @State var pushTriggerActiveWarning: Bool = false
     
     @State private var exporting = false
     
@@ -172,6 +184,11 @@ struct PolicyDetailView: View {
                     Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
                     Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")")
+                    
+                    if pushTriggerActiveWarning == true {
+                        Text("⚠️ Push Trigger Active! ⚠️").foregroundColor(.red)
+                    }
+                    
                     
                 }
                 .textSelection(.enabled)
@@ -611,6 +628,24 @@ struct PolicyDetailView: View {
                 networkController.addExistingPackages()
                 fetchData()
             }
+            
+             trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
+             trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
+             trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
+             trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+            
+            if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
+                pushTriggerActiveWarning = true
+                print("Push trigger is active!")
+            } else {
+                pushTriggerActiveWarning == false
+                print("Push trigger has been deactivated")
+
+            }
+            
+            
+            
+            
         }
         .padding()
         .textSelection(.enabled)
