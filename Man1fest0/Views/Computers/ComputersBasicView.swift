@@ -24,8 +24,8 @@ struct ComputersBasicView: View {
     //  Selections
     //  ########################################################################################
     
-//    @State var selection = Set<ComputerBasicRecord>()
-    @State var selection: ComputerBasicRecord
+    @State var selection = Set<ComputerBasicRecord>()
+//    @State var selection: ComputerBasicRecord
 
     
     var body: some View {
@@ -37,13 +37,13 @@ struct ComputersBasicView: View {
                 NavigationView {
 #if os(macOS)
                     List(networkController.allComputersBasic.computers, id: \.self, selection: $selection) { computer in
-                        NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer, selection: $selection)) {
+//                        NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer, selection: $selection)) {
                             HStack {
                                 Image(systemName: "apple.logo")
                                 Text(computer.name).font(.system(size: 12.0))
                             }
                             .foregroundColor(.blue)
-                        }
+//                        }
                     }
 #else
                     List(networkController.allComputersBasic.computers, id: \.self) { computer in
