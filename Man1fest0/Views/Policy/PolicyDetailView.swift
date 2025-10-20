@@ -585,41 +585,53 @@ struct PolicyDetailView: View {
             print("PolicyDetailView appeared - running detailed policy connect function")
             progress.showProgress()
             progress.waitForNotVeryLong()
-            Task {
-                print("getPolicyAsXML - running get policy as xml function")
-                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-            }
 
             Task {
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                 policyName = networkController.policyDetailed?.general?.name ?? ""
                 policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
-              
             }
+            
+            Task {
+                print("getPolicyAsXML - running get policy as xml function")
+                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+            }
+            
             if networkController.categories.count <= 1 {
                 print("No categories - fetching")
                 Task {
                     networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
                 }
             }
+            
             if networkController.packages.count <= 1 {
                 Task {
                     networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
                 }
             }
+            
             if networkController.departments.count <= 1 {
                 Task {
                     networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
                 }
             }
+            
             if networkController.buildings.count <= 1 {
                 Task {
                     try await networkController.getBuildings(server: server, authToken: networkController.authToken)
                 }
             }
+            
+            if networkController.allComputerGroups.count <= 0 {
+                
+                Task {
+                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                }
+            }
         
+<<<<<<< Updated upstream
             Task {
                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
             }
@@ -646,10 +658,21 @@ struct PolicyDetailView: View {
             
             
             
+=======
+            if networkController.packagesAssignedToPolicy.count <= 0 {
+                
+                Task {
+                    networkController.getPackagesAssignedToPolicy()
+                    networkController.addExistingPackages()
+                    fetchData()
+                }
+//            }
+>>>>>>> Stashed changes
         }
+    }
         .padding()
         .textSelection(.enabled)
-    }
+}
     
     func fetchData() {
         
