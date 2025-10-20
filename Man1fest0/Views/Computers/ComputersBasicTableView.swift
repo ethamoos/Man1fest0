@@ -14,7 +14,8 @@ struct ComputersBasicTableView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var layout: Layout
     @EnvironmentObject var pushController: PushBrain
-    
+    @EnvironmentObject var xmlController: XmlBrain
+
     var selectedResourceType = ResourceType.computerBasic
     
     @State private var showingWarning = false
@@ -28,8 +29,10 @@ struct ComputersBasicTableView: View {
     
 //
     
+//    @State var selection = Set<ComputerBasicRecord.ID>()
     @State var selection = Set<ComputerBasicRecord.ID>()
-    @State var selectionComp = Set<Computer>()
+
+//    @State var selectionComp = Set<Computer>()
 //    @State var selectionGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
     @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
@@ -278,20 +281,44 @@ struct ComputersBasicTableView: View {
             
     Button(action: {
         
+        
+        progress.showProgress()
+        progress.waitForABit()
+        
         // Call the real update group function and show progress
         guard let compGroup = selectionCompGroup else {
             // No group selected - nothing to do
             return
         }
-        Task {
-            
-//            try await networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)    
-            networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
-        }
-//        networkController.processAddComputersToGroup(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
+//        Task {
+//
+//            networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
+//        }
         
-        progress.showProgress()
-        progress.waitForABit()
+        // Request group members XML then call addMultipleComputersToGroup when the XML is available.
+        Task {
+            xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
+
+            // wait for the xmlController to populate computerGroupMembersXML (timeout after ~3s)
+            var attempts = 0
+            while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
+                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+                attempts += 1
+            }
+
+            if xmlController.computerGroupMembersXML.isEmpty {
+                print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
+            } else {
+                print("Got groupMembers XML")
+            }
+
+            xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
+                                                     computers: selection,
+                                                     authToken: networkController.authToken,
+                                                     groupId: String(compGroup.id),
+                                                     resourceType: ResourceType.computerGroup,
+                                                     server: server)
+        }
         
     }) {
         HStack(spacing: 10) {

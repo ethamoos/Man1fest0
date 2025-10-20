@@ -181,13 +181,13 @@ class XmlBrain: ObservableObject {
 
     
     
-    func addMultipleComputersToGroup(xmlContent: String, computers: Set<ComputerBasicRecord.ID>, authToken: String, computerId: String,groupId: String, resourceType: ResourceType, server: String) {
+    func addMultipleComputersToGroup(xmlContent: String, computers: Set<ComputerBasicRecord.ID>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
         readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
         
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
         let url = URL(string: jamfURLQuery)!
         separationLine()
-        print("Running addComputerToGroup XML brain")
+        print("Running addMultipleComputersToGroup XML brain")
         separationLine()
         print("xmlContent is:")
         separationLine()
@@ -195,7 +195,7 @@ class XmlBrain: ObservableObject {
         separationLine()
         print("url is:\(url)")
 //        print("computerName is:\(computerName)")
-        print("computerId is:\(computerId)")
+//        print("computerId is:\(computerId)")
         print("groupId is:\(groupId)")
         
         for eachComputerID in computers {
