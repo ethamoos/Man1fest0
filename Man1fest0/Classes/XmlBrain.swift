@@ -179,6 +179,7 @@ class XmlBrain: ObservableObject {
         self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
     }
     
+    
     // ######################################################################################
     // addCategoryToPolicy
     // ######################################################################################

@@ -88,7 +88,7 @@ struct OptionsView: View {
                                 }
 #if os(macOS)
 
-                                NavigationLink(destination: ComputersBasicTableView( server: server )) {
+                                NavigationLink(destination: ComputersBasicTableView(server: server)) {
                                     Text("Computer Actions")
                                 }
 #endif

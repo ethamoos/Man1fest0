@@ -3116,7 +3116,7 @@ import AEXML
     //    #################################################################################
     
     
-    func updateGroup(server: String,resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
+    func updateGroup(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
         
         //        let resourcePath = getURLFormat(data: (resourceType))
         //           let policyID = policyID
@@ -3143,11 +3143,50 @@ import AEXML
                 print("Running update group function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
                 // print("xml is set as:\(xml)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
             }
         }
     }
+    
+    
+    //    #################################################################################
+    //    processAddComputersToGroup
+    //    #################################################################################
+    
+    
+//    func processAddComputersToGroup(selection: Set<Computer>, server: String, authToken: String, resourceType: ResourceType, groupID: String) {
+    
+    func processAddComputersToGroup(selection: Set<Computer>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
+        
+        separationLine()
+        print("Running: processAddComputersToGroup")
+        print("Set processingComplete to false")
+        self.processingComplete = true
+        print(String(describing: self.processingComplete))
+        var count = 1
+        
+        for eachItem in selection {
+            separationLine()
+            print("Count is currently:\(count)")
+            print("Items as Dictionary is \(eachItem)")
+            let computerID = String(describing:eachItem.jamfId)
+            let computerName = String(describing:eachItem.name)
+            print("Current computerID is:\(computerID)")
+            print("computerName is:\(computerName)")
+            updateGroup(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0, computerName: computerName )
+            print("List is:\(computerProcessList)")
+            count = count + 1
+            print("Count is now:\(count)")
+        }
+        separationLine()
+        print("Finished - Set processingComplete to true")
+        self.processingComplete = true
+        print(String(describing: self.processingComplete))
+    }
+    
+    
+    
     
     //    #################################################################################
     //    togglePolicyOnOff - enable/disable policy

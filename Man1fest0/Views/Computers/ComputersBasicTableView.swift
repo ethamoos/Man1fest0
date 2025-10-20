@@ -21,12 +21,24 @@ struct ComputersBasicTableView: View {
     @State private var searchText = ""
     @State private var departmentFilterText = ""
     
+    
+    //              ##########################################################################
+    //              Selections
+    //              ##########################################################################
+    
+//
+    
     @State var selection = Set<ComputerBasicRecord.ID>()
     @State var selectionComp = Set<Computer>()
+//    @State var selectionGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
     @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
+   
+    @State private var computerGroupFilter: String = ""
+    @State private var selectionCompGroup: ComputerGroup? = nil
     @State private var selectedDevice = ""
     @State private var selectedCommand = ""
+    
     
     @State private var sortOrder = [KeyPathComparator(\ComputerBasicRecord.id)]
     @State private var newComputerName = ""
@@ -37,7 +49,24 @@ struct ComputersBasicTableView: View {
         VStack(alignment: .leading) {
             
             if networkController.allComputersBasic.computers.count > 0 {
-                
+
+                // Inline refresh button (removed ambiguous .toolbar usage)
+                HStack {
+                    Button(action: {
+                        handleConnect(resourceType: ResourceType.computerBasic)
+                        progress.showProgress()
+                        progress.waitForABit()
+                        print("Refresh")
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    Spacer()
+                }
+
                 Table(searchResults, selection: $selection, sortOrder: $sortOrder) {
                     
                     TableColumn("Name", value: \.name)
@@ -53,20 +82,6 @@ struct ComputersBasicTableView: View {
                     TableColumn("Checkin", value: \.reportDateUTC)
                 }
                 .searchable(text: $searchText)
-                .toolbar {
-                    
-                    Button(action: {
-                        handleConnect(resourceType: ResourceType.computerBasic)
-                        progress.showProgress()
-                        progress.waitForABit()
-                        print("Refresh")
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Refresh")
-                        }
-                    }
-                }
                 .onChange(of: sortOrder) { newOrder in
                     // Optionally, sort searchResults if needed
                     // If sorting is required, implement sorting logic here
@@ -207,6 +222,9 @@ struct ComputersBasicTableView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                    
+                    
+                   
                 }
                     
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
@@ -244,6 +262,59 @@ struct ComputersBasicTableView: View {
             //              Selections
             //              ##########################################################################
             
+           
+            //              ##########################################################################
+            //              Computer Group Picker
+            //              ##########################################################################
+           
+            Divider()
+            
+            //  ##########################################################################
+            //  processUpdateAddComputersToGroup
+            //  ##########################################################################
+            
+    Button(action: {
+        
+        // Call the real update group function and show progress
+        guard let compGroup = selectionCompGroup else {
+            // No group selected - nothing to do
+            return
+        }
+        networkController.processAddComputersToGroup(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
+        
+        progress.showProgress()
+        progress.waitForABit()
+        
+    }) {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.clockwise")
+            Text("Add Selection To Group")
+        }
+    }
+    .buttonStyle(.borderedProminent)
+    .tint(.blue)
+          
+            HStack(spacing: 10) {
+                TextField("Filter", text: $computerGroupFilter)
+                Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
+                    ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
+                        Text(group.name)
+                            .tag(group as ComputerGroup?)
+                    }
+                }
+                .onAppear {
+                    if let first = networkController.allComputerGroups.first {
+                        selectionCompGroup = first
+                    } else {
+                        selectionCompGroup = nil
+                    }
+                }
+            }
+                        
+                      
+                                
+//        #if os(macOS)
+            
             Divider()
             
             //              ##########################################################################
@@ -268,9 +339,6 @@ struct ComputersBasicTableView: View {
             
         .onAppear {
             
-            //                Task {
-            //                    try await networkController.getToken(server: server)
-            //                }
             networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
             handleConnect(resourceType: ResourceType.computerBasic)
 //                }
@@ -288,6 +356,7 @@ struct ComputersBasicTableView: View {
         }
         return filtered.sorted(using: sortOrder)
     }
+        
     
     var filteredDepartments: [Department] {
         if departmentFilterText.isEmpty {
@@ -297,23 +366,13 @@ struct ComputersBasicTableView: View {
         }
     }
     
-    //}
-    
-    //        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
-    
-    //}
+  
     
     func handleConnect(resourceType: ResourceType) {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
         
         Task {
-            
-            do {
-                try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
-            } catch {
-                print("Error fetching basic computers")
-                print(error)
-            }
+            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
         }
         
     }
