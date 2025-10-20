@@ -3118,8 +3118,6 @@ import AEXML
     
     func updateGroup(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
         
-        //        let resourcePath = getURLFormat(data: (resourceType))
-        //           let policyID = policyID
         var xml: String
         
         print("Running updateGroup - updating via xml")
@@ -3149,32 +3147,93 @@ import AEXML
         }
     }
     
+    func updateGroupID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int) {
+        
+        var xml: String
+        
+        print("Running updateGroupID - updating via xml")
+        print("computerID is set as:\(computerID)")
+        print("groupID is set as:\(groupID)")
+        
+        xml = """
+                   <computer_group>
+                       <computers>
+                               <computer>
+                               <id>\(computerID)</id>
+                               </computer>
+                       </computers>
+                   </computer_group>
+                   """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running update group function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+     func updateGroupNameID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
+        
+        //        let resourcePath = getURLFormat(data: (resourceType))
+        //           let policyID = policyID
+        var xml: String
+        
+        print("Running updateGroup - updating via xml")
+        print("computerID is set as:\(computerID)")
+        print("computerName is set as:\(computerName)")
+        print("groupID is set as:\(groupID)")
+        
+        xml = """
+                   <computer_group>
+                       <computers>
+                               <computer>
+                               <name>﻿\(computerName)</name>
+                               <id>\(computerID)</id>
+                               </computer>
+                       </computers>
+                   </computer_group>
+                   """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running update group function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
     
     //    #################################################################################
     //    processAddComputersToGroup
     //    #################################################################################
     
     
-//    func processAddComputersToGroup(selection: Set<Computer>, server: String, authToken: String, resourceType: ResourceType, groupID: String) {
+//    func processAddComputersToGroup(selection: Set<Computer>, server: String, authToken: String, resourceType: ResourceType, Set<ComputerBasicRecord.ID>) {
     
-    func processAddComputersToGroup(selection: Set<Computer>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
+    func processAddComputersToGroup(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
         
         separationLine()
         print("Running: processAddComputersToGroup")
-        print("Set processingComplete to false")
-        self.processingComplete = true
-        print(String(describing: self.processingComplete))
+        print("Set is:\(selection)")
+//        print("Set processingComplete to false")
+//        self.processingComplete = true
+//        print(String(describing: self.processingComplete))
         var count = 1
         
         for eachItem in selection {
             separationLine()
             print("Count is currently:\(count)")
             print("Items as Dictionary is \(eachItem)")
-            let computerID = String(describing:eachItem.jamfId)
-            let computerName = String(describing:eachItem.name)
+            let computerID = String(describing:eachItem)
             print("Current computerID is:\(computerID)")
-            print("computerName is:\(computerName)")
-            updateGroup(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0, computerName: computerName )
+            updateGroupID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
             print("List is:\(computerProcessList)")
             count = count + 1
             print("Count is now:\(count)")

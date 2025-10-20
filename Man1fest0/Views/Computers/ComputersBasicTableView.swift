@@ -251,11 +251,14 @@ struct ComputersBasicTableView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                //                        }
-//            }
-//                }
-            }
-            .padding()
+
+                
+                
+                
+                
+                
+                
+         
             
             
             //              ##########################################################################
@@ -280,7 +283,9 @@ struct ComputersBasicTableView: View {
             // No group selected - nothing to do
             return
         }
-        networkController.processAddComputersToGroup(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
+        networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
+        
+//        networkController.processAddComputersToGroup(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
         
         progress.showProgress()
         progress.waitForABit()
@@ -310,7 +315,9 @@ struct ComputersBasicTableView: View {
                     }
                 }
             }
-                        
+               
+            }
+            .padding()
                       
                                 
 //        #if os(macOS)
@@ -341,7 +348,14 @@ struct ComputersBasicTableView: View {
             
             networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
             handleConnect(resourceType: ResourceType.computerBasic)
-//                }
+            
+            
+            if networkController.allComputerGroups.count <= 1 {
+                Task {
+                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                }
+            }
+        
         }
     }
     
