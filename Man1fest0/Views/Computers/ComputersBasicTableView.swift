@@ -230,17 +230,18 @@ struct ComputersBasicTableView: View {
                    
                 }
                     
+                
+                //  ##########################################################################
+                //  Commands
+                //  ##########################################################################
+                
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
-//                    LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
-                    
-//                    LazyVGrid(columns: layout.columnsFlex) {
                         Picker("Commands", selection: $selectedCommand) {
                             ForEach(pushController.flushCommands, id: \.self) {
                                 Text(String(describing: $0))
                             }
                         }
                     }
-//                }
                             
                 Button("Flush Commands") {
                     
@@ -281,7 +282,6 @@ struct ComputersBasicTableView: View {
             
     Button(action: {
         
-        
         progress.showProgress()
         progress.waitForABit()
         
@@ -290,10 +290,6 @@ struct ComputersBasicTableView: View {
             // No group selected - nothing to do
             return
         }
-//        Task {
-//
-//            networkController.processAddComputersToGroup(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, computerGroup: compGroup)
-//        }
         
         // Request group members XML then call addMultipleComputersToGroup when the XML is available.
         Task {

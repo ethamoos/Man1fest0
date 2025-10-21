@@ -305,8 +305,8 @@
 		A86AF37F2C3FE2C2009349C4 /* Computers */ = {
 			isa = PBXGroup;
 			children = (
-				A8DD6B3A2A13CA890098563C /* ComputerActionView.swift */,
 				A861F25629D7447A0075D622 /* ComputersBasicView.swift */,
+				A8DD6B3A2A13CA890098563C /* ComputerActionView.swift */,
 				E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */,
 				A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */,
 				A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */,

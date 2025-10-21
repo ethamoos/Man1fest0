@@ -22,31 +22,14 @@ struct ComputerActionView: View {
     //              ################################################################################
     
     @State var selectionComp = Set<Computer>()
-//    @State var selectionComp = Set<Computer>()
-    
-//    @State var selection = Set<ComputerBasicRecord>()
+
     @State var selection: ComputerBasicRecord = ComputerBasicRecord(id: 0, name: "", managed: false, username: "", model: "", department: "", building: "",macAddress: "", udid: "", serialNumber: "", reportDateUTC: "", reportDateEpoch: 0)
   
-//    let id: Int
-//    let name: String
-//    let managed: Bool
-//    let username, model, department, building: String
-//    let macAddress, udid, serialNumber, reportDateUTC: String
-//    let reportDateEpoch: Int
-
-//    enum CodingKeys: String, CodingKey {
-//        case id, name, managed, username, model, department, building
-//        case macAddress = "mac_address"
-//        case udid
-//        case serialNumber = "serial_number"
-//        case reportDateUTC = "report_date_utc"
-//        case reportDateEpoch = "report_date_epoch"
     
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
 
     @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
     
-//    @State  var selectionBuilding: Building = Building(jamfId: 0, name: "")
     
     @State var showDetailScreen = true
     
@@ -172,12 +155,9 @@ struct ComputerActionView: View {
             
             HStack {
                 
-                //                LazyVGrid(columns: columns) {
-                
                 Button(action: {
                     
                     showingWarning = true
-                    
                     progress.showProgress()
                     progress.waitForABit()
                     
