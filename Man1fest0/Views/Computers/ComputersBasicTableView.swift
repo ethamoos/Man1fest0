@@ -308,7 +308,7 @@ struct ComputersBasicTableView: View {
                 print("Got groupMembers XML")
             }
 
-            xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
+            xmlController.addMultipleComputersToGroupOld(xmlContent: xmlController.computerGroupMembersXML,
                                                      computers: selection,
                                                      authToken: networkController.authToken,
                                                      groupId: String(compGroup.id),

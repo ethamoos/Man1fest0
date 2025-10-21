@@ -181,13 +181,13 @@ class XmlBrain: ObservableObject {
 
     
     
-    func addMultipleComputersToGroup(xmlContent: String, computers: Set<ComputerBasicRecord.ID>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
+    func addMultipleComputersToGroupOld(xmlContent: String, computers: Set<ComputerBasicRecord.ID>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
         readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
         
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
         let url = URL(string: jamfURLQuery)!
         separationLine()
-        print("Running addMultipleComputersToGroup XML brain")
+        print("Running addMultipleComputersToGroupOLD XML brain")
         separationLine()
         print("xmlContent is:")
         separationLine()
@@ -201,7 +201,8 @@ class XmlBrain: ObservableObject {
         for eachComputerID in computers {
             
             let computers = self.aexmlDoc.root["computers"]
-            computers.addChild(name: "id", value:String(describing: eachComputerID))
+            let computer = self.aexmlDoc.root["computers"].addChild(name: "computer")
+            computer.addChild(name: "id", value:String(describing: eachComputerID))
 //            computers.addChild(name: "name", value: computerName)
             print("updatedContent is:")
             separationLine()
@@ -218,13 +219,13 @@ class XmlBrain: ObservableObject {
     }
     
     
-    func addMultipleComputersToGroup2(xmlContent: String, computers: Set<ComputerBasicRecord>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
+    func addMultipleComputersToGroup(xmlContent: String, computers: Set<ComputerBasicRecord>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
         readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
         
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
         let url = URL(string: jamfURLQuery)!
         separationLine()
-        print("Running addMultipleComputersToGroup XML brain")
+        print("Running addMultipleComputersToGroupOLD XML brain")
         separationLine()
         print("xmlContent is:")
         separationLine()

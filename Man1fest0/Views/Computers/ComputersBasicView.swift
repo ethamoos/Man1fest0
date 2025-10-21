@@ -124,7 +124,7 @@ struct ComputersBasicView: View {
                             print("Got groupMembers XML")
                         }
                         
-                        xmlController.addMultipleComputersToGroup2(xmlContent: xmlController.computerGroupMembersXML,
+                        xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
                                                                    computers: selection,
                                                                    authToken: networkController.authToken,
                                                                    groupId: String(compGroup.id),
@@ -179,27 +179,29 @@ struct ComputersBasicView: View {
                 Spacer()
             }
         }
+        .padding()
     }
-        
-        //        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
-        
-        //        .onAppear {
-        //
-        //            networkController.refreshComputers()
-        //
-        //            //            if networkController.computers.count < 0 {
-        //            //                print("Fetching computers")
-        //            //                networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-        //            //            }
-        //            //            if networkController.computers.count < 0 {
-        //            //                print("Fetching basic computers")
-        //            //                //                networkController.allComputersBasic.computers
-        //            //            }
-        //        }
-        //}
     
-//}
-
+    
+    //        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
+    
+    //        .onAppear {
+    //
+    //            networkController.refreshComputers()
+    //
+    //            //            if networkController.computers.count < 0 {
+    //            //                print("Fetching computers")
+    //            //                networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+    //            //            }
+    //            //            if networkController.computers.count < 0 {
+    //            //                print("Fetching basic computers")
+    //            //                //                networkController.allComputersBasic.computers
+    //            //            }
+    //        }
+    //}
+    
+    //}
+    
     func handleConnect(resourceType: ResourceType) async {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
     }
