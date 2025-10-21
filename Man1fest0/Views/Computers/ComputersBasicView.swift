@@ -73,20 +73,20 @@ struct ComputersBasicView: View {
                     Text("\(networkController.computers.count) total computers")
                 }
                 
-//                .toolbar {
-//
-//                    Button(action: {
-//                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-//                        progress.showProgress()
-//                        progress.waitForABit()
-//                        print("Refresh")
-//                    }) {
-//                        HStack(spacing: 10) {
-//                            Image(systemName: "arrow.clockwise")
-//                            Text("Refresh")
-//                        }
-//                    }
-//                }
+                //                .toolbar {
+                //
+                //                    Button(action: {
+                //                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+                //                        progress.showProgress()
+                //                        progress.waitForABit()
+                //                        print("Refresh")
+                //                    }) {
+                //                        HStack(spacing: 10) {
+                //                            Image(systemName: "arrow.clockwise")
+                //                            Text("Refresh")
+                //                        }
+                //                    }
+                //                }
                 
                 Text("\(networkController.computers.count) total computers")
                 
@@ -124,12 +124,12 @@ struct ComputersBasicView: View {
                             print("Got groupMembers XML")
                         }
                         
-//                        xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
-//                                                                  computers: selection,
-//                                                                  authToken: networkController.authToken,
-//                                                                  groupId: String(compGroup.id),
-//                                                                  resourceType: ResourceType.computerGroup,
-//                                                                  server: server)
+                        xmlController.addMultipleComputersToGroup2(xmlContent: xmlController.computerGroupMembersXML,
+                                                                   computers: selection,
+                                                                   authToken: networkController.authToken,
+                                                                   groupId: String(compGroup.id),
+                                                                   resourceType: ResourceType.computerGroup,
+                                                                   server: server)
                     }
                     
                 }) {
@@ -158,27 +158,28 @@ struct ComputersBasicView: View {
                     }
                 }
                 
+                //            }
+                //                .padding()
+                
+                
+                
+                
+                
+                
+                //        }
+                
+            } else {
+                
+                ProgressView {
+                    Text("Loading data")
+                        .font(.title)
+                        .progressViewStyle(.horizontal)
+                }
+                .padding()
+                Spacer()
             }
-//                .padding()
-            
-            
-            
-            
-            
-            
         }
-        
-        //        } else {
-        //
-        //            ProgressView {
-        //                Text("Loading data")
-        //                    .font(.title)
-        //                    .progressViewStyle(.horizontal)
-        //            }
-        //            .padding()
-        //            Spacer()
-        //        }
-        //    }
+    }
         
         //        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
         
@@ -196,9 +197,9 @@ struct ComputersBasicView: View {
         //            //            }
         //        }
         //}
-        
-    }
     
+//}
+
     func handleConnect(resourceType: ResourceType) async {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
     }

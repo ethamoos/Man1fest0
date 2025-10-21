@@ -208,12 +208,7 @@ class XmlBrain: ObservableObject {
             print(self.aexmlDoc.root.xml)
             
         }
-        
-        
-        
-        
             separationLine()
-            
         print("Updated Final Content is:")
         separationLine()
         print(self.aexmlDoc.root.xml)
@@ -223,7 +218,40 @@ class XmlBrain: ObservableObject {
     }
     
     
-    
+    func addMultipleComputersToGroup2(xmlContent: String, computers: Set<ComputerBasicRecord>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
+        readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
+        
+        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
+        let url = URL(string: jamfURLQuery)!
+        separationLine()
+        print("Running addMultipleComputersToGroup XML brain")
+        separationLine()
+        print("xmlContent is:")
+        separationLine()
+        print(xmlContent)
+        separationLine()
+        print("url is:\(url)")
+        print("groupId is:\(groupId)")
+        
+        for eachComputer in computers {
+            
+            let computers = self.aexmlDoc.root["computers"]
+            let computer = self.aexmlDoc.root["computers"].addChild(name: "computer")
+            computer.addChild(name: "id", value:String(describing: eachComputer.id))
+            computer.addChild(name: "name", value:String(describing: eachComputer.name))
+            print("updatedContent is:")
+            separationLine()
+            print(self.aexmlDoc.root.xml)
+            
+        }
+            separationLine()
+        print("Updated Final Content is:")
+        separationLine()
+        print(self.aexmlDoc.root.xml)
+        let jamfCount = computers.count
+        print("jamfCount is:\(jamfCount)")
+        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+    }
     
     
     // ######################################################################################
