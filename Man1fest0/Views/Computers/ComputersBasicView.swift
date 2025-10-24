@@ -1,5 +1,3 @@
-
-
 import SwiftUI
 
 struct ComputersBasicView: View {
@@ -41,13 +39,14 @@ struct ComputersBasicView: View {
                 
                 NavigationView {
 #if os(macOS)
-                    List(networkController.allComputersBasic.computers, id: \.self, selection: $selection) { computer in
+                    List(searchResults, id: \.self, selection: $selection) { computer in
                         HStack {
                             Image(systemName: "apple.logo")
                             Text(computer.name).font(.system(size: 12.0))
                         }
                         .foregroundColor(.blue)
                     }
+                    .searchable(text: $searchText)
                     
                     
                     
@@ -62,13 +61,14 @@ struct ComputersBasicView: View {
                     //
                     
 #else
-                    List(networkController.allComputersBasic.computers, id: \.self) { computer in
+                    List(searchResults, id: \.self) { computer in
                         HStack {
                             Image(systemName: "apple.logo")
                             Text(computer.name).font(.system(size: 12.0))
                         }
                         .foregroundColor(.blue)
                     }
+                    .searchable(text: $searchText)
 #endif
                     Text("\(networkController.computers.count) total computers")
                 }
