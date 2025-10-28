@@ -68,6 +68,8 @@ struct PolicyDetailView: View {
     
     @State var policyNameInitial = ""
     
+    @State var policyNameClone = ""
+    
     @State var policyCustomTrigger = ""
     
     
@@ -225,31 +227,7 @@ struct PolicyDetailView: View {
                     Text("Disabled")
                 }
                 
-                //              ##########################################################################
-                //              CLONE
-                //              ##########################################################################
-                
-                Button(action: {
-                    print("Cloning policy:\(policyName)")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    if policyName.isEmpty == true {
-                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                        let newPolicyName = "\(policyNameInitial)-1"
-                        print("No name provided - policy is:\(newPolicyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
-                    } else {
-                        print("Policy name is set as:\(policyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyName, authToken: networkController.authToken)
-                    }
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "dog")
-                        Text("Clone")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
+            
 #endif
                 
                 //  ##########################################################################
@@ -257,12 +235,10 @@ struct PolicyDetailView: View {
                 //  ##########################################################################
                 
                 Button(action: {
-                    
                     progress.showProgress()
                     progress.waitForABit()
                     print("Deleting policy:\(policyID)")
                     showingWarning = true
-                    
                 }) {
                     HStack(spacing: 10) {
                         Image(systemName: "delete.left.fill")
@@ -346,6 +322,38 @@ struct PolicyDetailView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                
+                
+                HStack {
+                //              ##########################################################################
+                //              CLONE
+                //              ##########################################################################
+                
+                TextField(policyNameClone, text: $policyName)
+                    .textSelection(.enabled)
+                
+                Button(action: {
+                    print("Cloning policy:\(policyName)")
+                    progress.showProgress()
+                    progress.waitForABit()
+                    if policyNameClone.isEmpty == true {
+                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
+                        let newPolicyName = "\(policyNameInitial)-1"
+                        print("No name provided - policy is:\(newPolicyName)")
+                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+                    } else {
+                        print("Policy name is set as:\(policyName)")
+                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
+                    }
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "dog")
+                        Text("Clone")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+            }
 #endif
             }
             
@@ -554,7 +562,7 @@ struct PolicyDetailView: View {
                 
                 PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
                     .tabItem {
-                        Label("Remove Items", systemImage: "square.and.pencil")
+                        Label("Clear", systemImage: "square.and.pencil")
                     }
             }
 

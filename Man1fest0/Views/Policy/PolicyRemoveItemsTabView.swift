@@ -26,6 +26,10 @@ struct PolicyRemoveItemsTabView: View {
     var server: String
     var resourceType: ResourceType
     
+    @State var showingWarningClearLimit: Bool = false
+    
+    @State var showingWarningClearExclusions: Bool = false
+    
     @State private var selectedResourceType = ResourceType.policyDetail
     
     //  #############################################################################
@@ -130,6 +134,50 @@ struct PolicyRemoveItemsTabView: View {
                     .help("This clears the reboot node from the policy")
                 }
                 
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    showingWarningClearLimit = true
+                }) {
+                    Text("Clear Limitations")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .alert(isPresented: $showingWarningClearLimit) {
+                    Alert(
+                        title: Text("Caution!"),
+                        message: Text("This action will clear any current limitations on the policy scoping.\n Some devices previously blocked may now receive the policy"),
+                        primaryButton: .destructive(Text("I understand!")) {
+                            // Code to execute when "Yes" is tapped
+                            xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML)
+                            print("Yes tapped")
+                        },
+                        secondaryButton: .cancel()
+                    )
+                }
+                
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    showingWarningClearExclusions = true
+                }) {
+                    Text("Clear Exclusions")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .alert(isPresented: $showingWarningClearExclusions) {
+                    Alert(
+                        title: Text("Caution!"),
+                        message: Text("This action will clear any current exclusions on the policy scoping.\n Some devices previously blocked may now receive the policy"),
+                        primaryButton: .destructive(Text("I understand!")) {
+                            // Code to execute when "Yes" is tapped
+                            xmlController.removeExclusions(server: server, policyID: String(describing:policyID), authToken: networkController.authToken)
+                            print("Yes tapped")
+                        },
+                        secondaryButton: .cancel()
+                    )
+                }
+                
                 //                    Button(action: {
                 //                        progress.showProgress()
                 //                        progress.waitForABit()
@@ -171,6 +219,8 @@ struct PolicyRemoveItemsTabView: View {
         }
     }
 }
+
+
 //#Preview {
 //    PolicyPackageTabView()
 //}
