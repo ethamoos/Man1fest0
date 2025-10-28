@@ -582,14 +582,29 @@ struct PolicyDetailView: View {
         
         .onAppear {
             networkController.separationLine()
-            print("PolicyDetailView appeared - running detailed policy connect function")
             progress.showProgress()
             progress.waitForNotVeryLong()
 
             Task {
+                print("PolicyDetailView appeared - running getDetailedPolicy function")
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                 policyName = networkController.policyDetailed?.general?.name ?? ""
                 policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
+                trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
+                trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
+                trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
+                trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+               
+               if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
+                   pushTriggerActiveWarning = true
+                   print("Push trigger is active!")
+               } else {
+                   pushTriggerActiveWarning = false
+                   print("Push trigger has been deactivated")
+               }
+                
+                
+                
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
             
@@ -632,19 +647,7 @@ struct PolicyDetailView: View {
             }
         
           
-             trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
-             trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
-             trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
-             trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
-            
-            if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
-                pushTriggerActiveWarning = true
-                print("Push trigger is active!")
-            } else {
-                pushTriggerActiveWarning = false
-                print("Push trigger has been deactivated")
-
-            }
+         
           
             if networkController.packagesAssignedToPolicy.count <= 0 {
                 
