@@ -36,12 +36,12 @@ struct PolicyTriggersTabView: View {
     
     var body: some View {
         
-        let currentTrigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
-        let currentTrigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
-        let currentTrigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
-        let currentTrigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
-        let currentTrigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
-        
+//        let currentTrigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
+//        let currentTrigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
+//        let currentTrigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
+//        let currentTrigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+//        let currentTrigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
+//        
         VStack(alignment: .leading) {
             
             LazyVGrid(columns: layout.columnFlexWide, alignment: .leading, spacing: 10) {
@@ -74,7 +74,7 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_checkin) {
                     HStack {
                         Text("Checkin:")
-                        Text("\(currentTrigger_checkin)")
+                        Text("\(trigger_checkin)")
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -82,7 +82,7 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_login) {
                     HStack {
                         Text("Login:")
-                        Text("\(currentTrigger_login)")
+                        Text("\(trigger_login)")
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -90,7 +90,7 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_startup) {
                     HStack {
                         Text("Startup:")
-                        Text("\(currentTrigger_startup)")
+                        Text("\(trigger_startup)")
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -98,7 +98,7 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_enrollment_complete) {
                     HStack {
                         Text("Enrollment Complete:")
-                        Text("\(currentTrigger_enrollment_complete)")
+                        Text("\(trigger_enrollment_complete)")
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -114,7 +114,7 @@ struct PolicyTriggersTabView: View {
                         
                         
 //                    } else {
-//                        
+//
 //                        Text("Custom Trigger not configured")
 //                    }
             }
@@ -123,6 +123,11 @@ struct PolicyTriggersTabView: View {
         .padding()
         .onAppear() {
             trigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
+            trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
+            trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
+            trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+            trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
+            
         }
     }
 }
