@@ -48,18 +48,6 @@ struct ComputersBasicView: View {
                     }
                     .searchable(text: $searchText)
                     
-                    
-                    
-                    //                    List(searchResults, id: \.self, selection: $selection) { computer in
-                    //
-                    //                            HStack {
-                    //                                Image(systemName: "desktopcomputer")
-                    //                                Text(computer.name ).font(.system(size: 12.0)).foregroundColor(.blue)
-                    //                            }
-                    //                            .foregroundColor(.blue)
-                    //                    }
-                    //
-                    
 #else
                     List(searchResults, id: \.self) { computer in
                         HStack {
@@ -150,6 +138,18 @@ struct ComputersBasicView: View {
                         }
                     }
                     .onAppear {
+                        
+                        if networkController.allComputersBasic.computers.count == 0 {
+                            print("Fetching computers")
+                            Task {
+                                try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                            }
+                        }
+                        
+                        Task {
+                            try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                        }
+                        
                         if let first = networkController.allComputerGroups.first {
                             selectionCompGroup = first
                         } else {
@@ -157,16 +157,6 @@ struct ComputersBasicView: View {
                         }
                     }
                 }
-                
-                //            }
-                //                .padding()
-                
-                
-                
-                
-                
-                
-                //        }
                 
             } else {
                 

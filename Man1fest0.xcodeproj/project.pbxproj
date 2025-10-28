@@ -278,8 +278,8 @@
 				A857A3E72E1FF9A000A96F3A /* ConfigProfiles */,
 				E48D59D92C5A452D00E1E35B /* Create */,
 				A86AF37F2C3FE2C2009349C4 /* Computers */,
-				A87190492B6CF74500FC8FB2 /* GroupsView.swift */,
 				A83D00DA2D774FC30091B794 /* ErrorView.swift */,
+				A87190492B6CF74500FC8FB2 /* GroupsView.swift */,
 				A83D21062DE6124900D9AD2F /* GroupsSmartView.swift */,
 				A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */,
 				E48D59D42C5961B800E1E35B /* Packages */,
@@ -875,7 +875,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -920,7 +920,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

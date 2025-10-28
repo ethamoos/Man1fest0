@@ -141,8 +141,6 @@ struct ComputerActionView: View {
             
             Text("\(networkController.allComputersBasic.computers.count) total computers")
             
-//            Text("You have:\(selection.count) selections")
-            
         }
 
         Divider()
@@ -235,9 +233,6 @@ struct ComputerActionView: View {
         //              ##########################################################################
         //              Selections
         //              ##########################################################################
-        
-        Divider()
-        
 //        Text("Selections").fontWeight(.bold)
 //        List(Array(selection), id: \.self) { computer in//
 //            Text(computer.name )
@@ -250,7 +245,8 @@ struct ComputerActionView: View {
         //              ##########################################################################
         //              Progress view
         //              ##########################################################################
-        
+        Divider()
+
         if progress.showProgressView == true {
             
             ProgressView {
@@ -283,10 +279,8 @@ struct ComputerActionView: View {
         
         //        func processComputersSelected(selectionConverted: [Computer], operation:(String)->Void) {
         //        (networkController.downloadFileAsync)->Void)
-        
         print("Selection is:\(String(describing: item))")
         print("deleting item:\(item) !!!!!!!!!!!!!!!!!!!!!!")
-        
     }
     
     func hideDetailScreen() {
