@@ -357,12 +357,13 @@ struct PolicyDetailView: View {
             
             Divider()
             
+            
                 
                 VStack(alignment: .leading) {
                     
                     Text("Edit Names:").fontWeight(.bold)
                     
-                    LazyVGrid(columns: layout.fourColumns, spacing: 20) {
+                    LazyVGrid(columns: layout.columns, spacing: 20) {
                         
                         HStack {
                             
