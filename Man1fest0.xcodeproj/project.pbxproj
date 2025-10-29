@@ -235,6 +235,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A83049192EB22F3C00A28F8D /* PolicySearch */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicySearch; sourceTree = "<group>"; };
 		A83D011A2D7850E40091B794 /* JamfObjects */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JamfObjects; sourceTree = "<group>"; };
 		A857A3E72E1FF9A000A96F3A /* ConfigProfiles */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ConfigProfiles; sourceTree = "<group>"; };
 		A857A3E82E1FFA0B00A96F3A /* Structures */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Structures; sourceTree = "<group>"; };
@@ -422,6 +423,7 @@
 				A813C12A2E54873000735884 /* PolicyDetailScopeTabView.swift */,
 				A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */,
 				A857A4272E2566B300A96F3A /* NotesView.swift */,
+				A83049192EB22F3C00A28F8D /* PolicySearch */,
 				A87BF5C52EB13CD000E065BB /* PolicyListView.swift */,
 				A87BF5C72EB13CDC00E065BB /* PolicyRowView.swift */,
 			);
@@ -551,6 +553,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				A83049192EB22F3C00A28F8D /* PolicySearch */,
 				A83D011A2D7850E40091B794 /* JamfObjects */,
 				A857A3E72E1FF9A000A96F3A /* ConfigProfiles */,
 				A857A3E82E1FFA0B00A96F3A /* Structures */,

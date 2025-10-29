@@ -52,7 +52,7 @@ struct PolicyRowView: View {
                     }
                     .padding(.leading, 18)
                     .padding(8)
-                    .background(Color.yellow.opacity(0.06))
+                    .background(Color.white.opacity(0.06))
 //                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.red.opacity(0.7), lineWidth: 1))
                     .fixedSize(horizontal: false, vertical: true)
                     .layoutPriority(1)

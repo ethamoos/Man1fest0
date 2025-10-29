@@ -68,16 +68,7 @@ struct PolicyListView: View {
                 Button("Clear Empty Field Search") {
                     searchForEmptyField = nil
                 }
-                // Button to run an operation on all matching items (prints their jamf IDs)
-                Button("Print Matching IDs") {
-                    // Recompute matches to ensure we have the latest set
-                    updateMatchingIDs()
-                    // Print the IDs (and paired names for convenience)
-                    let ids = policiesMatchingItems
-                    let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
-                    print("Matching policy jamf IDs: \(ids)")
-                    print("Matching policy names: \(names)")
-                }
+      
                 Spacer()
             }
             .padding()
@@ -91,16 +82,26 @@ struct PolicyListView: View {
                         let isHighlighted = pair.isHighlighted
                         PolicyRowView(policy: policy)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(isHighlighted ? Color.yellow.opacity(0.12) : Color.clear)
+                            .background(isHighlighted ? Color.white.opacity(0.12) : Color.clear)
                             .cornerRadius(6)
                             .padding(.horizontal)
                     }
                 }
                 .padding(.vertical)
             }
-
-            Text("Matching Policies")
-            Text("Policies Missing Item")
+            // Button to run an operation on all matching items (prints their jamf IDs)
+            Button("Print Matching IDs") {
+                // Recompute matches to ensure we have the latest set
+                updateMatchingIDs()
+                // Print the IDs (and paired names for convenience)
+                let ids = policiesMatchingItems
+                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
+                print("Matching policy jamf IDs: \(ids)")
+                print("Matching policy names: \(names)")
+            }
+//
+//            Text("Matching Policies")
+//            Text("Policies Missing Item")
 
             List {
                 ForEach(networkController.policiesMissingItems, id: \.self) { policy in
