@@ -21,12 +21,15 @@ struct PolicyListView: View {
     
     var body: some View {
         
-        var filteredPolicies: [PolicyDetailed?] {
-            networkController.allPoliciesDetailed.enumerated().compactMap { idx, policy in
-                let isMatch = isPolicyMatch(policy!)
-                print("isMatch is:\(isMatch)")
-                return isMatch ? policy : nil
-            }
+        var filteredPolicies: [PolicyDetailed] {
+            // Safely unwrap optionals, then filter using isPolicyMatch
+            networkController.allPoliciesDetailed
+                .compactMap { $0 } // remove nil entries
+                .filter { policy in
+                    let isMatch = isPolicyMatch(policy)
+                    print("isMatch is:\(isMatch)")
+                    return isMatch
+                }
         }
         
         VStack {
@@ -54,8 +57,11 @@ struct PolicyListView: View {
             // Use ScrollView + LazyVStack so rows can expand naturally (List enforces row sizing on macOS which can clip expanded content).
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
-                    ForEach(networkController.allPoliciesDetailed.indices, id: \.self) { idx in
-                        if let policy = networkController.allPoliciesDetailed[idx] {
+                    // Use tuple index keypath (.0) so the compiler can infer the id type
+                    ForEach(Array(networkController.allPoliciesDetailed.enumerated()), id: \.offset) { pair in
+                        let idx = pair.offset
+                        let optionalPolicy = pair.element
+                        if let policy = optionalPolicy {
                             let isHighlighted = isPolicyMatch(policy)
                             PolicyRowView(policy: policy)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,20 +74,10 @@ struct PolicyListView: View {
                 .padding(.vertical)
             }
             
-            /*
-            List(networkController.allPoliciesDetailed, id: \\.self, selection: $selection) { policy in
-                let isHighlighted = isPolicyMatch(policy!)
-                PolicyRowView(policy: policy)
-                    .listRowBackground(isHighlighted ? Color.yellow.opacity(0.3) : Color.clear)
-            }
-            */
+      
             
             Text("Matching Policies")
 
-//            List(networkController.policiesMatchingItem, id: \.self, selection: $selectionMatching) { policy in
-//
-//                Text("Policy ID:\(policy)")
-//            }
             
             Text("Policies Missing Item")
 
@@ -106,7 +102,6 @@ struct PolicyListView: View {
                         
                         networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
                         
-//                        convertToallPoliciesDetailedGeneral()
                     
                         progress.waitForABit()
                         
@@ -126,9 +121,7 @@ struct PolicyListView: View {
     // MARK: - Matching Logic
     func isPolicyMatch(_ policy: PolicyDetailed) -> Bool {
         if let emptyField = searchForEmptyField, searchString.isEmpty {
-//            print("searchString is emptyField:\(emptyField)
             print("Missing policy is:\(String(describing: policy.general?.name ?? ""))")
-//            networkController.policiesMissingItems.insert(policy.general?.jamfId ?? 0, at: 0)
             return emptyField.isFieldEmpty(in: policy)
         }
         if searchString.isEmpty { return true }
@@ -170,7 +163,7 @@ enum SearchField: String, CaseIterable {
                 (policy.general?.enabled != nil && "\(policy.general!.enabled!)".localizedCaseInsensitiveContains(search)) ||
                 (policy.self_service?.selfServiceDisplayName?.localizedCaseInsensitiveContains(search) ?? false) ||
                 (policy.self_service?.selfServiceDescription?.localizedCaseInsensitiveContains(search) ?? false) ||
-            (policy.self_service?.selfServiceIcon?.uri?.localizedCaseInsensitiveContains(search) ?? false)
+            ((policy.self_service?.selfServiceIcon?.uri ?? "").localizedCaseInsensitiveContains(search))
         case .generalName:
             return policy.general?.name?.localizedCaseInsensitiveContains(search) ?? false
         case .generalID:
@@ -182,7 +175,7 @@ enum SearchField: String, CaseIterable {
         case .selfServiceDescription:
             return policy.self_service?.selfServiceDescription?.localizedCaseInsensitiveContains(search) ?? false
         case .selfServiceIconURI:
-            return policy.self_service?.selfServiceIcon?.uri?.localizedCaseInsensitiveContains(search) ?? false
+            return (policy.self_service?.selfServiceIcon?.uri ?? "").localizedCaseInsensitiveContains(search)
         }
     }
     func isFieldEmpty(in policy: PolicyDetailed) -> Bool {
@@ -200,7 +193,7 @@ enum SearchField: String, CaseIterable {
         case .selfServiceDescription:
             return (policy.self_service?.selfServiceDescription?.isEmpty ?? true)
         case .selfServiceIconURI:
-            return (policy.self_service?.selfServiceIcon?.uri?.isEmpty ?? true)
+            return (policy.self_service?.selfServiceIcon?.uri ?? "").isEmpty
         }
     }
 }
