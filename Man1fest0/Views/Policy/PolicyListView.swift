@@ -18,20 +18,28 @@ struct PolicyListView: View {
     @State var selectionMatching = ""
     @State var selectionMissing = ""
 
+    // Move filteredPolicies here so it can be reused and inspected
+    var filteredPolicies: [PolicyDetailed] {
+        networkController.allPoliciesDetailed
+            .compactMap { $0 } // remove nil entries
+            .filter { policy in
+                let isMatch = isPolicyMatch(policy)
+                // Avoid printing too frequently in production; left for parity with existing behavior
+                print("isMatch is:\(isMatch) for policy: \(policy.general?.name ?? "(no name)")")
+                return isMatch
+            }
+    }
     
+    // Helper to update matching IDs (and sync to NetBrain if desired)
+    private func updateMatchingIDs() {
+        let ids = filteredPolicies.compactMap { $0.general?.jamfId }
+        // store locally for view logic
+        policiesMatchingItems = ids
+        // also update the network controller's published copy so other views can use it
+        networkController.policiesMatchingItems = ids
+    }
+
     var body: some View {
-        
-        var filteredPolicies: [PolicyDetailed] {
-            // Safely unwrap optionals, then filter using isPolicyMatch
-            networkController.allPoliciesDetailed
-                .compactMap { $0 } // remove nil entries
-                .filter { policy in
-                    let isMatch = isPolicyMatch(policy)
-                    print("isMatch is:\(isMatch)")
-                    return isMatch
-                }
-        }
-        
         VStack {
             HStack {
                 TextField("Search...", text: $searchString)
@@ -53,32 +61,23 @@ struct PolicyListView: View {
             }
             .padding()
   
-        
             // Use ScrollView + LazyVStack so rows can expand naturally (List enforces row sizing on macOS which can clip expanded content).
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
-                    // Use tuple index keypath (.0) so the compiler can infer the id type
-                    ForEach(Array(networkController.allPoliciesDetailed.enumerated()), id: \.offset) { pair in
-                        let idx = pair.offset
-                        let optionalPolicy = pair.element
-                        if let policy = optionalPolicy {
-                            let isHighlighted = isPolicyMatch(policy)
-                            PolicyRowView(policy: policy)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(isHighlighted ? Color.yellow.opacity(0.12) : Color.clear)
-                                .cornerRadius(6)
-                                .padding(.horizontal)
-                        }
+                    // Show only filtered (matching) policies and use the model's Identifiable id
+                    ForEach(filteredPolicies, id: \.id) { policy in
+                        let isHighlighted = isPolicyMatch(policy)
+                        PolicyRowView(policy: policy)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(isHighlighted ? Color.yellow.opacity(0.12) : Color.clear)
+                            .cornerRadius(6)
+                            .padding(.horizontal)
                     }
                 }
                 .padding(.vertical)
             }
-            
-      
-            
-            Text("Matching Policies")
 
-            
+            Text("Matching Policies")
             Text("Policies Missing Item")
 
             List {
@@ -87,34 +86,31 @@ struct PolicyListView: View {
                 }
             }
             
-            
-            
             .onAppear() {
+                // If detailed policies haven't been fetched, fetch them (existing behavior)
                 if networkController.fetchedDetailedPolicies == false {
-                    
                     print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-                    
                     if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
-                        
                         print("fetching detailed policies")
-                        
                         progress.showProgress()
-                        
                         networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                        
-                    
                         progress.waitForABit()
-                        
                         networkController.fetchedDetailedPolicies = true
-                        
                     } else {
                         print("Download complete")
                     }
                 } else {
                     print("fetchedDetailedPolicies has run")
                 }
-                
+                // Update the matching IDs when the view appears
+                updateMatchingIDs()
             }
+            // Keep matching IDs up to date when inputs change
+            .onChange(of: searchString) { _ in updateMatchingIDs() }
+            .onChange(of: searchField) { _ in updateMatchingIDs() }
+            .onChange(of: searchForEmptyField) { _ in updateMatchingIDs() }
+            // Also update if the underlying policies array changes
+            .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
         }
     }
     
