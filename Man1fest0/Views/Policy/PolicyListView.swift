@@ -18,24 +18,35 @@ struct PolicyListView: View {
     @State var selectionMatching = ""
     @State var selectionMissing = ""
 
-    // Move filteredPolicies here so it can be reused and inspected
-    var filteredPolicies: [PolicyDetailed] {
+    // Identifiable wrapper so ForEach can use the pairs directly as data
+    private struct MatchedPolicyPair: Identifiable {
+        let policy: PolicyDetailed
+        let isHighlighted: Bool
+        var id: UUID { policy.id }
+    }
+
+    // Cached matched pairs so matching logic runs once per update
+    @State private var matchedPolicyPairsState: [MatchedPolicyPair] = []
+
+    // Compute matched policies (policy + isHighlighted)
+    private func computeMatchedPairs() -> [MatchedPolicyPair] {
         networkController.allPoliciesDetailed
             .compactMap { $0 } // remove nil entries
-            .filter { policy in
-                let isMatch = isPolicyMatch(policy)
-                // Avoid printing too frequently in production; left for parity with existing behavior
-                print("isMatch is:\(isMatch) for policy: \(policy.general?.name ?? "(no name)")")
-                return isMatch
+            .map { policy in
+                let isHighlighted = isPolicyMatch(policy)
+                return MatchedPolicyPair(policy: policy, isHighlighted: isHighlighted)
             }
+            .filter { $0.isHighlighted } // show only matches
     }
     
     // Helper to update matching IDs (and sync to NetBrain if desired)
     private func updateMatchingIDs() {
-        let ids = filteredPolicies.compactMap { $0.general?.jamfId }
-        // store locally for view logic
+        let pairs = computeMatchedPairs()
+        // update cached pairs used by the view
+        matchedPolicyPairsState = pairs
+        // update ids
+        let ids = pairs.compactMap { $0.policy.general?.jamfId }
         policiesMatchingItems = ids
-        // also update the network controller's published copy so other views can use it
         networkController.policiesMatchingItems = ids
     }
 
@@ -65,8 +76,9 @@ struct PolicyListView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     // Show only filtered (matching) policies and use the model's Identifiable id
-                    ForEach(filteredPolicies, id: \.id) { policy in
-                        let isHighlighted = isPolicyMatch(policy)
+                    ForEach(matchedPolicyPairsState) { pair in
+                        let policy = pair.policy
+                        let isHighlighted = pair.isHighlighted
                         PolicyRowView(policy: policy)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(isHighlighted ? Color.yellow.opacity(0.12) : Color.clear)
