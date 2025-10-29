@@ -41,9 +41,9 @@ struct PolicyRowView: View {
 
                 if isExpanded {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("DEBUG: Expanded content shown")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+//                        Text("DEBUG: Expanded content shown")
+//                            .font(.caption)
+//                            .foregroundColor(.secondary)
                         HStack { Text("General Name:"); Text(generalName).foregroundColor(.primary) }
                         HStack { Text("Name:"); Text(generalName).foregroundColor(.primary) }
                         HStack { Text("General ID:"); Text(generalJamfIdString).foregroundColor(.primary) }
@@ -53,7 +53,7 @@ struct PolicyRowView: View {
                     .padding(.leading, 18)
                     .padding(8)
                     .background(Color.yellow.opacity(0.06))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.red.opacity(0.7), lineWidth: 1))
+//                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.red.opacity(0.7), lineWidth: 1))
                     .fixedSize(horizontal: false, vertical: true)
                     .layoutPriority(1)
                 }
