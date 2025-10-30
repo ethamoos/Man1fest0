@@ -3,31 +3,52 @@ import SwiftUI
 struct PolicyListView: View {
     
     var server: String
-
+    
+    
+    //  ########################################################################################
+    //    EnvironmentObject
+    //  ########################################################################################
+    
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
-
+    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var xmlController: XmlBrain
+    
+    
     @State private var searchString: String = ""
     @State private var searchField: SearchField = .all
     @State private var searchForEmptyField: SearchField? = nil
     
     @State var policiesMatchingItems: [Int] = []
     @State var policiesMissingItems: [Int] = []
-
+    @State var policyName = ""
+    @State var policyID: Int = 0
+    @State private var selectedResourceType = ResourceType.policyDetail
+    
+    
+    @State var newSelfServiceName = ""
+    
+    //  ########################################################################################
+    //    SELECTIONS
+    //  ########################################################################################
+    
     @State var selection = Set<PolicyDetailed>()
     @State var selectionMatching = ""
     @State var selectionMissing = ""
-
+    @State var iconFilter = ""
+    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
+    @State var selectedIconString = ""
+    
     // Identifiable wrapper so ForEach can use the pairs directly as data
     private struct MatchedPolicyPair: Identifiable {
         let policy: PolicyDetailed
         let isHighlighted: Bool
         var id: UUID { policy.id }
     }
-
+    
     // Cached matched pairs so matching logic runs once per update
     @State private var matchedPolicyPairsState: [MatchedPolicyPair] = []
-
+    
     // Compute matched policies (policy + isHighlighted)
     private func computeMatchedPairs() -> [MatchedPolicyPair] {
         networkController.allPoliciesDetailed
@@ -49,7 +70,7 @@ struct PolicyListView: View {
         policiesMatchingItems = ids
         networkController.policiesMatchingItems = ids
     }
-
+    
     var body: some View {
         VStack {
             HStack {
@@ -68,11 +89,11 @@ struct PolicyListView: View {
                 Button("Clear Empty Field Search") {
                     searchForEmptyField = nil
                 }
-      
+                
                 Spacer()
             }
             .padding()
-  
+            
             // Use ScrollView + LazyVStack so rows can expand naturally (List enforces row sizing on macOS which can clip expanded content).
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
@@ -99,42 +120,166 @@ struct PolicyListView: View {
                 print("Matching policy jamf IDs: \(ids)")
                 print("Matching policy names: \(names)")
             }
-//
-//            Text("Matching Policies")
-//            Text("Policies Missing Item")
-
-            List {
-                ForEach(networkController.policiesMissingItems, id: \.self) { policy in
-                    Text("Policy ID:\(policy)")
-                }
-            }
+            //
+            //            Text("Matching Policies")
+            //            Text("Policies Missing Item")
             
-            .onAppear() {
-                // If detailed policies haven't been fetched, fetch them (existing behavior)
-                if networkController.fetchedDetailedPolicies == false {
-                    print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-                    if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
-                        print("fetching detailed policies")
-                        progress.showProgress()
-                        networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                        progress.waitForABit()
-                        networkController.fetchedDetailedPolicies = true
-                    } else {
-                        print("Download complete")
+            //            List {
+            //                ForEach(networkController.policiesMissingItems, id: \.self) { policy in
+            //                    Text("Policy ID:\(policy)")
+            //                }
+            //            }
+            
+            
+            Text("Icons").bold()
+            
+#if os(macOS)
+            List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
+                HStack {
+                    Image(systemName: "photo.circle")
+                    Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
+                    AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                        image.resizable().frame(width: 15, height: 15)
+                    } placeholder: {
                     }
-                } else {
-                    print("fetchedDetailedPolicies has run")
                 }
-                // Update the matching IDs when the view appears
-                updateMatchingIDs()
+                .foregroundColor(.gray)
+                .listRowBackground(selectedIconString == icon.name
+                                   ? Color.green.opacity(0.3)
+                                   : Color.clear)
+                .tag(icon)
             }
-            // Keep matching IDs up to date when inputs change
-            .onChange(of: searchString) { _ in updateMatchingIDs() }
-            .onChange(of: searchField) { _ in updateMatchingIDs() }
-            .onChange(of: searchForEmptyField) { _ in updateMatchingIDs() }
-            // Also update if the underlying policies array changes
-            .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
+            .cornerRadius(8)
+            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
+#else
+            
+            List(networkController.allIconsDetailed, id: \.self) { icon in
+                HStack {
+                    Image(systemName: "photo.circle")
+                    Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
+                    AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                        image.resizable().frame(width: 15, height: 15)
+                    } placeholder: {
+                    }
+                }
+            }
+#endif
+            //                                    .background(.gray)
+            //        }
+            
+            
+            // ################################################################################
+            //                        Icons - picker
+            // ################################################################################
+            
+            
+            LazyVGrid(columns: layout.columns, spacing: 10) {
+                
+                
+                HStack {
+                    TextField("Filter", text: $iconFilter)
+                    Picker(selection: $selectedIcon, label: Text("").bold()) {
+                        Text("No icon selected").tag(nil as Icon?)
+                        ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }, id: \.self) { icon in
+                            HStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.15))
+                                        .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                                    AsyncImage(url: URL(string: icon.url ))  { image in
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                                            .clipped()
+                                    } placeholder: {
+                                        ProgressView()
+                                            .frame(width: 32, height: 32)
+                                    }
+                                }
+                                Text(String(describing: icon.name))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.primary)
+                            }
+                            .frame(height: 36)
+                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                            .tag(icon as Icon?)
+                        }
+                    }
+                    .onAppear {
+                        if !networkController.allIconsDetailed.isEmpty {
+                            // Only set selectedIcon if the first icon exists
+                            selectedIcon = networkController.allIconsDetailed.first
+                        } else {
+                            selectedIcon = nil
+                        }
+                    }
+                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+                        if !newIcons.isEmpty {
+                            selectedIcon = newIcons.first
+                        } else {
+                            selectedIcon = nil
+                        }
+                    }
+                }
+                
+                
+                
+                
+                HStack {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        if let icon = selectedIcon {
+                            //                        xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
+                        } else {
+                            print("No icon selected")
+                        }
+                    }) {
+                        Text("Update Icon")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+                HStack {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                            Text("Refresh Icons")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                }
+            }
         }
+        
+        
+        .onAppear() {
+            // If detailed policies haven't been fetched, fetch them (existing behavior)
+            if networkController.fetchedDetailedPolicies == false {
+                print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
+                if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
+                    print("fetching detailed policies")
+                    progress.showProgress()
+                    networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    progress.waitForABit()
+                    networkController.fetchedDetailedPolicies = true
+                } else {
+                    print("Download complete")
+                }
+            } else {
+                print("fetchedDetailedPolicies has run")
+            }
+            // Update the matching IDs when the view appears
+            updateMatchingIDs()
+        }
+        // Keep matching IDs up to date when inputs change
+        .onChange(of: searchString) { _ in updateMatchingIDs() }
+        .onChange(of: searchField) { _ in updateMatchingIDs() }
+        .onChange(of: searchForEmptyField) { _ in updateMatchingIDs() }
+        // Also update if the underlying policies array changes
+        .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
     }
     
     // MARK: - Matching Logic
@@ -145,7 +290,7 @@ struct PolicyListView: View {
         }
         if searchString.isEmpty { return true }
         print("Matching policy is:\(String(describing: policy.general?.name ?? ""))")
-//        networkController.policiesMatchingItems.insert(policy.general?.jamfId ?? 0, at: 0)
+        //        networkController.policiesMatchingItems.insert(policy.general?.jamfId ?? 0, at: 0)
         return searchField.isMatch(in: policy, search: searchString)
     }
 }
@@ -159,7 +304,7 @@ enum SearchField: String, CaseIterable {
     case selfServiceDisplayName
     case selfServiceDescription
     case selfServiceIconURI
-
+    
     var displayName: String {
         switch self {
         case .all: return "All"
@@ -177,11 +322,11 @@ enum SearchField: String, CaseIterable {
         switch self {
         case .all:
             return
-                (policy.general?.name?.localizedCaseInsensitiveContains(search) ?? false) ||
-                (policy.general?.jamfId != nil && "\(policy.general!.jamfId!)".contains(search)) ||
-                (policy.general?.enabled != nil && "\(policy.general!.enabled!)".localizedCaseInsensitiveContains(search)) ||
-                (policy.self_service?.selfServiceDisplayName?.localizedCaseInsensitiveContains(search) ?? false) ||
-                (policy.self_service?.selfServiceDescription?.localizedCaseInsensitiveContains(search) ?? false) ||
+            (policy.general?.name?.localizedCaseInsensitiveContains(search) ?? false) ||
+            (policy.general?.jamfId != nil && "\(policy.general!.jamfId!)".contains(search)) ||
+            (policy.general?.enabled != nil && "\(policy.general!.enabled!)".localizedCaseInsensitiveContains(search)) ||
+            (policy.self_service?.selfServiceDisplayName?.localizedCaseInsensitiveContains(search) ?? false) ||
+            (policy.self_service?.selfServiceDescription?.localizedCaseInsensitiveContains(search) ?? false) ||
             ((policy.self_service?.selfServiceIcon?.uri ?? "").localizedCaseInsensitiveContains(search))
         case .generalName:
             return policy.general?.name?.localizedCaseInsensitiveContains(search) ?? false
@@ -197,6 +342,7 @@ enum SearchField: String, CaseIterable {
             return (policy.self_service?.selfServiceIcon?.uri ?? "").localizedCaseInsensitiveContains(search)
         }
     }
+    
     func isFieldEmpty(in policy: PolicyDetailed) -> Bool {
         switch self {
         case .all:

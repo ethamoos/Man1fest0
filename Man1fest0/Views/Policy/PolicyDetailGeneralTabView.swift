@@ -176,42 +176,6 @@ struct PolicyDetailGeneralTabView: View {
             //                        Icons
             // ################################################################################
             
-            //        VStack(alignment: .leading) {
-            //
-            //            Text("Icons").bold()
-            //#if os(macOS)
-            //            List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-            //                HStack {
-            //                    Image(systemName: "photo.circle")
-            //                    Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-            //                    AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-            //                        image.resizable().frame(width: 15, height: 15)
-            //                    } placeholder: {
-            //                    }
-            //                }
-            //                .foregroundColor(.gray)
-            //                .listRowBackground(selectedIconString == icon?.name
-            //                                   ? Color.green.opacity(0.3)
-            //                                   : Color.clear)
-            //                .tag(icon)
-            //            }
-            //            .cornerRadius(8)
-            //            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-            //#else
-            //
-            //            List(networkController.allIconsDetailed, id: \.self) { icon in
-            //                HStack {
-            //                    Image(systemName: "photo.circle")
-            //                    Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-            //                    AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-            //                        image.resizable().frame(width: 15, height: 15)
-            //                    } placeholder: {
-            //                    }
-            //                }
-            //            }
-            //#endif
-            //            .background(.gray)
-            //        }
             
             // ################################################################################
             //                        Icons - picker
@@ -219,61 +183,6 @@ struct PolicyDetailGeneralTabView: View {
             
           
             LazyVGrid(columns: layout.columns, spacing: 10) {
-                
-//                VStack {
-//                    Picker("Sort Order", selection: $sortOrder) {
-//                        Text("Ascending").tag(SortOrder.ascending)
-//                        Text("Descending").tag(SortOrder.descending)
-//                    }
-//                    .pickerStyle(SegmentedPickerStyle())
-//                    .padding()
-//
-//                    List(sortedItems, id: \.self) { item in
-//                        Text(item)
-//                    }
-//                }
-                
-//                VStack {
-//                    Picker("Sort Options", selection: $sortOption) {
-//                        ForEach(SortOption.allCases) { option in
-//                            Text(option.rawValue).tag(option)
-//                        }
-//                    }
-//                    .pickerStyle(SegmentedPickerStyle())
-//                    .padding()
-//
-//                    List(sortedIcons) { icon in
-//                        Text(icon.id)
-//                    }
-//                }
-                
-                
-//                Picker(selection: $selectedIcon, label: Text("Icon:")) {
-//                    //                            Text("").tag("")
-//                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-//                        HStack {
-//                            Text(String(describing: icon.name ?? ""))
-//
-//                            AsyncImage(url: URL(string: icon.url ?? "" ))  { image in
-//                                image
-//                                    .resizable()
-//                                    .scaledToFill()
-//                            } placeholder: {
-//                                ProgressView()
-//                            }
-//                            .frame(width: 05, height: 05)
-//                            .background(Color.gray)
-//                            .clipShape(Circle())
-//                        }
-//                        .frame(width: 05, height: 05)
-//                    }
-//                    //
-//                    //                ############################################################
-//                    //                Update Icon Button
-//                    //                ############################################################
-//
-//                }
-//
                 
                 
                 HStack {
