@@ -119,15 +119,15 @@ struct PolicyListView: View {
             
             
             // Button to run an operation on all matching items (prints their jamf IDs)
-//            Button("Print Matching IDs") {
-//                // Recompute matches to ensure we have the latest set
-//                updateMatchingIDs()
-//                // Print the IDs (and paired names for convenience)
-//                let ids = policiesMatchingItems
-//                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
-//                print("Matching policy jamf IDs: \(ids)")
-//                print("Matching policy names: \(names)")
-//            }
+            Button("Print Matching IDs") {
+                // Recompute matches to ensure we have the latest set
+                updateMatchingIDs()
+                // Print the IDs (and paired names for convenience)
+                let ids = policiesMatchingItems
+                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
+                print("Matching policy jamf IDs: \(ids)")
+                print("Matching policy names: \(names)")
+            }
      
             
             Text("Icons").bold()
@@ -288,14 +288,24 @@ struct PolicyListView: View {
     
     // MARK: - Matching Logic
     func isPolicyMatch(_ policy: PolicyDetailed) -> Bool {
-        if let emptyField = searchForEmptyField, searchString.isEmpty {
-            print("Missing policy is:\(String(describing: policy.general?.name ?? ""))")
-            return emptyField.isFieldEmpty(in: policy)
+        // Evaluate empty-field filter (if provided)
+        let emptyFieldMatches: Bool
+        if let emptyField = searchForEmptyField {
+            emptyFieldMatches = emptyField.isFieldEmpty(in: policy)
+        } else {
+            emptyFieldMatches = true
         }
-        if searchString.isEmpty { return true }
-        print("Matching policy is:\(String(describing: policy.general?.name ?? ""))")
-        //        networkController.policiesMatchingItems.insert(policy.general?.jamfId ?? 0, at: 0)
-        return searchField.isMatch(in: policy, search: searchString)
+
+        // Evaluate text search filter (if provided)
+        let textFilterMatches: Bool
+        if searchString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            textFilterMatches = true
+        } else {
+            textFilterMatches = searchField.isMatch(in: policy, search: searchString)
+        }
+
+        // Both filters must pass (if provided) to be considered a match
+        return emptyFieldMatches && textFilterMatches
     }
 }
 
