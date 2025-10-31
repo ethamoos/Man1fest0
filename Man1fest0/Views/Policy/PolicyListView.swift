@@ -40,6 +40,20 @@ struct PolicyListView: View {
     @State private var selectedFieldForFilter: SearchField = .generalName
     @State private var selectedFieldIsEmpty: Bool = false
     
+    // Match-mode and case sensitivity
+    enum MatchMode: String, CaseIterable {
+        case contains
+        case startsWith
+        var displayName: String {
+            switch self {
+            case .contains: return "Contains"
+            case .startsWith: return "Starts With"
+            }
+        }
+    }
+    @State private var matchMode: MatchMode = .contains
+    @State private var caseSensitive: Bool = false
+    
     @State var policiesMatchingItems: [Int] = []
     @State var policiesMissingItems: [Int] = []
     @State var policyName = ""
@@ -94,35 +108,56 @@ struct PolicyListView: View {
     
     var body: some View {
         VStack {
-            HStack {
-                TextField("Search...", text: $searchString)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    TextField("Search...", text: $searchString)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(maxWidth: 300)
+                    
+                    // Text search scope segmented control
+                    Picker("Search", selection: $textSearchScope) {
+                        ForEach(TextSearchScope.allCases, id: \.self) { scope in
+                            Text(scope.displayName)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
                     .frame(maxWidth: 300)
-                
-                // Text search scope segmented control
-                Picker("Text Search In", selection: $textSearchScope) {
-                    ForEach(TextSearchScope.allCases, id: \.self) { scope in
-                        Text(scope.displayName)
+                    
+                    // Selected-field picker (used when scope is .selectedField or to choose which field to check for emptiness)
+                    Picker("Field", selection: $selectedFieldForFilter) {
+                        ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
+                            Text(field.displayName)
+                        }
                     }
+                    .pickerStyle(MenuPickerStyle())
+                    
+                    Spacer()
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .frame(maxWidth: 300)
                 
-                // Selected-field picker (used when scope is .selectedField or to choose which field to check for emptiness)
-                Picker("Field", selection: $selectedFieldForFilter) {
-                    ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
-                        Text(field.displayName)
+                HStack {
+                    // Match mode segmented control (Contains / Starts With)
+                    Picker("Match Mode", selection: $matchMode) {
+                        ForEach(MatchMode.allCases, id: \.self) { mode in
+                            Text(mode.displayName)
+                        }
                     }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(maxWidth: 240)
+                    
+                    // Case sensitivity toggle
+                    Toggle(isOn: $caseSensitive) {
+                        Text("Case Sensitive")
+                    }
+                    .toggleStyle(SwitchToggleStyle())
+                    
+                    // Toggle to check selected field is empty. Can be combined with text search scope.
+                    Toggle(isOn: $selectedFieldIsEmpty) {
+                        Text("Selected Field is Empty")
+                    }
+                    .toggleStyle(SwitchToggleStyle())
+                    
+                    Spacer()
                 }
-                .pickerStyle(MenuPickerStyle())
-                
-                // Toggle to check selected field is empty. Can be combined with text search scope.
-                Toggle(isOn: $selectedFieldIsEmpty) {
-                    Text("Selected Field is Empty")
-                }
-                .toggleStyle(SwitchToggleStyle())
-                
-                Spacer()
             }
             .padding()
             
@@ -168,8 +203,8 @@ struct PolicyListView: View {
             List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                 HStack {
                     Image(systemName: "photo.circle")
-                    Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                    AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+                    AsyncImage(url: URL(string: icon.url )) { image in
                         image.resizable().frame(width: 15, height: 15)
                     } placeholder: {
                     }
@@ -187,8 +222,8 @@ struct PolicyListView: View {
             List(networkController.allIconsDetailed, id: \.self) { icon in
                 HStack {
                     Image(systemName: "photo.circle")
-                    Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                    AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+                    AsyncImage(url: URL(string: icon.url )) { image in
                         image.resizable().frame(width: 15, height: 15)
                     } placeholder: {
                     }
@@ -315,8 +350,10 @@ struct PolicyListView: View {
         .onChange(of: textSearchScope) { _ in updateMatchingIDs() }
         .onChange(of: selectedFieldForFilter) { _ in updateMatchingIDs() }
         .onChange(of: selectedFieldIsEmpty) { _ in updateMatchingIDs() }
-        // Also update if the underlying policies array changes
-        .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
+        .onChange(of: matchMode) { _ in updateMatchingIDs() }
+        .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
+         // Also update if the underlying policies array changes
+         .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
     }
     
     // MARK: - Matching Logic
@@ -334,13 +371,35 @@ struct PolicyListView: View {
         let textFilterMatches: Bool = {
             let trimmed = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return true }
+            // Helper to match a single text value according to options
+            func matchText(_ value: String?) -> Bool {
+                guard let value = value else { return false }
+                if caseSensitive {
+                    switch matchMode {
+                    case .contains:
+                        return value.contains(trimmed)
+                    case .startsWith:
+                        return value.hasPrefix(trimmed)
+                    }
+                } else {
+                    let lhs = value.lowercased()
+                    let rhs = trimmed.lowercased()
+                    switch matchMode {
+                    case .contains:
+                        return lhs.contains(rhs)
+                    case .startsWith:
+                        return lhs.hasPrefix(rhs)
+                    }
+                }
+            }
+
             switch textSearchScope {
             case .title:
-                return policy.general?.name?.localizedCaseInsensitiveContains(trimmed) ?? false
+                return matchText(policy.general?.name)
             case .all:
-                return SearchField.all.isMatch(in: policy, search: trimmed)
+                return SearchField.all.isMatch(in: policy, search: trimmed, matchMode: matchMode, caseSensitive: caseSensitive)
             case .selectedField:
-                return selectedFieldForFilter.isMatch(in: policy, search: trimmed)
+                return selectedFieldForFilter.isMatch(in: policy, search: trimmed, matchMode: matchMode, caseSensitive: caseSensitive)
             }
         }()
         
@@ -371,29 +430,57 @@ enum SearchField: String, CaseIterable {
         }
     }
     
-    func isMatch(in policy: PolicyDetailed, search: String) -> Bool {
-        let search = search.lowercased()
+    func isMatch(in policy: PolicyDetailed, search: String, matchMode: PolicyListView.MatchMode = .contains, caseSensitive: Bool = false) -> Bool {
+        // Normalize inputs depending on case sensitivity
+        let targetSearch = caseSensitive ? search : search.lowercased()
+        func match(_ value: String?) -> Bool {
+            guard let v = value else { return false }
+            let subject = caseSensitive ? v : v.lowercased()
+            switch matchMode {
+            case .contains:
+                return subject.contains(targetSearch)
+            case .startsWith:
+                return subject.hasPrefix(targetSearch)
+            }
+        }
+
         switch self {
         case .all:
             return
-            (policy.general?.name?.localizedCaseInsensitiveContains(search) ?? false) ||
-            (policy.general?.jamfId != nil && "\(policy.general!.jamfId!)".contains(search)) ||
-            (policy.general?.enabled != nil && "\(policy.general!.enabled!)".localizedCaseInsensitiveContains(search)) ||
-            (policy.self_service?.selfServiceDisplayName?.localizedCaseInsensitiveContains(search) ?? false) ||
-            (policy.self_service?.selfServiceDescription?.localizedCaseInsensitiveContains(search) ?? false) ||
-            ((policy.self_service?.selfServiceIcon?.uri ?? "").localizedCaseInsensitiveContains(search))
+                match(policy.general?.name) ||
+                (policy.general?.jamfId != nil && {
+                    let idStr = String(describing: policy.general!.jamfId!)
+                    let subject = caseSensitive ? idStr : idStr.lowercased()
+                    switch matchMode {
+                    case .contains: return subject.contains(targetSearch)
+                    case .startsWith: return subject.hasPrefix(targetSearch)
+                    }
+                }()) ||
+                (policy.general?.enabled != nil && {
+                    let enabledStr = String(describing: policy.general!.enabled!)
+                    let subject = caseSensitive ? enabledStr : enabledStr.lowercased()
+                    switch matchMode {
+                    case .contains: return subject.contains(targetSearch)
+                    case .startsWith: return subject.hasPrefix(targetSearch)
+                    }
+                }()) ||
+                match(policy.self_service?.selfServiceDisplayName) ||
+                match(policy.self_service?.selfServiceDescription) ||
+                match(policy.self_service?.selfServiceIcon?.uri)
         case .generalName:
-            return policy.general?.name?.localizedCaseInsensitiveContains(search) ?? false
+            return match(policy.general?.name)
         case .generalID:
-            return policy.general?.jamfId != nil && "\(policy.general!.jamfId!)".contains(search)
+            if let id = policy.general?.jamfId { let idStr = String(describing: id); return caseSensitive ? idStr.contains(search) : idStr.lowercased().contains(targetSearch) }
+            return false
         case .generalEnabled:
-            return policy.general?.enabled != nil && "\(policy.general!.enabled!)".localizedCaseInsensitiveContains(search)
+            if let enabled = policy.general?.enabled { let s = String(describing: enabled); return caseSensitive ? s.contains(search) : s.lowercased().contains(targetSearch) }
+            return false
         case .selfServiceDisplayName:
-            return policy.self_service?.selfServiceDisplayName?.localizedCaseInsensitiveContains(search) ?? false
+            return match(policy.self_service?.selfServiceDisplayName)
         case .selfServiceDescription:
-            return policy.self_service?.selfServiceDescription?.localizedCaseInsensitiveContains(search) ?? false
+            return match(policy.self_service?.selfServiceDescription)
         case .selfServiceIconURI:
-            return (policy.self_service?.selfServiceIcon?.uri ?? "").localizedCaseInsensitiveContains(search)
+            return match(policy.self_service?.selfServiceIcon?.uri)
         }
     }
     
