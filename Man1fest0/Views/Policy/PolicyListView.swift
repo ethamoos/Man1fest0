@@ -1,3 +1,10 @@
+//
+//  PolicyListView.swift
+//  Man1fest0
+//
+//  (Updated to add scoped text search + selected-field empty toggle)
+//
+
 import SwiftUI
 
 struct PolicyListView: View {
@@ -16,8 +23,22 @@ struct PolicyListView: View {
     
     
     @State private var searchString: String = ""
-    @State private var searchField: SearchField = .all
-    @State private var searchForEmptyField: SearchField? = nil
+    // New: replace the previous simple searchField/searchForEmptyField with explicit controls:
+    private enum TextSearchScope: String, CaseIterable {
+        case title
+        case all
+        case selectedField
+        var displayName: String {
+            switch self {
+            case .title: return "Title"
+            case .all: return "All Fields"
+            case .selectedField: return "Selected Field"
+            }
+        }
+    }
+    @State private var textSearchScope: TextSearchScope = .title
+    @State private var selectedFieldForFilter: SearchField = .generalName
+    @State private var selectedFieldIsEmpty: Bool = false
     
     @State var policiesMatchingItems: [Int] = []
     @State var policiesMissingItems: [Int] = []
@@ -77,18 +98,29 @@ struct PolicyListView: View {
                 TextField("Search...", text: $searchString)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .frame(maxWidth: 300)
-                Picker("Field", selection: $searchField) {
-                    ForEach(SearchField.allCases, id: \.self) { field in
+                
+                // Text search scope segmented control
+                Picker("Text Search In", selection: $textSearchScope) {
+                    ForEach(TextSearchScope.allCases, id: \.self) { scope in
+                        Text(scope.displayName)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(maxWidth: 300)
+                
+                // Selected-field picker (used when scope is .selectedField or to choose which field to check for emptiness)
+                Picker("Field", selection: $selectedFieldForFilter) {
+                    ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
                         Text(field.displayName)
                     }
                 }
                 .pickerStyle(MenuPickerStyle())
-                Button("Find Empty Field") {
-                    searchForEmptyField = searchField
+                
+                // Toggle to check selected field is empty. Can be combined with text search scope.
+                Toggle(isOn: $selectedFieldIsEmpty) {
+                    Text("Selected Field is Empty")
                 }
-                Button("Clear Empty Field Search") {
-                    searchForEmptyField = nil
-                }
+                .toggleStyle(SwitchToggleStyle())
                 
                 Spacer()
             }
@@ -280,31 +312,39 @@ struct PolicyListView: View {
         }
         // Keep matching IDs up to date when inputs change
         .onChange(of: searchString) { _ in updateMatchingIDs() }
-        .onChange(of: searchField) { _ in updateMatchingIDs() }
-        .onChange(of: searchForEmptyField) { _ in updateMatchingIDs() }
+        .onChange(of: textSearchScope) { _ in updateMatchingIDs() }
+        .onChange(of: selectedFieldForFilter) { _ in updateMatchingIDs() }
+        .onChange(of: selectedFieldIsEmpty) { _ in updateMatchingIDs() }
         // Also update if the underlying policies array changes
         .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
     }
     
     // MARK: - Matching Logic
     func isPolicyMatch(_ policy: PolicyDetailed) -> Bool {
-        // Evaluate empty-field filter (if provided)
-        let emptyFieldMatches: Bool
-        if let emptyField = searchForEmptyField {
-            emptyFieldMatches = emptyField.isFieldEmpty(in: policy)
-        } else {
-            emptyFieldMatches = true
-        }
-
-        // Evaluate text search filter (if provided)
-        let textFilterMatches: Bool
-        if searchString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            textFilterMatches = true
-        } else {
-            textFilterMatches = searchField.isMatch(in: policy, search: searchString)
-        }
-
-        // Both filters must pass (if provided) to be considered a match
+        // Evaluate empty-field filter (if requested)
+        let emptyFieldMatches: Bool = {
+            if selectedFieldIsEmpty {
+                return selectedFieldForFilter.isFieldEmpty(in: policy)
+            } else {
+                return true
+            }
+        }()
+        
+        // Evaluate text search filter (if provided) according to the selected scope
+        let textFilterMatches: Bool = {
+            let trimmed = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return true }
+            switch textSearchScope {
+            case .title:
+                return policy.general?.name?.localizedCaseInsensitiveContains(trimmed) ?? false
+            case .all:
+                return SearchField.all.isMatch(in: policy, search: trimmed)
+            case .selectedField:
+                return selectedFieldForFilter.isMatch(in: policy, search: trimmed)
+            }
+        }()
+        
+        // Both filters must pass to be considered a match
         return emptyFieldMatches && textFilterMatches
     }
 }
