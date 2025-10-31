@@ -186,18 +186,17 @@ struct PolicyListView: View {
             
             
             // Button to run an operation on all matching items (prints their jamf IDs)
-            Button("Print Matching IDs") {
-                // Recompute matches to ensure we have the latest set
-                updateMatchingIDs()
-                // Print the IDs (and paired names for convenience)
-                let ids = policiesMatchingItems
-                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
-                print("Matching policy jamf IDs: \(ids)")
-                print("Matching policy names: \(names)")
-            }
+//            Button("Print Matching IDs") {
+//                // Recompute matches to ensure we have the latest set
+//                updateMatchingIDs()
+//                // Print the IDs (and paired names for convenience)
+//                let ids = policiesMatchingItems
+//                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
+//                print("Matching policy jamf IDs: \(ids)")
+//                print("Matching policy names: \(names)")
+//            }
      
             
-            Text("Icons").bold()
             
 #if os(macOS)
             List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
@@ -323,6 +322,7 @@ struct PolicyListView: View {
                         .tint(.blue)
                 }
             }
+            .padding()
         }
         
         
