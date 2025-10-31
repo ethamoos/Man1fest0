@@ -110,26 +110,25 @@ struct PolicyListView: View {
                 }
                 .padding(.vertical)
             }
+            
+            
+            
+            // ################################################################################
+            //                       Print Matching IDs
+            // ################################################################################
+            
+            
             // Button to run an operation on all matching items (prints their jamf IDs)
-            Button("Print Matching IDs") {
-                // Recompute matches to ensure we have the latest set
-                updateMatchingIDs()
-                // Print the IDs (and paired names for convenience)
-                let ids = policiesMatchingItems
-                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
-                print("Matching policy jamf IDs: \(ids)")
-                print("Matching policy names: \(names)")
-            }
-            //
-            //            Text("Matching Policies")
-            //            Text("Policies Missing Item")
-            
-            //            List {
-            //                ForEach(networkController.policiesMissingItems, id: \.self) { policy in
-            //                    Text("Policy ID:\(policy)")
-            //                }
-            //            }
-            
+//            Button("Print Matching IDs") {
+//                // Recompute matches to ensure we have the latest set
+//                updateMatchingIDs()
+//                // Print the IDs (and paired names for convenience)
+//                let ids = policiesMatchingItems
+//                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
+//                print("Matching policy jamf IDs: \(ids)")
+//                print("Matching policy names: \(names)")
+//            }
+     
             
             Text("Icons").bold()
             
@@ -224,6 +223,11 @@ struct PolicyListView: View {
                 }
                 
                 
+                //                ############################################################
+                //                Update Icon Button
+                //                ############################################################
+                
+                
                 
                 
                 HStack {
@@ -231,7 +235,7 @@ struct PolicyListView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         if let icon = selectedIcon {
-                            //                        xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
+                                                    xmlController.updateIconBatch(selectedPoliciesInt: policiesMatchingItems , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
                         } else {
                             print("No icon selected")
                         }
