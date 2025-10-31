@@ -342,6 +342,20 @@ struct PolicyListView: View {
             } else {
                 print("fetchedDetailedPolicies has run")
             }
+            
+            
+            if networkController.allIconsDetailed.count <= 1 {
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+            } else {
+                print("getAllIconsDetailed has already run")
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+            }
+            
+            
+            
+            
+            
             // Update the matching IDs when the view appears
             updateMatchingIDs()
         }
