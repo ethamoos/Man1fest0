@@ -158,8 +158,7 @@ struct PrestagesView: View {
     
     
     func showPrestage(prestageID: String) {
-        prestageController.separationLine()
-        print("Running: showPrestage")
+separationLine()        print("Running: showPrestage")
         Task {
             try await prestageController.getPrestageCurrentScope(jamfURL: prestageController.server, prestageID: prestageID, authToken: networkController.authToken)
         }

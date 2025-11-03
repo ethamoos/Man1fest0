@@ -12,8 +12,6 @@ import Foundation
 //    #################################################################################
 //    COMMANDS
 //    #################################################################################
-
-
 //
 //    Button("Disable Bluetooth") {
 //        print("I have been clicked off")
@@ -40,7 +38,6 @@ import Foundation
 //    .background(Color.blue)
 //    .cornerRadius(15)
 //    //        Spacer()
-//
 //
 //
 //
@@ -109,15 +106,12 @@ import AEXML
     var encoded = ""
     var initialDataLoaded = false
     
-    
     //    #################################################################################
     //    Alerts
     @Published var showAlert = false
     var alertMessage = ""
     var alertTitle = ""
     var showActivity = false
-    
-    
     
     
     //    #################################################################################
@@ -160,28 +154,6 @@ import AEXML
         
         task.resume()
         semaphore.wait()
-    }
-    
-    func flushCommands (id: Int, deviceType: String, command: String, authorisation: String, server: String )  {
-
-        var request = URLRequest(url: URL(string: "https://\(server)/JSSResource/commandflush/\(deviceType)/id/{{id}}/status/{{command}}")!,timeoutInterval: Double.infinity)
-        request.addValue("application/xml", forHTTPHeaderField: "Accept")
-        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.addValue("••••••", forHTTPHeaderField: "Authorization")
-
-        request.httpMethod = "DELETE"
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-          guard let data = data else {
-            print(String(describing: error))
-            return
-          }
-          print(String(data: data, encoding: .utf8)!)
-        }
-
-        task.resume()
-        
-        
     }
     
 }

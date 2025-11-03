@@ -195,40 +195,39 @@ struct PolicyListView: View {
 //                print("Matching policy jamf IDs: \(ids)")
 //                print("Matching policy names: \(names)")
 //            }
-     
             
             
-#if os(macOS)
-            List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-                HStack {
-                    Image(systemName: "photo.circle")
-                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-                    AsyncImage(url: URL(string: icon.url )) { image in
-                        image.resizable().frame(width: 15, height: 15)
-                    } placeholder: {
-                    }
-                }
-                .foregroundColor(.gray)
-                .listRowBackground(selectedIconString == icon.name
-                                   ? Color.green.opacity(0.3)
-                                   : Color.clear)
-                .tag(icon)
-            }
-            .cornerRadius(8)
-            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-#else
-            
-            List(networkController.allIconsDetailed, id: \.self) { icon in
-                HStack {
-                    Image(systemName: "photo.circle")
-                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-                    AsyncImage(url: URL(string: icon.url )) { image in
-                        image.resizable().frame(width: 15, height: 15)
-                    } placeholder: {
-                    }
-                }
-            }
-#endif
+//#if os(macOS)
+//            List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
+//                HStack {
+//                    Image(systemName: "photo.circle")
+//                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+//                    AsyncImage(url: URL(string: icon.url )) { image in
+//                        image.resizable().frame(width: 15, height: 15)
+//                    } placeholder: {
+//                    }
+//                }
+//                .foregroundColor(.gray)
+//                .listRowBackground(selectedIconString == icon.name
+//                                   ? Color.green.opacity(0.3)
+//                                   : Color.clear)
+//                .tag(icon)
+//            }
+//            .cornerRadius(8)
+//            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
+//#else
+//            
+//            List(networkController.allIconsDetailed, id: \.self) { icon in
+//                HStack {
+//                    Image(systemName: "photo.circle")
+//                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+//                    AsyncImage(url: URL(string: icon.url )) { image in
+//                        image.resizable().frame(width: 15, height: 15)
+//                    } placeholder: {
+//                    }
+//                }
+//            }
+//#endif
             //                                    .background(.gray)
             //        }
             
@@ -321,10 +320,26 @@ struct PolicyListView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                 }
+                
+                //  ##########################################################################
+                //  Progress view via showProgress
+                //  ##########################################################################
+                
+                if progress.showProgressView == true {
+                    
+                    ProgressView {
+                        Text("Processing")
+                    }
+                    .padding()
+                } else {
+                    Text("")
+                }
             }
             .padding()
         }
-        
+    
+//            . padding()
+//            .frame(minWidth: 150, maxWidth: .infinity, minHeight: 70, maxHeight: .infinity)
         
         .onAppear() {
             // If detailed policies haven't been fetched, fetch them (existing behavior)

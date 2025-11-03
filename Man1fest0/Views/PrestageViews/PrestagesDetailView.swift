@@ -67,7 +67,7 @@ struct PrestagesDetailView: View {
     }
     
     func showPrestage(prestageID: String, authToken: String) async {
-        prestageController.separationLine()
+        separationLine()
         print("Running: showPrestage")
         
         Task {

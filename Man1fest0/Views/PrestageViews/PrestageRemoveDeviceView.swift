@@ -129,8 +129,7 @@ struct PrestageRemoveDeviceView: View {
     
     
     func updatePrestage(initialPrestageID: String) {
-        prestageController.separationLine()
-        
+separationLine()        
         
         print("Running getPrestageCurrentScope - to remove")
         
@@ -217,8 +216,7 @@ struct PrestageRemoveDeviceView: View {
         }
         
         func updatePrestage(initialPrestageID: String) {
-            prestageController.separationLine()
-            
+    separationLine()            
             
             Task {
                 print("Running getPrestageCurrentScope - to remove")

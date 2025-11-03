@@ -170,19 +170,19 @@ struct ScriptUsageViewJson: View {
         //        All scripts found in policies
         policyScriptsByNameSet = Set(Array(policyScriptsByName.keys))
         
-        print(networkController.separationLine())
+        separationLine()
         print("everything in both - scripts in use")
         let commonScripts = allScriptsByNameSet.intersection(policyScriptsByNameSet)
         //        print(commonScripts)
         print(commonScripts.count)
         
-        print(networkController.separationLine())
+        separationLine()
         print("everything not in both - scripts not in use")
         differentScripts = allScriptsByNameSet.symmetricDifference(policyScriptsByNameSet)
         //        print(differentScripts)
         print(differentScripts.count)
         
-        print(networkController.separationLine())
+        separationLine()
         print("One set minus the contents of another - scripts not in use")
         clippedScripts = allScriptsByNameSet.subtracting(policyScriptsByNameSet)
         //        print(clippedScripts)
