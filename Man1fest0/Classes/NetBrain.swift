@@ -743,9 +743,6 @@ import AEXML
     
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
-//        let secondDecodedData = try decoder.decode(PoliciesDetailed.self, from: data)
-
-//        var newCurrentDetailedPolicy: PolicyDetailed = decodedData
         
         self.policyDetailed = decodedData
 
@@ -755,10 +752,10 @@ import AEXML
         print("Policy Trigger:\t\t\t\(self.policyDetailed?.general?.triggerOther ?? "")\n")
 
 //        }
-//      On completion add policy to array of detailed policies
+
+        //      On completion add policy to array of detailed policies
         self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
       
-//        self.policyDetailed2? = newCurrentDetailedPolicy
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
