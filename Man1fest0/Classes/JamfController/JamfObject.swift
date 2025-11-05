@@ -92,7 +92,7 @@ extension JamfObject {
             print("Url of request is:\(url)")
             return result.results
             
-            // handle decoding errors
+            // handle decoding errors - handle errors
             // see DecodingError documentation for details
         } catch let DecodingError.dataCorrupted(context) {
             print("------------------------------------------------------------------")

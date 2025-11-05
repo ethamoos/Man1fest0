@@ -49,10 +49,6 @@ struct PolicyView: View {
         
         VStack(alignment: .leading) {
             
-            if networkController.resourceAccess == false {
-                Text("Access to this resource is not available")
-            } else {
-                
                 if networkController.policies.count > 0 {
                     NavigationView {
                         
@@ -126,13 +122,15 @@ struct PolicyView: View {
                     
                 } else {
                     
+                                    Text("Access to this resource is not available")
+
                     ProgressView {
                         Text("Loading")
                             .font(.title)
                             .progressViewStyle(.horizontal)
                     }
                 }
-            }
+//            }
         }
         
         
@@ -142,8 +140,9 @@ struct PolicyView: View {
         
         .onAppear {
 
-            networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
-            
+            Task {
+                try await networkController.getPolicies(server: server, authToken: networkController.authToken)
+            }
             Task {
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }

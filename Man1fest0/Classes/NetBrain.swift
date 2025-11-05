@@ -689,12 +689,12 @@ actor RequestPacer {
     
     
     
-    func getAllPolicies(server: String) async throws {
+    func getAllPolicies(server: String, authToken: String) async throws {
         let jamfURLQuery = server + "/JSSResource/policies"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
         
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -719,6 +719,35 @@ actor RequestPacer {
         print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
     }
     
+    
+    
+    func getPolicies(server: String, authToken: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/policies"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getPolicies")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            print(response)
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
+        self.policies = try decoder.decode(PolicyBasic.self, from: data).policies
+//        print(self.policies)
+//        allPoliciesComplete = true
+        separationLine()
+        print("getPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
+    }
+    
+     
      
   
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
@@ -781,7 +810,6 @@ actor RequestPacer {
         //      On completion add policy to array of detailed policies
         self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
       
-//        self.policyDetailed2? = newCurrentDetailedPolicy
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
