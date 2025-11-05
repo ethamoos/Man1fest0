@@ -42,6 +42,12 @@ struct PolicyPackageTabView: View {
     
     @State private var packageName = ""
     
+    @State private var action = ""
+    
+    @State private var feu = false
+    
+    @State private var fut = false
+    
 //              ################################################################################
 //              Selection
 //              ################################################################################
@@ -79,7 +85,6 @@ struct PolicyPackageTabView: View {
                 }
             }
                 
-                
                 //  ################################################################################
                 //              Edit package assignment to policy
                 //  ################################################################################
@@ -91,12 +96,6 @@ struct PolicyPackageTabView: View {
                 
             Divider()
 
-//            VStack(alignment: .leading) {
-//                Text("Assign Packages").font(.system(size: 12, weight: .bold, design: .default))
-//            }
-//            .padding()
-                
-                
                 //  ################################################################################
                 //  Package picker
                 //  ################################################################################
@@ -136,6 +135,9 @@ struct PolicyPackageTabView: View {
                     }
                 }
             }
+            Divider()
+            
+            Text("Packages")
             
                 HStack {
                     Button(action: {
@@ -143,23 +145,39 @@ struct PolicyPackageTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        networkController.separationLine()
+//                        separationLine()
                         print("Editing policy:\(String(describing: policyID))")
                         networkController.addExistingPackages()
                         print("Adding selected package to policy:\(String(describing: selectedPackage))")
                         
-                        xmlController.addPackageToPolicy(xmlContent: xmlController.aexmlDoc, xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, server: server, packageName: selectedPackage?.name ?? "",packageId: String(describing: selectedPackage?.jamfId ?? 0), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false )
+                        xmlController.addPackageToPolicy(xmlContent: xmlController.aexmlDoc, xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, server: server, packageName: selectedPackage?.name ?? "",packageId: String(describing: selectedPackage?.jamfId ?? 0), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false, action: action, fut: fut ? "true" : "", feu: feu ? "true" : "" )
                         
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "plus.square.fill.on.square.fill")
                             Text("Add package")
-                        }
-                  
+                            }
+                      
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                     
+                    TextField("Install", text: $action)
+
+                    Toggle(isOn: $fut) {
+                        Text("FUT")
+                            .font(.caption)
+                    }
+                    .toggleStyle(.checkbox)
+                    .fixedSize()
+
+                    Toggle(isOn: $feu) {
+                        Text("FEU")
+                            .font(.caption)
+                    }
+                    .toggleStyle(.checkbox)
+                    .fixedSize()
+
                     //  ################################################################################
                     //              Replace package in policy
                     //  ################################################################################
@@ -169,71 +187,66 @@ struct PolicyPackageTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        networkController.separationLine()
+//                        separationLine()
                         print("Assigning package to policy:\(String(describing: selectedPackage?.jamfId))")
                         
                         packageID = String(describing: selectedPackage?.jamfId)
                         packageName = selectedPackage?.name ?? ""
                         
-                        networkController.editPolicy(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, packageName: packageName, packageID: packageID, policyID: policyID)
+                        networkController.editPolicy(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, packageName: packageName, packageID: packageID, policyID: policyID, action: action, fut: fut ? "true" : "", feu: feu ? "true" : "")
                         
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "plus.square.fill.on.square.fill")
-                            Text("Replace All Packages")
+                            Text("Replace All")
+                            }
                         }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    
-                    //  ################################################################################
-                    //              Replace package in policy
-                    //  ################################################################################
-                    
-                    Button(action: {
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
                         
-                        progress.showProgress()
-                        progress.waitForABit()
+                        //  ################################################################################
+                        //              Replace package in policy
+                        //  ################################################################################
                         
-                        networkController.separationLine()
-                        print("Clearing all packages in policy:\(String(describing: policyID))")
-                        
-                        xmlController.removePackagesFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+//                            separationLine()
+                            print("Clearing all packages in policy:\(String(describing: policyID))")
+                            
+                            xmlController.removePackagesFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
 //                        xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
 
-                        
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "plus.square.fill.on.square.fill")
-                            Text("Remove All Packages")
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "plus.square.fill.on.square.fill")
+                                Text("Remove All")
+                            }
                         }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    
-                    
-                     Button(action: {
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
                         
-                        progress.showProgress()
-                        progress.waitForABit()
                         
-                        networkController.separationLine()
-                        print("Refresh packages")
+                         Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+//                            separationLine()
+                            print("Refresh packages")
 
-                         networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                        
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "plus.square.fill.on.square.fill")
-                            Text("Refresh Packages")
+                             networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                            
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "plus.square.fill.on.square.fill")
+                                Text("Refresh")
+                            }
                         }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    
-                    
-                    
-                    
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
 //                }
             }
         }

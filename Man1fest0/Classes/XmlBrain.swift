@@ -897,7 +897,7 @@ class XmlBrain: ObservableObject {
                     print("resourceType is set as:\(resourceType)")
                     // print("xml is set as:\(xml)")
                     sendRequestAsXML(url: url,authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT" )
-                    //                    appendStatus("Connecting to \(url)...")
+                    // appendStatus("Connecting to \(url)...")
                 }
             }
         }
@@ -1130,7 +1130,7 @@ class XmlBrain: ObservableObject {
     // addPackageToPolicy
     // ######################################################################################
     
-    func addPackageToPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, packageName: String, packageId: String,policyId: String, resourceType: ResourceType, newPolicyFlag: Bool) {
+    func addPackageToPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, packageName: String, packageId: String,policyId: String, resourceType: ResourceType, newPolicyFlag: Bool, action: String,fut: String, feu: String) {
         
         //        if newPolicyFlag == false {
         //            self.separationLine()
@@ -1164,7 +1164,7 @@ class XmlBrain: ObservableObject {
         let packages = xmlContent.root["package_configuration"]["packages"].addChild(name: "package")
         packages.addChild(name: "id", value: packageId)
         packages.addChild(name: "name", value: packageName)
-        packages.addChild(name: "action", value: "Install")
+        packages.addChild(name: "action", value: action)
         packages.addChild(name: "fut", value: "false")
         packages.addChild(name: "feu", value: "false")
         packages.addChild(name: "update_autorun", value: "false")
@@ -1657,8 +1657,7 @@ class XmlBrain: ObservableObject {
     //   addSelectedPackagesToPolicy
     //   #################################################################################
     
-    func addSelectedPackagesToPolicy(selection: Set<Package>, authToken: String, server: String, xmlContent: AEXMLDocument, policyId: String) {
-        
+    func addSelectedPackagesToPolicy(selection: Set<Package>, authToken: String, server: String, xmlContent: AEXMLDocument, policyId: String, action: String, fut: String, feu: String) {
         
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
@@ -1682,7 +1681,7 @@ class XmlBrain: ObservableObject {
                     print("Current currentPackageIdInt is:\(String(describing: self.currentPackageIdInt))")
                     print("Current currentPackageNameString is:\(String(describing: self.currentPackageNameString))")
                     print("Adding package:\(eachPackage.name) to list")
-                    self.addPackageToPolicy(xmlContent: self.aexmlDoc, xmlContentString: "", authToken: authToken, server: server, packageName: currentPackageNameString, packageId: String(describing: currentPackageIdInt), policyId: policyId, resourceType: ResourceType.policyDetail, newPolicyFlag: true)
+                    self.addPackageToPolicy(xmlContent: self.aexmlDoc, xmlContentString: "", authToken: authToken, server: server, packageName: currentPackageNameString, packageId: String(describing: currentPackageIdInt), policyId: policyId, resourceType: ResourceType.policyDetail, newPolicyFlag: true, action: action, fut: fut, feu: feu)
                 }
             }
             

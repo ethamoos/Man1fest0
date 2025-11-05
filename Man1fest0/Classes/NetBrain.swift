@@ -2416,7 +2416,7 @@ import AEXML
     //    #################################################################################
     
     
-    func editPolicy(server: String, authToken: String, resourceType: ResourceType, packageName: String, packageID: String, policyID: Int) {
+    func editPolicy(server: String, authToken: String, resourceType: ResourceType, packageName: String, packageID: String, policyID: Int, action: String,fut: String, feu: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
         let packageIDString = String(packageID)
@@ -2433,9 +2433,9 @@ import AEXML
                 <package>
                     <id>\(packageIDString)</id>
                     <name>\(packageName)</name>
-                    <action>Install</action>
-                    <fut>false</fut>
-                    <feu>false</feu>
+                    <action>\(action)</action>
+                    <fut>\(fut)</fut>
+                    <feu>\(feu)</feu>
                     <update_autorun>false</update_autorun>
                 </package>
             </packages>
