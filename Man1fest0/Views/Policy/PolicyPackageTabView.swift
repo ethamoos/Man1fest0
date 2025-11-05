@@ -42,7 +42,7 @@ struct PolicyPackageTabView: View {
     
     @State private var packageName = ""
     
-    @State private var action = ""
+    @State private var action = "Install"
     
     @State private var feu = false
     
@@ -162,7 +162,12 @@ struct PolicyPackageTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                     
-                    TextField("Install", text: $action)
+                    Picker("Action", selection: $action) {
+                        Text("Install").tag("Install")
+                        Text("Cache").tag("Cache")
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
 
                     Toggle(isOn: $fut) {
                         Text("FUT")
