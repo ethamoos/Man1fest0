@@ -1,694 +1,875 @@
+import Foundation
 import SwiftUI
-import UniformTypeIdentifiers
+import AEXML
 
 
-struct PolicyDetailView: View {
-    
-    var server: String
-    
-    //  ########################################################################################
-    //  EnvironmentObjects
-    //  ########################################################################################
-    
-    @EnvironmentObject var networkController: NetBrain
-    
-    @EnvironmentObject var exportController: ImportExportBrain
-    
-    @EnvironmentObject var scopingController: ScopingBrain
-    
-    @EnvironmentObject var policyController: PolicyBrain
-    
-    @EnvironmentObject var xmlController: XmlBrain
-    
-    @EnvironmentObject var progress: Progress
-    
-    @EnvironmentObject var layout: Layout
-    
-    //  ########################################################################################
-    
-    @State var categoryName = ""
-    
-    @State private var categoryID = ""
-    
-    @State var categories: [Category] = []
-    
-    @State private var computers: [ Computer ] = []
-    
-    @State var computerID = ""
-    
-    @State var computerUDID = ""
-    
-    @State var computerName = ""
-    
-    //  ########################################################################################
-    //  GROUPS
-    //  ########################################################################################
-    
-    @State var computerGroupFilter = ""
+// Actor to serialize pacing between requests and prevent bursts
+actor RequestPacer {
+    let minInterval: TimeInterval
+    private var lastRequest: Date?
 
-    //  ########################################################################################
-    //  Packages
-    //  ########################################################################################
-    
-    @State var packageFilter = ""
-    
-    @State private var packageID = ""
-    
-    @State private var packageName = ""
-    
-    //  ########################################################################################
-    //  Policies
-    //  ########################################################################################
-    
-    var policy: Policy
-    
-    var policyID: Int
-    
-    @State var policyName = ""
-    
-    @State var policyNameInitial = ""
-    
-    @State var policyNameClone = ""
-    
-    @State var policyCustomTrigger = ""
-    
-    
-    //    ########################################################################################
-//    Triggers
-    //    ########################################################################################
+    init(minInterval: TimeInterval) {
+        self.minInterval = minInterval
+        self.lastRequest = nil
+    }
 
-    @State var trigger_login: Bool = false
-    @State var trigger_checkin: Bool = false
-    @State var trigger_startup: Bool = false
-    @State var trigger_enrollment_complete: Bool = false
-    
-    //    ########################################################################################
-    //    ########################################################################################
-    //    VARIABLES
-    //    ########################################################################################
-    //    ########################################################################################
-    
-//    @State var currentDetailedPolicy: PoliciesDetailed? = nil
-    
-    @State var scriptName = ""
-    
-    @State var scriptID = ""
-    
-    @State var enableDisableButton: Bool = true
-    
-    @State var enableDisableStatus: Bool = true
-    
-    @State var enableDisableSelfServiceStatus: Bool = true
-    
-    @State var enableDisableSelfService: Bool = true
-    
-    @State var pushTriggerActiveWarning: Bool = false
-    
-    @State private var exporting = false
-    
-    //    ########################################################################################
-    //    Selections
-    //    ########################################################################################
-    
-    @State var selectedResourceType = ResourceType.policyDetail
-    
-    @State var selection: Package? = nil
-    
-    @State var packageSelection = Set<Package>()
-    
-    @State private var computerGroupSelection = Set<ComputerGroup>()
-    
-    @State var selectedComputer: Computer = Computer(id: 0, name: "")
-    
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
-    
-    @State var selectedDepartment: Department = Department(jamfId: 0, name: "")
-    
-    @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
-    
-    @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
-    
-    @State var iconMultiSelection = Set<String>()
-    
-    @State var selectedIconString = ""
-    
-    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
-    
-    @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
-    
-    //    ########################################################################################
-    //    Script parameters
-    //    ########################################################################################
-    
-    @State var scriptParameter4: String = ""
-    
-    @State var scriptParameter5: String = ""
-    
-    @State var scriptParameter6: String = ""
-    
-    @State  var tempUUID = (UUID(uuidString: "") ?? UUID())
-    
-    @State private var showingWarning = false
-    
-    @State private var showingWarningDelete = false
-    
-    @State private var showingWarningClearScope = false
-    
-    @State private var showingWarningClearLimit = false
-    
-    //    ########################################################################################
-    //    ########################################################################################
-    //    MAIN BODY
-    //    ########################################################################################
-    //    ########################################################################################
-    
-    var body: some View {
-        
-        let text = String(describing: xmlController.currentPolicyAsXML)
-        
-        let document = TextDocument(text: text)
-        
-        VStack(alignment: .leading) {
-            
-            //  ################################################################################
-            //              Top
-            //  ################################################################################
-            
-            if networkController.policyDetailed != nil {
-                
-#if os(macOS)
-                VStack(alignment: .leading) {
-                    Text("Jamf Name:\t\t\t\t\(networkController.policyDetailed?.general?.name ?? "Blank")\n")
-                    Text("Enabled Status:\t\t\t\(String(describing: networkController.policyDetailed?.general?.enabled ?? true))\n")
-                    Text("Self Service Name:\t\t\(String(describing: networkController.policyDetailed?.self_service?.selfServiceDisplayName ?? ""))\n")
-                    Text("Self Service Status:\t\t\(String(describing: networkController.policyDetailed?.self_service?.useForSelfService ?? true))\n")
-                    Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
-                    Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")")
-                    
-                    if pushTriggerActiveWarning == true {
-                        Text("⚠️ Push Trigger Active! ⚠️").foregroundColor(.red)
-                    }
-                    
-                    
-                }
-                .textSelection(.enabled)
-                .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
-                
-                //              ################################################################################
-                //              Toolbar
-                //              ################################################################################
-                
-                .toolbar {
-                    
-                }
-#endif
-            }
-            
-            // ################################################################################
-            //              ENABLE/DISABLE
-            // ################################################################################
-            
-            HStack(spacing: 20) {
-                
-                Toggle("", isOn: $enableDisableButton)
-                    .toggleStyle(SwitchToggleStyle(tint: .red))
-                    .onChange(of: enableDisableButton) { value in
-                        networkController.togglePolicyOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, policyToggle: enableDisableButton)
-                        print("enableDisableButton changed - value is now:\(value) for policy:\(policyID)")
-                    }
-                
-#if os(macOS)
-                
-                if enableDisableButton == true {
-                    Text("Enabled")
-                } else {
-                    Text("Disabled")
-                }
-                
-            
-#endif
-                
-                //  ##########################################################################
-                //              DELETE
-                //  ##########################################################################
-                
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    print("Deleting policy:\(policyID)")
-                    showingWarning = true
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "delete.left.fill")
-                        Text("Delete")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                
-                .alert(isPresented: $showingWarning) {
-                    Alert(
-                        title: Text("Caution!"),
-                        message: Text("This action will delete data.\n Always ensure that you have a backup!"),
-                        primaryButton: .destructive(Text("I understand!")) {
-                            // Code to execute when "Yes" is tapped
-                            networkController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
-                            print("Yes tapped")
-                        },
-                        secondaryButton: .cancel()
-                    )
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                
-                //              ################################################################################
-                //              DOWNLOAD OPTION
-                //              ################################################################################
-                
-#if os(macOS)
-                
-                Button("Export") {
-                    exporting = true
-                    networkController.separationLine()
-                    print("Printing text to export:\(text)")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.yellow)
-                .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                
-                .fileExporter(
-                    isPresented: $exporting,
-                    document: document,
-                    contentType: .xml
-                ) { result in
-                    switch result {
-                    case .success(let file):
-                        print("Printing file to export:\(file)")
-                    case .failure(let error):
-                        print(error)
-                    }
-                }
-                
-                Button(action: {
-                    
-                    print("Refresh detailPolicyView")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    Task {
-                        do {
-                            let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                            
-                            xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-                        } catch {
-                            print("Fetching detailed policy as xml failed: \(error)")
-                        }
-                    }
-                    
-                    Task {
-                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                        policyName = networkController.policyDetailed?.general?.name ?? ""
-                        policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
-                    }
-                    
-                }) {
-                    HStack(spacing: 10) {
-                        Text("Refresh Detail")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                
-                
-                HStack {
-                //              ##########################################################################
-                //              CLONE
-                //              ##########################################################################
-                
-                TextField(policyNameClone, text: $policyName)
-                    .textSelection(.enabled)
-                
-                Button(action: {
-                    print("Cloning policy:\(policyName)")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    if policyNameClone.isEmpty == true {
-                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                        let newPolicyName = "\(policyNameInitial)-1"
-                        print("No name provided - policy is:\(newPolicyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
-                    } else {
-                        print("Policy name is set as:\(policyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
-                    }
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "dog")
-                        Text("Clone")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-            }
-#endif
-            }
-            
-            .textSelection(.enabled)
-            
-            //  ##########################################################################
-            //              UPDATE NAME
-            //  ##########################################################################
-            
-            Divider()
-            
-            
-                
-                VStack(alignment: .leading) {
-                    
-                    Text("Edit Names:").fontWeight(.bold)
-                    
-                    LazyVGrid(columns: layout.columns, spacing: 20) {
-                        
-                        HStack {
-                            
-                            TextField(policyName, text: $policyName)
-                                .textSelection(.enabled)
-                            
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.updateName(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyName: policyName, policyID: String(describing: policyID))
-                                
-                                networkController.separationLine()
-                                print("Renaming Policy:\(policyName)")
-                            }) {
-                                Text("Rename")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                        }
-                        
-                        //  ##########################################################################
-                        //              UPDATE Trigger
-                        //  ##########################################################################
-                        
-                        HStack {
-                            
-                            TextField(policyCustomTrigger, text: $policyCustomTrigger)
-                                .textSelection(.enabled)
-                            
-                            Button(action: {
-                                
-                                progress.showProgress()
-                                progress.waitForABit()
-                                
-                                networkController.updateCustomTrigger(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyCustomTrigger: policyCustomTrigger, policyID: String(describing: policyID))
-                                
-                                networkController.separationLine()
-                                print("Updating Policy Trigger to:\(policyName)")
-                                
-                            }) {
-                                Text("Trigger")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                        }
-                    }
-                    
-                    //  ##########################################################################
-                    //              UPDATE Self-Service
-                    //  ##########################################################################
-                    
-                    LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
-                        
-                        HStack {
-                            TextField(policyName, text: $policyName)
-                                .textSelection(.enabled)
-                            Button(action: {
-                                
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: policyName, policyID: String(describing: policyID))
-                                
-                                networkController.separationLine()
-                                print("Name Self-Service to:\(policyName)")
-                            }) {
-                                Text("Self-Service")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                            Toggle("", isOn: $enableDisableSelfService)
-                                .toggleStyle(SwitchToggleStyle(tint: .red))
-                                .onChange(of: enableDisableSelfService) { value in
-                                    progress.showProgress()
-                                    progress.waitForABit()
-                                    networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
-                                    print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
-                                }
-#if os(macOS)
-                            if enableDisableSelfService == true {
-                                Text("Enabled")
-                            } else {
-                                Text("Disabled")
-                            }
-                            
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                            }) {
-                                Text("Enable")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-#endif
-                        }
-                    }
-                }
-
-                
-                //  ##########################################################################
-                //              CATEGORY
-                //  ##########################################################################
-                
-            Divider()
-                
-            LazyVGrid(columns: layout.columnsFlex) {
-                    HStack {
-                        
-                        if !networkController.categories.isEmpty {
-                            Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                                ForEach(networkController.categories, id: \.self) { category in
-                                    Text(category.name).tag(category)
-                                }
-                            }
-                            .onAppear {
-                                if !networkController.categories.isEmpty {
-                                    if !networkController.categories.contains(selectedCategory) {
-                                        selectedCategory = networkController.categories.first!
-                                    }
-                                }
-                            }
-                            .onChange(of: networkController.categories) { newCategories in
-                                if !newCategories.isEmpty {
-                                    if !newCategories.contains(selectedCategory) {
-                                        selectedCategory = newCategories.first!
-                                    }
-                                }
-                            }
-                        } else {
-                            Text("No categories available")
-                        }
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
-                        }) {
-                            HStack(spacing: 10) {
-                                Text("Update")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        .disabled(networkController.categories.isEmpty)
-                    }
-                }
-//            }
-            .padding()
-            
-            //  ##########################################################################
-            //              DELETE POLICY
-            //  ##########################################################################
-            
-            //  ##########################################################################
-            //  Manually add to assigned list
-            //  ##########################################################################
-            
-            //  ##########################################################################
-            //  TabView - TAB
-            //  ##########################################################################
-            
-#if os(macOS)
-            TabView {
-                
-                PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
-                    .tabItem {
-                        Label("Packages", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                    .tabItem {
-                        Label("Scoping", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                    .tabItem {
-                        Label("Scripts", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
-                    .tabItem {
-                        Label("Triggers", systemImage: "square.and.pencil")
-                    }
-                
-                PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
-                    .tabItem {
-                        Label("Self Service", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
-                    .tabItem {
-                        Label("Clear", systemImage: "square.and.pencil")
-                    }
-            }
-
-#endif
-            
-            //  ##########################################################################
-            //  Progress view via showProgress
-            //  ##########################################################################
-            
-            if progress.showProgressView == true {
-                
-                ProgressView {
-                    Text("Processing")
-                }
-                .padding()
-            } else {
-                Text("")
+    func acquire() async {
+        let now = Date()
+        if let last = lastRequest {
+            let elapsed = now.timeIntervalSince(last)
+            if elapsed < minInterval {
+                let delay = minInterval - elapsed
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
         }
-        . padding()
-        .frame(minWidth: 150, maxWidth: .infinity, minHeight: 70, maxHeight: .infinity)
+        lastRequest = Date()
+    }
+}
+
+
+@MainActor class NetBrain: ObservableObject {
+    
+    // #########################################################################
+    // Global Variables
+    // #########################################################################
+    let debug_enabled = false
+    // #########################################################################
+    //  Build identifiers
+    // #########################################################################
+        let product_name = Bundle.main.infoDictionary!["CFBundleName"] as? String
+        let product_version = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String
+        let build_version = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+    //    let buildString = "Version: \(appVersion ?? "").\(build ?? "")"
+    //  #############################################################################
+    //  Login
+    //  #############################################################################
+    var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
+    var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
+    //  #############################################################################
+    //  Login and Tokens Confirmations
+    //  #############################################################################
+
+    @Published var status: String = ""
+    var tokenComplete: Bool = false
+    var tokenStatusCode: Int = 0
+    var authToken = ""
+    var encoded = ""
+    var initialDataLoaded = false
+    
+    //  #############################################################################
+    //    Alerts
+    //  #############################################################################
+
+    @Published var showAlert = false
+    var alertMessage = ""
+    var alertTitle = ""
+    var showActivity = false
+    
+    
+    //  #############################################################################
+    //    ############ Category
+    //  #############################################################################
+
+    @Published var category: [Category] = []
+    @Published var categories: [Category] = []
+    
+    //  #############################################################################
+    //    ############ Buildings
+    //  #############################################################################
+
+    @Published var buildings: [Building] = []
+    
+    //  #############################################################################
+    //    ############ Config Profiles
+    //  #############################################################################
+
+    @Published var allConfigProfiles: ConfigurationProfiles = ConfigurationProfiles()
+    
+    //  #############################################################################
+    //    ############ Department
+    //  #############################################################################
+
+    @Published var department: [Department] = []
+    @Published var departments: [Department] = []
+    //  #############################################################################
+    //    Icons
+    //  #############################################################################
+    //  #################################################################################
+    @Published var allIconsDetailed: [Icon] = []
+    @Published var iconDetailed: Icon = Icon(id: 0, url: "", name: "")
+    
+    
+    //  #############################################################################
+    //    Error Codes
+    //  #############################################################################
+
+    @State var currentResponseCode: String = ""
+    var hasError = false
+    
+    //  #############################################################################
+    //    ############ Screen Access
+    //  #############################################################################
+
+    var showLoginScreen = true
+    var allComputersComplete = false
+    var allPoliciesComplete = false
+    var allPackagesComplete = false
+    var allPoliciesStatusCode: Int = 0
+    var resourceAccess = false
+    @Published var showingWarning = false
+    
+    //  #############################################################################
+    //    ############ Computers
+    //  #############################################################################
+
+    @Published var computers: [Computer] = []
+    @Published var computersBasic: [Computers.ComputerResponse] = []
+    @Published var allComputersBasic: ComputerBasic = ComputerBasic(computers: [])
+    @Published var allComputersBasicDict = [ComputerBasicRecord]()
+    
+    //  #############################################################################
+    //    ############ GROUPS
+    //  #############################################################################
+
+    //    Members of a computer group
+    @Published var compGroupComputers = [computerGroupResponse.Computer]()
+    @Published var allComputerGroups: [ComputerGroup] = []
+    @Published var computerGroupMembers: [ComputerGroupMembers] = []
+    @Published var computerGroupInstance: [ComputerGroupInstance] = []
+    
+    @Published var computerGroupMembersComputers: [ComputerMember] = []
+    @Published var allComputerRecordsInit: ComputerGroupMembers = ComputerGroupMembers(computer: ComputerMember(id: 0, name: "") )
+    @Published var allComputerGroupsInitDict = ComputerMember(id: 0, name: "")
+    
+    @Published var userGroupsLDAP = ""
+    //        Groups in policy scope
+    @Published var allComputerGroupsScope: [ComputerGroup] = []
+    
+    //  #############################################################################
+    //    ############ Packages
+    //  #############################################################################
+
+    @Published var currentPackages: [Package] = []
+    @Published var allPackagesAssignedToAPolicyGlobal: [Package?] = []
+    @Published var packages: [Package] = []
+    @Published var packagesAssignedToPolicy: [ Package ] = []
+    @Published var allPackages: [Package] = []
+    
+    @Published var packageDetailed: PackageDetailed? = PackageDetailed(id: 0, name: "", category: "", filename: "" , info: "", notes: "", priority: 0, rebootRequired: false,fillUserTemplate: false, fillExistingUsers: false, allowUninstalled: false,
+                                                                       osRequirements: "", requiredProcessor: "", hashType: "", hashValue: "", switchWithPackage: "",
+                                                                       installIfReportedAvailable: "", reinstallOption: "", sendNotification: false  )
+    
+    //  #############################################################################
+    //    ############ Policies
+    //  #############################################################################
+
+    @Published var policies: [Policy] = []
+    @Published var fetchedDetailedPolicies: Bool = false
+    @Published var currentPolicyID: Int = 0
+    @Published var currentPolicyName: String = ""
+    @Published var currentPolicyIDIString: String = ""
+    
+    @Published var allPolicies: PolicyBasic? = nil
+    @Published var allPoliciesConverted: [Policy] = []
+    @Published var currentDetailedPolicy: PoliciesDetailed? = nil
+    @Published var currentDetailedPolicy2: PolicyDetailed? = nil
+    @Published var policyDetailed: PolicyDetailed? = nil
+    @Published var allPoliciesDetailed: [PolicyDetailed?] = []
+    @Published var allPoliciesDetailedGeneral: [General] = []
+    
+    var singlePolicyDetailedGeneral: General? = nil
+    
+    //    var imageA1: UIImage? = nil
+    //    var imageA2: UIImage!
+    //    var imageA3: UIImage = UIImage()
+    //    var imageA4: UIImage? = UIImage()
+    
+    //  #############################################################################
+    //    XML data
+    //  #############################################################################
+
+    @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
+    @Published var computerGroupMembersXML: String = ""
+//    @Published var currentPolicyAsXML: String = ""
+    @Published var updateXML: Bool = false
+    
+    //  #############################################################################
+    //    ############ Scripts
+    //  #############################################################################
+
+    @Published var scripts: [ScriptClassic] = []
+    @Published var allScripts: [ScriptClassic] = []
+    @Published var allScriptsVeryDetailed: [Scripts] = []
+    @Published var allScriptsDetailed: [Script] = []
+    @Published var scriptDetailed: Script = Script(id: "")
+    @Published var allPolicyScripts: [PolicyScripts] = []
+    
+    //  #############################################################################
+    //    ############  Search properties
+    //  #############################################################################
+
+    @Published var policiesMissingItems: [Int] = []
+    @Published var policiesMatchingItems: [Int] = [0]
+    //  #############################################################################
+    //    ############ SELECTIONS
+    //  #############################################################################
+
+    @Published var selectedSimpleComputer: Computer = Computer(id: 0, name: "")
+    @Published var selectedCategory: Category = Category(jamfId: 0, name: "")
+
+    
+    //  #############################################################################
+    //    ############ BOOLEAN - TOGGLES
+    //  #############################################################################
+
+    //    @Published var enableDisable: Bool = true
+    //    @State var currentSelection: Category = Category(jamfId: 0, name: "")
+    
+    //  #############################################################################
+    //    ############ Process lists - for batch operations
+    //  #############################################################################
+
+    @Published var computerProcessList: [Computer] = []
+    @Published var policyProcessList: [Policy] = []
+    @Published var policiesProcessList: [Policy] = []
+    @Published var packageProcessList: [Package] = []
+    @Published var genericProcessList: [Any] = []
+    @Published var processingComplete: Bool = true
+    
+    //  #######################################################################
+    //  Example Resource types
+    //  #######################################################################
+    //
+    // ResourceType.category
+    // ResourceType.computer
+    // ResourceType.computerBasic
+    // ResourceType.computerDetailed
+    // ResourceType.computerGroup
+    // ResourceType.configProfileMacOS
+    // ResourceType.configProfileDetailedMacOS
+    // ResourceType.department
+    // ResourceType.mobile
+    // ResourceType.account
+    // ResourceType.command
+    // ResourceType.package
+    // ResourceType.packages
+    // ResourceType.policy
+    // ResourceType.policies
+    // ResourceType.policyDetail
+    // ResourceType.script
+    // ResourceType.scripts
+    //
+    
+//    #################################################################################
+//    Initialisers
+//    #################################################################################
+
+    private let minInterval: TimeInterval
+    private var lastRequestDate: Date?
+    private let requestPacer: RequestPacer
+
+    init(minInterval: TimeInterval = 3.0) { // default minimum interval between requests
+        self.minInterval = minInterval
+        self.requestPacer = RequestPacer(minInterval: minInterval)
+    }
+
+    // Small helper to match project's separationLine usage in other classes
+    func separationLine() {
+        print("-----------------------------------")
+    }
+    
+    //    #################################################################################
+    //    Functions
+    //    #################################################################################
+    
+    func getComputersBasic(server: String, authToken: String) async throws {
         
-        //        if progress.debugMode == true {
-        //            .background(Color.blue)
+        print("Running getComputersBasic")
+        let jamfURLQuery = server + "/JSSResource/computers/subset/basic"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        //        separationLine()
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200 - response is:\(response)")
+            throw JamfAPIError.badResponseCode
+        }
+        
+        let decoder = JSONDecoder()
+        
+        self.allComputersBasic = try decoder.decode(ComputerBasic.self, from: data)
+        
+        
+        self.allComputersBasicDict = self.allComputersBasic.computers
+        
+        self.initialDataLoaded = true
+        
+    }
+    
+    
+    //    #################################################################################
+    //    try await functions
+    //    #################################################################################
+    
+    
+    //   #################################################################################
+    //    try await getAllGroups
+    //    #################################################################################
+    
+    func getAllGroups(server: String, authToken: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/computergroups"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getAllGroups")
+        print("jamfURLQuery is: \(jamfURLQuery)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        //        DEBUG
+        //        separationLine()
+        //        print("getAllGroups - processDetail Json data as text is:")
+        //        print(String(data: data, encoding: .utf8)!)
+        let decoder = JSONDecoder()
+        
+        //        DispatchQueue.main.async {
+        self.allComputerGroups = try decoder.decode(Man1fest0.allComputerGroups.self, from: data).computerGroups
         //        }
-        
-        .onAppear {
-            networkController.separationLine()
-            progress.showProgress()
-            progress.waitForNotVeryLong()
-
-            Task {
-                print("PolicyDetailView appeared - running getDetailedPolicy function")
-                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                policyName = networkController.policyDetailed?.general?.name ?? ""
-                policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
-                trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
-                trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
-                trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
-                trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
-               
-               if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
-                   pushTriggerActiveWarning = true
-                   print("Push trigger is active!")
-               } else {
-                   pushTriggerActiveWarning = false
-                   print("Push trigger has been deactivated")
-               }
-                
-                
-                
-                try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
-            }
-            
-            Task {
-                print("getPolicyAsXML - running get policy as xml function")
-                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-            }
-            
-            if networkController.categories.count <= 1 {
-                print("No categories - fetching")
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.packages.count <= 1 {
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.departments.count <= 1 {
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.buildings.count <= 1 {
-                Task {
-                    try await networkController.getBuildings(server: server, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.allComputerGroups.count <= 0 {
-                
-                Task {
-                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                }
-            }
-        
-          
-         
-          
-            if networkController.packagesAssignedToPolicy.count <= 0 {
-                
-                Task {
-                    networkController.getPackagesAssignedToPolicy()
-                    networkController.addExistingPackages()
-                    fetchData()
-                }
-        }
     }
-        .padding()
-        .textSelection(.enabled)
-}
     
-    func fetchData() {
+    //    #################################################################################
+    //    try await get Group Members - simple auth
+    //    #################################################################################
+    
+    func getGroupMembers(server: String,  name: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/computergroups/name/" + name
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        separationLine()
+        print("Running func: getGroupMembers")
+        print("jamfURLQuery is: \(jamfURLQuery)")
+        print("Server is: \(server)")
+        print("Name is: \(name)")
         
-        if  networkController.packages.isEmpty {
-            print("No package data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-            
-        } else {
-            print("package data is available")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        
+        //        DEBUG
+        separationLine()
+        print("processDetail getGroupMembers Json data as text is:")
+        print(String(data: data, encoding: .utf8)!)
+        let compGroupData = try JSONDecoder().decode(computerGroupResponse.self, from: data)
+        
+        DispatchQueue.main.async {
+            self.allComputerGroupsInitDict = self.allComputerRecordsInit.computer
+            self.allComputersBasicDict = self.allComputersBasic.computers
+            self.compGroupComputers = compGroupData.computerGroup.computers
         }
     }
+    
+    
+    func getDepartmentScope(server: String, id: String) async throws {
+        
+        let jamfURLQuery = server + "/v1/departments/" + id
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getDepartments")
+        print("jamfURLQuery is: \(jamfURLQuery)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        separationLine()
+        print("getDepartmentScope - processDetail Json data as text is:")
+        print(String(data: data, encoding: .utf8)!)
+        let decoder = JSONDecoder()
+        self.departments = try decoder.decode([Department].self, from: data)
+        //        print("Decoded departments are:\(allDepartments)")
+        //        for department in allDepartments {
+        //            print("- \(department)")
+        //        }
+    }
+    
+    func receivedCategory(categories: [Category]) {
+        DispatchQueue.main.async {
+            self.categories = categories
+            // self.status = "Computers retrieved"
+            //        self.status = "Categories retrieved"
+        }
+    }
+    
+    func getCategoryScope(server: String, id: String) async throws {
+        
+        let jamfURLQuery = server + "/v1/categories/" + id
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("\(String(describing: product_name))/\(String(describing: product_version))", forHTTPHeaderField: "User-Agent")
+        separationLine()
+        print("User-Agent is: \(String(describing: product_name))/\(String(describing: product_version))")
+        
+        separationLine()
+        print("Running func: getDepartments")
+        print("jamfURLQuery is: \(jamfURLQuery)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        separationLine()
+        print("processDetail Json data as text is:")
+        print(String(data: data, encoding: .utf8)!)
+        let decoder = JSONDecoder()
+        self.categories = try decoder.decode([Category].self, from: data)
+    }
+    
+    func getCategories(server: String, authToken: String) async throws {
+        
+        let jamfURLQuery = server + "/JSSResource/categories"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getCategories")
+        print("jamfURLQuery is: \(jamfURLQuery)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        separationLine()
+        print("processDetail Json data as text is:")
+        print(String(data: data, encoding: .utf8)!)
+        let decoder = JSONDecoder()
+            
+           do {
+               let response = try decoder.decode(AllCategories.self, from: data)
+               self.categories = response.categories
+               self.separationLine()
+               print("getCategories Decoding succeeded")
+               
+           } catch {
+               self.separationLine()
+               print("getCategories Decoding failed - error is:")
+               print(error)
+           }
+           
+    }
+    
+    func getDepartments(server: String) async throws {
+        
+        let jamfURLQuery = server + "/JSSResource/departments"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getDepartments")
+        print("jamfURLQuery is: \(jamfURLQuery)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        separationLine()
+        print("processDetail Json data as text is:")
+        print(String(data: data, encoding: .utf8)!)
+        let decoder = JSONDecoder()
+        self.departments = try decoder.decode([Department].self, from: data)
+        
+    }
+    
+    func getOSXConfigProfiles(server: String, authToken: String) async throws {
+        
+        let jamfURLQuery = server + "/JSSResource/osxconfigurationprofiles"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getOSXConfigProfiles")
+        print("Url is:\(url)")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        print("Decoding without array - using ConfigurationProfiles")
+        self.allConfigProfiles = try decoder.decode(ConfigurationProfiles.self, from: data)
+    }
+    
+    
+    
+    
+    func getBuildings(server: String, authToken: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/buildings"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        self.separationLine()
+        print("Running func: getBuildings")
+        print("url is set to:\(url)")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        //        print("Json data is:")
+        //        print(String(data: data, encoding: .utf8)!)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        let allBuildings = try decoder.decode(Buildings.self, from: data)
+        self.buildings = allBuildings.buildings
+        //        print("buildings is set to:\(self.buildings)")
+    }
+    
+    
+    
+    func getAllPackages(server: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/packages"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+  
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getAllPackages")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        self.allPackages = try decoder.decode(Packages.self, from: data).packages
+        allPackagesComplete = true
+        print("allPackagesComplete status is set to:\(allPackagesComplete)")
+        
+    }
+    
+    func getAllScripts(server: String, authToken: String) async throws {
+        
+        print("Running func: getAllScripts")
+        
+        let jamfURLQuery = server + "/api/v1/scripts?page=0&page-size=500"
+        
+        let url = URL(string: jamfURLQuery)!
+        print("url is set to:\(url)")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getAllScripts")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        separationLine()
+        //        print("Json data is:")
+        //                  print(String(data: data, encoding: .utf8)!)
+        let decoder = JSONDecoder()
+        //        let allScriptResults = try decoder.decode(ScriptResults.self, from: data)
+        //        let localScriptsDetailed = allScriptResults.results
+        
+        //        print("localScriptsDetailed status is set to:\(localScriptsDetailed)")
+        //        let allScriptsFullyDetailed = self.allScriptsVeryDetailed.results
+        
+    }
+    
+    func getDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
+        
+        separationLine()
+        print("Running func: getDetailedScript")
+        print("scriptID is set to:\(scriptID)")
+        
+        let jamfURLQuery = server + "/api/v1/scripts/" + String(describing: scriptID)
+        
+        let url = URL(string: jamfURLQuery)!
+        print("url is set to:\(url)")
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+
+        let decoder = JSONDecoder()
+        scriptDetailed = try decoder.decode(Script.self, from: data)
+        //        print("scriptDetailed is set to:\(scriptDetailed)")
+    }
+    
+    
+    
+    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String) async throws {
+        
+        let xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <script>
+            <name>\(scriptName)</name>
+            <script_contents>\(scriptContent)</script_contents>
+        </script>
+        """
+
+        
+        separationLine()
+        print("Running func: updateScript")
+        print("scriptName is set to:\(scriptName)")
+        print("scriptID is set to:\(scriptId)")
+        separationLine()
+        print("scriptContent is\(scriptContent)")
+        
+//        let scriptData = Data(scriptContent.utf8)
+        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
+//        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: URL(string: jamfURLQuery)!)
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "PUT"
+        request.httpBody = xml.data(using: .utf8)
+
+//
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+    }
+    
+    
+    
+    
+    
+    func getAllPolicies(server: String, authToken: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/policies"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getAllPolicies")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            print(response)
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
+        let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
+        self.allPoliciesConverted = decodedData
+        allPoliciesComplete = true
+        separationLine()
+        //        atSeparationLine()
+        print("getAllPolicies status is set to:\(allPoliciesComplete)")
+        print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
+        print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
+    }
+    
+    
+    func getPolicies(server: String, authToken: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/policies"
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        separationLine()
+        print("Running func: getPolicies")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            print(response)
+            throw JamfAPIError.badResponseCode
+        }
+        let decoder = JSONDecoder()
+        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
+        self.policies = try decoder.decode(PolicyBasic.self, from: data).policies
+//        print(self.policies)
+//        allPoliciesComplete = true
+        separationLine()
+        print("getPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
+    }
+    
+     
+     
+    func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
+        print("Running getDetailedPolicy - policyID is:\(policyID)")
+        // Normalize server to avoid accidental double-slashes which some servers treat as different paths
+        var serverBase = server
+        while serverBase.hasSuffix("/") {
+            serverBase.removeLast()
+        }
+
+        let jamfURLQuery = serverBase + "/JSSResource/policies/id/" + policyID
+        let url = URL(string: jamfURLQuery)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        // Respect internal pacing
+        // Use the RequestPacer actor to serialize pacing across concurrent callers
+        await requestPacer.acquire()
+        // Also update lastRequestDate for compatibility with older logic/diagnostics
+        lastRequestDate = Date()
+
+        // Diagnostic: print the full request info for debugging intermittent 404s
+        print("getDetailedPolicy REQUEST -> URL: \(jamfURLQuery)")
+        print("Request headers: \(String(describing: request.allHTTPHeaderFields))")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard statusCode == 200 else {
+            // Improved diagnostics for intermittent failures
+            self.currentResponseCode = String(describing: statusCode)
+            print("getDetailedPolicy ERROR: HTTP \(statusCode) for URL: \(jamfURLQuery)")
+            let bodyText = String(data: data, encoding: .utf8) ?? "<no body>"
+            print("Response body:\n\(bodyText)")
+            // Also print response headers if available
+            if let httpResponse = response as? HTTPURLResponse {
+                print("Response headers: \(httpResponse.allHeaderFields)")
+            }
+            throw JamfAPIError.http(statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
+        self.policyDetailed = decodedData
+
+        separationLine()
+        print("getDetailedPolicy succeeded - policy name=\(self.policyDetailed?.general?.name ?? "<unknown>")")
+
+        // Insert at front
+        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+    }
+
+    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
+        self.separationLine()
+        print("Running func: getAllPoliciesDetailed - total policies: \(policies.count)")
+
+        Task {
+            for policy in policies {
+                guard let jamfId = policy.jamfId, jamfId > 0 else {
+                    print("Skipping policy with invalid jamfId: \(policy.name) -> \(String(describing: policy.jamfId))")
+                    continue
+                }
+
+                let policyIDStr = String(jamfId)
+                do {
+                    try await getDetailedPolicy(server: server, authToken: authToken, policyID: policyIDStr)
+                    if let pd = self.policyDetailed {
+                        print("Fetched policy: \(policy.name) id=\(policyIDStr) -> \(pd.general?.name ?? \"<no name>\")")
+                    }
+                } catch {
+                    separationLine()
+                    print("getDetailedPolicy failed for policy name=\(policy.name) id=\(policyIDStr) error=\(error)")
+                    // brief backoff to reduce pressure on the server
+                    try? await Task.sleep(nanoseconds: UInt64(0.2 * 1_000_000_000))
+                }
+            }
+            print("Completed getAllPoliciesDetailed")
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Icon helpers (lightweight stubs)
+    // - getDetailedIcon: sets a placeholder `iconDetailed` entry; replace with
+    //   real network fetch/decoding as needed.
+    // - getAllIconsDetailed: populates `allIconsDetailed` with placeholders to
+    //   keep UI code compiling/runnable. Replace with a real implementation.
+    // -------------------------------------------------------------------------
+
+    func getDetailedIcon(server: String, authToken: String, iconID: String) async throws {
+        separationLine()
+        print("Called getDetailedIcon id=\(iconID)")
+
+        // Basic normalization
+        var serverBase = server
+        while serverBase.hasSuffix("/") { serverBase.removeLast() }
+
+        // Placeholder behaviour: set a minimal Icon so views can display something.
+        let idInt = Int(iconID) ?? 0
+        DispatchQueue.main.async {
+            self.iconDetailed = Icon(id: idInt, url: "", name: "Icon_\(idInt)")
+        }
+    }
+
+    func getAllIconsDetailed(server: String, authToken: String, loopTotal: Int) {
+        separationLine()
+        print("Called getAllIconsDetailed - loopTotal=\(loopTotal)")
+
+        Task {
+            // Placeholder list — replace with a real network fetch & decode.
+            var placeholders: [Icon] = []
+            for i in 1...5 {
+                placeholders.append(Icon(id: i, url: "", name: "Icon_\(i)"))
+            }
+            DispatchQueue.main.async {
+                self.allIconsDetailed = placeholders
+            }
+        }
+    }
+
 }
-
-
-//struct PolicyDetailView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        PolicyDetailView(server: "", username: "", password: "", policy: PolicyDetailed(id:11111111-1111-1111-1111-111111111111, name: "", policyID: 1), policyID: 01)
-//
-//        //    DetailView(computer: Computer.sampleMacBookAir)
-//
-//    }
-//}

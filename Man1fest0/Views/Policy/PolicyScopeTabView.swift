@@ -265,7 +265,7 @@ struct PolicyScopeTabView: View {
                                         message: Text("This action will clear the policy scoping.\n You will need to rescope in order to deploy"),
                                         primaryButton: .destructive(Text("I understand!")) {
                                             // Code to execute when "Yes" is tapped
-                                            networkController.clearScope(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
+                                            xmlController.clearScope(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
                                             print("Yes tapped")
                                         },
                                         secondaryButton: .cancel()

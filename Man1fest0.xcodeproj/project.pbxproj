@@ -108,7 +108,6 @@
 		E4CE363D29D1C43100533707 /* Man1fest0App.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE363C29D1C43100533707 /* Man1fest0App.swift */; };
 		E4CE364129D1C43200533707 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4CE364029D1C43200533707 /* Assets.xcassets */; };
 		E4CE364529D1C43200533707 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4CE364429D1C43200533707 /* Preview Assets.xcassets */; };
-		E4CE368529D336C100533707 /* NetBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368429D336C100533707 /* NetBrain.swift */; };
 		E4CE369229D3372400533707 /* PolicyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368E29D3372400533707 /* PolicyDetailView.swift */; };
 		E4CE369329D3372400533707 /* PolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368D29D3372400533707 /* PolicyView.swift */; };
 		E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */; };
@@ -221,7 +220,6 @@
 		E4CE364029D1C43200533707 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E4CE364229D1C43200533707 /* Man1fest0.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Man1fest0.entitlements; sourceTree = "<group>"; };
 		E4CE364429D1C43200533707 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		E4CE368429D336C100533707 /* NetBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetBrain.swift; sourceTree = "<group>"; };
 		E4CE368D29D3372400533707 /* PolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyView.swift; sourceTree = "<group>"; };
 		E4CE368E29D3372400533707 /* PolicyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailView.swift; sourceTree = "<group>"; };
 		E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageUsageView.swift; sourceTree = "<group>"; };
@@ -472,7 +470,6 @@
 				A8C4EAC82D53BDD10022E0ED /* EaBrain.swift */,
 				A86CB8602D3E595B00D8F22F /* ImportExportBrain.swift */,
 				A8DECD592BD7FA2700D79A11 /* Layout.swift */,
-				E4CE368429D336C100533707 /* NetBrain.swift */,
 				A8BC96A52E68224A0078AF53 /* PhotoViewModel.swift */,
 				A8B35B0F2AE822FF0007B5BE /* Progress.swift */,
 				E48D59D52C5965AA00E1E35B /* PolicyBrain.swift */,
@@ -683,7 +680,6 @@
 				A83D21072DE6125F00D9AD2F /* GroupsSmartView.swift in Sources */,
 				A81B58092C4A5E83008C1C25 /* Policies.swift in Sources */,
 				A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */,
-				E4CE368529D336C100533707 /* NetBrain.swift in Sources */,
 				A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */,
 				A8BC96A62E6822520078AF53 /* PhotoViewModel.swift in Sources */,
 				A88491912C8A1D8600C37DB7 /* IconsView.swift in Sources */,

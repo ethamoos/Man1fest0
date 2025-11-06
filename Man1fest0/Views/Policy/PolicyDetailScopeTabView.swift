@@ -102,7 +102,7 @@ struct PolicyDetailScopeTabView: View {
                         //                        Text("").tag("")
                         ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
                             Text(String(describing: group.name))
-                                .tag(group as ComputerGroup?)
+                                .tag(group)
                         }
                     }
                     
@@ -151,7 +151,7 @@ struct PolicyDetailScopeTabView: View {
                     Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:").bold()) {
                         ForEach(scopingController.allLdapCustomGroupsCombinedArray, id: \.self) { group in
                             Text(String(describing: group.name))
-                                .tag(ldapSearchCustomGroupSelection as LDAPCustomGroup?)
+                                .tag(group)
                         }
                     }
                     
@@ -214,7 +214,7 @@ struct PolicyDetailScopeTabView: View {
                 Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:").bold()) {
                     ForEach(scopingController.allLdapServers, id: \.self) { group in
                         Text(String(describing: group.name))
-                            .tag(ldapServerSelection as LDAPServer?)
+                            .tag(group)
                     }
                 }
                 
@@ -247,11 +247,11 @@ struct PolicyDetailScopeTabView: View {
                     for eachItem in selectedPoliciesInt {
                         print("Updating for \(String(describing: eachItem ?? 0))")
                         let currentPolicyID = (eachItem ?? 0)
-                        
+
                         Task {
                             do {
                                 let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
-                                
+
                                 xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
                             } catch {
                                 print("Fetching detailed policy as xml failed: \(error)")
@@ -263,7 +263,7 @@ struct PolicyDetailScopeTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
-                .alert(isPresented: $showingWarningClearScope) {
+                .alert(isPresented: $showingWarningClearLimit) {
                     Alert(title: Text("Caution!"), message: Text("This action will clear any limitations from the policy scoping.\n You will need to re-add these if you still require them"), dismissButton: .default(Text("I understand!")))
                 }
             }
@@ -287,7 +287,7 @@ struct PolicyDetailScopeTabView: View {
                     for eachItem in selectedPoliciesInt {
                         
                         let currentPolicyID = (String(describing: eachItem ?? 0))
-                        networkController.clearScope(server: server,resourceType:  ResourceType.policies, policyID: currentPolicyID, authToken: networkController.authToken)
+                        xmlController.clearScope(server: server, resourceType:  ResourceType.policies, policyID: currentPolicyID, authToken: networkController.authToken)
                         print("Clear Scope for policy:\(eachItem ?? 0)")
                     }
                 }) {
