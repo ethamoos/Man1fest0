@@ -4541,15 +4541,15 @@ xml = """
         //        ########################################################
 
         let now = Date()
-        if let last = lastRequestDate {
-            print("Last request ran at:\(String(describing: last))")
-            let elapsed = now.timeIntervalSince(last)
-            if elapsed < minInterval {
-                let delay = minInterval - elapsed
-                print("Waiting:\(String(describing: delay))")
-                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            }
-        }
+//        if let last = lastRequestDate {
+//            print("Last request ran at:\(String(describing: last))")
+//            let elapsed = now.timeIntervalSince(last)
+//            if elapsed < minInterval {
+//                let delay = minInterval - elapsed
+//                print("Waiting:\(String(describing: delay))")
+//                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+//            }
+//        }
         lastRequestDate = Date()
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -4569,32 +4569,8 @@ xml = """
         } else {
             print("Decoding failed")
         }
-        //        print("All icons are:\(self.allIconsDetailed)")
     }
     
-//    func getAllIcons(server: String) async throws {
-//        let jamfURLQuery = server + "/JSSResource/packages"
-//        let url = URL(string: jamfURLQuery)!
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "GET"
-//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//  
-//        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        separationLine()
-//        print("Running func: getAllPackages")
-//        
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200")
-//            throw JamfAPIError.badResponseCode
-//        }
-//        let decoder = JSONDecoder()
-//        self.allPackages = try decoder.decode(Packages.self, from: data).packages
-//        allPackagesComplete = true
-//        print("allPackagesComplete status is set to:\(allPackagesComplete)")
-//        
-//    }
     
     
     

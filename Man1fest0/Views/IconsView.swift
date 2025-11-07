@@ -124,7 +124,7 @@ struct  IconsView: View {
                     Button(action: {
                         progress.showProgress()
                         progress.waitForABit()
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)}) {
                         Text("Refresh Icons")
                     }
                     .buttonStyle(.borderedProminent)
