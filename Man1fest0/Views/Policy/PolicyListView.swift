@@ -356,7 +356,9 @@ struct PolicyListView: View {
                 if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
                     print("fetching detailed policies")
                     progress.showProgress()
-                    networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    Task {
+                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    }
                     progress.waitForABit()
                     networkController.fetchedDetailedPolicies = true
                 } else {

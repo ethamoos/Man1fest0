@@ -147,7 +147,9 @@ struct PolicyActionsDetailTableView: View {
                         print("Clearing allPoliciesDetailed")
                         networkController.allPoliciesDetailed.removeAll()
                         print("Fetching allPoliciesDetailed")
-                        networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                        Task {
+                            try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                        }
                         convertToallPoliciesDetailedGeneral()
                     }) {
                         Image(systemName: "arrow.clockwise")
@@ -338,7 +340,9 @@ struct PolicyActionsDetailTableView: View {
                 
                 progress.showProgress()
                 
-                networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                Task {
+                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                }
                 
                 convertToallPoliciesDetailedGeneral()
                 
