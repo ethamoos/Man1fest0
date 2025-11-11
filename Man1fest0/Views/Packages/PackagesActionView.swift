@@ -30,7 +30,11 @@ struct PackagesActionView: View {
     //    Selections
     //    ########################################################################################
     
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Use jamfId-based selection to avoid UUID identity mismatches in Picker
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     @State var selection = Set<Package>()
     
@@ -139,18 +143,17 @@ struct PackagesActionView: View {
             LazyVGrid(columns: layout.columnsFlex) {
                 HStack {
                     
-                    Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                    Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
+                        Text("No category selected").tag(nil as Int?)
                         ForEach(networkController.categories, id: \.self) { category in
                             Text(String(describing: category.name))
-                                .tag(category as Category?)
-                                .tag(selectedCategory as Category?)
+                                .tag(category.jamfId as Int?)
                         }
                     }
                     .onAppear {
-                        
-                        if networkController.categories.isEmpty != true {
-                            print("Setting categories picker default")
-                            selectedCategory = networkController.categories[0] }
+                        if selectedCategoryId == nil {
+                            selectedCategoryId = networkController.categories.first?.jamfId
+                        }
                     }
                     
                     Button(action: {
@@ -158,7 +161,11 @@ struct PackagesActionView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        networkController.processUpdatePackagesCategory(selection: selection, server: server,resourceType: ResourceType.package,authToken: networkController.authToken, selectedCategory: selectedCategory)
+                        if let cat = selectedCategory {
+                            networkController.processUpdatePackagesCategory(selection: selection, server: server,resourceType: ResourceType.package,authToken: networkController.authToken, selectedCategory: cat)
+                        } else {
+                            print("No category selected")
+                        }
                         
                     }) {
                         HStack(spacing: 10) {

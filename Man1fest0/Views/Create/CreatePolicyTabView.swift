@@ -75,7 +75,11 @@ struct CreatePolicyTabView: View {
     
     @State var selectedComputer: Computer = Computer(id: 0, name: "")
     
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Use selectedCategoryId (Int?) so Picker tags (jamfId) match selection type
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     @State var selectedDepartment: Department = Department(jamfId: 0, name: "")
     
@@ -120,7 +124,7 @@ struct CreatePolicyTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory.jamfId), category: selectedCategory.name, departmentID: String(describing: selectedDepartment.jamfId ?? 0) , department: selectedDepartment.name , scriptID: String(describing: $selectedScript.id), scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
+                            networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory?.jamfId ?? 0), category: selectedCategory?.name ?? "", departmentID: String(describing: selectedDepartment.jamfId ?? 0) , department: selectedDepartment.name , scriptID: String(describing: $selectedScript.id), scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
                     
                             if createDepartmentIsChecked == true {
                                 networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
@@ -132,10 +136,10 @@ struct CreatePolicyTabView: View {
                             
                             networkController.separationLine()
                             print("Creating new Policy:\(policyName)")
-                            print("categoryID:\(selectedCategory.jamfId)")
-                            print("Category:\(selectedCategory.name)")
+                            print("categoryID:\(selectedCategory?.jamfId ?? 0)")
+                            print("Category:\(selectedCategory?.name ?? "")")
                             print("selectedDepartment ID:\(String(describing: selectedDepartment.jamfId ?? 0))")
-                            print("selectedCategory:\(selectedCategory.name)")
+                            print("selectedCategory:\(selectedCategory?.name ?? "")")
                             
                         }) {
                             Text("Create Policy")
@@ -168,9 +172,15 @@ struct CreatePolicyTabView: View {
     // ##########################################################################################
     
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedCategory, label: Text("Category")) {
+                    Picker(selection: $selectedCategoryId, label: Text("Category")) {
+                        Text("No category").tag(nil as Int?)
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(category.name).tag(category)
+                            Text(category.name).tag(category.jamfId as Int?)
+                        }
+                    }
+                    .onAppear {
+                        if selectedCategoryId == nil {
+                            selectedCategoryId = networkController.categories.first?.jamfId
                         }
                     }
                 }

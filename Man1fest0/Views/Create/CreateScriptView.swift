@@ -66,7 +66,11 @@ struct CreateScriptView: View {
     //              Selections
     //              ################################################################################
     
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Use selectedCategoryId (Int?) so Picker tags (jamfId) match selection type
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
     
@@ -87,10 +91,9 @@ struct CreateScriptView: View {
                         progress.waitForABit()
                         layout.separationLine()
                         print("Creating New Script:\(newScriptName)")
-                        print("Category:\(selectedCategory.name)")
-//                        print("Department:\(selectedDepartment.name)")
-                        
-                        xmlController.createScript(name: newScriptName, category: selectedCategory.name, filename: newScriptName, info: info, notes: notes, priority: priority, parameter4: scriptParameter4, parameter5: scriptParameter5, parameter6: scriptParameter6, parameter7: scriptParameter7, parameter8: scriptParameter8, parameter9: scriptParameter10, parameter10: scriptParameter4, parameter11: scriptParameter11, os_requirements: os_requirements, script_contents: bodyText, script_contents_encoded: script_contents_encoded, scriptID: "0", server: server, authToken: networkController.authToken)
+                        print("Category:\(selectedCategory?.name ?? "")")
+                         
+                        xmlController.createScript(name: newScriptName, category: selectedCategory?.name ?? "", filename: newScriptName, info: info, notes: notes, priority: priority, parameter4: scriptParameter4, parameter5: scriptParameter5, parameter6: scriptParameter6, parameter7: scriptParameter7, parameter8: scriptParameter8, parameter9: scriptParameter10, parameter10: scriptParameter4, parameter11: scriptParameter11, os_requirements: os_requirements, script_contents: bodyText, script_contents_encoded: script_contents_encoded, scriptID: "0", server: server, authToken: networkController.authToken)
                         
                         
                     }) {
@@ -111,9 +114,15 @@ struct CreateScriptView: View {
             
             Group {
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedCategory, label: Text("Category")) {
+                    Picker(selection: $selectedCategoryId, label: Text("Category")) {
+                        Text("No category selected").tag(nil as Int?)
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(category.name).tag(category)
+                            Text(category.name).tag(category.jamfId as Int?)
+                        }
+                    }
+                    .onAppear {
+                        if selectedCategoryId == nil {
+                            selectedCategoryId = networkController.categories.first?.jamfId
                         }
                     }
                 }
@@ -137,7 +146,6 @@ struct CreateScriptView: View {
                     }
                 }
             }
-            
         }
         .padding()
         

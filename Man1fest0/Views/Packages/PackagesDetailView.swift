@@ -24,7 +24,11 @@ struct PackageDetailView: View {
     //  Selections
     //  ########################################################################################
 
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Use jamfId-based selection for Category to avoid Picker tag/selection mismatches
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     @State private var showingWarning = false
     
@@ -88,26 +92,29 @@ struct PackageDetailView: View {
                 LazyVGrid(columns: layout.columnsFlex) {
                     HStack {
                         
-                        Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                        Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
+                            Text("No category selected").tag(nil as Int?)
                             ForEach(networkController.categories, id: \.self) { category in
                                 Text(String(describing: category.name))
-                                    .tag(category as Category?)
-                                    .tag(selectedCategory as Category?)
+                                    .tag(category.jamfId as Int?)
                             }
                         }
                         .onAppear {
-                        
-                        if networkController.categories.isEmpty != true {
-                            print("Setting categories picker default")
-                            selectedCategory = networkController.categories[0] }
-                    }
+                            if selectedCategoryId == nil {
+                                selectedCategoryId = networkController.categories.first?.jamfId
+                            }
+                        }
                         
                         Button(action: {
                             
                             progress.showProgress()
                             progress.waitForABit()
                            
-                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.package, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: currentPackage?.id ?? 0))
+                            if let cat = selectedCategory {
+                                networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.package, categoryID: String(describing: cat.jamfId), categoryName: String(describing: cat.name), updatePressed: true, resourceID: String(describing: currentPackage?.id ?? 0))
+                            } else {
+                                print("No category selected")
+                            }
 
                         }) {
                             HStack(spacing: 10) {

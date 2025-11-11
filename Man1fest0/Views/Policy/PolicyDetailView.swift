@@ -120,7 +120,11 @@ struct PolicyDetailView: View {
     
     @State var selectedComputer: Computer = Computer(id: 0, name: "")
     
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Use jamfId-based selection to avoid Picker tag/selection mismatches
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     @State var selectedDepartment: Department = Department(jamfId: 0, name: "")
     
@@ -481,22 +485,22 @@ struct PolicyDetailView: View {
                     HStack {
                         
                         if !networkController.categories.isEmpty {
-                            Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                            Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
                                 ForEach(networkController.categories, id: \.self) { category in
-                                    Text(category.name).tag(category)
+                                    Text(category.name).tag(category.jamfId as Int?)
                                 }
                             }
                             .onAppear {
                                 if !networkController.categories.isEmpty {
-                                    if !networkController.categories.contains(selectedCategory) {
-                                        selectedCategory = networkController.categories.first!
+                                    if selectedCategoryId == nil || !networkController.categories.contains(where: { $0.jamfId == selectedCategoryId }) {
+                                        selectedCategoryId = networkController.categories.first?.jamfId
                                     }
                                 }
                             }
                             .onChange(of: networkController.categories) { newCategories in
                                 if !newCategories.isEmpty {
-                                    if !newCategories.contains(selectedCategory) {
-                                        selectedCategory = newCategories.first!
+                                    if selectedCategoryId == nil || !newCategories.contains(where: { $0.jamfId == selectedCategoryId }) {
+                                        selectedCategoryId = newCategories.first?.jamfId
                                     }
                                 }
                             }
@@ -506,7 +510,11 @@ struct PolicyDetailView: View {
                         Button(action: {
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
+                            if let cat = selectedCategory {
+                                networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: cat.jamfId), categoryName: cat.name, updatePressed: true, resourceID: String(describing: policyID))
+                            } else {
+                                print("No category selected")
+                            }
                         }) {
                             HStack(spacing: 10) {
                                 Text("Update")
@@ -517,178 +525,8 @@ struct PolicyDetailView: View {
                         .disabled(networkController.categories.isEmpty)
                     }
                 }
-//            }
+            }
+            .textSelection(.enabled)
             .padding()
-            
-            //  ##########################################################################
-            //              DELETE POLICY
-            //  ##########################################################################
-            
-            //  ##########################################################################
-            //  Manually add to assigned list
-            //  ##########################################################################
-            
-            //  ##########################################################################
-            //  TabView - TAB
-            //  ##########################################################################
-            
-#if os(macOS)
-            TabView {
-                
-                PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
-                    .tabItem {
-                        Label("Packages", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                    .tabItem {
-                        Label("Scoping", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                    .tabItem {
-                        Label("Scripts", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
-                    .tabItem {
-                        Label("Triggers", systemImage: "square.and.pencil")
-                    }
-                
-                PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
-                    .tabItem {
-                        Label("Self Service", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
-                    .tabItem {
-                        Label("Clear", systemImage: "square.and.pencil")
-                    }
-            }
-
-#endif
-            
-            //  ##########################################################################
-            //  Progress view via showProgress
-            //  ##########################################################################
-            
-            if progress.showProgressView == true {
-                
-                ProgressView {
-                    Text("Processing")
-                }
-                .padding()
-            } else {
-                Text("")
-            }
-        }
-        . padding()
-        .frame(minWidth: 150, maxWidth: .infinity, minHeight: 70, maxHeight: .infinity)
-        
-        //        if progress.debugMode == true {
-        //            .background(Color.blue)
-        //        }
-        
-        .onAppear {
-            networkController.separationLine()
-            progress.showProgress()
-            progress.waitForNotVeryLong()
-
-            Task {
-                print("PolicyDetailView appeared - running getDetailedPolicy function")
-                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                policyName = networkController.policyDetailed?.general?.name ?? ""
-                policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
-                trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
-                trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
-                trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
-                trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
-               
-               if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
-                   pushTriggerActiveWarning = true
-                   print("Push trigger is active!")
-               } else {
-                   pushTriggerActiveWarning = false
-                   print("Push trigger has been deactivated")
-               }
-                
-                
-                
-                try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
-            }
-            
-            Task {
-                print("getPolicyAsXML - running get policy as xml function")
-                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-            }
-            
-            if networkController.categories.count <= 1 {
-                print("No categories - fetching")
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.packages.count <= 1 {
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.departments.count <= 1 {
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.buildings.count <= 1 {
-                Task {
-                    try await networkController.getBuildings(server: server, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.allComputerGroups.count <= 0 {
-                
-                Task {
-                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                }
-            }
-        
-          
-         
-          
-            if networkController.packagesAssignedToPolicy.count <= 0 {
-                
-                Task {
-                    networkController.getPackagesAssignedToPolicy()
-                    networkController.addExistingPackages()
-                    fetchData()
-                }
         }
     }
-        .padding()
-        .textSelection(.enabled)
-}
-    
-    func fetchData() {
-        
-        if  networkController.packages.isEmpty {
-            print("No package data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-            
-        } else {
-            print("package data is available")
-        }
-    }
-}
-
-
-//struct PolicyDetailView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        PolicyDetailView(server: "", username: "", password: "", policy: PolicyDetailed(id:11111111-1111-1111-1111-111111111111, name: "", policyID: 1), policyID: 01)
-//
-//        //    DetailView(computer: Computer.sampleMacBookAir)
-//
-//    }
-//}
