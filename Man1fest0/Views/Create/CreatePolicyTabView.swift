@@ -81,7 +81,11 @@ struct CreatePolicyTabView: View {
     
     @State var selectedScript: Script = Script(id: "", name: "")
     
-    @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
+    // Use selectedPackageId (Int?) so Picker tags (jamfId) match selection type
+    @State var selectedPackageId: Int? = nil
+    private var selectedPackage: Package? {
+        networkController.packages.first(where: { $0.jamfId == selectedPackageId })
+    }
     
     //    ########################################
     //    scriptParameters
@@ -183,9 +187,10 @@ struct CreatePolicyTabView: View {
             Group {
                 
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedPackage, label: Text("Package:")) {
+                    Picker(selection: $selectedPackageId, label: Text("Package:")) {
+                        Text("No package selected").tag(nil as Int?)
                         ForEach(networkController.packages, id: \.self) { package in
-                            Text(package.name).tag(package)
+                            Text(package.name).tag(package.jamfId as Int?)
                         }
                     }
                 }

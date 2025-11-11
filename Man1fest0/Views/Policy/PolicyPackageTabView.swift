@@ -42,18 +42,25 @@ struct PolicyPackageTabView: View {
     
     @State private var packageName = ""
     
-    @State private var action = "Install"
+    @State var action: String = "Install"
     
-    @State private var feu = false
+    @State var fut: String = "false"
     
-    @State private var fut = false
+    @State var feu: String = "false"
+    
+    
     
 //              ################################################################################
 //              Selection
 //              ################################################################################
 
 
-    @State var selectedPackage: Package? = nil
+    // Use selectedPackageId (Int?) for Picker selection to avoid UUID-based identity mismatches
+    @State var selectedPackageId: Int? = nil
+    // Convenience computed property to access the selected Package from the id
+    private var selectedPackage: Package? {
+        networkController.packages.first(where: { $0.jamfId == selectedPackageId })
+    }
     
     var body: some View {
         
@@ -85,6 +92,7 @@ struct PolicyPackageTabView: View {
                 }
             }
                 
+                
                 //  ################################################################################
                 //              Edit package assignment to policy
                 //  ################################################################################
@@ -96,6 +104,12 @@ struct PolicyPackageTabView: View {
                 
             Divider()
 
+//            VStack(alignment: .leading) {
+//                Text("Assign Packages").font(.system(size: 12, weight: .bold, design: .default))
+//            }
+//            .padding()
+                
+                
                 //  ################################################################################
                 //  Package picker
                 //  ################################################################################
@@ -103,41 +117,38 @@ struct PolicyPackageTabView: View {
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
                     TextField("Filter", text: $packageFilter)
-                    Picker(selection: $selectedPackage, label: Text("").bold()) {
-                        Text("No package selected").tag(nil as Package?)
-                        ForEach(networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }, id: \ .self) { package in
+                    Picker(selection: $selectedPackageId, label: Text("").bold()) {
+                        Text("No package selected").tag(nil as Int?)
+                        ForEach(networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }, id: \.self) { package in
                             Text(String(describing: package.name))
-                                .tag(package as Package?)
+                                .tag(package.jamfId as Int?)
                         }
                     }
                     .onAppear {
                         let filtered = networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
-                        selectedPackage = filtered.first
+                        selectedPackageId = filtered.first?.jamfId
                     }
                     .onChange(of: networkController.packages) { newPackages in
                         let filtered = newPackages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
-                        selectedPackage = filtered.first
+                        selectedPackageId = filtered.first?.jamfId
                     }
                     .onChange(of: packageFilter) { newFilter in
                         let filtered = networkController.packages.filter { newFilter.isEmpty ? true : $0.name.contains(newFilter) }
-                        if let selected = selectedPackage, !filtered.contains(selected) {
-                            selectedPackage = filtered.first
+                        if let selected = selectedPackage, !filtered.contains(where: { $0.jamfId == selected.jamfId }) {
+                            selectedPackageId = filtered.first?.jamfId
                         }
                         if filtered.isEmpty {
-                            selectedPackage = nil
+                            selectedPackageId = nil
                         }
                     }
-                    .onChange(of: selectedPackage) { newSelection in
+                    .onChange(of: selectedPackageId) { newSelectionId in
                         let filtered = networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }
-                        if let selected = newSelection, !filtered.contains(selected) {
-                            selectedPackage = filtered.first
+                        if let id = newSelectionId, !filtered.contains(where: { $0.jamfId == id }) {
+                            selectedPackageId = filtered.first?.jamfId
                         }
                     }
                 }
             }
-            Divider()
-            
-            Text("Packages")
             
                 HStack {
                     Button(action: {
@@ -145,44 +156,35 @@ struct PolicyPackageTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-//                        separationLine()
+                        networkController.separationLine()
                         print("Editing policy:\(String(describing: policyID))")
                         networkController.addExistingPackages()
-                        print("Adding selected package to policy:\(String(describing: selectedPackage))")
-                        
-                        xmlController.addPackageToPolicy(xmlContent: xmlController.aexmlDoc, xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, server: server, packageName: selectedPackage?.name ?? "",packageId: String(describing: selectedPackage?.jamfId ?? 0), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, newPolicyFlag: false, action: action, fut: fut ? "true" : "", feu: feu ? "true" : "" )
+                        print("Adding selected package to policy id:\(String(describing: selectedPackageId))")
+                        let pkg = selectedPackage
+                        // Provide explicit action/fut/feu values to match XmlBrain API
+                        xmlController.addPackageToPolicy(xmlContent: xmlController.aexmlDoc,
+                                                         xmlContentString: xmlController.currentPolicyAsXML,
+                                                         authToken: networkController.authToken,
+                                                         server: server,
+                                                         packageName: pkg?.name ?? "",
+                                                         packageId: String(describing: pkg?.jamfId ?? 0),
+                                                         policyId: String(describing: policyID),
+                                                         resourceType: ResourceType.policyDetail,
+                                                         newPolicyFlag: false,
+                                                         action: "Install",
+                                                         fut: "false",
+                                                         feu: "false")
                         
                     }) {
                         HStack(spacing: 10) {
-                            Image(systemName: "plus.square.fill.on.square.fill")
-                            Text("Add package")
-                            }
-                      
+//                            Image(systemName: "plus.square.fill.on.square.fill")
+                            Text("Add Package")
+                        }
+                  
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                     
-                    Picker("Action", selection: $action) {
-                        Text("Install").tag("Install")
-                        Text("Cache").tag("Cache")
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-
-                    Toggle(isOn: $fut) {
-                        Text("FUT")
-                            .font(.caption)
-                    }
-                    .toggleStyle(.checkbox)
-                    .fixedSize()
-
-                    Toggle(isOn: $feu) {
-                        Text("FEU")
-                            .font(.caption)
-                    }
-                    .toggleStyle(.checkbox)
-                    .fixedSize()
-
                     //  ################################################################################
                     //              Replace package in policy
                     //  ################################################################################
@@ -192,66 +194,77 @@ struct PolicyPackageTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-//                        separationLine()
-                        print("Assigning package to policy:\(String(describing: selectedPackage?.jamfId))")
-                        
-                        packageID = String(describing: selectedPackage?.jamfId)
+                        networkController.separationLine()
+                        print("Assigning package to policy id:\(String(describing: selectedPackageId))")
+                        packageID = String(describing: selectedPackageId ?? 0)
                         packageName = selectedPackage?.name ?? ""
                         
-                        networkController.editPolicy(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, packageName: packageName, packageID: packageID, policyID: policyID, action: action, fut: fut ? "true" : "", feu: feu ? "true" : "")
+                        networkController.editPolicy(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, packageName: packageName, packageID: packageID, policyID: policyID,action: action,fut: fut, feu: feu)
                         
                     }) {
                         HStack(spacing: 10) {
-                            Image(systemName: "plus.square.fill.on.square.fill")
+//                            Image(systemName: "plus.square.fill.on.square.fill")
                             Text("Replace All")
-                            }
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    
+                    TextField("Action", text: $action)
+                        .textFieldStyle(.roundedBorder)
+                        TextField("FUT", text: $fut)
+                            .textFieldStyle(.roundedBorder)
+                    TextField("FEU", text: $feu)
+                        .textFieldStyle(.roundedBorder)
+                    
+                    //  ################################################################################
+                    //              Replace package in policy
+                    //  ################################################################################
+                    
+                    Button(action: {
                         
-                        //  ################################################################################
-                        //              Replace package in policy
-                        //  ################################################################################
+                        progress.showProgress()
+                        progress.waitForABit()
                         
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-//                            separationLine()
-                            print("Clearing all packages in policy:\(String(describing: policyID))")
-                            
-                            xmlController.removePackagesFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                        networkController.separationLine()
+                        print("Clearing all packages in policy:\(String(describing: policyID))")
+                        
+                        xmlController.removePackagesFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
 //                        xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
 
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "plus.square.fill.on.square.fill")
-                                Text("Remove All")
-                            }
+                        
+                    }) {
+                        HStack(spacing: 10) {
+//                            Image(systemName: "plus.square.fill.on.square.fill")
+                            Text("Remove All")
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    
+                    
+                     Button(action: {
                         
+                        progress.showProgress()
+                        progress.waitForABit()
                         
-                         Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-//                            separationLine()
-                            print("Refresh packages")
+                        networkController.separationLine()
+                        print("Refresh packages")
 
-                             networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                            
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "plus.square.fill.on.square.fill")
-                                Text("Refresh")
-                            }
+                         networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                        
+                    }) {
+                        HStack(spacing: 10) {
+//                            Image(systemName: "plus.square.fill.on.square.fill")
+                            Text("Refresh")
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    
+                    
+                    
+                    
 //                }
             }
         }

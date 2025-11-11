@@ -106,7 +106,11 @@ struct CreateGeneralTabView: View {
     
     @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
     
-    @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
+    // Use selectedPackageId (Int?) bound to Picker tags (jamfId)
+    @State var selectedPackageId: Int? = nil
+    private var selectedPackage: Package? {
+        networkController.packages.first(where: { $0.jamfId == selectedPackageId })
+    }
     
     
     //    ########################################
@@ -338,10 +342,11 @@ struct CreateGeneralTabView: View {
                 Button(action: {
                     progress.showProgress()
                     progress.waitForABit()
-                    packageID = String(describing: selectedPackage.jamfId)
+                    // Safely unwrap selectedPackage in case it's nil
+                    packageID = String(describing: selectedPackage?.jamfId ?? 0)
                     importExportController.uploadPackage(authToken: networkController.authToken, server: server, packageId: packageID, pathToFile: self.filePath)
                     layout.separationLine()
-                    
+
                 }) {
                     HStack {
                         Image(systemName: "suitcase.fill")
@@ -372,17 +377,18 @@ struct CreateGeneralTabView: View {
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
                     TextField("Filter", text: $packageFilter)
-                    Picker(selection: $selectedPackage, label: Text("").bold()) {
+                    Picker(selection: $selectedPackageId, label: Text("").bold()) {
+                        Text("No package selected").tag(nil as Int?)
                         ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)}), id: \.self) { package in
                             Text(String(describing: package.name))
-                                .tag(package as Package?)
-                                .tag(selectedPackage as Package?)
+                                .tag(package.jamfId as Int?)
                         }
                     }
                     .onAppear {
-                        if networkController.packages.count >= 1 {
+                        if let first = networkController.packages.first {
                             print("Setting package picker default")
-                            selectedPackage = networkController.packages[0] }
+                            selectedPackageId = first.jamfId
+                        }
                     }
                 }
             }
