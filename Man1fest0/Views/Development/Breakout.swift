@@ -44,58 +44,85 @@ struct BreakoutGameView: View {
     @State private var speedLevel: Int = 1 // 1 (slowest) to 50 (fastest)
     @State private var showLevelUp = false
     @State private var showIcons: Bool = false
+    @State private var usedInitialIcons: Bool = false
+
+    // Responsive frame size (updated from GeometryReader)
+    @State private var frameSize: CGSize = CGSize(width: 600, height: 800)
 
     let rows = 5
     let cols = 8
     let brickWidth: CGFloat = 64
     let brickHeight: CGFloat = 24
     let paddleStep: CGFloat = 32
-    let frameWidth: CGFloat = 600
-    let frameHeight: CGFloat = 800
 
-    @State private var words: [String] = []
+     @State private var words: [String] = []
 
-    
+     
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            bricksLayer()
+                bricksLayer()
 
-            // Ball
-            Circle()
-                .fill(Color.white)
-                .frame(width: ball.size, height: ball.size)
-                .position(ball.position)
+                // Ball
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: ball.size, height: ball.size)
+                    .position(ball.position)
 
-            // Paddle
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.blue)
-                .frame(width: paddle.width, height: paddle.height)
-                .position(x: paddle.position, y: frameHeight - 40)
+                // Paddle
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.blue)
+                    .frame(width: paddle.width, height: paddle.height)
+                    .position(x: paddle.position, y: frameSize.height - 40)
 
-            // toolbar moved into the score layer (so it appears above the Score text)
+                // toolbar moved into the score layer (so it appears above the Score text)
 
-            scoreLayer()
+                scoreLayer()
 
-            overlaysLayer()
-        }
-        .frame(width: frameWidth, height: frameHeight)
-        .onAppear {
-            setupBricks()
-            updateWords()
-            Task {
-                try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+                overlaysLayer()
             }
-        }
-        .onChange(of: networkController.policies) { _ in
-            updateWords()
-        }
-        .onChange(of: networkController.allIconsDetailed) { _ in
-            // Rebuild bricks when icons list changes
-            setupBricks()
-        }
-        .onReceive(Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()) { _ in
+            .onAppear {
+                // initialize frame size from geometry
+                // Set frame size and initial positions on the main queue, then build bricks/words.
+                DispatchQueue.main.async {
+                    frameSize = geo.size
+                    // Center paddle and ball relative to the initial size
+                    paddle.position = frameSize.width / 2
+                    ball.position = CGPoint(x: frameSize.width / 2, y: frameSize.height * 0.5)
+                    setupBricks()
+                    updateWords()
+                }
+                // Fetch policies in background
+                Task {
+                    try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+                }
+            }
+            .onChange(of: geo.size) { newSize in
+                // Keep layout responsive when container size changes
+                DispatchQueue.main.async {
+                    frameSize = newSize
+                    // Clamp paddle position to remain visible
+                    paddle.position = min(max(paddle.width/2, paddle.position), frameSize.width - paddle.width/2)
+                    // Clamp ball position to remain within the new frame
+                    ball.position.x = max(ball.size/2, min(frameSize.width - ball.size/2, ball.position.x))
+                    ball.position.y = max(ball.size/2, min(frameSize.height - ball.size/2, ball.position.y))
+                    // Rebuild bricks for the new size
+                    setupBricks()
+                }
+            }
+            .frame(width: frameSize.width, height: frameSize.height)
+         }
+         // end GeometryReader
+         .onChange(of: networkController.policies) { _ in
+             updateWords()
+         }
+         .onChange(of: networkController.allIconsDetailed) { _ in
+             // Rebuild bricks when icons list changes
+             setupBricks()
+         }
+         .onReceive(Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()) { _ in
             guard isGameRunning && !gameOver && !isPaused else { return }
             updatePaddleSmoothly()
             updateGame()
@@ -265,13 +292,13 @@ struct BreakoutGameView: View {
             paddle.position = max(paddle.width/2, paddle.position - smoothStep)
         }
         if rightPressed {
-            paddle.position = min(frameWidth - paddle.width/2, paddle.position + smoothStep)
+            paddle.position = min(frameSize.width - paddle.width/2, paddle.position + smoothStep)
         }
     }
     
     private func setupBricks() {
         bricks = []
-        let xOffset: CGFloat = (frameWidth - (CGFloat(cols) * brickWidth)) / 2
+        let xOffset: CGFloat = (frameSize.width - (CGFloat(cols) * brickWidth)) / 2
         var wordIndex = 0
         for row in 0..<rows {
             for col in 0..<cols {
@@ -286,7 +313,15 @@ struct BreakoutGameView: View {
                     if networkController.allIconsDetailed.isEmpty {
                         bricks.append(Brick(rect: rect, word: nil, icon: nil))
                     } else {
-                        let icon = networkController.allIconsDetailed[wordIndex % networkController.allIconsDetailed.count]
+                        // Use the first batch of icons (in order) the very first time we populate icons.
+                        // On subsequent runs, pick random icons for variety.
+                        let icons = networkController.allIconsDetailed
+                        let icon: Icon
+                        if !usedInitialIcons {
+                            icon = icons[wordIndex % icons.count]
+                        } else {
+                            icon = icons.randomElement() ?? icons[wordIndex % icons.count]
+                        }
                         bricks.append(Brick(rect: rect, word: nil, icon: icon))
                     }
                 } else {
@@ -302,6 +337,11 @@ struct BreakoutGameView: View {
                 wordIndex += 1
             }
         }
+        // If we just populated icons for the first time, mark that we've used the initial set so
+        // subsequent calls will use random selections instead.
+        if showIcons && !networkController.allIconsDetailed.isEmpty && !usedInitialIcons {
+            usedInitialIcons = true
+        }
     }
     
     private func updateGame() {
@@ -313,9 +353,9 @@ struct BreakoutGameView: View {
         )
         
         // Wall collisions
-        if newPos.x <= ball.size/2 || newPos.x >= frameWidth - ball.size/2 {
+        if newPos.x <= ball.size/2 || newPos.x >= frameSize.width - ball.size/2 {
             ball.velocity.dx *= -1
-            newPos.x = max(ball.size/2, min(frameWidth - ball.size/2, newPos.x))
+            newPos.x = max(ball.size/2, min(frameSize.width - ball.size/2, newPos.x))
         }
         if newPos.y <= ball.size/2 {
             ball.velocity.dy *= -1
@@ -325,16 +365,16 @@ struct BreakoutGameView: View {
         // Paddle collision
         let paddleRect = CGRect(
             x: paddle.position - paddle.width/2,
-            y: frameHeight - 40 - paddle.height/2,
+            y: frameSize.height - 40 - paddle.height/2,
             width: paddle.width,
             height: paddle.height
         )
         let ballRect = CGRect(
-            x: newPos.x - ball.size/2,
-            y: newPos.y - ball.size/2,
-            width: ball.size,
-            height: ball.size
-        )
+             x: newPos.x - ball.size/2,
+             y: newPos.y - ball.size/2,
+             width: ball.size,
+             height: ball.size
+         )
         if ballRect.intersects(paddleRect) && ball.velocity.dy > 0 {
             ball.velocity.dy *= -1
             // Add a little horizontal angle based on hit location
@@ -347,7 +387,7 @@ struct BreakoutGameView: View {
                 ball.velocity.dx *= maxSpeed/speed
                 ball.velocity.dy *= maxSpeed/speed
             }
-            newPos.y = frameHeight - 40 - paddle.height/2 - ball.size/2
+            newPos.y = frameSize.height - 40 - paddle.height/2 - ball.size/2
         }
         
         // Brick collisions
@@ -364,7 +404,7 @@ struct BreakoutGameView: View {
         ball.position = newPos
         
         // Lose condition
-        if ball.position.y > frameHeight + ball.size {
+        if ball.position.y > frameSize.height + ball.size {
             gameOver = true
             isGameRunning = false
         }
@@ -382,23 +422,27 @@ struct BreakoutGameView: View {
     }
     // --- Next level logic ---
     private func nextLevel() {
-        ball = Ball(position: CGPoint(x: 300, y: 400), velocity: CGVector(dx: 4, dy: -6))
-        paddle = Paddle(position: 300)
+        // Center ball and paddle relative to current frame size for responsive layouts
+        ball = Ball(position: CGPoint(x: frameSize.width / 2, y: frameSize.height * 0.5), velocity: CGVector(dx: 4, dy: -6))
+        paddle = Paddle(position: frameSize.width / 2)
         setupBricks()
         isGameRunning = true
         gameOver = false
     }
     
     private func restartGame() {
-        ball = Ball(position: CGPoint(x: 300, y: 400), velocity: CGVector(dx: 4, dy: -6))
-        paddle = Paddle(position: 300)
+        // Reset ball and paddle centered in the current frame so the UI stays consistent when resized
+        ball = Ball(position: CGPoint(x: frameSize.width / 2, y: frameSize.height * 0.5), velocity: CGVector(dx: 4, dy: -6))
+        paddle = Paddle(position: frameSize.width / 2)
         setupBricks()
         score = 0
         gameOver = false
         isGameRunning = false
         speedLevel = 1
-    }
-}
+        // Do not reset usedInitialIcons here — user wanted the first run to use the first icons fetched.
+     }
+
+ }
 
 // --- Keyboard handling for SwiftUI on macOS ---
 
