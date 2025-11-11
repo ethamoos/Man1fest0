@@ -200,9 +200,6 @@ struct OptionsView: View {
                             }
                         }
                             
-//                            NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
-//                                Text("Prestages")
-//                            }
                         Divider()
 
                         
@@ -255,11 +252,11 @@ struct OptionsView: View {
                                 }
                             }
 #if os(macOS)
-                            
                             Group {
                                 Divider()
                                 
                                 DisclosureGroup("Groups") {
+                                    
                                     //  #######################################################################
                                     //  Static Groups
                                     //  #######################################################################
@@ -339,7 +336,6 @@ struct OptionsView: View {
                             networkController.needsCredentials = true
                         }) {
                             HStack {
-//                                Label("Connect", systemImage: networkController.connected ? "bolt.horizontal.fill" : "bolt.horizontal")
                                 Text("Connect")
                             }
                             .foregroundColor(.blue)
