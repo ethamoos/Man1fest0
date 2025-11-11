@@ -134,8 +134,8 @@ struct PoliciesActionView: View {
                     }
                     .foregroundColor(.blue)
                 }
-                .searchable(text: $searchText)
-                .onReceive([self.policiesSelection].publisher.first()) { (value) in
+                // .searchable removed to avoid multiple SwiftUI search toolbar items in the same window
+                 .onReceive([self.policiesSelection].publisher.first()) { (value) in
                     
                     //                    print("policiesSelection List is:\(value)")
                     print("getDetailedPolicyHasRun is:\(getDetailedPolicyHasRun)")
