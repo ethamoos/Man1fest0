@@ -370,20 +370,15 @@ struct CreatePolicyView: View {
         
             LazyVGrid(columns: columns, spacing: 30) {
                 Picker(selection: $selectedIcon, label: Text("Icon:")) {
-                    Text("").tag("") //basically added empty tag and it solve the case
                     ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-                        
-                            HStack {
-                                Text(String(describing: icon.name))
-                                AsyncImage(url: URL(string: icon.url )) { image in
-                                    image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
-                                } placeholder: {
-                                    //                        Color.red
-                                }
+                        HStack {
+                            Text(icon.name)
+                            AsyncImage(url: URL(string: icon.url )) { image in
+                                image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
+                            } placeholder: {
                             }
-
-//                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
-
+                        }
+                        .tag(icon as Icon?)
                     }
                 }
             }
@@ -397,7 +392,7 @@ struct CreatePolicyView: View {
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategory, label: Text("Category")) {
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
+                            Text(category.name).tag(category)
                         }
                     }
                 }
@@ -412,7 +407,7 @@ struct CreatePolicyView: View {
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedDepartment, label: Text("Department:")) {
                         ForEach(networkController.departments, id: \.self) { department in
-                            Text(String(describing: department.name)).tag(department.name)
+                            Text(department.name).tag(department)
                         }
                     }
                 }
@@ -424,7 +419,7 @@ struct CreatePolicyView: View {
                 LazyVGrid(columns: columns, spacing: 20) {
                     Picker(selection: $selectedScript, label: Text("Scripts")) {
                         ForEach(networkController.scripts, id: \.self) { script in
-                            Text(String(describing: script.name))
+                            Text(script.name).tag(script)
                         }
                     }
                 }
@@ -521,7 +516,6 @@ struct CreatePolicyView: View {
 //                    .buttonStyle(.borderedProminent)
 //                    .tint(.blue)
 //                    }
-//
 //                }
 //            }
         }
@@ -566,7 +560,6 @@ struct CreatePolicyView: View {
         }
     }
 }
-
 
 
 //#Preview {

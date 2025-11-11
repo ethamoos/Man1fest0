@@ -113,7 +113,7 @@ struct CreateScriptView: View {
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategory, label: Text("Category")) {
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
+                            Text(category.name).tag(category)
                         }
                     }
                 }
@@ -168,9 +168,9 @@ struct CreateScriptView: View {
 //    . padding()
 //    .frame(minWidth: 100, maxWidth: 600, minHeight: 70, maxHeight: .infinity)
 //
-//        
-//            
-//            
+//
+//
+//
 //        }
         //        .padding()
         //

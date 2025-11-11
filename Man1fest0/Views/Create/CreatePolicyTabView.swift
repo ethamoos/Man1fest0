@@ -165,18 +165,16 @@ struct CreatePolicyTabView: View {
     
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategory, label: Text("Category")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
+                            Text(category.name).tag(category)
                         }
                     }
                 }
                 
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedDepartment, label: Text("Department:")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
                         ForEach(networkController.departments, id: \.self) { department in
-                            Text(String(describing: department.name)).tag(department.name)
+                            Text(department.name).tag(department)
                         }
                     }
                 }
@@ -186,18 +184,16 @@ struct CreatePolicyTabView: View {
                 
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedPackage, label: Text("Package:")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
                         ForEach(networkController.packages, id: \.self) { package in
-                            Text(String(describing: package.name))
+                            Text(package.name).tag(package)
                         }
                     }
                 }
                 
                 LazyVGrid(columns: columns, spacing: 20) {
                     Picker(selection: $selectedScript, label: Text("Scripts")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
                         ForEach(networkController.scripts, id: \.self) { script in
-                            Text(String(describing: script.name))
+                            Text(script.name).tag(script)
                         }
                     }
                 }
