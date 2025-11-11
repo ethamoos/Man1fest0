@@ -25,6 +25,7 @@ struct Brick: Identifiable {
     var rect: CGRect
     var isHit: Bool = false
     var word: String? = nil // Optional word for display
+    var icon: Icon? = nil   // Optional icon for display
 }
 
 struct BreakoutGameView: View {
@@ -42,6 +43,7 @@ struct BreakoutGameView: View {
     @State private var isPaused = false
     @State private var speedLevel: Int = 1 // 1 (slowest) to 50 (fastest)
     @State private var showLevelUp = false
+    @State private var showIcons: Bool = false
 
     let rows = 5
     let cols = 8
@@ -55,76 +57,138 @@ struct BreakoutGameView: View {
 
     
     var body: some View {
-        
-        // Avoid mutating @State directly in the body; words will be updated in onAppear and when policies change.
-         
-         ZStack {
-             Color.black.ignoresSafeArea()
-             
-             // Bricks
-             ForEach(bricks) { brick in
-                 if !brick.isHit {
-                     Rectangle()
-                         .fill(Color.orange)
-                         .frame(width: brick.rect.width, height: brick.rect.height)
-                         .overlay(
-                             Group {
-                                 if let word = brick.word {
-                                     Text(word)
-                                         .foregroundColor(.black)
-                                         .font(.system(size: 12, weight: .bold))
-                                         .lineLimit(1)
-                                         .minimumScaleFactor(0.5)
-                                         .padding(.horizontal, 4)
-                                 }
-                             }
-                         )
-                         .position(x: brick.rect.midX, y: brick.rect.midY)
-                 }
-             }
-             
-             // Ball
-             Circle()
-                 .fill(Color.white)
-                 .frame(width: ball.size, height: ball.size)
-                 .position(ball.position)
-             
-             // Paddle
-             RoundedRectangle(cornerRadius: 8)
-                 .fill(Color.blue)
-                 .frame(width: paddle.width, height: paddle.height)
-                 .position(x: paddle.position, y: frameHeight - 40)
-             
-            // Pause button and speed picker (centered at top)
-            VStack {
-                HStack {
-                    Spacer()
-                    HStack(spacing: 12) {
-                        Button(isPaused ? "Resume" : "Pause") {
-                            if isGameRunning && !gameOver {
-                                isPaused.toggle()
-                            }
-                        }
-                        .disabled(!isGameRunning || gameOver)
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-                        if !isGameRunning && !gameOver {
-                            Picker("Speed", selection: $speedLevel) {
-                                ForEach(1...50, id: \.self) { level in
-                                    Text("Level \(level)")
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            .frame(width: 140)
+            bricksLayer()
+
+            // Ball
+            Circle()
+                .fill(Color.white)
+                .frame(width: ball.size, height: ball.size)
+                .position(ball.position)
+
+            // Paddle
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.blue)
+                .frame(width: paddle.width, height: paddle.height)
+                .position(x: paddle.position, y: frameHeight - 40)
+
+            // toolbar moved into the score layer (so it appears above the Score text)
+
+            scoreLayer()
+
+            overlaysLayer()
+        }
+        .frame(width: frameWidth, height: frameHeight)
+        .onAppear {
+            setupBricks()
+            updateWords()
+            Task {
+                try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+            }
+        }
+        .onChange(of: networkController.policies) { _ in
+            updateWords()
+        }
+        .onChange(of: networkController.allIconsDetailed) { _ in
+            // Rebuild bricks when icons list changes
+            setupBricks()
+        }
+        .onReceive(Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()) { _ in
+            guard isGameRunning && !gameOver && !isPaused else { return }
+            updatePaddleSmoothly()
+            updateGame()
+        }
+        .focusable()
+        .onKeyDown { key in
+            guard isGameRunning else {
+                if key == .space && !gameOver { isGameRunning = true }
+                return
+            }
+            if key == .leftArrow {
+               leftPressed = true
+            } else if key == .rightArrow {
+               rightPressed = true
+            }
+        }
+        .onKeyUp { key in
+           if key == .leftArrow {
+               leftPressed = false
+           } else if key == .rightArrow {
+               rightPressed = false
+           }
+        }
+    }
+
+    // MARK: - Extracted subviews to reduce body complexity
+    private func bricksLayer() -> AnyView {
+        AnyView(
+            ForEach(bricks) { brick in
+                if !brick.isHit {
+                    Rectangle()
+                        .fill(Color.orange)
+                        .frame(width: brick.rect.width, height: brick.rect.height)
+                        .overlay(
+                            BrickContentView(brick: brick, showIcons: showIcons)
+                        )
+                        .position(x: brick.rect.midX, y: brick.rect.midY)
+                }
+            }
+        )
+    }
+
+    private func scoreLayer() -> AnyView {
+        AnyView(
+            VStack {
+                // Toolbar: contains buttons and controls and sits above the Score text
+                HStack(spacing: 12) {
+                    Button(isPaused ? "Resume" : "Pause") {
+                        if isGameRunning && !gameOver {
+                            isPaused.toggle()
                         }
                     }
+                    .disabled(!isGameRunning || gameOver)
+
+                    Button("Reset") {
+                        restartGame()
+                    }
+
+                    // Toggle to switch between words and icons
+                    Toggle("Show Icons", isOn: $showIcons)
+                        .toggleStyle(SwitchToggleStyle())
+                        .onChange(of: showIcons) { enabled in
+                            setupBricks()
+                            if enabled && networkController.allIconsDetailed.isEmpty {
+                                Task {
+                                    // getAllIconsDetailed is a synchronous/non-throwing function in NetBrain,
+                                    // so call it directly (no `try`/`await`).
+                                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                                    // rebuild bricks once icons are fetched
+                                    DispatchQueue.main.async {
+                                        setupBricks()
+                                    }
+                                }
+                            }
+                        }
+
+                    if !isGameRunning && !gameOver {
+                        Picker("Speed", selection: $speedLevel) {
+                            ForEach(1...50, id: \.self) { level in
+                                Text("Level \(level)")
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 140)
+                    }
+
                     Spacer()
                 }
-                .padding(.top, 8)
-                Spacer()
-            }
+                .padding(8)
+                .background(Color.gray.opacity(0.15))
+                .cornerRadius(8)
+                .padding([.leading, .trailing, .top], 8)
 
-            // Score (centered under the pause/picker)
-            VStack {
                 HStack {
                     Spacer()
                     Text("Score: \(score)")
@@ -133,83 +197,53 @@ struct BreakoutGameView: View {
                     Spacer()
                 }
                 .padding()
+
                 Spacer()
             }
-             
-             // Level up overlay
-             if showLevelUp {
-                 VStack {
-                     Text("Level Up! Speed: \(speedLevel)")
-                         .foregroundColor(.yellow)
-                         .font(.title)
-                         .padding()
-                 }
-                 .background(Color.black.opacity(0.8))
-                 .cornerRadius(16)
-             }
-             
-             if !isGameRunning || gameOver {
-                 VStack {
-                     Text(gameOver ? "Game Over" : "Breakout")
-                         .foregroundColor(.white)
-                         .font(.largeTitle)
-                         .padding()
-                     if !gameOver {
-                         Text("Press SPACE to Start")
-                             .foregroundColor(.white)
-                             .padding()
-                     }
-                     if gameOver {
-                         Text("Final Score: \(score)")
-                             .foregroundColor(.white)
-                             .padding()
-                         Button("Restart") {
-                             restartGame()
-                         }
-                         .keyboardShortcut(.space, modifiers: [])
-                         .padding()
-                     }
-                 }
-                 .background(Color.black.opacity(0.8))
-                 .cornerRadius(16)
-             }
-         }
-         .frame(width: frameWidth, height: frameHeight)
-         .onAppear {
-            setupBricks()
-            updateWords()
-             Task {
-                 try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
-             }
-         }
-        .onChange(of: networkController.policies) { _ in
-            updateWords()
-        }
-         .onReceive(Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()) { _ in
-             guard isGameRunning && !gameOver && !isPaused else { return }
-             updatePaddleSmoothly()
-             updateGame()
-         }
-         .focusable()
-         .onKeyDown { key in
-             guard isGameRunning else {
-                 if key == .space && !gameOver { isGameRunning = true }
-                 return
-             }
-             if key == .leftArrow {
-                leftPressed = true
-             } else if key == .rightArrow {
-                rightPressed = true
-             }
-         }
-         .onKeyUp { key in
-            if key == .leftArrow {
-                leftPressed = false
-            } else if key == .rightArrow {
-                rightPressed = false
-            }
-         }
+         )
      }
+
+    private func overlaysLayer() -> AnyView {
+        AnyView(
+            Group {
+                if showLevelUp {
+                    VStack {
+                        Text("Level Up! Speed: \(speedLevel)")
+                            .foregroundColor(.yellow)
+                            .font(.title)
+                            .padding()
+                    }
+                    .background(Color.black.opacity(0.8))
+                    .cornerRadius(16)
+                }
+                if !isGameRunning || gameOver {
+                    VStack {
+                        Text(gameOver ? "Game Over" : "Breakout")
+                            .foregroundColor(.white)
+                            .font(.largeTitle)
+                            .padding()
+                        if !gameOver {
+                            Text("Press SPACE to Start")
+                                .foregroundColor(.white)
+                                .padding()
+                        }
+                        if gameOver {
+                            Text("Final Score: \(score)")
+                                .foregroundColor(.white)
+                                .padding()
+                            Button("Restart") {
+                                restartGame()
+                            }
+                            .keyboardShortcut(.space, modifiers: [])
+                            .padding()
+                        }
+                    }
+                    .background(Color.black.opacity(0.8))
+                    .cornerRadius(16)
+                }
+            }
+        )
+    }
     
     private func updateWords() {
         // Map networkController.policies ([Policy]) to [String] by using the 'name' property.
@@ -247,14 +281,24 @@ struct BreakoutGameView: View {
                     width: brickWidth - 4,
                     height: brickHeight - 4
                 )
-                let word: String?
-                if words.isEmpty {
-                    word = nil
+                if showIcons {
+                    // Assign icons (cycle through available icons)
+                    if networkController.allIconsDetailed.isEmpty {
+                        bricks.append(Brick(rect: rect, word: nil, icon: nil))
+                    } else {
+                        let icon = networkController.allIconsDetailed[wordIndex % networkController.allIconsDetailed.count]
+                        bricks.append(Brick(rect: rect, word: nil, icon: icon))
+                    }
                 } else {
-                    // Cycle through words so all bricks receive a label
-                    word = words[wordIndex % words.count]
+                    let word: String?
+                    if words.isEmpty {
+                        word = nil
+                    } else {
+                        // Cycle through words so all bricks receive a label
+                        word = words[wordIndex % words.count]
+                    }
+                    bricks.append(Brick(rect: rect, word: word, icon: nil))
                 }
-                bricks.append(Brick(rect: rect, word: word))
                 wordIndex += 1
             }
         }
@@ -447,6 +491,43 @@ fileprivate extension KeyPress {
         case 124: self = .rightArrow
         case 49:  self = .space
         default: return nil
+        }
+    }
+}
+
+// New small view to render brick content (word or icon). Extracted to simplify the parent view.
+fileprivate struct BrickContentView: View {
+    let brick: Brick
+    let showIcons: Bool
+
+    @ViewBuilder
+    var body: some View {
+        if showIcons, let icon = brick.icon, let url = URL(string: icon.url) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .padding(4)
+                case .failure(_):
+                    Image(systemName: "xmark.octagon")
+                        .resizable()
+                        .scaledToFit()
+                        .padding(8)
+                default:
+                    ProgressView()
+                }
+            }
+        } else if let word = brick.word {
+            Text(word)
+                .foregroundColor(.black)
+                .font(.system(size: 12, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, 4)
+        } else {
+            EmptyView()
         }
     }
 }
