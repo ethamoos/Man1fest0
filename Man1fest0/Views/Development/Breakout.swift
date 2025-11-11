@@ -51,7 +51,7 @@ struct BreakoutGameView: View {
     let frameWidth: CGFloat = 600
     let frameHeight: CGFloat = 800
 
-    @State private var words: [String] = [ "" ]
+    @State private var words: [String] = []
 
     
     var body: some View {
@@ -64,18 +64,22 @@ struct BreakoutGameView: View {
              // Bricks
              ForEach(bricks) { brick in
                  if !brick.isHit {
-                     ZStack {
-                         Rectangle()
-                             .fill(Color.orange)
-                             .frame(width: brick.rect.width, height: brick.rect.height)
-                             .position(x: brick.rect.midX, y: brick.rect.midY)
-                         if let word = brick.word {
-                             Text(word)
-                                 .foregroundColor(.black)
-                                 .font(.system(size: 14, weight: .bold))
-                                 .position(x: brick.rect.midX, y: brick.rect.midY)
-                         }
-                     }
+                     Rectangle()
+                         .fill(Color.orange)
+                         .frame(width: brick.rect.width, height: brick.rect.height)
+                         .overlay(
+                             Group {
+                                 if let word = brick.word {
+                                     Text(word)
+                                         .foregroundColor(.black)
+                                         .font(.system(size: 12, weight: .bold))
+                                         .lineLimit(1)
+                                         .minimumScaleFactor(0.5)
+                                         .padding(.horizontal, 4)
+                                 }
+                             }
+                         )
+                         .position(x: brick.rect.midX, y: brick.rect.midY)
                  }
              }
              
@@ -210,10 +214,14 @@ struct BreakoutGameView: View {
     private func updateWords() {
         // Map networkController.policies ([Policy]) to [String] by using the 'name' property.
         if networkController.policies.isEmpty {
-            words = [""]
+            words = []
         } else {
             words = networkController.policies.map { $0.name }.shuffled()
             print("Words are:\(words)")
+        }
+        // Rebuild bricks so the new words are applied to brick.word
+        DispatchQueue.main.async {
+            setupBricks()
         }
     }
  // --- Smooth paddle movement ---
@@ -239,7 +247,13 @@ struct BreakoutGameView: View {
                     width: brickWidth - 4,
                     height: brickHeight - 4
                 )
-                let word: String? = wordIndex < words.count ? words[wordIndex] : nil
+                let word: String?
+                if words.isEmpty {
+                    word = nil
+                } else {
+                    // Cycle through words so all bricks receive a label
+                    word = words[wordIndex % words.count]
+                }
                 bricks.append(Brick(rect: rect, word: word))
                 wordIndex += 1
             }
