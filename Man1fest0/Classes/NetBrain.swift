@@ -1707,12 +1707,13 @@ import AEXML
     
     
     
-    func getAllPolicies(server: String) async throws {
+    
+    func getAllPolicies(server: String, authToken: String) async throws {
         let jamfURLQuery = server + "/JSSResource/policies"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
         
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -1726,9 +1727,10 @@ import AEXML
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
-        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
+//        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
-        self.allPoliciesConverted = decodedData
+//        self.allPoliciesConverted = decodedData
+        self.policies = decodedData
         allPoliciesComplete = true
         separationLine()
         //        atSeparationLine()
@@ -1736,6 +1738,8 @@ import AEXML
         print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
         print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
     }
+    
+     
     
 //    func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
 //        if self.debug_enabled == true {

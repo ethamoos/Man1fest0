@@ -179,7 +179,7 @@ struct OptionsView: View {
                                     Text("Create Script")
                                 }
                                 
-                                NavigationLink(destination: BreakoutGameView()) {
+                                NavigationLink(destination: BreakoutGameView(server: server)) {
                                     Text("Downtime")
                                 }
                             }

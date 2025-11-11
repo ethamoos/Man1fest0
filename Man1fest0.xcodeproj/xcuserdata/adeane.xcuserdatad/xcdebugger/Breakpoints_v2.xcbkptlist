@@ -92,8 +92,8 @@
             filePath = "Man1fest0/Classes/NetBrain.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2268"
-            endingLineNumber = "2268"
+            startingLineNumber = "2272"
+            endingLineNumber = "2272"
             landmarkName = "processUpdatePolicies(selection:server:resourceType:enableDisable:authToken:)"
             landmarkType = "7">
          </BreakpointContent>

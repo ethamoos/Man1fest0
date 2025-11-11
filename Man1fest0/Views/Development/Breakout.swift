@@ -1,4 +1,3 @@
-
 //
 //  Ball.swift
 //  Man1fest0
@@ -29,6 +28,8 @@ struct Brick: Identifiable {
 }
 
 struct BreakoutGameView: View {
+    @State var server: String
+    @EnvironmentObject var networkController: NetBrain
     @State private var ball = Ball(position: CGPoint(x: 300, y: 400), velocity: CGVector(dx: 4, dy: -6))
     @State private var paddle = Paddle(position: 300)
     @State private var bricks: [Brick] = []
@@ -41,7 +42,7 @@ struct BreakoutGameView: View {
     @State private var isPaused = false
     @State private var speedLevel: Int = 1 // 1 (slowest) to 50 (fastest)
     @State private var showLevelUp = false
-    
+
     let rows = 5
     let cols = 8
     let brickWidth: CGFloat = 64
@@ -49,48 +50,79 @@ struct BreakoutGameView: View {
     let paddleStep: CGFloat = 32
     let frameWidth: CGFloat = 600
     let frameHeight: CGFloat = 800
-    
-    @State private var words: [String] = [
-        "Swift", "Code", "Game", "Fun", "Brick", "Ball", "Paddle", "Break"
-    ] // Example words, can be set by user
+
+    @State private var words: [String] = [ "" ]
+
     
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            
-            // Bricks
-            ForEach(bricks) { brick in
-                if !brick.isHit {
-                    ZStack {
-                        Rectangle()
-                            .fill(Color.orange)
-                            .frame(width: brick.rect.width, height: brick.rect.height)
-                            .position(x: brick.rect.midX, y: brick.rect.midY)
-                        if let word = brick.word {
-                            Text(word)
-                                .foregroundColor(.black)
-                                .font(.system(size: 14, weight: .bold))
-                                .position(x: brick.rect.midX, y: brick.rect.midY)
-                        }
-                    }
-                }
-            }
-            
-            // Ball
-            Circle()
-                .fill(Color.white)
-                .frame(width: ball.size, height: ball.size)
-                .position(ball.position)
-            
-            // Paddle
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.blue)
-                .frame(width: paddle.width, height: paddle.height)
-                .position(x: paddle.position, y: frameHeight - 40)
-            
-            // Score
+        
+        // Avoid mutating @State directly in the body; words will be updated in onAppear and when policies change.
+         
+         ZStack {
+             Color.black.ignoresSafeArea()
+             
+             // Bricks
+             ForEach(bricks) { brick in
+                 if !brick.isHit {
+                     ZStack {
+                         Rectangle()
+                             .fill(Color.orange)
+                             .frame(width: brick.rect.width, height: brick.rect.height)
+                             .position(x: brick.rect.midX, y: brick.rect.midY)
+                         if let word = brick.word {
+                             Text(word)
+                                 .foregroundColor(.black)
+                                 .font(.system(size: 14, weight: .bold))
+                                 .position(x: brick.rect.midX, y: brick.rect.midY)
+                         }
+                     }
+                 }
+             }
+             
+             // Ball
+             Circle()
+                 .fill(Color.white)
+                 .frame(width: ball.size, height: ball.size)
+                 .position(ball.position)
+             
+             // Paddle
+             RoundedRectangle(cornerRadius: 8)
+                 .fill(Color.blue)
+                 .frame(width: paddle.width, height: paddle.height)
+                 .position(x: paddle.position, y: frameHeight - 40)
+             
+            // Pause button and speed picker (centered at top)
             VStack {
                 HStack {
+                    Spacer()
+                    HStack(spacing: 12) {
+                        Button(isPaused ? "Resume" : "Pause") {
+                            if isGameRunning && !gameOver {
+                                isPaused.toggle()
+                            }
+                        }
+                        .disabled(!isGameRunning || gameOver)
+
+                        if !isGameRunning && !gameOver {
+                            Picker("Speed", selection: $speedLevel) {
+                                ForEach(1...50, id: \.self) { level in
+                                    Text("Level \(level)")
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .frame(width: 140)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(.top, 8)
+                Spacer()
+            }
+
+            // Score (centered under the pause/picker)
+            VStack {
+                HStack {
+                    Spacer()
                     Text("Score: \(score)")
                         .foregroundColor(.white)
                         .font(.headline)
@@ -99,100 +131,92 @@ struct BreakoutGameView: View {
                 .padding()
                 Spacer()
             }
-            
-            // Pause button and speed picker
-            VStack {
-                HStack {
-                    Button(isPaused ? "Resume" : "Pause") {
-                        if isGameRunning && !gameOver {
-                            isPaused.toggle()
-                        }
-                    }
-                    .padding(.trailing, 8)
-                    .disabled(!isGameRunning || gameOver)
-                    if !isGameRunning && !gameOver {
-                        Picker("Speed", selection: $speedLevel) {
-                            ForEach(1...50, id: \.self) { level in
-                                Text("Level \(level)")
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 120)
-                        .padding(.trailing, 8)
-                    }
-                    Spacer()
-                }
-                .padding(.top, 8)
-                Spacer()
-            }
-            // Level up overlay
-            if showLevelUp {
-                VStack {
-                    Text("Level Up! Speed: \(speedLevel)")
-                        .foregroundColor(.yellow)
-                        .font(.title)
-                        .padding()
-                }
-                .background(Color.black.opacity(0.8))
-                .cornerRadius(16)
-            }
-            
-            if !isGameRunning || gameOver {
-                VStack {
-                    Text(gameOver ? "Game Over" : "Breakout")
-                        .foregroundColor(.white)
-                        .font(.largeTitle)
-                        .padding()
-                    if !gameOver {
-                        Text("Press SPACE to Start")
-                            .foregroundColor(.white)
-                            .padding()
-                    }
-                    if gameOver {
-                        Text("Final Score: \(score)")
-                            .foregroundColor(.white)
-                            .padding()
-                        Button("Restart") {
-                            restartGame()
-                        }
-                        .keyboardShortcut(.space, modifiers: [])
-                        .padding()
-                    }
-                }
-                .background(Color.black.opacity(0.8))
-                .cornerRadius(16)
-            }
-        }
-        .frame(width: frameWidth, height: frameHeight)
-        .onAppear {
+             
+             // Level up overlay
+             if showLevelUp {
+                 VStack {
+                     Text("Level Up! Speed: \(speedLevel)")
+                         .foregroundColor(.yellow)
+                         .font(.title)
+                         .padding()
+                 }
+                 .background(Color.black.opacity(0.8))
+                 .cornerRadius(16)
+             }
+             
+             if !isGameRunning || gameOver {
+                 VStack {
+                     Text(gameOver ? "Game Over" : "Breakout")
+                         .foregroundColor(.white)
+                         .font(.largeTitle)
+                         .padding()
+                     if !gameOver {
+                         Text("Press SPACE to Start")
+                             .foregroundColor(.white)
+                             .padding()
+                     }
+                     if gameOver {
+                         Text("Final Score: \(score)")
+                             .foregroundColor(.white)
+                             .padding()
+                         Button("Restart") {
+                             restartGame()
+                         }
+                         .keyboardShortcut(.space, modifiers: [])
+                         .padding()
+                     }
+                 }
+                 .background(Color.black.opacity(0.8))
+                 .cornerRadius(16)
+             }
+         }
+         .frame(width: frameWidth, height: frameHeight)
+         .onAppear {
             setupBricks()
+            updateWords()
+             Task {
+                 try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+             }
+         }
+        .onChange(of: networkController.policies) { _ in
+            updateWords()
         }
-        .onReceive(Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()) { _ in
-            guard isGameRunning && !gameOver && !isPaused else { return }
-            updatePaddleSmoothly()
-            updateGame()
-        }
-        .focusable()
-        .onKeyDown { key in
-            guard isGameRunning else {
-                if key == .space && !gameOver { isGameRunning = true }
-                return
-            }
-            if key == .leftArrow {
+         .onReceive(Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()) { _ in
+             guard isGameRunning && !gameOver && !isPaused else { return }
+             updatePaddleSmoothly()
+             updateGame()
+         }
+         .focusable()
+         .onKeyDown { key in
+             guard isGameRunning else {
+                 if key == .space && !gameOver { isGameRunning = true }
+                 return
+             }
+             if key == .leftArrow {
                 leftPressed = true
-            } else if key == .rightArrow {
+             } else if key == .rightArrow {
                 rightPressed = true
-            }
-        }
-        .onKeyUp { key in
+             }
+         }
+         .onKeyUp { key in
             if key == .leftArrow {
                 leftPressed = false
             } else if key == .rightArrow {
-                leftPressed = false
+                rightPressed = false
             }
+         }
+     }
+    
+    private func updateWords() {
+        // Map networkController.policies ([Policy]) to [String] by using the 'name' property.
+        if networkController.policies.isEmpty {
+            words = [""]
+        } else {
+            words = networkController.policies.map { $0.name }.shuffled()
+            print("Words are:\(words)")
         }
     }
-    // --- Smooth paddle movement ---
+ // --- Smooth paddle movement ---
     private func updatePaddleSmoothly() {
         let smoothStep: CGFloat = 8
         if leftPressed {
