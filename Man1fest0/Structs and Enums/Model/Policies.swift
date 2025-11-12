@@ -19,7 +19,7 @@ import Foundation
 
 struct PolicyBasic: Codable, Hashable {
     
-    let policies: [Policy]    
+    let policies: [Policy]
 
 }
 
@@ -47,8 +47,9 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
     //    let serialsByPrestageID: [String: String]
     let scope: Scope?
     let package_configuration: PackageConfiguration?
-        let scripts: [PolicyScripts]?
-    //    let printers: [PrinterElement]?
+    let scripts: [PolicyScripts]?
+    let printers: Printers?
+    //    let self_service: SelfService?
     let self_service: SelfService?
     //    let files_processes: FilesProcesses?
     //    let printer:[PrinterClass]?
@@ -58,6 +59,7 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
         case scope = "scope"
         case package_configuration = "package_configuration"
         case scripts = "scripts"
+        case printers = "printers"
         case self_service = "self_service"
         //        case printers = "printers"
         //        case files_processes = "files_processes"

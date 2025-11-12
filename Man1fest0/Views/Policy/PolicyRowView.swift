@@ -14,6 +14,12 @@ struct PolicyRowView: View {
         let selfServiceDisplayName = policy.self_service?.selfServiceDisplayName ?? ""
         let selfServiceIconURI = policy.self_service?.selfServiceIcon?.uri ?? ""
 
+        // New extracted properties
+        let scripts = policy.scripts ?? []
+        let packages = policy.package_configuration?.packages ?? []
+        let scope = policy.scope
+        let printers = policy.printers
+
         VStack(alignment: .leading, spacing: 6) {
             Group {
                 // Manual disclosure: plain tappable label + explicit content
@@ -41,19 +47,100 @@ struct PolicyRowView: View {
 
                 if isExpanded {
                     VStack(alignment: .leading, spacing: 6) {
-//                        Text("DEBUG: Expanded content shown")
-//                            .font(.caption)
-//                            .foregroundColor(.secondary)
                         HStack { Text("General Name:"); Text(generalName).foregroundColor(.primary) }
                         HStack { Text("Name:"); Text(generalName).foregroundColor(.primary) }
                         HStack { Text("General ID:"); Text(generalJamfIdString).foregroundColor(.primary) }
                         HStack { Text("Self Service Display Name:"); Text(selfServiceDisplayName).foregroundColor(.primary) }
                         HStack { Text("Self Service Icon URI:"); Text(selfServiceIconURI).foregroundColor(.primary) }
+
+                        // Scripts Disclosure
+                        DisclosureGroup("Scripts (\(scripts.count))") {
+                            if scripts.isEmpty {
+                                Text("No scripts").foregroundColor(.secondary)
+                            } else {
+                                ForEach(scripts, id: \.id) { script in
+                                    HStack {
+                                        Text(script.name ?? "Unnamed script")
+                                            .font(.subheadline)
+                                        Spacer()
+                                        if let jamfId = script.jamfId {
+                                            Text("id: \(jamfId)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+                            }
+                        }
+                        .padding(.top, 6)
+
+                        // Packages Disclosure
+                        DisclosureGroup("Packages (\(packages.count))") {
+                            if packages.isEmpty {
+                                Text("No packages").foregroundColor(.secondary)
+                            } else {
+                                ForEach(packages, id: \.id) { pkg in
+                                    HStack {
+                                        Text(pkg.name)
+                                            .font(.subheadline)
+                                        Spacer()
+                                        Text("id: \(pkg.jamfId)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+                            }
+                        }
+                        .padding(.top, 6)
+
+                        // Scope Disclosure
+                        DisclosureGroup("Scope") {
+                            if scope == nil {
+                                Text("No scope").foregroundColor(.secondary)
+                            } else {
+                                HStack { Text("All Computers:"); Text(scope?.allComputers.map { String($0) } ?? "?").foregroundColor(.primary) }
+                                HStack { Text("Computers:"); Text("\(scope?.computers?.count ?? 0)").foregroundColor(.primary) }
+                                HStack { Text("Computer Groups:"); Text("\(scope?.computerGroups?.count ?? 0)").foregroundColor(.primary) }
+                                HStack { Text("Buildings:"); Text("\(scope?.buildings?.count ?? 0)").foregroundColor(.primary) }
+                                HStack { Text("Departments:"); Text("\(scope?.departments?.count ?? 0)").foregroundColor(.primary) }
+                                // Optionally list group names
+                                if let groups = scope?.computerGroups, !groups.isEmpty {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Groups:").font(.caption)
+                                        ForEach(groups, id: \.id) { g in
+                                            Text(g.name ?? "Unnamed group")
+                                                .font(.caption2)
+                                        }
+                                    }
+                                    .padding(.top, 4)
+                                }
+                            }
+                        }
+                        .padding(.top, 6)
+
+                        // Printers Disclosure
+                        DisclosureGroup("Printers") {
+                            if printers == nil {
+                                Text("No printers").foregroundColor(.secondary)
+                            } else {
+                                if let printer = printers?.printer {
+                                    VStack(alignment: .leading) {
+                                        Text(printer.name ?? "Unnamed printer").font(.subheadline)
+                                        if let id = printer.jamfId { Text("id: \(id)").font(.caption).foregroundColor(.secondary) }
+                                    }
+                                } else {
+                                    Text(String(describing: printers)).font(.caption).foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.top, 6)
+
                     }
                     .padding(.leading, 18)
                     .padding(8)
                     .background(Color.white.opacity(0.06))
-//                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.red.opacity(0.7), lineWidth: 1))
                     .fixedSize(horizontal: false, vertical: true)
                     .layoutPriority(1)
                 }
@@ -90,7 +177,21 @@ struct PolicyRowView_Previews: PreviewProvider {
                                     category: nil,
                                     mac_address: nil,
                                     ip_address: nil)
-        let samplePolicy = PolicyDetailed(general: sampleGeneral, scope: nil, package_configuration: nil, scripts: nil, self_service: sampleSelfService)
+
+        // Build sample scripts / packages / scope / printers for preview
+        let sampleScript = PolicyScripts(jamfId: 100, name: "set_time", priority: "After", parameter4: nil, parameter5: nil, parameter6: nil, parameter7: nil, parameter8: nil, parameter9: nil, parameter10: nil)
+        let samplePolicyScriptsArray = [sampleScript]
+
+        let samplePackage = Package(jamfId: 1207, name: "1Password_8.pkg", udid: nil)
+        let samplePackageConfig = PackageConfiguration(packages: [samplePackage])
+
+        let sampleGroup = ComputerGroups(jamfId: 379, name: "ABBA")
+        let sampleScope = Scope(allComputers: false, all_jss_users: nil, computers: nil, computerGroups: [sampleGroup], buildings: nil, departments: nil, limitToUsers: nil, limitations: nil, exclusions: nil)
+
+        let samplePrinterResult = Printers.Result(jamfId: 122, name: "Colour", makeDefault: false)
+        let samplePrinters = Printers(any: nil, printer: samplePrinterResult)
+
+        let samplePolicy = PolicyDetailed(general: sampleGeneral, scope: sampleScope, package_configuration: samplePackageConfig, scripts: samplePolicyScriptsArray, printers: samplePrinters, self_service: sampleSelfService)
 
         return Group {
             PolicyRowView(policy: samplePolicy)
