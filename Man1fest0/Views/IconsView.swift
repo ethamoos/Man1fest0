@@ -141,7 +141,7 @@ struct  IconsView: View {
 //                    if networkController.allIconsDetailed.count > 0 {
 
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 5000)
                 } else {
                     print("getAllIconsDetailed has already run")
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
