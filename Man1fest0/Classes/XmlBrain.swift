@@ -2627,7 +2627,8 @@ class XmlBrain: ObservableObject {
 //    ICONS
     
     func updateIconBatch(selectedPoliciesInt: [Int?], server: String,authToken: String, iconFilename: String, iconID: String, iconURI: String) {
-        
+        self.separationLine()
+        print("Running updateIconBatch")
         for eachItem in selectedPoliciesInt {
             let currentPolicyID = (eachItem ?? 0)
             self.separationLine()
