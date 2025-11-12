@@ -41,16 +41,17 @@ struct BreakoutGameView: View {
     @State private var leftPressed = false
     @State private var rightPressed = false
     @State private var isPaused = false
-    @State private var speedLevel: Int = 1 // 1 (slowest) to 50 (fastest)
+    @State private var speedLevel: Int = 10 // default to 10 per request (1-50)
     @State private var showLevelUp = false
-    @State private var showIcons: Bool = false
+    @State private var showIcons: Bool = true
     @State private var usedInitialIcons: Bool = false
 
     // Responsive frame size (updated from GeometryReader)
     @State private var frameSize: CGSize = CGSize(width: 600, height: 800)
 
     let rows = 5
-    let cols = 8
+    // Increase columns so more bricks fit across the width (bricks will be narrower)
+    let cols = 12
     let brickWidth: CGFloat = 64
     let brickHeight: CGFloat = 24
     let paddleStep: CGFloat = 32
@@ -94,6 +95,13 @@ struct BreakoutGameView: View {
                     setupBricks()
                     updateWords()
                 }
+                // If icons are desired by default and none are present, fetch them now.
+                if showIcons && networkController.allIconsDetailed.isEmpty {
+                    Task {
+                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 200)
+                        DispatchQueue.main.async { setupBricks() }
+                    }
+                }
                 // Fetch policies in background
                 Task {
                     try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
@@ -129,10 +137,35 @@ struct BreakoutGameView: View {
         }
         .focusable()
         .onKeyDown { key in
-            guard isGameRunning else {
-                if key == .space && !gameOver { isGameRunning = true }
+            // Global keys that work regardless of running state
+            if key == .reset {
+                restartGame()
                 return
             }
+            if key == .toggleIcons {
+                // Toggle icons and request icons if needed
+                showIcons.toggle()
+                if showIcons && networkController.allIconsDetailed.isEmpty {
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 200)
+                    DispatchQueue.main.async { setupBricks() }
+                } else {
+                    setupBricks()
+                }
+                return
+            }
+
+            // Space toggles pause when the game is running; if not running it starts the game
+            if key == .space {
+                if isGameRunning && !gameOver {
+                    isPaused.toggle()
+                } else if !isGameRunning && !gameOver {
+                    isGameRunning = true
+                }
+                return
+            }
+
+            // Movement keys
+            guard isGameRunning else { return }
             if key == .leftArrow {
                leftPressed = true
             } else if key == .rightArrow {
@@ -175,22 +208,25 @@ struct BreakoutGameView: View {
                             isPaused.toggle()
                         }
                     }
+                    .keyboardShortcut(.space, modifiers: [])
                     .disabled(!isGameRunning || gameOver)
 
                     Button("Reset") {
                         restartGame()
                     }
+                    .keyboardShortcut("r", modifiers: [])
 
                     // Toggle to switch between words and icons
                     Toggle("Show Icons", isOn: $showIcons)
                         .toggleStyle(SwitchToggleStyle())
+                        .keyboardShortcut("i", modifiers: [])
                         .onChange(of: showIcons) { enabled in
                             setupBricks()
                             if enabled && networkController.allIconsDetailed.isEmpty {
                                 Task {
                                     // getAllIconsDetailed is a synchronous/non-throwing function in NetBrain,
                                     // so call it directly (no `try`/`await`).
-                                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 200)
                                     // rebuild bricks once icons are fetched
                                     DispatchQueue.main.async {
                                         setupBricks()
@@ -231,46 +267,54 @@ struct BreakoutGameView: View {
      }
 
     private func overlaysLayer() -> AnyView {
-        AnyView(
-            Group {
-                if showLevelUp {
-                    VStack {
-                        Text("Level Up! Speed: \(speedLevel)")
-                            .foregroundColor(.yellow)
-                            .font(.title)
-                            .padding()
-                    }
-                    .background(Color.black.opacity(0.8))
-                    .cornerRadius(16)
-                }
-                if !isGameRunning || gameOver {
-                    VStack {
-                        Text(gameOver ? "Game Over" : "Breakout")
-                            .foregroundColor(.white)
-                            .font(.largeTitle)
-                            .padding()
-                        if !gameOver {
-                            Text("Press SPACE to Start")
-                                .foregroundColor(.white)
-                                .padding()
-                        }
-                        if gameOver {
-                            Text("Final Score: \(score)")
-                                .foregroundColor(.white)
-                                .padding()
-                            Button("Restart") {
-                                restartGame()
-                            }
-                            .keyboardShortcut(.space, modifiers: [])
-                            .padding()
-                        }
-                    }
-                    .background(Color.black.opacity(0.8))
-                    .cornerRadius(16)
-                }
-            }
-        )
-    }
+         AnyView(
+             Group {
+                 if showLevelUp {
+                     VStack {
+                         Spacer()
+                         VStack {
+                             Text("Level Up! Speed: \(speedLevel)")
+                                 .foregroundColor(.yellow)
+                                 .font(.title)
+                                 .padding()
+                         }
+                         .background(Color.black.opacity(0.8))
+                         .cornerRadius(16)
+                         .padding(.bottom, 80)
+                     }
+                 }
+                 if !isGameRunning || gameOver {
+                     VStack {
+                         Spacer()
+                         VStack {
+                             Text(gameOver ? "Game Over" : "Icon Breaker")
+                                 .foregroundColor(.white)
+                                 .font(.largeTitle)
+                                 .padding()
+                             if !gameOver {
+                                 Text("Press SPACE to Start")
+                                     .foregroundColor(.white)
+                                     .padding()
+                             }
+                             if gameOver {
+                                 Text("Final Score: \(score)")
+                                     .foregroundColor(.white)
+                                     .padding()
+                                 Button("Restart") {
+                                     restartGame()
+                                 }
+                                 .keyboardShortcut(.space, modifiers: [])
+                                 .padding()
+                             }
+                         }
+                         .background(Color.black.opacity(0.8))
+                         .cornerRadius(16)
+                         .padding(.bottom, 80)
+                     }
+                 }
+             }
+         )
+     }
     
     private func updateWords() {
         // Map networkController.policies ([Policy]) to [String] by using the 'name' property.
@@ -298,15 +342,23 @@ struct BreakoutGameView: View {
     
     private func setupBricks() {
         bricks = []
-        let xOffset: CGFloat = (frameSize.width - (CGFloat(cols) * brickWidth)) / 2
+        // Compute brick size dynamically so blocks are larger and fit nicely in the view.
+        let horizontalPadding: CGFloat = max(12, frameSize.width * 0.04)
+        let availableWidth = max(100, frameSize.width - horizontalPadding * 2)
+        // Make bricks bigger but keep sensible min/max.
+        // Use a smaller width per brick to allow more columns, but increase height to make icons larger.
+        let brickW = max(28, min(availableWidth / CGFloat(cols) - 6, 120))
+        // Make bricks taller so icons have more vertical space (icons will appear larger)
+        let brickH = max(34, brickW * 0.75)
+        let xOffset: CGFloat = (frameSize.width - (CGFloat(cols) * brickW)) / 2
         var wordIndex = 0
         for row in 0..<rows {
             for col in 0..<cols {
                 let rect = CGRect(
-                    x: xOffset + CGFloat(col) * brickWidth,
-                    y: 60 + CGFloat(row) * brickHeight,
-                    width: brickWidth - 4,
-                    height: brickHeight - 4
+                    x: xOffset + CGFloat(col) * brickW,
+                    y: max(40, frameSize.height * 0.06) + CGFloat(row) * brickH,
+                    width: brickW - 6,
+                    height: brickH - 6
                 )
                 if showIcons {
                     // Assign icons (cycle through available icons)
@@ -438,7 +490,7 @@ struct BreakoutGameView: View {
         score = 0
         gameOver = false
         isGameRunning = false
-        speedLevel = 1
+        speedLevel = 10
         // Do not reset usedInitialIcons here — user wanted the first run to use the first icons fetched.
      }
 
@@ -452,6 +504,8 @@ fileprivate enum KeyPress: Equatable {
     case leftArrow
     case rightArrow
     case space
+    case reset
+    case toggleIcons
 }
 
 // This view modifier allows keyboard events in SwiftUI for macOS.
@@ -467,26 +521,34 @@ fileprivate struct KeyDownModifier: ViewModifier {
         let action: (KeyPress) -> Void
 
         func makeNSView(context: Context) -> NSView {
-            let view = NSView()
-            let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // NSView subclass that accepts first responder and forwards key events
+            class KeyCatcherView: NSView {
+                var onKeyDown: ((NSEvent) -> Void)?
+                override var acceptsFirstResponder: Bool { true }
+                override func keyDown(with event: NSEvent) {
+                    onKeyDown?(event)
+                }
+                override func viewDidMoveToWindow() {
+                    super.viewDidMoveToWindow()
+                    // Request first responder in the window when available
+                    window?.makeFirstResponder(self)
+                }
+            }
+
+            let view = KeyCatcherView()
+            view.onKeyDown = { event in
                 if let key = KeyPress(event: event) {
                     action(key)
                 }
-                return event
             }
-            context.coordinator.monitor = monitor
+
             return view
         }
+
         func updateNSView(_ nsView: NSView, context: Context) {}
-        func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
-            if let monitor = coordinator.monitor {
-                NSEvent.removeMonitor(monitor)
-            }
-        }
+        func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {}
         func makeCoordinator() -> Coordinator { Coordinator() }
-        class Coordinator {
-            var monitor: Any?
-        }
+        class Coordinator {}
     }
 }
 
@@ -505,31 +567,42 @@ extension View {
 fileprivate struct KeyUpEventHandlingView: NSViewRepresentable {
     let action: (KeyPress) -> Void
     func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyUp) { event in
+        class KeyCatcherView: NSView {
+            var onKeyUp: ((NSEvent) -> Void)?
+            override var acceptsFirstResponder: Bool { true }
+            override func keyUp(with event: NSEvent) {
+                onKeyUp?(event)
+            }
+            override func viewDidMoveToWindow() {
+                super.viewDidMoveToWindow()
+                window?.makeFirstResponder(self)
+            }
+        }
+
+        let view = KeyCatcherView()
+        view.onKeyUp = { event in
             if let key = KeyPress(event: event) {
                 action(key)
             }
-            return event
         }
-        context.coordinator.monitor = monitor
         return view
-    }
-    func updateNSView(_ nsView: NSView, context: Context) {}
-    func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
-        if let monitor = coordinator.monitor {
-            NSEvent.removeMonitor(monitor)
-        }
-    }
-    func makeCoordinator() -> Coordinator { Coordinator() }
-    class Coordinator {
-        var monitor: Any?
-    }
+     }
+     func updateNSView(_ nsView: NSView, context: Context) {}
+     func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {}
+     func makeCoordinator() -> Coordinator { Coordinator() }
+    class Coordinator {}
 }
 
-// Map NSEvent to our KeyPress enum
+// Map NSEvent to our KeyPress enum. Prefer character matching for letters so layout-agnostic.
 fileprivate extension KeyPress {
     init?(event: NSEvent) {
+        // Check letters/space via charactersIgnoringModifiers
+        if let chars = event.charactersIgnoringModifiers?.lowercased() {
+            if chars == "r" { self = .reset; return }
+            if chars == "i" { self = .toggleIcons; return }
+            if chars == " " { self = .space; return }
+        }
+        // Fall back to arrow keycodes
         switch event.keyCode {
         case 123: self = .leftArrow
         case 124: self = .rightArrow
@@ -553,11 +626,14 @@ fileprivate struct BrickContentView: View {
                     image
                         .resizable()
                         .scaledToFit()
+                        // Size the image to the brick's rect so icons appear larger and fill the brick.
+                        .frame(width: max(24, brick.rect.width * 0.92), height: max(24, brick.rect.height * 0.92))
                         .padding(4)
                 case .failure(_):
                     Image(systemName: "xmark.octagon")
                         .resizable()
                         .scaledToFit()
+                        .frame(width: max(16, brick.rect.width * 0.8), height: max(16, brick.rect.height * 0.8))
                         .padding(8)
                 default:
                     ProgressView()
