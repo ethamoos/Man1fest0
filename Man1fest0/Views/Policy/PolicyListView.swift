@@ -86,22 +86,27 @@ struct PolicyListView: View {
     
     // Compute matched policies (policy + isHighlighted)
     private func computeMatchedPairs() -> [MatchedPolicyPair] {
-        networkController.allPoliciesDetailed
-            .compactMap { $0 } // remove nil entries
-            .map { policy in
-                let isHighlighted = isPolicyMatch(policy)
-                return MatchedPolicyPair(policy: policy, isHighlighted: isHighlighted)
-            }
-            .filter { $0.isHighlighted } // show only matches
+        let detailed = networkController.allPoliciesDetailed
+        print("computeMatchedPairs: allPoliciesDetailed count=\(detailed.count)")
+        let nonNil = detailed.compactMap { $0 }
+        print("computeMatchedPairs: non-nil detailed count=\(nonNil.count); allPoliciesConverted count=\(networkController.allPoliciesConverted.count)")
+        let pairs = nonNil.map { policy in
+            let isHighlighted = isPolicyMatch(policy)
+            return MatchedPolicyPair(policy: policy, isHighlighted: isHighlighted)
+        }
+        return pairs
+            // Previously we filtered out non-highlights here which hid all items when filters matched none.
+            // Return all pairs so the UI can display every policy and use `isHighlighted` only for styling.
     }
-    
+
     // Helper to update matching IDs (and sync to NetBrain if desired)
     private func updateMatchingIDs() {
         let pairs = computeMatchedPairs()
+        print("updateMatchingIDs: computed pairs=\(pairs.count)")
         // update cached pairs used by the view
         matchedPolicyPairsState = pairs
-        // update ids
-        let ids = pairs.compactMap { $0.policy.general?.jamfId }
+        // update ids to only include highlighted (matching) policies
+        let ids = pairs.filter { $0.isHighlighted }.compactMap { $0.policy.general?.jamfId }
         policiesMatchingItems = ids
         networkController.policiesMatchingItems = ids
     }
@@ -164,6 +169,63 @@ struct PolicyListView: View {
             // Use ScrollView + LazyVStack so rows can expand naturally (List enforces row sizing on macOS which can clip expanded content).
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
+                    if matchedPolicyPairsState.isEmpty {
+                        // If there are basic policies available but no detailed policies, show a basic list and allow fetching details
+                        if !networkController.allPoliciesConverted.isEmpty && networkController.allPoliciesDetailed.isEmpty {
+                            VStack(alignment: .leading) {
+                                Text("Detailed policies not loaded yet — showing basic policy list")
+                                    .foregroundColor(.secondary)
+                                Text("Total basic policies: \(networkController.allPoliciesConverted.count)")
+                                    .foregroundColor(.secondary)
+
+                                ForEach(networkController.allPoliciesConverted, id: \.jamfId) { p in
+                                    HStack {
+                                        Text(p.name)
+                                            .font(.body)
+                                        Spacer()
+                                        Text("id: \(p.jamfId ?? 0)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal)
+                                }
+
+                                HStack {
+                                    Button("Fetch detailed policies") {
+                                        progress.showProgress()
+                                        Task {
+                                            do {
+                                                try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                                                networkController.fetchedDetailedPolicies = true
+                                                updateMatchingIDs()
+                                            } catch {
+                                                print("Error fetching detailed policies: \(error)")
+                                            }
+                                            progress.waitForABit()
+                                        }
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.blue)
+
+                                    Spacer()
+                                }
+                                .padding(.top)
+                            }
+                            .padding()
+                        } else {
+                            // helpful placeholder so user knows why nothing is showing
+                            VStack(alignment: .leading) {
+                                Text("No detailed policies loaded")
+                                    .foregroundColor(.secondary)
+                                Text("allPoliciesDetailed.count = \(networkController.allPoliciesDetailed.count)")
+                                    .foregroundColor(.secondary)
+                                Text("allPoliciesConverted.count = \(networkController.allPoliciesConverted.count)")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding()
+                        }
+                    }
                     // Show only filtered (matching) policies and use the model's Identifiable id
                     ForEach(matchedPolicyPairsState) { pair in
                         let policy = pair.policy
@@ -350,6 +412,19 @@ struct PolicyListView: View {
         
         
         .onAppear() {
+            // If basic policies are missing, try fetching them so the list can show something
+            if networkController.allPoliciesConverted.isEmpty {
+                print("PolicyListView: allPoliciesConverted empty onAppear — fetching basic policies")
+                Task {
+                    do {
+                        try await networkController.getAllPolicies(server: server)
+                        updateMatchingIDs()
+                    } catch {
+                        print("PolicyListView: failed to fetch basic policies: \(error)")
+                    }
+                }
+            }
+
             // If detailed policies haven't been fetched, fetch them (existing behavior)
             if networkController.fetchedDetailedPolicies == false {
                 print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
@@ -393,6 +468,8 @@ struct PolicyListView: View {
         .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
          // Also update if the underlying policies array changes
          .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
+         // Also update when the basic policies list arrives so the UI can show fallback list immediately
+         .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
     }
     
     // MARK: - Matching Logic
