@@ -71,7 +71,7 @@ struct PolicySelfServiceTabView: View {
     @State  var selectionBuilding: Building = Building(id: 0, name: "")
     
     
-    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
+    @State var selectedIcon: Icon? = nil
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
@@ -130,8 +130,8 @@ struct PolicySelfServiceTabView: View {
                     List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
-                            Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                            Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+                            AsyncImage(url: URL(string: icon.url)) { image in
                                 image.resizable().frame(width: 15, height: 15)
                             } placeholder: {
                             }
@@ -149,8 +149,8 @@ struct PolicySelfServiceTabView: View {
                     List(networkController.allIconsDetailed, id: \.self) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
-                            Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                            Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+                            AsyncImage(url: URL(string: icon.url)) { image in
                                 image.resizable().frame(width: 15, height: 15)
                             } placeholder: {
                             }
@@ -173,23 +173,23 @@ struct PolicySelfServiceTabView: View {
                         TextField("Filter", text: $iconFilter)
                         Picker(selection: $selectedIcon, label: Text("").bold()) {
                                 
-                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter)}), id: \.self) { icon in
+                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter.lowercased())}), id: \.self) { icon in
                                 HStack {
                                     Text(String(describing: icon.name))
-                                        .tag(icon as Icon?)
-                                        .tag(selectedIcon as Icon?)
-                                    AsyncImage(url: URL(string: icon.url ))  { image in
+                                    AsyncImage(url: URL(string: icon.url))  { image in
                                         image.resizable()
                                             .aspectRatio(contentMode: .fit)
-                                                                     .frame(maxWidth: 30, maxHeight: 10)
+                                            .frame(maxWidth: 30, maxHeight: 30)
 
                                     } placeholder: {
                                         ProgressView()
                                     }
-                                    .frame(width: 05, height: 05)
+                                    .frame(width: 30, height: 30)
                                     .background(Color.gray)
                                     .clipShape(Circle())
                                 }
+                                // Tag must match the Picker selection type (Icon?) so provide the optional Icon as tag
+                                .tag(icon as Icon?)
                             }
                         }
                     }
@@ -268,6 +268,16 @@ struct PolicySelfServiceTabView: View {
                 print("getAllIconsDetailed has already run")
                 print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
             }
+        }
+        .onChange(of: networkController.allIconsDetailed) { newIcons in
+            // If no icon is currently selected, pick the first available icon so Picker has a valid selection
+            if selectedIcon == nil, let first = newIcons.first {
+                selectedIcon = first
+            }
+        }
+        .onChange(of: selectedIcon) { newSelection in
+            // Keep the string in sync for row highlighting and other uses
+            selectedIconString = newSelection?.name ?? ""
         }
     }
 }
