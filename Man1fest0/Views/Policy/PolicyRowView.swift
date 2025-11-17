@@ -29,6 +29,47 @@ struct PolicyRowView: View {
         let selfServiceIconFilename = policy.self_service?.selfServiceIcon?.filename ?? ""
         let selfServiceIconID = policy.self_service?.selfServiceIcon?.id.map { "\($0)" } ?? ""
 
+        // Scope-related helpers
+        let isAllComputers = policy.scope?.allComputers == true
+        let isAllJSSUsers = policy.scope?.all_jss_users == true
+
+        func firstNames<T>(_ items: [T]?, nameExtractor: (T) -> String?, limit: Int = 5) -> String {
+            guard let items = items, !items.isEmpty else { return "" }
+            let names = items.compactMap { nameExtractor($0) }
+            if names.isEmpty { return "" }
+            let first = names.prefix(limit)
+            var s = first.joined(separator: ", ")
+            if names.count > limit { s += "..." }
+            return s
+        }
+
+        // Try mapping common scope types
+        let computersCount = policy.scope?.computers?.count ?? 0
+        let computersNames = firstNames(policy.scope?.computers, nameExtractor: { $0.name })
+        let compGroupsCount = policy.scope?.computerGroups?.count ?? 0
+        let compGroupsNames = firstNames(policy.scope?.computerGroups, nameExtractor: { $0.name ?? "" })
+        let buildingsCount = policy.scope?.buildings?.count ?? 0
+        let buildingsNames = firstNames(policy.scope?.buildings, nameExtractor: { $0.name })
+        let deptsCount = policy.scope?.departments?.count ?? 0
+        let deptsNames = firstNames(policy.scope?.departments, nameExtractor: { $0.name })
+        let limitToUsersCount = policy.scope?.limitToUsers?.users?.count ?? 0
+        let limitToUsersNames = firstNames(policy.scope?.limitToUsers?.users, nameExtractor: { $0.name })
+
+        // Limitations and exclusions
+        let limitationsUsersCount = policy.scope?.limitations?.users?.count ?? 0
+        let limitationsUsersNames = firstNames(policy.scope?.limitations?.users, nameExtractor: { $0.name })
+        let exclusionsComputersCount = policy.scope?.exclusions?.computers?.count ?? 0
+        let exclusionsComputersNames = firstNames(policy.scope?.exclusions?.computers, nameExtractor: { $0.name })
+        let exclusionsSummaryCount: Int = {
+            var c = 0
+            c += policy.scope?.exclusions?.computers?.count ?? 0
+            c += policy.scope?.exclusions?.computerGroups?.count ?? 0
+            c += policy.scope?.exclusions?.buildings?.count ?? 0
+            c += policy.scope?.exclusions?.departments?.count ?? 0
+            c += policy.scope?.exclusions?.users?.count ?? 0
+            return c
+        }()
+
         // Scope summary: either All Computers or counts of different scope types
         let scopeSummary: String = {
             guard let s = policy.scope else { return "No scope" }
@@ -44,7 +85,8 @@ struct PolicyRowView: View {
             return "Scope: " + parts.joined(separator: ", ")
         }()
 
-        VStack(alignment: .leading, spacing: 6) {
+        // Add explicit return so the `some View` opaque type can be inferred
+        return VStack(alignment: .leading, spacing: 6) {
             Group {
                 // Manual disclosure: plain tappable label + explicit content
                 // Label (no nested Button) — tapping toggles expansion
@@ -61,6 +103,9 @@ struct PolicyRowView: View {
                             if !enabledString.isEmpty { Text(enabledString).font(.caption).foregroundColor(.secondary) }
                             if !categoryName.isEmpty { Text("Category: \(categoryName)").font(.caption).foregroundColor(.secondary) }
                             if !triggerString.isEmpty { Text("Trigger: \(triggerString)").font(.caption).foregroundColor(.secondary) }
+                            // show short scope indicator
+                            if isAllComputers { Text("All Computers").font(.caption).foregroundColor(.secondary) }
+                            else { Text(scopeSummary).font(.caption).foregroundColor(.secondary) }
                         }
                     }
                     Spacer()
@@ -79,9 +124,6 @@ struct PolicyRowView: View {
 
                 if isExpanded {
                     VStack(alignment: .leading, spacing: 6) {
-//                        Text("DEBUG: Expanded content shown")
-//                            .font(.caption)
-//                            .foregroundColor(.secondary)
                         HStack { Text("General Name:"); Text(generalName).foregroundColor(.primary) }
                         HStack { Text("General ID:"); Text(generalJamfIdString).foregroundColor(.primary) }
                         HStack { Text("Enabled:"); Text(enabledString).foregroundColor(.primary) }
@@ -100,11 +142,26 @@ struct PolicyRowView: View {
                         // Scope summary
                         HStack { Text(scopeSummary).foregroundColor(.secondary).font(.caption) }
 
+                        // Detailed scope attributes
+                        Group {
+                            HStack { Text("All JSS Users:"); Text(isAllJSSUsers ? "Yes" : "No").foregroundColor(.primary) }
+                            HStack { Text("Computers (") ; Text("\(computersCount)").foregroundColor(.primary); Text("):") ; Text(computersNames).foregroundColor(.primary) }
+                            HStack { Text("Computer Groups (") ; Text("\(compGroupsCount)").foregroundColor(.primary); Text("):") ; Text(compGroupsNames).foregroundColor(.primary) }
+                            HStack { Text("Buildings (") ; Text("\(buildingsCount)").foregroundColor(.primary); Text("):") ; Text(buildingsNames).foregroundColor(.primary) }
+                            HStack { Text("Departments (") ; Text("\(deptsCount)").foregroundColor(.primary); Text("):") ; Text(deptsNames).foregroundColor(.primary) }
+                            HStack { Text("LimitToUsers (") ; Text("\(limitToUsersCount)").foregroundColor(.primary); Text("):") ; Text(limitToUsersNames).foregroundColor(.primary) }
+
+                            HStack { Text("Limitations Users (") ; Text("\(limitationsUsersCount)").foregroundColor(.primary); Text("):") ; Text(limitationsUsersNames).foregroundColor(.primary) }
+
+                            HStack { Text("Exclusions total:"); Text("\(exclusionsSummaryCount)").foregroundColor(.primary) }
+                            if exclusionsComputersCount > 0 { HStack { Text("Excluded Computers (") ; Text("\(exclusionsComputersCount)").foregroundColor(.primary); Text("):") ; Text(exclusionsComputersNames).foregroundColor(.primary) } }
+                        }
+
                     }
                     .padding(.leading, 18)
                     .padding(8)
                     .background(Color.white.opacity(0.06))
-//                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.red.opacity(0.7), lineWidth: 1))
+    //                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.red.opacity(0.7), lineWidth: 1))
                     .fixedSize(horizontal: false, vertical: true)
                     .layoutPriority(1)
                 }
