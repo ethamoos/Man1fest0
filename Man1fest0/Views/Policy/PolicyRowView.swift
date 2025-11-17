@@ -15,6 +15,7 @@ struct PolicyRowView: View {
 
     @State private var isExpanded: Bool = false
     @State private var scriptsExpanded: Bool = false
+    @State private var packagesExpanded: Bool = false
 
     private var generalName: String { policy.general?.name ?? "(no name)" }
     private var jamfID: Int { policy.general?.jamfId ?? 0 }
@@ -103,6 +104,45 @@ struct PolicyRowView: View {
                                                     .font(.caption2)
                                                     .foregroundColor(.secondary)
                                             }
+                                        }
+                                    }
+                                }
+                                .padding(.leading, 12)
+                            }
+                        }
+                    }
+
+                    // Packages subsection (collapsible) — uses package_configuration.packages
+                    if let pkgs = policy.package_configuration?.packages, !pkgs.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                Button(action: { withAnimation(.easeInOut) { packagesExpanded.toggle() } }) {
+                                    Image(systemName: "chevron.right")
+                                        .rotationEffect(.degrees(packagesExpanded ? 90 : 0))
+                                        .foregroundColor(.secondary)
+                                        .frame(width: 14, height: 14)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+
+                                Text("Packages (\(pkgs.count))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+
+                                Spacer()
+                            }
+
+                            if packagesExpanded {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(pkgs) { pkg in
+                                        HStack(spacing: 8) {
+                                            Text(pkg.name)
+                                                .font(.caption2)
+                                                .foregroundColor(.primary)
+                                                .lineLimit(1)
+                                            Spacer()
+                                            Text("id: \(pkg.jamfId)")
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
                                         }
                                     }
                                 }

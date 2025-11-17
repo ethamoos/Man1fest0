@@ -546,6 +546,7 @@ enum SearchField: String, CaseIterable {
     case selfServiceDisplayName
     case selfServiceDescription
     case selfServiceIconURI
+    case packages
     case scripts
 
     // New scope-related fields
@@ -568,6 +569,7 @@ enum SearchField: String, CaseIterable {
         case .selfServiceDisplayName: return "Self Service: Display Name"
         case .selfServiceDescription: return "Self Service: Description"
         case .selfServiceIconURI: return "Self Service: Icon URI"
+        case .packages: return "Packages"
         case .scripts: return "Scripts"
         case .scopeAllComputers: return "Scope: All Computers"
         case .scopeAllJSSUsers: return "Scope: All JSS Users"
@@ -597,7 +599,7 @@ enum SearchField: String, CaseIterable {
 
         switch self {
         case .all:
-            // include general, self-service, scripts and scope related fields
+            // include general, self-service, packages, scripts and scope related fields
             return
                 match(policy.general?.name) ||
                 (policy.general?.jamfId != nil && {
@@ -619,6 +621,15 @@ enum SearchField: String, CaseIterable {
                 match(policy.self_service?.selfServiceDisplayName) ||
                 match(policy.self_service?.selfServiceDescription) ||
                 match(policy.self_service?.selfServiceIcon?.uri) ||
+                // packages: match any package name or package id
+                (policy.package_configuration?.packages.contains { pkg in
+                    // match name
+                    if match(pkg.name) { return true }
+                    // match ID as string
+                    let idStr = String(describing: pkg.jamfId)
+                    let subject = caseSensitive ? idStr : idStr.lowercased()
+                    switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
+                } ?? false) ||
                 // scripts: match any script name
                 (policy.scripts?.contains { match($0.name) } ?? false) ||
                 // scope checks: match basic boolean/string forms and any names inside scope arrays
@@ -644,6 +655,14 @@ enum SearchField: String, CaseIterable {
                 (policy.scope?.exclusions?.buildings?.contains { match($0.name) } ?? false) ||
                 (policy.scope?.exclusions?.departments?.contains { match($0.name) } ?? false) ||
                 (policy.scope?.exclusions?.users?.contains { match($0.name) } ?? false)
+
+        case .packages:
+            return policy.package_configuration?.packages.contains { pkg in
+                 if match(pkg.name) { return true }
+                 let idStr = String(describing: pkg.jamfId)
+                 let subject = caseSensitive ? idStr : idStr.lowercased()
+                 switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
+            } ?? false
 
         case .scripts:
             return policy.scripts?.contains { match($0.name) } ?? false
@@ -709,6 +728,8 @@ enum SearchField: String, CaseIterable {
             return (policy.self_service?.selfServiceDescription?.isEmpty ?? true)
         case .selfServiceIconURI:
             return (policy.self_service?.selfServiceIcon?.uri ?? "").isEmpty
+        case .packages:
+            return (policy.package_configuration?.packages.isEmpty ?? true)
         case .scripts:
             return (policy.scripts?.isEmpty ?? true)
 
