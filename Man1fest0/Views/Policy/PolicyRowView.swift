@@ -64,40 +64,40 @@ struct PolicyRowView: View {
  }
 
 #if DEBUG
-struct PolicyRowView_Previews: PreviewProvider {
-    static var previews: some View {
-        // Use the SelfService nested icon type to match the `SelfService` model's property type
-        let sampleIcon = SelfService.SelfServiceIcon(filename: "icon.png", id: 1, uri: "https://example.com/icon.png")
-        let sampleSelfService = SelfService(useForSelfService: true,
-                                           selfServiceDisplayName: "Sample Display",
-                                           installButtonText: nil,
-                                           reinstallButtonText: nil,
-                                           selfServiceDescription: "",
-                                           forceUsersToViewDescription: false,
-                                           selfServiceIcon: sampleIcon)
-        // Provide the trigger boolean parameters (optional) required by the memberwise initializer
-        let sampleGeneral = General(jamfId: 123,
-                                    name: "Sample Policy",
-                                    enabled: true,
-                                    trigger: "manual",
-                                    triggerCheckin: nil,
-                                    triggerEnrollmentComplete: nil,
-                                    triggerLogin: nil,
-                                    triggerLogout: nil,
-                                    triggerNetworkStateChanged: nil,
-                                    triggerStartup: nil,
-                                    triggerOther: nil,
-                                    category: nil,
-                                    mac_address: nil,
-                                    ip_address: nil)
-        let samplePolicy = PolicyDetailed(general: sampleGeneral, scope: nil, package_configuration: nil, scripts: nil, self_service: sampleSelfService)
-
-        return Group {
-            PolicyRowView(policy: samplePolicy)
-                .padding()
-                .previewLayout(.sizeThatFits)
-        }
-    }
-}
+//struct PolicyRowView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        // Use the SelfService nested icon type to match the `SelfService` model's property type
+//        let sampleIcon = SelfService.SelfServiceIcon(filename: "icon.png", id: 1, uri: "https://example.com/icon.png")
+//        let sampleSelfService = SelfService(useForSelfService: true,
+//                                           selfServiceDisplayName: "Sample Display",
+//                                           installButtonText: nil,
+//                                           reinstallButtonText: nil,
+//                                           selfServiceDescription: "",
+//                                           forceUsersToViewDescription: false,
+//                                           selfServiceIcon: sampleIcon)
+//        // Provide the trigger boolean parameters (optional) required by the memberwise initializer
+//        let sampleGeneral = General(jamfId: 123,
+//                                    name: "Sample Policy",
+//                                    enabled: true,
+//                                    trigger: "manual",
+//                                    triggerCheckin: nil,
+//                                    triggerEnrollmentComplete: nil,
+//                                    triggerLogin: nil,
+//                                    triggerLogout: nil,
+//                                    triggerNetworkStateChanged: nil,
+//                                    triggerStartup: nil,
+//                                    triggerOther: nil,
+//                                    category: nil,
+//                                    mac_address: nil,
+//                                    ip_address: nil)
+//        let samplePolicy = PolicyDetailed(general: sampleGeneral, scope: nil, package_configuration: nil, scripts: nil, self_service: sampleSelfService)
+//
+//        return Group {
+//            PolicyRowView(policy: samplePolicy)
+//                .padding()
+//                .previewLayout(.sizeThatFits)
+//        }
+//    }
+//}
 
 #endif
