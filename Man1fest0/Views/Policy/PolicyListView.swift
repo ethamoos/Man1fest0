@@ -86,26 +86,38 @@ struct PolicyListView: View {
     
     // Compute matched policies (policy + isHighlighted)
     private func computeMatchedPairs() -> [MatchedPolicyPair] {
-        networkController.allPoliciesDetailed
-            .compactMap { $0 } // remove nil entries
-            .map { policy in
-                let isHighlighted = isPolicyMatch(policy)
-                return MatchedPolicyPair(policy: policy, isHighlighted: isHighlighted)
-            }
-            .filter { $0.isHighlighted } // show only matches
+        let detailed = networkController.allPoliciesDetailed
+        print("computeMatchedPairs: allPoliciesDetailed count=\(detailed.count)")
+        let nonNil = detailed.compactMap { $0 }
+        print("computeMatchedPairs: non-nil detailed count=\(nonNil.count); allPoliciesConverted count=\(networkController.allPoliciesConverted.count)")
+        let pairs = nonNil.map { policy in
+            let isHighlighted = isPolicyMatch(policy)
+            return MatchedPolicyPair(policy: policy, isHighlighted: isHighlighted)
+        }
+        return pairs
+            // Previously we filtered out non-highlights here which hid all items when filters matched none.
+            // Return all pairs so the UI can display every policy and use `isHighlighted` only for styling.
     }
-    
+
     // Helper to update matching IDs (and sync to NetBrain if desired)
     private func updateMatchingIDs() {
         let pairs = computeMatchedPairs()
+        print("updateMatchingIDs: computed pairs=\(pairs.count)")
         // update cached pairs used by the view
         matchedPolicyPairsState = pairs
-        // update ids
-        let ids = pairs.compactMap { $0.policy.general?.jamfId }
+        // update ids to only include highlighted (matching) policies
+        let ids = pairs.filter { $0.isHighlighted }.compactMap { $0.policy.general?.jamfId }
         policiesMatchingItems = ids
         networkController.policiesMatchingItems = ids
     }
     
+    // Computed displayed pairs depending on active filter
+    private var displayedPairs: [MatchedPolicyPair] {
+        let trimmedSearch = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
+        let activeFilter = !trimmedSearch.isEmpty || selectedFieldIsEmpty || matchMode != .contains || caseSensitive
+        return activeFilter ? matchedPolicyPairsState.filter { $0.isHighlighted } : matchedPolicyPairsState
+    }
+
     var body: some View {
         VStack {
             VStack(alignment: .leading, spacing: 8) {
@@ -118,20 +130,20 @@ struct PolicyListView: View {
                     Picker("Search", selection: $textSearchScope) {
                         ForEach(TextSearchScope.allCases, id: \.self) { scope in
                             Text(scope.displayName)
+                            }
                         }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .frame(maxWidth: 300)
+                        .pickerStyle(SegmentedPickerStyle())
+                        .frame(maxWidth: 300)
                     
                     // Selected-field picker (used when scope is .selectedField or to choose which field to check for emptiness)
                     Picker("Field", selection: $selectedFieldForFilter) {
                         ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
                             Text(field.displayName)
+                            }
                         }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    
-                    Spacer()
+                        .pickerStyle(MenuPickerStyle())
+                        
+                        Spacer()
                 }
                 
                 HStack {
@@ -139,10 +151,10 @@ struct PolicyListView: View {
                     Picker("Match Mode", selection: $matchMode) {
                         ForEach(MatchMode.allCases, id: \.self) { mode in
                             Text(mode.displayName)
+                            }
                         }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .frame(maxWidth: 240)
+                        .pickerStyle(SegmentedPickerStyle())
+                        .frame(maxWidth: 240)
                     
                     // Case sensitivity toggle
                     Toggle(isOn: $caseSensitive) {
@@ -164,16 +176,89 @@ struct PolicyListView: View {
             // Use ScrollView + LazyVStack so rows can expand naturally (List enforces row sizing on macOS which can clip expanded content).
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
-                    // Show only filtered (matching) policies and use the model's Identifiable id
-                    ForEach(matchedPolicyPairsState) { pair in
-                        let policy = pair.policy
-                        let isHighlighted = pair.isHighlighted
-                        PolicyRowView(policy: policy)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(isHighlighted ? Color.white.opacity(0.12) : Color.clear)
-                            .cornerRadius(6)
-                            .padding(.horizontal)
+                    if matchedPolicyPairsState.isEmpty {
+                        // If there are basic policies available but no detailed policies, show a basic list and allow fetching details
+                        if !networkController.allPoliciesConverted.isEmpty && networkController.allPoliciesDetailed.isEmpty {
+                            VStack(alignment: .leading) {
+                                Text("Detailed policies not loaded yet — showing basic policy list")
+                                    .foregroundColor(.secondary)
+                                Text("Total basic policies: \(networkController.allPoliciesConverted.count)")
+                                    .foregroundColor(.secondary)
+
+                                ForEach(networkController.allPoliciesConverted, id: \.jamfId) { p in
+                                    HStack {
+                                        Text(p.name)
+                                            .font(.body)
+                                        Spacer()
+                                        Text("id: \(p.jamfId ?? 0)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal)
+                                }
+
+                                HStack {
+                                    Button("Fetch detailed policies") {
+                                        progress.showProgress()
+                                        Task {
+                                            do {
+                                                try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                                                networkController.fetchedDetailedPolicies = true
+                                                updateMatchingIDs()
+                                            } catch {
+                                                print("Error fetching detailed policies: \(error)")
+                                            }
+                                            progress.waitForABit()
+                                        }
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.blue)
+
+                                    Spacer()
+                                }
+                                .padding(.top)
+                            }
+                            .padding()
+                        } else {
+                            // helpful placeholder so user knows why nothing is showing
+                            VStack(alignment: .leading) {
+                                Text("No detailed policies loaded")
+                                    .foregroundColor(.secondary)
+                                Text("allPoliciesDetailed.count = \(networkController.allPoliciesDetailed.count)")
+                                    .foregroundColor(.secondary)
+                                Text("allPoliciesConverted.count = \(networkController.allPoliciesConverted.count)")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding()
+                        }
                     }
+                    // Show only filtered (matching) policies and use the model's Identifiable id
+                    ForEach(displayedPairs) { pair in
+                        // Make the row itself tappable for expansion by PolicyRowView.
+                        // Provide a small trailing NavigationLink button for navigation so row taps are not swallowed.
+                        HStack(spacing: 8) {
+                            PolicyRowView(policy: pair.policy)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(pair.isHighlighted ? Color.white.opacity(0.12) : Color.clear)
+                                .cornerRadius(6)
+                                .padding(.leading)
+                                .contentShape(Rectangle())
+
+                            NavigationLink(destination: PolicyDetailView(server: server, policy: {
+                                var basicPolicy = Policy(name: pair.policy.general?.name ?? "")
+                                basicPolicy.jamfId = pair.policy.general?.jamfId
+                                return basicPolicy
+                            }(), policyID: pair.policy.general?.jamfId ?? 0)) {
+                                Image(systemName: "arrow.right.circle")
+                                    .imageScale(.large)
+                                    .foregroundColor(.secondary)
+                                    .padding(.trailing)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .frame(maxWidth: .infinity)
+                     }
                 }
                 .padding(.vertical)
             }
@@ -217,7 +302,7 @@ struct PolicyListView: View {
 //            .cornerRadius(8)
 //            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
 //#else
-//            
+//
 //            List(networkController.allIconsDetailed, id: \.self) { icon in
 //                HStack {
 //                    Image(systemName: "photo.circle")
@@ -341,15 +426,20 @@ struct PolicyListView: View {
         }
         
         
-                    
-//                    }
-//                    .padding()
-//                }
-//                
-        
-        
-        
-        .onAppear() {
+         .onAppear() {
+            // If basic policies are missing, try fetching them so the list can show something
+            if networkController.allPoliciesConverted.isEmpty {
+                print("PolicyListView: allPoliciesConverted empty onAppear — fetching basic policies")
+                Task {
+                    do {
+                        try await networkController.getAllPolicies(server: server)
+                        updateMatchingIDs()
+                    } catch {
+                        print("PolicyListView: failed to fetch basic policies: \(error)")
+                    }
+                }
+            }
+
             // If detailed policies haven't been fetched, fetch them (existing behavior)
             if networkController.fetchedDetailedPolicies == false {
                 print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
@@ -393,6 +483,8 @@ struct PolicyListView: View {
         .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
          // Also update if the underlying policies array changes
          .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
+         // Also update when the basic policies list arrives so the UI can show fallback list immediately
+         .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
     }
     
     // MARK: - Matching Logic
@@ -456,7 +548,18 @@ enum SearchField: String, CaseIterable {
     case selfServiceDisplayName
     case selfServiceDescription
     case selfServiceIconURI
-    
+
+    // New scope-related fields
+    case scopeAllComputers
+    case scopeAllJSSUsers
+    case scopeComputers
+    case scopeComputerGroups
+    case scopeBuildings
+    case scopeDepartments
+    case scopeLimitToUsers
+    case scopeLimitationsUsers
+    case scopeExclusions
+
     var displayName: String {
         switch self {
         case .all: return "All"
@@ -466,9 +569,18 @@ enum SearchField: String, CaseIterable {
         case .selfServiceDisplayName: return "Self Service: Display Name"
         case .selfServiceDescription: return "Self Service: Description"
         case .selfServiceIconURI: return "Self Service: Icon URI"
+        case .scopeAllComputers: return "Scope: All Computers"
+        case .scopeAllJSSUsers: return "Scope: All JSS Users"
+        case .scopeComputers: return "Scope: Computers"
+        case .scopeComputerGroups: return "Scope: Computer Groups"
+        case .scopeBuildings: return "Scope: Buildings"
+        case .scopeDepartments: return "Scope: Departments"
+        case .scopeLimitToUsers: return "Scope: Limit To Users"
+        case .scopeLimitationsUsers: return "Scope: Limitations: Users"
+        case .scopeExclusions: return "Scope: Exclusions"
         }
     }
-    
+
     func isMatch(in policy: PolicyDetailed, search: String, matchMode: PolicyListView.MatchMode = .contains, caseSensitive: Bool = false) -> Bool {
         // Normalize inputs depending on case sensitivity
         let targetSearch = caseSensitive ? search : search.lowercased()
@@ -485,6 +597,7 @@ enum SearchField: String, CaseIterable {
 
         switch self {
         case .all:
+            // include general, self-service and scope related fields
             return
                 match(policy.general?.name) ||
                 (policy.general?.jamfId != nil && {
@@ -505,7 +618,31 @@ enum SearchField: String, CaseIterable {
                 }()) ||
                 match(policy.self_service?.selfServiceDisplayName) ||
                 match(policy.self_service?.selfServiceDescription) ||
-                match(policy.self_service?.selfServiceIcon?.uri)
+                match(policy.self_service?.selfServiceIcon?.uri) ||
+                // scope checks: match basic boolean/string forms and any names inside scope arrays
+                (policy.scope?.allComputers != nil && {
+                    let s = String(describing: policy.scope!.allComputers!)
+                    let subject = caseSensitive ? s : s.lowercased()
+                    switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
+                }()) ||
+                (policy.scope?.all_jss_users != nil && {
+                    let s = String(describing: policy.scope!.all_jss_users!)
+                    let subject = caseSensitive ? s : s.lowercased()
+                    switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
+                }()) ||
+                (policy.scope?.computers?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.computerGroups?.contains { match($0.name ?? "") } ?? false) ||
+                (policy.scope?.buildings?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.departments?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.limitToUsers?.users?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.limitations?.users?.contains { match($0.name) } ?? false) ||
+                // exclusions: check common exclusion arrays for matching names
+                (policy.scope?.exclusions?.computers?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.computerGroups?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.buildings?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.departments?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.users?.contains { match($0.name) } ?? false)
+
         case .generalName:
             return match(policy.general?.name)
         case .generalID:
@@ -520,9 +657,37 @@ enum SearchField: String, CaseIterable {
             return match(policy.self_service?.selfServiceDescription)
         case .selfServiceIconURI:
             return match(policy.self_service?.selfServiceIcon?.uri)
+
+        // Scope-specific cases
+        case .scopeAllComputers:
+            if let val = policy.scope?.allComputers { let s = String(describing: val); let subject = caseSensitive ? s : s.lowercased(); switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) } }
+            return false
+        case .scopeAllJSSUsers:
+            if let val = policy.scope?.all_jss_users { let s = String(describing: val); let subject = caseSensitive ? s : s.lowercased(); switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) } }
+            return false
+        case .scopeComputers:
+            return policy.scope?.computers?.contains { match($0.name) } ?? false
+        case .scopeComputerGroups:
+            return policy.scope?.computerGroups?.contains { match($0.name ?? "") } ?? false
+        case .scopeBuildings:
+            return policy.scope?.buildings?.contains { match($0.name) } ?? false
+        case .scopeDepartments:
+            return policy.scope?.departments?.contains { match($0.name) } ?? false
+        case .scopeLimitToUsers:
+            return policy.scope?.limitToUsers?.users?.contains { match($0.name) } ?? false
+        case .scopeLimitationsUsers:
+            return policy.scope?.limitations?.users?.contains { match($0.name) } ?? false
+        case .scopeExclusions:
+            return (
+                (policy.scope?.exclusions?.computers?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.computerGroups?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.buildings?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.departments?.contains { match($0.name) } ?? false) ||
+                (policy.scope?.exclusions?.users?.contains { match($0.name) } ?? false)
+            )
         }
     }
-    
+
     func isFieldEmpty(in policy: PolicyDetailed) -> Bool {
         switch self {
         case .all:
@@ -539,6 +704,28 @@ enum SearchField: String, CaseIterable {
             return (policy.self_service?.selfServiceDescription?.isEmpty ?? true)
         case .selfServiceIconURI:
             return (policy.self_service?.selfServiceIcon?.uri ?? "").isEmpty
+
+        // Scope emptiness checks
+        case .scopeAllComputers:
+            return policy.scope?.allComputers == nil
+        case .scopeAllJSSUsers:
+            return policy.scope?.all_jss_users == nil
+        case .scopeComputers:
+            return (policy.scope?.computers?.isEmpty ?? true)
+        case .scopeComputerGroups:
+            return (policy.scope?.computerGroups?.isEmpty ?? true)
+        case .scopeBuildings:
+            return (policy.scope?.buildings?.isEmpty ?? true)
+        case .scopeDepartments:
+            return (policy.scope?.departments?.isEmpty ?? true)
+        case .scopeLimitToUsers:
+            return (policy.scope?.limitToUsers?.users?.isEmpty ?? true)
+        case .scopeLimitationsUsers:
+            return (policy.scope?.limitations?.users?.isEmpty ?? true)
+        case .scopeExclusions:
+            let ex = policy.scope?.exclusions
+            let hasAny = (ex?.computers?.isEmpty == false) || (ex?.computerGroups?.isEmpty == false) || (ex?.buildings?.isEmpty == false) || (ex?.departments?.isEmpty == false) || (ex?.users?.isEmpty == false)
+            return !hasAny
         }
     }
 }
