@@ -14,6 +14,36 @@ struct PolicyRowView: View {
         let selfServiceDisplayName = policy.self_service?.selfServiceDisplayName ?? ""
         let selfServiceIconURI = policy.self_service?.selfServiceIcon?.uri ?? ""
 
+        // --- Additional fields ---
+        let enabledString: String = {
+            if let enabled = policy.general?.enabled { return enabled ? "Enabled" : "Disabled" }
+            return "Unknown"
+        }()
+        let triggerString = policy.general?.trigger ?? ""
+        let categoryName = policy.general?.category?.name ?? ""
+        let macAddress = policy.general?.mac_address ?? ""
+        let ipAddress = policy.general?.ip_address ?? ""
+        let packageCount = policy.package_configuration?.packages.count ?? 0
+        let scriptsCount = policy.scripts?.count ?? 0
+        let selfServiceDescription = policy.self_service?.selfServiceDescription ?? ""
+        let selfServiceIconFilename = policy.self_service?.selfServiceIcon?.filename ?? ""
+        let selfServiceIconID = policy.self_service?.selfServiceIcon?.id.map { "\($0)" } ?? ""
+
+        // Scope summary: either All Computers or counts of different scope types
+        let scopeSummary: String = {
+            guard let s = policy.scope else { return "No scope" }
+            if s.allComputers == true { return "Scope: All Computers" }
+
+            var parts: [String] = []
+            if let comps = s.computers, comps.count > 0 { parts.append("Computers: \(comps.count)") }
+            if let groups = s.computerGroups, groups.count > 0 { parts.append("Computer Groups: \(groups.count)") }
+            if let buildings = s.buildings, buildings.count > 0 { parts.append("Buildings: \(buildings.count)") }
+            if let depts = s.departments, depts.count > 0 { parts.append("Departments: \(depts.count)") }
+            if let lt = s.limitToUsers?.users, lt.count > 0 { parts.append("LimitToUsers: \(lt.count)") }
+            if parts.isEmpty { return "Scope: (empty)" }
+            return "Scope: " + parts.joined(separator: ", ")
+        }()
+
         VStack(alignment: .leading, spacing: 6) {
             Group {
                 // Manual disclosure: plain tappable label + explicit content
@@ -23,8 +53,16 @@ struct PolicyRowView: View {
                         .font(.system(size: 12, weight: .semibold))
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .foregroundColor(.secondary)
-                    Text(generalName)
-                        .font(.headline)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(generalName)
+                            .font(.headline)
+                        // compact subtitle line showing a couple of summary properties
+                        HStack(spacing: 8) {
+                            if !enabledString.isEmpty { Text(enabledString).font(.caption).foregroundColor(.secondary) }
+                            if !categoryName.isEmpty { Text("Category: \(categoryName)").font(.caption).foregroundColor(.secondary) }
+                            if !triggerString.isEmpty { Text("Trigger: \(triggerString)").font(.caption).foregroundColor(.secondary) }
+                        }
+                    }
                     Spacer()
                 }
                 .padding(.vertical, 6)
@@ -45,10 +83,23 @@ struct PolicyRowView: View {
 //                            .font(.caption)
 //                            .foregroundColor(.secondary)
                         HStack { Text("General Name:"); Text(generalName).foregroundColor(.primary) }
-                        HStack { Text("Name:"); Text(generalName).foregroundColor(.primary) }
                         HStack { Text("General ID:"); Text(generalJamfIdString).foregroundColor(.primary) }
+                        HStack { Text("Enabled:"); Text(enabledString).foregroundColor(.primary) }
+                        HStack { Text("Trigger:"); Text(triggerString).foregroundColor(.primary) }
+                        HStack { Text("Category:"); Text(categoryName).foregroundColor(.primary) }
+                        HStack { Text("MAC Address:"); Text(macAddress).foregroundColor(.primary) }
+                        HStack { Text("IP Address:"); Text(ipAddress).foregroundColor(.primary) }
+                        HStack { Text("Package count:"); Text("\(packageCount)").foregroundColor(.primary) }
+                        HStack { Text("Scripts count:"); Text("\(scriptsCount)").foregroundColor(.primary) }
                         HStack { Text("Self Service Display Name:"); Text(selfServiceDisplayName).foregroundColor(.primary) }
+                        if !selfServiceDescription.isEmpty { HStack { Text("Self Service Description:"); Text(selfServiceDescription).foregroundColor(.primary) } }
+                        HStack { Text("Self Service Icon:"); Text(selfServiceIconFilename).foregroundColor(.primary) }
+                        if !selfServiceIconID.isEmpty { HStack { Text("Self Service Icon ID:"); Text(selfServiceIconID).foregroundColor(.primary) } }
                         HStack { Text("Self Service Icon URI:"); Text(selfServiceIconURI).foregroundColor(.primary) }
+
+                        // Scope summary
+                        HStack { Text(scopeSummary).foregroundColor(.secondary).font(.caption) }
+
                     }
                     .padding(.leading, 18)
                     .padding(8)
@@ -63,41 +114,41 @@ struct PolicyRowView: View {
      }
  }
 
-#if DEBUG
-//struct PolicyRowView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        // Use the SelfService nested icon type to match the `SelfService` model's property type
-//        let sampleIcon = SelfService.SelfServiceIcon(filename: "icon.png", id: 1, uri: "https://example.com/icon.png")
-//        let sampleSelfService = SelfService(useForSelfService: true,
-//                                           selfServiceDisplayName: "Sample Display",
-//                                           installButtonText: nil,
-//                                           reinstallButtonText: nil,
-//                                           selfServiceDescription: "",
-//                                           forceUsersToViewDescription: false,
-//                                           selfServiceIcon: sampleIcon)
-//        // Provide the trigger boolean parameters (optional) required by the memberwise initializer
-//        let sampleGeneral = General(jamfId: 123,
-//                                    name: "Sample Policy",
-//                                    enabled: true,
-//                                    trigger: "manual",
-//                                    triggerCheckin: nil,
-//                                    triggerEnrollmentComplete: nil,
-//                                    triggerLogin: nil,
-//                                    triggerLogout: nil,
-//                                    triggerNetworkStateChanged: nil,
-//                                    triggerStartup: nil,
-//                                    triggerOther: nil,
-//                                    category: nil,
-//                                    mac_address: nil,
-//                                    ip_address: nil)
-//        let samplePolicy = PolicyDetailed(general: sampleGeneral, scope: nil, package_configuration: nil, scripts: nil, self_service: sampleSelfService)
-//
-//        return Group {
-//            PolicyRowView(policy: samplePolicy)
-//                .padding()
-//                .previewLayout(.sizeThatFits)
-//        }
-//    }
-//}
+ #if DEBUG
+ //struct PolicyRowView_Previews: PreviewProvider {
+ //    static var previews: some View {
+ //        // Use the SelfService nested icon type to match the `SelfService` model's property type
+ //        let sampleIcon = SelfService.SelfServiceIcon(filename: "icon.png", id: 1, uri: "https://example.com/icon.png")
+ //        let sampleSelfService = SelfService(useForSelfService: true,
+ //                                           selfServiceDisplayName: "Sample Display",
+ //                                           installButtonText: nil,
+ //                                           reinstallButtonText: nil,
+ //                                           selfServiceDescription: "",
+ //                                           forceUsersToViewDescription: false,
+ //                                           selfServiceIcon: sampleIcon)
+ //        // Provide the trigger boolean parameters (optional) required by the memberwise initializer
+ //        let sampleGeneral = General(jamfId: 123,
+ //                                    name: "Sample Policy",
+ //                                    enabled: true,
+ //                                    trigger: "manual",
+ //                                    triggerCheckin: nil,
+ //                                    triggerEnrollmentComplete: nil,
+ //                                    triggerLogin: nil,
+ //                                    triggerLogout: nil,
+ //                                    triggerNetworkStateChanged: nil,
+ //                                    triggerStartup: nil,
+ //                                    triggerOther: nil,
+ //                                    category: nil,
+ //                                    mac_address: nil,
+ //                                    ip_address: nil)
+ //        let samplePolicy = PolicyDetailed(general: sampleGeneral, scope: nil, package_configuration: nil, scripts: nil, self_service: sampleSelfService)
+ //
+ //        return Group {
+ //            PolicyRowView(policy: samplePolicy)
+ //                .padding()
+ //                .previewLayout(.sizeThatFits)
+ //        }
+ //    }
+ //}
 
-#endif
+ #endif
