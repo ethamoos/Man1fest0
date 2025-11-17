@@ -235,8 +235,6 @@ struct PolicyListView: View {
                     }
                     // Show only filtered (matching) policies and use the model's Identifiable id
                     ForEach(displayedPairs) { pair in
-                        // Make the row itself tappable for expansion by PolicyRowView.
-                        // Provide a small trailing NavigationLink button for navigation so row taps are not swallowed.
                         HStack(spacing: 8) {
                             PolicyRowView(policy: pair.policy)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -244,7 +242,7 @@ struct PolicyListView: View {
                                 .cornerRadius(6)
                                 .padding(.leading)
                                 .contentShape(Rectangle())
-
+                            
                             NavigationLink(destination: PolicyDetailView(server: server, policy: {
                                 var basicPolicy = Policy(name: pair.policy.general?.name ?? "")
                                 basicPolicy.jamfId = pair.policy.general?.jamfId
@@ -548,6 +546,7 @@ enum SearchField: String, CaseIterable {
     case selfServiceDisplayName
     case selfServiceDescription
     case selfServiceIconURI
+    case scripts
 
     // New scope-related fields
     case scopeAllComputers
@@ -569,6 +568,7 @@ enum SearchField: String, CaseIterable {
         case .selfServiceDisplayName: return "Self Service: Display Name"
         case .selfServiceDescription: return "Self Service: Description"
         case .selfServiceIconURI: return "Self Service: Icon URI"
+        case .scripts: return "Scripts"
         case .scopeAllComputers: return "Scope: All Computers"
         case .scopeAllJSSUsers: return "Scope: All JSS Users"
         case .scopeComputers: return "Scope: Computers"
@@ -597,7 +597,7 @@ enum SearchField: String, CaseIterable {
 
         switch self {
         case .all:
-            // include general, self-service and scope related fields
+            // include general, self-service, scripts and scope related fields
             return
                 match(policy.general?.name) ||
                 (policy.general?.jamfId != nil && {
@@ -619,6 +619,8 @@ enum SearchField: String, CaseIterable {
                 match(policy.self_service?.selfServiceDisplayName) ||
                 match(policy.self_service?.selfServiceDescription) ||
                 match(policy.self_service?.selfServiceIcon?.uri) ||
+                // scripts: match any script name
+                (policy.scripts?.contains { match($0.name) } ?? false) ||
                 // scope checks: match basic boolean/string forms and any names inside scope arrays
                 (policy.scope?.allComputers != nil && {
                     let s = String(describing: policy.scope!.allComputers!)
@@ -642,6 +644,9 @@ enum SearchField: String, CaseIterable {
                 (policy.scope?.exclusions?.buildings?.contains { match($0.name) } ?? false) ||
                 (policy.scope?.exclusions?.departments?.contains { match($0.name) } ?? false) ||
                 (policy.scope?.exclusions?.users?.contains { match($0.name) } ?? false)
+
+        case .scripts:
+            return policy.scripts?.contains { match($0.name) } ?? false
 
         case .generalName:
             return match(policy.general?.name)
@@ -704,6 +709,8 @@ enum SearchField: String, CaseIterable {
             return (policy.self_service?.selfServiceDescription?.isEmpty ?? true)
         case .selfServiceIconURI:
             return (policy.self_service?.selfServiceIcon?.uri ?? "").isEmpty
+        case .scripts:
+            return (policy.scripts?.isEmpty ?? true)
 
         // Scope emptiness checks
         case .scopeAllComputers:

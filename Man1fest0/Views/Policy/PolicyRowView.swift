@@ -2,35 +2,28 @@
 //  PolicyRowView.swift
 //  Man1fest0
 //
-//  Created by jamf on 11/1/23.
+//  Created by Your Name on Date.
+//
+//  Compact row view for a policy that expands to show details and has a collapsible Scripts section.
 //
 
 import SwiftUI
 
-// A compact, tappable policy row which expands to show extra details when tapped.
-// This was accidentally overwritten with `PolicyListView` content; restore a focused, self-contained row view.
-
+// PolicyRowView: compact row that expands to show details and has a collapsible Scripts section.
 struct PolicyRowView: View {
     let policy: PolicyDetailed
 
     @State private var isExpanded: Bool = false
+    @State private var scriptsExpanded: Bool = false
 
-    // Convenience accessors
     private var generalName: String { policy.general?.name ?? "(no name)" }
     private var jamfID: Int { policy.general?.jamfId ?? 0 }
-    private var enabledString: String {
-        if let e = policy.general?.enabled { return String(describing: e) }
-        return "-"
-    }
+    private var enabledString: String { policy.general?.enabled.map { String(describing: $0) } ?? "-" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
-                // Chevron button — keep as a button so taps are intentional and accessible
-                Button(action: {
-                    withAnimation(.easeInOut) { isExpanded.toggle() }
-                    print("PolicyRowView: toggled isExpanded=\(isExpanded) for policy=\(generalName)")
-                }) {
+                Button(action: { withAnimation(.easeInOut) { isExpanded.toggle() } }) {
                     Image(systemName: "chevron.right")
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .foregroundColor(.secondary)
@@ -38,12 +31,12 @@ struct PolicyRowView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
 
-                // Main title + meta
                 VStack(alignment: .leading, spacing: 2) {
                     Text(generalName)
                         .font(.body)
                         .foregroundColor(.primary)
                         .lineLimit(2)
+
                     HStack(spacing: 10) {
                         Text("id: \(jamfID)")
                             .font(.caption)
@@ -65,17 +58,10 @@ struct PolicyRowView: View {
                 Spacer()
             }
             .contentShape(Rectangle())
-            // Also allow tapping the whole header HStack to toggle expansion for convenience
-            .onTapGesture {
-                withAnimation(.easeInOut) { isExpanded.toggle() }
-            }
+            .onTapGesture { withAnimation(.easeInOut) { isExpanded.toggle() } }
 
             if isExpanded {
-                // Expanded details — keep concise to avoid massive rows; callers can navigate to full detail view
                 VStack(alignment: .leading, spacing: 6) {
-                    // Note: `General` model doesn't include a `description` field. Prefer self-service description below.
-
-                    // Show a compact scope summary if available
                     if let scope = policy.scope {
                         HStack(spacing: 8) {
                             if scope.allComputers == true { Text("Scope: All Computers").font(.caption).foregroundColor(.secondary) }
@@ -85,31 +71,46 @@ struct PolicyRowView: View {
                         }
                     }
 
-                    // Show scripts if present
                     if let scripts = policy.scripts, !scripts.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Scripts (\(scripts.count))")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                Button(action: { withAnimation(.easeInOut) { scriptsExpanded.toggle() } }) {
+                                    Image(systemName: "chevron.right")
+                                        .rotationEffect(.degrees(scriptsExpanded ? 90 : 0))
+                                        .foregroundColor(.secondary)
+                                        .frame(width: 14, height: 14)
+                                }
+                                .buttonStyle(PlainButtonStyle())
 
-                            ForEach(scripts) { s in
-                                HStack(spacing: 8) {
-                                    Text(s.name ?? "(no name)")
-                                        .font(.caption2)
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                    Spacer()
-                                    if let pri = s.priority, !pri.isEmpty {
-                                        Text("Priority: \(pri)")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                Text("Scripts (\(scripts.count))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+
+                                Spacer()
+                            }
+
+                            if scriptsExpanded {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(scripts) { s in
+                                        HStack(spacing: 8) {
+                                            Text(s.name ?? "(no name)")
+                                                .font(.caption2)
+                                                .foregroundColor(.primary)
+                                                .lineLimit(1)
+                                            Spacer()
+                                            if let pri = s.priority, !pri.isEmpty {
+                                                Text("Priority: \(pri)")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
                                     }
                                 }
+                                .padding(.leading, 12)
                             }
                         }
                     }
 
-                    // Self-service description and icon URI (if present)
                     if let sdesc = policy.self_service?.selfServiceDescription, !sdesc.isEmpty {
                         Text(sdesc)
                             .font(.caption)
