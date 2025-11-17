@@ -85,6 +85,30 @@ struct PolicyRowView: View {
                         }
                     }
 
+                    // Show scripts if present
+                    if let scripts = policy.scripts, !scripts.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Scripts (\(scripts.count))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            ForEach(scripts) { s in
+                                HStack(spacing: 8) {
+                                    Text(s.name ?? "(no name)")
+                                        .font(.caption2)
+                                        .foregroundColor(.primary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    if let pri = s.priority, !pri.isEmpty {
+                                        Text("Priority: \(pri)")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Self-service description and icon URI (if present)
                     if let sdesc = policy.self_service?.selfServiceDescription, !sdesc.isEmpty {
                         Text(sdesc)
