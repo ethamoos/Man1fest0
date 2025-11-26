@@ -91,7 +91,7 @@ struct PackageDetailView: View {
                 
                     Divider()
 
-                LazyVGrid(columns: layout.columnsFlex) {
+//                LazyVGrid(columns: layout.columnsFlex) {
                     HStack {
                         
                         Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
@@ -133,24 +133,10 @@ struct PackageDetailView: View {
                     //              ####################################################################
                     
                     
-                    HStack {
-                        
-                        TextField(currentPackage?.name ?? "", text: $packageName)
-                            .textSelection(.enabled)
-                        
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            networkController.updatePackageName(server: server, authToken: networkController.authToken, resourceType:  ResourceType.package, packageName: packageName, packageID: String(describing: currentPackage?.id ?? 0))
-                            
-                            networkController.separationLine()
-                            print("Renaming Package:\(packageName)")
-                        }) {
-                            Text("Rename Package")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                    }
+//                    HStack {
+//                        
+//
+//                    }
                     
                     HStack {
                         
@@ -170,9 +156,25 @@ struct PackageDetailView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        
+                        TextField(currentPackage?.name ?? "", text: $packageName)
+                            .textSelection(.enabled)
+                        
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updatePackageName(server: server, authToken: networkController.authToken, resourceType:  ResourceType.package, packageName: packageName, packageID: String(describing: currentPackage?.id ?? 0))
+                            
+                            networkController.separationLine()
+                            print("Renaming Package:\(packageName)")
+                        }) {
+                            Text("Rename Package")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
                     }
                     
-                }
+//                }
 
                 //              ####################################################################
                 //              PACKAGE INFO & NOTES EDITORS

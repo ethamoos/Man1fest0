@@ -1354,13 +1354,13 @@ import AEXML
     }
     
 //    static func get(server: String, username: String, password: String) async throws -> JamfAuthToken {
-//      
+//
 //      // MARK: Prepare Request
 //      // encode username name and password
 //      let base64 = "\(username):\(password)"
 //        .data(using: String.Encoding.utf8)!
 //        .base64EncodedString()
-//      
+//
 //      // assemble the URL for the Jamf API
 //      guard var components = URLComponents(string: server) else {
 //        throw JamfAPIError.badURL
@@ -1369,41 +1369,41 @@ import AEXML
 //      guard let url = components.url else {
 //        throw JamfAPIError.badURL
 //      }
-//      
+//
 //      // MARK: Send Request and get Data
-//      
+//
 //      // create the request
 //      var authRequest = URLRequest(url: url)
 //      authRequest.httpMethod = "POST"
 //      authRequest.addValue("Basic " + base64, forHTTPHeaderField: "Authorization")
-//      
+//
 //      // send request and get data
 //      guard let (data, response) = try? await URLSession.shared.data(for: authRequest)
 //      else {
 //        throw JamfAPIError.requestFailed
 //      }
-//      
+//
 //      // MARK: Handle Errors
-//      
+//
 //      // check the response code
 //      let authStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 //      if authStatusCode != 200 {
 //        throw JamfAPIError.http(authStatusCode)
 //      }
-//      
+//
 //      // print(String(data: data, encoding: .utf8) ?? "no data")
-//      
+//
 //      // MARK: Parse JSON returned
 //      let decoder = JSONDecoder()
-//      
+//
 //      guard let auth = try? decoder.decode(JamfAuthToken.self, from: data)
 //      else {
 //        throw JamfAPIError.decode
 //      }
-//      
+//
 //      return auth
 //    }
-//    
+//
     
     
     
@@ -1427,10 +1427,10 @@ import AEXML
     
     
 //    func connectDetailed(server: String, authToken: String, resourceType: ResourceType, itemID: Int) {
-//        
+//
 //        let resourcePath = getURLFormat(data: (resourceType))
 //        let itemIDString = String(itemID)
-//        
+//
 //        if let serverURL = URL(string: server) {
 //            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
 //            asteriskSeparationLine()
@@ -1456,7 +1456,7 @@ import AEXML
     
     
 //    func detailedRequest(url: URL,resourceType: ResourceType, authToken: String) {
-//        
+//
 //        asteriskSeparationLine()
 //        print("Running detailedRequest function - resourceType is set as:\(resourceType)")
 //        print("URL is set as:\n\(url)")
@@ -1464,24 +1464,24 @@ import AEXML
 //            "Accept": "application/json",
 //            "Authorization": "Bearer \(self.authToken)"
 //        ]
-//        
+//
 //        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //        request.allHTTPHeaderFields = headers
-//        
+//
 //        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //            if let data = data, let response = response {
 //                //                self.separationLine()
 //                //                self.doubleSeparationLine()
 //                print("Data returned - processing detailed request")
-//                
+//
 //                DispatchQueue.main.async {
-//                    
+//
 //                    self.processPolicyDetail(data: data, response: response, resourceType: resourceType)
-//                    
+//
 //                }
-//                            
+//
 //            } else {
-//                
+//
 //                var text = "\n\nDetailed Request Failed."
 //                print(text)
 //                print("Request is:")
@@ -1728,7 +1728,7 @@ import AEXML
 //            //        self.status = ""
 //            print("Adding:policyDetailed to: allPoliciesDetailed ")
 //            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-//            
+//
 //        }
 //    }
     
@@ -2109,13 +2109,13 @@ import AEXML
     
     
 //    func processComputerDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-//        
+//
 //        separationLine()
 //        print("Running: processComputerDetail")
-//        
+//
 //        let decoded = PoliciesDetailReply.decode(data)
-//        
-//        
+//
+//
 //        switch decoded {
 //        case .success(let policyDetailed):
 //            receivedPolicyDetail(policyDetailed: policyDetailed)
@@ -2173,13 +2173,13 @@ import AEXML
     
     
 //    func processPolicyDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-//        
+//
 //        separationLine()
 //        print("Running: processPolicyDetail")
 //        print("ResourceType is:\(String(describing: ResourceType.self))")
-//        
+//
 //        let decoded = PoliciesDetailReply.decode(data)
-//        
+//
 //        switch decoded {
 //        case .success(let policyDetailed):
 //            receivedPolicyDetail(policyDetailed: policyDetailed)
@@ -3576,7 +3576,7 @@ xml = """
                 appendStatus("Connecting to \(url)...")
             }
         }
-    }    
+    }
     //    #################################################################################
     //    scopeAllComputers  - enable AllComputers
     //    #################################################################################
@@ -4714,11 +4714,11 @@ xml = """
 //        request.httpMethod = "GET"
 //          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
 //        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//  
+//
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
 //        separationLine()
 //        print("Running func: getAllPackages")
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            print("Code not 200")
@@ -4728,7 +4728,7 @@ xml = """
 //        self.allPackages = try decoder.decode(Packages.self, from: data).packages
 //        allPackagesComplete = true
 //        print("allPackagesComplete status is set to:\(allPackagesComplete)")
-//        
+//
 //    }
     
     
