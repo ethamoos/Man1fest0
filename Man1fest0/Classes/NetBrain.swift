@@ -2542,6 +2542,144 @@ import AEXML
             
         }
     }
+        
+    //    #################################################################################
+    //    updatePackageName -editName - rename
+    //    #################################################################################
+    
+    
+    func updatePackageName(server: String,authToken: String, resourceType: ResourceType, packageName: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updateName XML")
+        print("packageName is set as:\(packageName)")
+        xml = """
+                <package>
+                        <name>\(packageName)</name>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
+    
+    //    #################################################################################
+    //    updatePackageFileName -editName - rename
+    //    #################################################################################
+    
+    func updatePackageFileName(server: String,authToken: String, resourceType: ResourceType, packageFileName: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updateName XML")
+        print("packageName is set as:\(packageFileName)")
+        xml = """
+                <package>
+                        <filename>\(packageFileName)</filename>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
+    
+    
+    //    #################################################################################
+    //    updatePackageNotes
+    //    #################################################################################
+    
+    func updatePackageNotes(server: String,authToken: String, resourceType: ResourceType, packageNotes: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updatePackageNotes XML")
+        print("packageNotes is set as:\(packageNotes)")
+        xml = """
+                <package>
+                        <notes>\(packageNotes)</notes>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
+    
+    //    #################################################################################
+    //    updatePackageInfo
+    //    #################################################################################
+    
+    func updatePackageInfo(server: String,authToken: String, resourceType: ResourceType, packageInfo: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updatePackageInfo XML")
+        print("packageInfo is set as:\(packageInfo)")
+        xml = """
+                <package>
+                        <info>\(packageInfo)</info>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
     
     func updateSSName(server: String, authToken: String, resourceType: ResourceType, providedName: String, policyID: String) {
         
