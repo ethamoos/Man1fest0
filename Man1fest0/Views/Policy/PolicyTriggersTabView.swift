@@ -36,12 +36,7 @@ struct PolicyTriggersTabView: View {
     
     var body: some View {
         
-//        let currentTrigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
-//        let currentTrigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
-//        let currentTrigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
-//        let currentTrigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
-//        let currentTrigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
-//        
+
         VStack(alignment: .leading) {
             
             LazyVGrid(columns: layout.columnFlexWide, alignment: .leading, spacing: 10) {
@@ -103,20 +98,15 @@ struct PolicyTriggersTabView: View {
                 }
                 .toggleStyle(.checkbox)
                 
-//                    if currentTrigger_other.isEmpty != true {
+                
+                HStack {
+                    Text("Custom Trigger")
+                    TextField(trigger_other, text: $trigger_other)
+                        .textSelection(.enabled)
+                }
+                .frame(width: 250)
                         
-                        HStack {
-                            Text("Custom Trigger")
-                            TextField(trigger_other, text: $trigger_other)
-                                .textSelection(.enabled)
-                        }
-                        .frame(width: 250)
                         
-                        
-//                    } else {
-//
-//                        Text("Custom Trigger not configured")
-//                    }
             }
             Spacer()
         }
