@@ -358,18 +358,23 @@ struct PoliciesActionView: View {
                     //              UPDATE POLICY - COMPLETE
                     // ######################################################################
 
-                    Divider()
-                    VStack(alignment: .leading) {
-                        
-                        Text("Selections").fontWeight(.bold)
-                        
-                        List(Array(policiesSelection), id: \.self) { policy in
-                            
-                            Text(policy.name )
-                            
-                        }
-                        .frame(height: 50)
-                    }
+                    // ######################################################################
+                    //              Show selections
+                    // ######################################################################
+
+                    
+//                    Divider()
+//                    VStack(alignment: .leading) {
+//                        
+//                        Text("Selections").fontWeight(.bold)
+//                        
+//                        List(Array(policiesSelection), id: \.self) { policy in
+//                            
+//                            Text(policy.name )
+//                            
+//                        }
+//                        .frame(height: 50)
+//                    }
                     
                     
                     // ######################################################################
