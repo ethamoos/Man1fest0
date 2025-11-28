@@ -1771,19 +1771,19 @@ class XmlBrain: ObservableObject {
         readXMLDataFromString(xmlContent: xmlContent)
         if self.aexmlDoc.name.isEmpty != true {
             separationLine()
-            print("Running setPolicyTriggers - xmlDoc available:\(xmlContent)")
+//            print("Running setPolicyTriggers - xmlDoc available:\(xmlContent)")
             let wholeDoc = aexmlDoc.root
             let policyGeneral = aexmlDoc.root["general"]
-            //            let policyID = policyGeneral["id"].last!
-            //            let policyName = policyGeneral["name"].last!
+
             //    #################################################################################
             //        ADD NEW STRINGS
             //    #################################################################################
             separationLine()
             //            print("Policy name is:\(policyName)")
             print("Policy id is:\(itemIDString)")
+            print("Update all triggers")
             
-            if trigger_checkin == true {
+//            if trigger_checkin == true {
                 self.separationLine()
                 print("Remove current trigger_checkin")
                 let _trigger_checkin = policyGeneral["trigger_checkin"].last!
@@ -1791,11 +1791,18 @@ class XmlBrain: ObservableObject {
                 _trigger_checkin.removeFromParent()
                 policyGeneral.addChild(name: "trigger_checkin", value: String(describing: trigger_checkin))
                 print("Setting trigger_checkin as:\(trigger_checkin)")
-            } else {
-                print("trigger_checkin is set as false")
-            }
+//            } else {
+//                print("trigger_checkin is set as false")
+//                self.separationLine()
+//                print("Remove current trigger_checkin")
+//                let _trigger_checkin = policyGeneral["trigger_checkin"].last!
+//                print("Removing:\(_trigger_checkin.xml)")
+//                _trigger_checkin.removeFromParent()
+//                policyGeneral.addChild(name: "trigger_checkin", value: String(describing: trigger_checkin))
+//                print("Setting trigger_checkin as:\(trigger_checkin)")
+//            }
             
-            if trigger_login == true {
+//            if trigger_login == true {
                 self.separationLine()
                 print("Remove current trigger_login")
                 let _trigger_login = policyGeneral["trigger_login"].last!
@@ -1803,11 +1810,11 @@ class XmlBrain: ObservableObject {
                 _trigger_login.removeFromParent()
                 policyGeneral.addChild(name: "trigger_login", value: String(describing: trigger_login))
                 print("Setting trigger_login as:\(trigger_login)")
-            } else {
-                print("trigger_login is set as false")
-            }
+//            } else {
+//                print("trigger_login is set as false")
+//            }
             
-            if trigger_startup == true {
+//            if trigger_startup == true {
                 self.separationLine()
                 print("Remove current trigger_startup")
                 let _trigger_startup = policyGeneral["trigger_startup"].last!
@@ -1815,11 +1822,11 @@ class XmlBrain: ObservableObject {
                 _trigger_startup.removeFromParent()
                 policyGeneral.addChild(name: "trigger_startup", value: String(describing: trigger_startup))
                 print("Setting trigger_startup as:\(trigger_startup)")
-            } else {
-                print("trigger_startup is set as false")
-            }
+//            } else {
+//                print("trigger_startup is set as false")
+//            }
             
-            if trigger_enrollment_complete == true {
+//            if trigger_enrollment_complete == true {
                 self.separationLine()
                 print("Remove current trigger_enrollment_complete")
                 let _trigger_enrollment_complete = policyGeneral["trigger_enrollment_complete"].last!
@@ -1827,9 +1834,9 @@ class XmlBrain: ObservableObject {
                 _trigger_enrollment_complete.removeFromParent()
                 policyGeneral.addChild(name: "trigger_enrollment_complete", value: String(describing: trigger_enrollment_complete))
                 print("Setting trigger_enrollment_complete as:\(trigger_enrollment_complete)")
-            } else {
-                print("trigger_enrollment_complete is set as false")
-            }
+//            } else {
+//                print("trigger_enrollment_complete is set as false")
+//            }
             
             if trigger_other != "" {
                 self.separationLine()
