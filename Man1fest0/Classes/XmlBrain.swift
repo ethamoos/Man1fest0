@@ -2883,4 +2883,61 @@ class XmlBrain: ObservableObject {
     }
     
     
+    
+    
+    //    #################################################################################
+    //    Set distribution point to default
+    //    #################################################################################
+    
+    func setDPToDefault(server: String, policyID: String, authToken: String) {
+        
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
+        
+        var xml: String
+        
+        xml = """
+                       <policy>
+                           <general>
+                               <override_default_settings>
+                                    <distribution_point>﻿"default"</distribution_point>
+                                   <distribution_point/>
+                               </exclusions>
+                           </scope>
+                       </policy>
+                       """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Setting distribution point to default for policyID:\(policyID)")
+                print("xml is set as:\(xml)")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
+            }
+        }
+        else {
+            print("setDPToDefault request failed")
+        }
+    }
+    
+    
+    //    #################################################################################
+    //    batchUpdateDPSelectedPolicies
+    //    #################################################################################
+    
+    
+    func batchSetDPToDefault(policiesSelection: Set<Policy>, server: String, authToken: String) {
+        self.separationLine()
+        print("Running: batchSetDPToDefault")
+        for eachItem in policiesSelection {
+            self.separationLine()
+            let jamfID: Int = eachItem.jamfId ?? 0
+            print("Current jamfID is:\(String(describing: jamfID))")
+            self.setDPToDefault(server: server, policyID: String(describing: jamfID), authToken: authToken )
+        }
+    }
+    
+    
+    
+    
 }

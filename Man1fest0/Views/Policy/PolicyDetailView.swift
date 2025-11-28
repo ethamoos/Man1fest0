@@ -185,10 +185,16 @@ struct PolicyDetailView: View {
                     Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")")
+                    Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")\n")
+                    
+                    
+                    if networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
+                        
+                        Text("Distribution Point :\t\t\t\(networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
+                    }
                     
                     if pushTriggerActiveWarning == true {
-                        Text("⚠️ Push Trigger Active! ⚠️").foregroundColor(.red)
+                        Text("⚠️ Push Trigger Active! ⚠️\n").foregroundColor(.red)
                     }
                     
                     
@@ -611,9 +617,6 @@ struct PolicyDetailView: View {
                    pushTriggerActiveWarning = false
                    print("Push trigger has been deactivated")
                }
-                
-                
-                
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
             
