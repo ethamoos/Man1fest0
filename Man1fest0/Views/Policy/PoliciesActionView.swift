@@ -72,6 +72,8 @@ struct PoliciesActionView: View {
     
     @State private var showingWarningClearScope = false
 
+    // Confirmation for Set DP action
+    @State private var showingWarningSetDP = false
     
     
     //  ########################################################################################
@@ -274,17 +276,17 @@ struct PoliciesActionView: View {
                             
                             progress.showProgress()
                             progress.waitForABit()
-                            
+
                             for eachItem in policiesSelection {
-                                
+
                                 let currentPolicyID = (eachItem.jamfId ?? 0)
-                                
+
                                 print("Download file for \(eachItem.name)")
                                 print("jamfId is \(String(describing: eachItem.jamfId ?? 0))")
-                                
+
                                 ASyncFileDownloader.downloadFileAsyncAuth( objectID: currentPolicyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in}
                             }
-                            
+
                         }) {
                             Image(systemName: "plus.circle")
                             Text("Download")
@@ -292,7 +294,34 @@ struct PoliciesActionView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.yellow)
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
-
+                        
+                        
+                        Button(action: {
+                            // Ask for confirmation before executing the batch operation
+                            showingWarningSetDP = true
+                            progress.showProgress()
+                            progress.waitForABit()
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "archivebox")
+                                Text("Set DP to Default")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .alert(isPresented: $showingWarningSetDP) {
+                            Alert(
+                                title: Text("Caution!"),
+                                message: Text("This action will set the distribution point to default for all selected policies."),
+                                primaryButton: .destructive(Text("I understand!")) {
+                                    print("Confirmed: calling xmlController.batchSetDPToDefault for selection: \(policiesSelection.map{ $0.name })")
+                                    xmlController.batchSetDPToDefault(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                    progress.endProgress()
+                                },
+                                secondaryButton: .cancel({ progress.endProgress() })
+                            )
+                        }
+                        
                     }
                     
                     // ######################################################################

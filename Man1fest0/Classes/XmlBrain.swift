@@ -2894,17 +2894,20 @@ class XmlBrain: ObservableObject {
         let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
         
         var xml: String
-        
         xml = """
-                       <policy>
-                           <general>
-                               <override_default_settings>
-                                    <distribution_point>﻿"default"</distribution_point>
-                                   <distribution_point/>
-                               </exclusions>
-                           </scope>
-                       </policy>
-                       """
+                    <policy>
+                        <general>
+                            <override_default_settings>
+                                <distribution_point/>
+                                <force_afp_smb>false</force_afp_smb>
+                                <sus>default</sus>                               
+                            </override_default_settings>
+                        </general>
+                        <package_configuration>
+                            <distribution_point>default</distribution_point>
+                        </package_configuration>
+                    </policy>
+       """
         
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
