@@ -125,11 +125,28 @@ struct PoliciesActionView: View {
         //              ################################################################################
         
         VStack(alignment: .leading) {
-            
+
             if networkController.policies.count > 0 {
+
+                // Inline search field (visible in the view) — useful when .searchable is disabled in the toolbar
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    TextField("Search policies", text: $searchText)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(minWidth: 200)
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding([.leading, .trailing, .top])
                 
                 List(searchResults, id: \.self, selection: $policiesSelection) { policy in
-                    
+
                     HStack {
                         Image(systemName:"text.justify")
                         Text("\(policy.name)")
@@ -365,13 +382,13 @@ struct PoliciesActionView: View {
                     
 //                    Divider()
 //                    VStack(alignment: .leading) {
-//                        
+//
 //                        Text("Selections").fontWeight(.bold)
-//                        
+//
 //                        List(Array(policiesSelection), id: \.self) { policy in
-//                            
+//
 //                            Text(policy.name )
-//                            
+//
 //                        }
 //                        .frame(height: 50)
 //                    }
