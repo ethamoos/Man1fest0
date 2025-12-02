@@ -622,8 +622,8 @@ struct PolicyDetailView: View {
             
             Task {
                 print("getPolicyAsXML - running get policy as xml function")
-                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                _ = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
             }
             
             if networkController.categories.count <= 1 {
@@ -657,7 +657,7 @@ struct PolicyDetailView: View {
                     try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
                 }
             }
-        
+          
           
          
           
@@ -670,6 +670,26 @@ struct PolicyDetailView: View {
                 }
         }
     }
+
+        // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
+        HStack {
+            Spacer()
+            Button(action: {
+                // Use the current URL provided by the network controller
+                let urlToOpen = networkController.currentURL
+                print("Opening URL: \(urlToOpen)")
+                layout.openURL(urlString: urlToOpen)
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "safari")
+                    Text("Open in Browser")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .padding(.top, 6)
+            Spacer()
+        }
         .padding()
         .textSelection(.enabled)
 }

@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import AEXML
+import AppKit
 
 
 class ASyncFileDownloader {
@@ -24,7 +25,125 @@ class ASyncFileDownloader {
     static func destinationBaseURL() -> URL {
         return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
-//    Renamed funcs from original
+
+    // Ensure filename ends with .xml
+    static func ensureXMLExtension(_ filename: String) -> String {
+        if filename.lowercased().hasSuffix(".xml") {
+            return filename
+        } else {
+            return filename + ".xml"
+        }
+    }
+
+    // MARK: - Sandbox / Bookmark helpers
+    private static let bookmarkDefaultsKey = "ASyncFileDownloader.downloadFolderBookmark"
+
+    // Persist a security-scoped bookmark for a folder
+    static func storeBookmark(for folderURL: URL) -> Bool {
+        do {
+            let bookmark = try folderURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+            UserDefaults.standard.set(bookmark, forKey: bookmarkDefaultsKey)
+            return true
+        } catch {
+            print("Failed to create bookmark: \(error)")
+            return false
+        }
+    }
+
+    // Resolve saved bookmark to URL (starts access if security-scoped)
+    static func resolveSavedBookmark() -> URL? {
+        guard let bookmarkData = UserDefaults.standard.data(forKey: bookmarkDefaultsKey) else { return nil }
+        var isStale = false
+        do {
+            let url = try URL(resolvingBookmarkData: bookmarkData, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &isStale)
+            if isStale {
+                // Try to recreate
+                _ = storeBookmark(for: url)
+            }
+            return url
+        } catch {
+            print("Failed to resolve bookmark: \(error)")
+            return nil
+        }
+    }
+
+    // Present an NSOpenPanel to let the user choose a downloads folder (returns the selected folder URL or nil)
+    static func askUserForDownloadFolder() -> URL? {
+        var selectedURL: URL?
+        let runPanel = {
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.prompt = "Choose"
+            panel.title = "Choose folder to save downloads"
+            if panel.runModal() == .OK {
+                selectedURL = panel.url
+            }
+        }
+
+        if Thread.isMainThread {
+            runPanel()
+        } else {
+            DispatchQueue.main.sync {
+                runPanel()
+            }
+        }
+
+        if let url = selectedURL {
+            _ = storeBookmark(for: url)
+        }
+        return selectedURL
+    }
+
+    // Attempt to write data to a writable folder: Downloads preferred; if not writable, try saved bookmark; if still not, present a panel and save bookmark.
+    static func saveDataToUserDownloads(data: Data, filename: String) -> (String?, Error?) {
+        let safeFilename = ensureXMLExtension(filename)
+
+        // 1) Try default destination (Downloads or Documents)
+        let defaultBase = destinationBaseURL()
+        let defaultURL = defaultBase.appendingPathComponent(safeFilename)
+        do {
+            try data.write(to: defaultURL, options: .atomic)
+            return (defaultURL.path, nil)
+        } catch {
+            print("Direct write to default destination failed: \(error)")
+        }
+
+        // 2) Try resolved bookmark folder (security-scoped)
+        if let bookmarkFolder = resolveSavedBookmark() {
+            var didStart = false
+            if bookmarkFolder.startAccessingSecurityScopedResource() { didStart = true }
+            let targetURL = bookmarkFolder.appendingPathComponent(safeFilename)
+            do {
+                try data.write(to: targetURL, options: .atomic)
+                if didStart { bookmarkFolder.stopAccessingSecurityScopedResource() }
+                return (targetURL.path, nil)
+            } catch {
+                print("Write to bookmarked folder failed: \(error)")
+                if didStart { bookmarkFolder.stopAccessingSecurityScopedResource() }
+            }
+        }
+
+        // 3) Ask the user to choose a folder
+        if let chosen = askUserForDownloadFolder() {
+            var didStart = false
+            if chosen.startAccessingSecurityScopedResource() { didStart = true }
+            let targetURL = chosen.appendingPathComponent(safeFilename)
+            do {
+                try data.write(to: targetURL, options: .atomic)
+                if didStart { chosen.stopAccessingSecurityScopedResource() }
+                return (targetURL.path, nil)
+            } catch {
+                print("Write to user-chosen folder failed: \(error)")
+                if didStart { chosen.stopAccessingSecurityScopedResource() }
+                return (targetURL.path, error)
+            }
+        }
+
+        // All attempts failed
+        return (defaultURL.path, NSError(domain: "ASyncFileDownloader", code: 2001, userInfo: [NSLocalizedDescriptionKey: "Failed to save file to Downloads or user-selected folder"]))
+    }
     
     //   #################################################################################
     //   downloadFileSync
@@ -32,33 +151,25 @@ class ASyncFileDownloader {
     
     static func downloadFileSync(url: URL, completion: @escaping (String?, Error?) -> Void)
     {
-        let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent)
-         
-         if FileManager().fileExists(atPath: destinationUrl.path)
-         {
-             print("File already exists [\(destinationUrl.path)]")
-             completion(destinationUrl.path, nil)
-         }
-         else if let dataFromURL = NSData(contentsOf: url)
-         {
-             if dataFromURL.write(to: destinationUrl, atomically: true)
-             {
-                 print("file saved [\(destinationUrl.path)]")
-                 completion(destinationUrl.path, nil)
-             }
-             else
-             {
-                 print("error saving file")
-                 let error = NSError(domain:"Error saving file", code:1001, userInfo:nil)
-                 completion(destinationUrl.path, error)
-             }
-         }
-         else
-         {
-             let error = NSError(domain:"Error downloading file", code:1002, userInfo:nil)
-             completion(destinationUrl.path, error)
-         }
-     }
+        let filename = ensureXMLExtension(url.lastPathComponent)
+        let destinationUrl = destinationBaseURL().appendingPathComponent(filename)
+        
+        if FileManager().fileExists(atPath: destinationUrl.path) {
+            print("File already exists [\(destinationUrl.path)]")
+            completion(destinationUrl.path, nil)
+        } else if let dataFromURL = NSData(contentsOf: url) {
+            // Use sandbox-friendly save helper
+            let data = dataFromURL as Data
+            let (path, writeError) = saveDataToUserDownloads(data: data, filename: filename)
+            if let p = path, writeError == nil {
+                showDownloadCompletedNotification(savedPath: p)
+            }
+            completion(path, writeError)
+        } else {
+            let error = NSError(domain: "Error downloading file", code: 1002, userInfo: nil)
+            completion(destinationUrl.path, error)
+        }
+    }
      
      //   #################################################################################
      //   downloadFileAsync
@@ -70,11 +181,8 @@ class ASyncFileDownloader {
          
          print("Running downloadFileAsync")
 
-       let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-      print("documentsUrl is:\(documentsUrl)")
-
-/*-  */      let destinationUrl = documentsUrl.appendingPathComponent(url.lastPathComponent)
-//       let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent)
+         let filename = ensureXMLExtension(url.lastPathComponent)
+         let destinationUrl = destinationBaseURL().appendingPathComponent(filename)
          print("destinationUrl is:\(destinationUrl)")
          
          self.separationLine()
@@ -99,16 +207,13 @@ class ASyncFileDownloader {
                      {
                          if response.statusCode == 200
                          {
-                             if let data = data
-                             {
-                                 if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
-                                 {
-                                     completion(destinationUrl.path, error)
+                             if let data = data {
+                                 // Try sandbox-friendly save
+                                 let (path, writeError) = saveDataToUserDownloads(data: data, filename: filename)
+                                 if let p = path, writeError == nil {
+                                     showDownloadCompletedNotification(savedPath: p)
                                  }
-                                 else
-                                 {
-                                     completion(destinationUrl.path, error)
-                                 }
+                                 completion(path, writeError)
                              }
                              else
                              {
@@ -147,7 +252,8 @@ class ASyncFileDownloader {
 //            self.separationLine()
             print("URL is set as:\(String(describing: url))")
             
-            let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent )
+            let filename = ensureXMLExtension(url.lastPathComponent)
+            let destinationUrl = destinationBaseURL().appendingPathComponent(filename )
             print("destination Url is:\(destinationUrl)")
             
             if FileManager().fileExists(atPath: destinationUrl.path)
@@ -184,19 +290,13 @@ class ASyncFileDownloader {
                             {
                                 print("StatusCode == 200")
                                 
-                                if let data = data
-                                {
-                                    
+                                if let data = data {
                                     print("Data has been received")
-                                    
-                                    if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
-                                    {
-                                        completion(destinationUrl.path, error)
+                                    let (path, writeError) = saveDataToUserDownloads(data: data, filename: filename)
+                                    if let p = path, writeError == nil {
+                                        showDownloadCompletedNotification(savedPath: p)
                                     }
-                                    else
-                                    {
-                                        completion(destinationUrl.path, error)
-                                    }
+                                    completion(path, writeError)
                                 }
                                 else
                                 {
@@ -265,7 +365,8 @@ class ASyncFileDownloader {
 //            self.separationLine()
             print("URL is set as:\(String(describing: url))")
             
-            let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent )
+            let filename = ensureXMLExtension(url.lastPathComponent)
+            let destinationUrl = destinationBaseURL().appendingPathComponent(filename )
             print("destination Url is:\(destinationUrl)")
             
             if FileManager().fileExists(atPath: destinationUrl.path)
@@ -302,19 +403,13 @@ class ASyncFileDownloader {
                             {
                                 print("StatusCode == 200")
                                 
-                                if let data = data
-                                {
-                                    
+                                if let data = data {
                                     print("Data has been received")
-                                    
-                                    if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
-                                    {
-                                        completion(destinationUrl.path, error)
+                                    let (path, writeError) = saveDataToUserDownloads(data: data, filename: filename)
+                                    if let p = path, writeError == nil {
+                                        showDownloadCompletedNotification(savedPath: p)
                                     }
-                                    else
-                                    {
-                                        completion(destinationUrl.path, error)
-                                    }
+                                    completion(path, writeError)
                                 }
                                 else
                                 {
@@ -360,8 +455,22 @@ class ASyncFileDownloader {
             print("No url has been supplied")
         }
     }
+    
+    // Show a UI alert after a successful download, offering "Open in Finder"
+    static func showDownloadCompletedNotification(savedPath: String) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = "Download Complete"
+            alert.informativeText = "Saved to: \(savedPath)"
+            alert.addButton(withTitle: "Open in Finder")
+            alert.addButton(withTitle: "OK")
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: savedPath)])
+            }
+        }
+    }
 }
-
 
 
 

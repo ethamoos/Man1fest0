@@ -22,6 +22,7 @@ import AEXML
     //  #############################################################################
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
+    var currentURL: String = ""
     //  #############################################################################
     //  Login and Tokens Confirmations
     //  #############################################################################
@@ -695,6 +696,7 @@ import AEXML
             print("Running getDetailedPolicy - policyID is:\(policyID)")
 //        }
         let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
+        self.currentURL = jamfURLQuery
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
