@@ -19,111 +19,112 @@ class ASyncFileDownloader {
     static func separationLine() {
         print("------------------------------------------------------------------")
     }
-    
+
+    // Destination helper: prefer Downloads, fall back to Documents
+    static func destinationBaseURL() -> URL {
+        return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    }
 //    Renamed funcs from original
-    
     
     //   #################################################################################
     //   downloadFileSync
     //   #################################################################################
     
-    
     static func downloadFileSync(url: URL, completion: @escaping (String?, Error?) -> Void)
     {
-        let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        
-        let destinationUrl = documentsUrl.appendingPathComponent(url.lastPathComponent)
-        
-        if FileManager().fileExists(atPath: destinationUrl.path)
-        {
-            print("File already exists [\(destinationUrl.path)]")
-            completion(destinationUrl.path, nil)
-        }
-        else if let dataFromURL = NSData(contentsOf: url)
-        {
-            if dataFromURL.write(to: destinationUrl, atomically: true)
-            {
-                print("file saved [\(destinationUrl.path)]")
-                completion(destinationUrl.path, nil)
-            }
-            else
-            {
-                print("error saving file")
-                let error = NSError(domain:"Error saving file", code:1001, userInfo:nil)
-                completion(destinationUrl.path, error)
-            }
-        }
-        else
-        {
-            let error = NSError(domain:"Error downloading file", code:1002, userInfo:nil)
-            completion(destinationUrl.path, error)
-        }
-    }
-    
-    //   #################################################################################
-    //   downloadFileAsync
-    //   #################################################################################
-    
-    
-    static func downloadFileAsync(url: URL, completion: @escaping (String?, Error?) -> Void)
-    {
-        
-        print("Running downloadFileAsync")
+        let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent)
+         
+         if FileManager().fileExists(atPath: destinationUrl.path)
+         {
+             print("File already exists [\(destinationUrl.path)]")
+             completion(destinationUrl.path, nil)
+         }
+         else if let dataFromURL = NSData(contentsOf: url)
+         {
+             if dataFromURL.write(to: destinationUrl, atomically: true)
+             {
+                 print("file saved [\(destinationUrl.path)]")
+                 completion(destinationUrl.path, nil)
+             }
+             else
+             {
+                 print("error saving file")
+                 let error = NSError(domain:"Error saving file", code:1001, userInfo:nil)
+                 completion(destinationUrl.path, error)
+             }
+         }
+         else
+         {
+             let error = NSError(domain:"Error downloading file", code:1002, userInfo:nil)
+             completion(destinationUrl.path, error)
+         }
+     }
+     
+     //   #################################################################################
+     //   downloadFileAsync
+     //   #################################################################################
+     
+     
+     static func downloadFileAsync(url: URL, completion: @escaping (String?, Error?) -> Void)
+     {
+         
+         print("Running downloadFileAsync")
 
-        let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        print("documentsUrl is:\(documentsUrl)")
+       let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+      print("documentsUrl is:\(documentsUrl)")
 
-        let destinationUrl = documentsUrl.appendingPathComponent(url.lastPathComponent)
-        print("destinationUrl is:\(destinationUrl)")
-        
-        self.separationLine()
-        print("url is:\(String(describing:url))")
+/*-  */      let destinationUrl = documentsUrl.appendingPathComponent(url.lastPathComponent)
+//       let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent)
+         print("destinationUrl is:\(destinationUrl)")
+         
+         self.separationLine()
+         print("url is:\(String(describing:url))")
 
-        if FileManager().fileExists(atPath: destinationUrl.path)
-        {
-            print("File already exists [\(destinationUrl.path)]")
-            completion(destinationUrl.path, nil)
-        }
-        else
-        {
-            let session = URLSession(configuration: URLSessionConfiguration.default, delegate: nil, delegateQueue: nil)
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            let task = session.dataTask(with: request, completionHandler:
-                                            {
-                data, response, error in
-                if error == nil
-                {
-                    if let response = response as? HTTPURLResponse
-                    {
-                        if response.statusCode == 200
-                        {
-                            if let data = data
-                            {
-                                if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
-                                {
-                                    completion(destinationUrl.path, error)
-                                }
-                                else
-                                {
-                                    completion(destinationUrl.path, error)
-                                }
-                            }
-                            else
-                            {
-                                completion(destinationUrl.path, error)
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    completion(destinationUrl.path, error)
-                }
-            })
-            task.resume()
-        }
-    }
+         if FileManager().fileExists(atPath: destinationUrl.path)
+         {
+             print("File already exists [\(destinationUrl.path)]")
+             completion(destinationUrl.path, nil)
+         }
+         else
+         {
+             let session = URLSession(configuration: URLSessionConfiguration.default, delegate: nil, delegateQueue: nil)
+             var request = URLRequest(url: url)
+             request.httpMethod = "GET"
+             let task = session.dataTask(with: request, completionHandler:
+                                             {
+                 data, response, error in
+                 if error == nil
+                 {
+                     if let response = response as? HTTPURLResponse
+                     {
+                         if response.statusCode == 200
+                         {
+                             if let data = data
+                             {
+                                 if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
+                                 {
+                                     completion(destinationUrl.path, error)
+                                 }
+                                 else
+                                 {
+                                     completion(destinationUrl.path, error)
+                                 }
+                             }
+                             else
+                             {
+                                 completion(destinationUrl.path, error)
+                             }
+                         }
+                     }
+                 }
+                 else
+                 {
+                     completion(destinationUrl.path, error)
+                 }
+             })
+             task.resume()
+         }
+     }
     
     //   #################################################################################
     //   downloadFileAsyncAuth
@@ -146,10 +147,7 @@ class ASyncFileDownloader {
 //            self.separationLine()
             print("URL is set as:\(String(describing: url))")
             
-            let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            print("documents Url is:\(documentsUrl)")
-            
-            let destinationUrl = documentsUrl.appendingPathComponent(url.lastPathComponent )
+            let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent )
             print("destination Url is:\(destinationUrl)")
             
             if FileManager().fileExists(atPath: destinationUrl.path)
@@ -267,10 +265,7 @@ class ASyncFileDownloader {
 //            self.separationLine()
             print("URL is set as:\(String(describing: url))")
             
-            let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            print("documents Url is:\(documentsUrl)")
-            
-            let destinationUrl = documentsUrl.appendingPathComponent(url.lastPathComponent )
+            let destinationUrl = destinationBaseURL().appendingPathComponent(url.lastPathComponent )
             print("destination Url is:\(destinationUrl)")
             
             if FileManager().fileExists(atPath: destinationUrl.path)
@@ -471,7 +466,3 @@ class ASyncFileDownloader {
 //            print("No url has been supplied")
 //        }
 //    }
-
-
-
-

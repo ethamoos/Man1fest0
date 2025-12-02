@@ -51,6 +51,8 @@ struct PoliciesActionView: View {
     @State private var policiesSelection = Set<Policy>()
     
     @State var searchText = ""
+    // Focus for the inline search field so it can be focused via Cmd-F
+    @FocusState private var searchFieldFocused: Bool
     
     @State var status: Bool = true
     
@@ -133,6 +135,8 @@ struct PoliciesActionView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
                     TextField("Search policies", text: $searchText)
+                        .focused($searchFieldFocused)
+                        .accessibilityLabel("Search policies")
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .frame(minWidth: 200)
                     if !searchText.isEmpty {
@@ -140,6 +144,7 @@ struct PoliciesActionView: View {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(.secondary)
                         }
+                        .help("Clear search")
                         .buttonStyle(.plain)
                     }
                 }
@@ -198,6 +203,12 @@ struct PoliciesActionView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    // Hidden shortcut to focus the inline search (Cmd-F)
+                    Button(action: { searchFieldFocused = true }) {
+                        EmptyView()
+                    }
+                    .keyboardShortcut("f", modifiers: [.command])
+                    .hidden()
                     //                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 }
                 
