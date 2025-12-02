@@ -27,8 +27,11 @@ struct  IconsView: View {
 
     @State var path = ""
     @State private var showList = false
-    @State private var allItemsList = [""]
+    @State var allItemsList = [""]
     @State private var searchText = ""
+
+    // Show confirmation before downloading all icons (can take time)
+    @State private var showingRefreshIconsWarning = false
 
     var body: some View {
         
@@ -122,13 +125,20 @@ struct  IconsView: View {
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     .tint(.yellow)
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                        showingRefreshIconsWarning = true
+                    }) {
                         Text("Refresh Icons")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .alert("This will download all icons again, which may take some time. Do you want to continue?", isPresented: $showingRefreshIconsWarning) {
+                        Button("Cancel", role: .cancel) { }
+                        Button("Continue") {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                        }
+                    }
                 }
                 
                 Text(importExportController.uploadStatus)

@@ -106,7 +106,9 @@ struct PolicySelfServiceTabView: View {
     @State private var showingWarningLimitScope = false
     
     @State private var showingWarningClearLimit = false
-    
+
+    // Show confirmation before downloading all icons (can take time)
+    @State private var showingRefreshIconsWarning = false
     //  ########################################################################################
     
     var body: some View {
@@ -212,14 +214,24 @@ struct PolicySelfServiceTabView: View {
 //                    }
 //                    HStack {
                         Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                            // Show confirmation before kicking off a potentially long download
+                            showingRefreshIconsWarning = true
+                        }) {
                             Text("Refresh Icons")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                    }
+                        .alert("Warning", isPresented: $showingRefreshIconsWarning) {
+                            Button("Proceed") {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                            }
+                            Button("Cancel", role: .cancel) { }
+                        } message: {
+                            Text("please note downloading all the icons can take some time")
+                        }
+                     }
                 }
                 HStack {
                     Button(action: {
@@ -262,7 +274,7 @@ struct PolicySelfServiceTabView: View {
             if networkController.allIconsDetailed.count <= 1 {
                 print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
                 Task {
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 2000)
                 }
             } else {
                 print("getAllIconsDetailed has already run")
