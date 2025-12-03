@@ -117,14 +117,19 @@ struct PolicyScopeTabView: View {
     @State private var showingWarningClearLimit = false
     
     @State private var showingWarningAllUsers = false
+    @State private var showingWarningDisableAllUsers = false
     
     @State private var showingWarningAllComputers = false
+    @State private var showingWarningDisableAllComputers = false
     
     @State private var showingWarningClearComputers = false
     
     @State private var showingWarningClearComputerGroups = false
     
     @State private var showingWarningAllComputersAndUsers = false
+    @State private var showingWarningDisableAllComputersAndUsers = false
+    
+    
     
 
 //    ########################################################################################
@@ -163,13 +168,19 @@ struct PolicyScopeTabView: View {
                     VStack(alignment: .leading) {
 
                         //  ################################################################################
-                        //  Show All Computers scoping
+                        //  Show All Computers and users scoping
                         //  ################################################################################
                         
                         if networkController.policyDetailed?.scope?.allComputers == true {
                             Text("Scoped To All Computers").font(.subheadline)
                         } else {
                             Text("All Computers is not enabled").font(.subheadline)
+                        }
+                          
+                        if networkController.policyDetailed?.scope?.all_jss_users == true {
+                            Text("Scoped To All Users").font(.subheadline)
+                        } else {
+                            Text("All Users is not enabled").font(.subheadline)
                         }
                         
                         //  ################################################################################
@@ -242,38 +253,7 @@ struct PolicyScopeTabView: View {
                             .padding()
                         }
                         
-                        //  ################################################################################
-                        //              Clear Scope
-                        //  ################################################################################
-                        
-                        Divider()
-                        
                         HStack {
-                            
-                            Button(action: {
-                                showingWarningClearScope = true
-                                progress.showProgress()
-                                progress.waitForABit()
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "eraser")
-                                    Text("Clear Scope")
-                                }
-                                .alert(isPresented: $showingWarningClearScope) {
-                                    Alert(
-                                        title: Text("Caution!"),
-                                        message: Text("This action will clear the policy scoping.\n You will need to rescope in order to deploy"),
-                                        primaryButton: .destructive(Text("I understand!")) {
-                                            // Code to execute when "Yes" is tapped
-                                            networkController.clearScope(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
-                                            print("Yes tapped")
-                                        },
-                                        secondaryButton: .cancel()
-                                    )
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
                             
                             //  ################################################################################
                             //              scopeAllUsers
@@ -285,7 +265,7 @@ struct PolicyScopeTabView: View {
                                 progress.waitForABit()
                             }) {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "eraser")
+                                    //                                    Image(systemName: "eraser")
                                     Text("Enable All Users")
                                 }
                                 .alert(isPresented: $showingWarningAllUsers) {
@@ -304,6 +284,7 @@ struct PolicyScopeTabView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
                             
+                            
                             //  ################################################################################
                             //              scopeAllComputers
                             //  ################################################################################
@@ -314,7 +295,7 @@ struct PolicyScopeTabView: View {
                                 progress.waitForABit()
                             }) {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "eraser")
+                                    //                                    Image(systemName: "eraser")
                                     Text("Enable All Computers")
                                 }
                                 .alert(isPresented: $showingWarningAllComputers) {
@@ -333,13 +314,19 @@ struct PolicyScopeTabView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
                             
-                             Button(action: {
+                            
+                            //  ################################################################################
+                            //              scopeAllComputersAndUsers
+                            //  ################################################################################
+                            
+                            
+                            Button(action: {
                                 showingWarningAllComputers = true
                                 progress.showProgress()
                                 progress.waitForABit()
                             }) {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "eraser")
+                                    //                                    Image(systemName: "eraser")
                                     Text("Enable All Computers & Users")
                                 }
                                 .alert(isPresented: $showingWarningAllComputers) {
@@ -357,6 +344,110 @@ struct PolicyScopeTabView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.red)
                         }
+                        
+                        
+                        
+                        
+                        
+                            
+                            //  ################################################################################
+                            //  DISABLE           scopeDisableAllComputers
+                            //  ################################################################################
+                            
+                        HStack {
+                            
+                            Button(action: {
+                                showingWarningDisableAllComputers = true
+                                progress.showProgress()
+                                progress.waitForABit()
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "eraser")
+                                    Text("Disable All Computers")
+                                }
+                                .alert(isPresented: $showingWarningDisableAllComputers) {
+                                    Alert(
+                                        title: Text("Caution!"),
+                                        message: Text("This action will disable the policy scoping for all computers.\n This might cause the policy to stop running on many devices"),
+                                        primaryButton: .destructive(Text("I understand!")) {
+                                            // Code to execute when "Yes" is tapped
+                                            networkController.scopeDisableAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            print("Yes tapped")
+                                        },
+                                        secondaryButton: .cancel()
+                                    )
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            
+                            
+                            //  ################################################################################
+                            //              scopeDisableAllUsers
+                            //  ################################################################################
+                            
+                            Button(action: {
+                                showingWarningDisableAllUsers = true
+                                progress.showProgress()
+                                progress.waitForABit()
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "eraser")
+                                    Text("Disable All Users")
+                                }
+                                .alert(isPresented: $showingWarningDisableAllUsers) {
+                                    Alert(
+                                        title: Text("Caution!"),
+                                        message: Text("This action will disable the policy scoping for all users.\n This might cause the policy to stop running on many devices"),
+                                        primaryButton: .destructive(Text("I understand!")) {
+                                            // Code to execute when "Yes" is tapped
+                                            networkController.scopeDisableAllUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            print("Yes tapped")
+                                        },
+                                        secondaryButton: .cancel()
+                                    )
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            
+                            
+                            //  ################################################################################
+                            //              Clear Scope
+                            //  ################################################################################
+                            
+                            Divider()
+                            
+                            HStack {
+                                
+                                Button(action: {
+                                    showingWarningClearScope = true
+                                    progress.showProgress()
+                                    progress.waitForABit()
+                                }) {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "eraser")
+                                        Text("Clear Scope")
+                                    }
+                                    .alert(isPresented: $showingWarningClearScope) {
+                                        Alert(
+                                            title: Text("Caution!"),
+                                            message: Text("This action will clear the policy scoping.\n You will need to rescope in order to deploy"),
+                                            primaryButton: .destructive(Text("I understand!")) {
+                                                // Code to execute when "Yes" is tapped
+                                                networkController.clearScope(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
+                                                print("Yes tapped")
+                                            },
+                                            secondaryButton: .cancel()
+                                        )
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.red)
+                                
+                            }
+                        }
+                        
                     }
                 }
                         

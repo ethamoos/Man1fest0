@@ -325,7 +325,7 @@ struct PoliciesActionView: View {
                         
                         
                         Button(action: {
-                            // Ask for confirmation before executing the batch operation
+                            // Ask for confirmation before executing the batch action
                             showingWarningSetDP = true
                             progress.showProgress()
                             progress.waitForABit()
@@ -404,393 +404,7 @@ struct PoliciesActionView: View {
 //                        .frame(height: 50)
 //                    }
                     
-                    
-                    // ######################################################################
-                    //  Set Scoping - Group
-                    // ######################################################################
-
-                    Group {
-                        
-                        // ######################################################################
-                        //  Group picker
-                        // ######################################################################
-
-                        
-                        //                        Divider()
-                        
-                        // ######################################################################
-                        //  add selected groups
-                        // ######################################################################
-
-                        Divider()
-                        Text("Scoping").fontWeight(.bold)
-                        
-                        
-                        Divider()
-
-                        // ######################################################################
-                        //            Batch Scope All users and computers
-                        // ######################################################################
-
-                        HStack {
-                            
-                            Button(action: {
-                               showingWarningAllComputers = true
-                               progress.showProgress()
-                               progress.waitForABit()
-                           }) {
-                               HStack(spacing: 10) {
-                                   Image(systemName: "plus.circle")
-                                   Text("Scope To All Computers")
-                               }
-                               .alert(isPresented: $showingWarningAllComputers) {
-                                   Alert(
-                                       title: Text("Caution!"),
-                                       message: Text("This action will enable the policy scoping for all computers.\n This might cause the policy to run immediately to many devices"),
-                                       primaryButton: .destructive(Text("I understand!")) {
-                                           // Code to execute when "Yes" is tapped
-                                           networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                                           print("Yes tapped")
-                                       },
-                                       secondaryButton: .cancel()
-                                   )
-                               }
-                           }
-                           .buttonStyle(.borderedProminent)
-                           .tint(.red)
-                            
-                            Button(action: {
-                               showingWarningAllUsers = true
-                               progress.showProgress()
-                               progress.waitForABit()
-                           }) {
-                               HStack(spacing: 10) {
-                                   Image(systemName: "plus.circle")
-                                   Text("Scope To All Users")
-                               }
-                               .alert(isPresented: $showingWarningAllUsers) {
-                                   Alert(
-                                       title: Text("Caution!"),
-                                       message: Text("This action will enable the policy scoping for all users.\n This might cause the policy to run immediately to many devices"),
-                                       primaryButton: .destructive(Text("I understand!")) {
-                                           // Code to execute when "Yes" is tapped
-                                           networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                                         
-                                           print("Yes tapped")
-                                       },
-                                       secondaryButton: .cancel()
-                                   )
-                               }
-                           }
-                           .buttonStyle(.borderedProminent)
-                           .tint(.red)
-                            
-                            Button(action: {
-                                showingWarningAllComputersAndUsers = true
-                               progress.showProgress()
-                               progress.waitForABit()
-                           }) {
-                               HStack(spacing: 10) {
-                                   Image(systemName: "plus.circle")
-                                   Text("Scope To All Computers & Users")
-                               }
-                               .alert(isPresented: $showingWarningAllComputersAndUsers) {
-                                   Alert(
-                                       title: Text("Caution!"),
-                                       message: Text("This action will enable the policy scoping for all computers and all users.\n This might cause the policy to run immediately to many devices"),
-                                       primaryButton: .destructive(Text("I understand!")) {
-                                           // Code to execute when "Yes" is tapped
-                                           networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                                           networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                                           print("Yes tapped")
-                                       },
-                                       secondaryButton: .cancel()
-                                   )
-                               }
-                           }
-                           .buttonStyle(.borderedProminent)
-                           .tint(.red)
-                            
-                            Button(action: {
-                                showingWarningClearScope = true
-                               progress.showProgress()
-                               progress.waitForABit()
-                           }) {
-                               HStack(spacing: 10) {
-                                   Image(systemName: "eraser")
-                                   Text("Clear Scope")
-                               }
-                               .alert(isPresented: $showingWarningClearScope) {
-                                   Alert(
-                                       title: Text("Caution!"),
-                                       message: Text("This action will clear the policy scoping for all policies selected."),
-                                       primaryButton: .destructive(Text("I understand!")) {
-                                           // Code to execute when "Yes" is tapped
-                                           xmlController.clearScopeBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
-                                    
-                                           print("Yes tapped")
-                                       },
-                                       secondaryButton: .cancel()
-                                   )
-                               }
-                           }
-                           .buttonStyle(.borderedProminent)
-                           .tint(.red)
-                        }
-                        
-                        Text("Scope to Group").fontWeight(.bold)
-                        
-                        LazyVGrid(columns: layout.columns, spacing: 10) {
-                            Picker(selection: $computerGroupSelection, label:Label("Static Groups", systemImage: "person.3")
-                            ) {
-                                Text("No group selected").tag(nil as ComputerGroup?)
-                                ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
-                                    if group.isSmart != true {
-                                        Text(String(describing: group.name)).tag(group as ComputerGroup?)
-                                    }
-                                }
-                            }
-                            
-//                            Toggle(isOn: $allComputersStaticEnable) {
-//                                Text("All Computers")
-//                            }
-//                            .toggleStyle(.checkbox)
-                            
-                            Button(action: {
-                                
-                                progress.showProgress()
-                                progress.waitForABit()
-
-//            ################################################################################
-//            GROUPS - STATIC
-//            ################################################################################
-                              
-                                Task {
-                                    if let groupSelection = computerGroupSelection {
-                                        await updateScopeCompGroupSet(groupSelection: groupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: "true", all_computersStatus: allComputersStaticEnable)
-                                    } else {
-                                        print("No group selected for updateScopeCompGroupSet")
-                                    }
-                                }
-                                
-                            }) {
-                                Image(systemName: "plus.circle")
-                                Text("Update")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                        }
-                        
-                        LazyVGrid(columns: layout.columns, spacing: 10) {
-                            
-                            Picker(selection: $computerGroupSelection, label:Label("Smart Groups", systemImage: "person.3")
-                            ) {
-                                Text("No group selected").tag(nil as ComputerGroup?)
-                                ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
-                                    if group.isSmart == true {
-                                        Text(String(describing: group.name)).tag(group as ComputerGroup?)
-                                    }
-                                }
-                            }
-                            
-//                            Toggle(isOn: $allComputersSmartEnable) {
-//                                Text("All Computers")
-//                            }
-//                            .toggleStyle(.checkbox)
-                            
-                            Button(action: {
-                                
-                                progress.showProgress()
-                                progress.waitForABit()
-                            
-//            ################################################################################
-//            GROUPS - SMART
-//            ################################################################################
-                                
-                                Task {
-                                    if let groupSelection = computerGroupSelection {
-                                        await updateScopeCompGroupSet(groupSelection: groupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: "true", all_computersStatus: allComputersSmartEnable)
-                                    } else {
-                                        print("No group selected for updateScopeCompGroupSet")
-                                    }
-                                }
-                                
-                            }) {
-                                Image(systemName: "plus.circle")
-                                Text("Update")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                        }
-                    }
-                    
-                    //  ################################################################################
-                    //  LDAP SEARCH RESULTS - Picker 1
-                    //  ################################################################################
-                    
-                    Divider()
-                    LazyVGrid(columns: layout.columns, spacing: 10) {
-                        //                                            TextField("Filter", text: $allLdapServersFilter)
-                        Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Limitations:").bold()) {
-                            //                            Text("").tag("") //basically added empty tag and it solve the case
-                            ForEach(scopingController.allLdapCustomGroupsCombinedArray, id: \.self) { group in
-                                Text(String(describing: group.name))
-                                    .tag(group as LDAPCustomGroup?)
-                            }
-                        }
-                        
-                        //            ################################################################################
-                        //            Limitations - Set
-                        //            ################################################################################
-                        
-                        HStack(spacing:10) {
-                            
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                
-                                for eachItem in policiesSelection {
-                                    
-                                    let currentPolicyID = (eachItem.jamfId ?? 0)
-                                    layout.separationLine()
-                                    print("Button pressed")
-                                    print("Updating for \(eachItem.name)")
-                                    print("currentPolicyID is: \(currentPolicyID)")
-                                    print("jamfId is \(String(describing: eachItem.jamfId ?? 0))")
-                                    
-                                    Task {
-                                        await self.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID))
-                                    }
-                                }
-                            }) {
-                                Image(systemName: "plus.circle")
-                                Text("Add")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        
-                        //            ################################################################################
-                        //            Limitations - Clear
-                        //            ################################################################################
-                        
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            for eachItem in policiesSelection {
-                                
-                                let currentPolicyID = (eachItem.jamfId ?? 0)
-                                layout.separationLine()
-                                print("Button pressed")
-                                print("Updating for \(eachItem.name)")
-                                print("currentPolicyID is: \(currentPolicyID)")
-                                print("jamfId is \(String(describing: eachItem.jamfId ?? 0))")
-                                
-                                Task {
-                                    do {
-                                        let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(currentPolicyID), authToken: networkController.authToken)
-                                        
-                                        xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:currentPolicyID), currentPolicyAsXML: policyAsXML)
-                                    }
-                                }
-                                print("Test")
-                            }
-                        }) {
-                            Image(systemName: "minus.circle")
-                            Text("Clear Limitations")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                    }
                   
-//  ################################################################################
-//  Select Ldap group
-//  ################################################################################
-                    
-                    LazyVGrid(columns: layout.threeColumns, spacing: 20) {
-                        
-                        HStack {
-                            Text("Search Ldap")
-                            TextField("", text: $ldapSearch)
-                        }
-                        
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            Task {
-                                try await scopingController.getLdapGroupsSearch(server: server, search: ldapSearch, authToken: networkController.authToken)
-                            }
-                        }) {
-                            HStack(spacing:10) {
-                                Image(systemName: "magnifyingglass")
-                                withAnimation {
-                                    Text("Search")
-                                }
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                    }
-
-//  ################################################################################
-//                    Select Ldap server
-//  ################################################################################
-                    
-                    LazyVGrid(columns: layout.threeColumns, spacing: 20) {
-                        Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:").bold()) {
-                            Text("No server selected").tag(nil as LDAPServer?)
-                            ForEach(scopingController.allLdapServers, id: \.self) { server in
-                                Text(String(describing: server.name)).tag(server as LDAPServer?)
-                            }
-                        }
-                    }
-//  ################################################################################
-//  END
-//  ################################################################################
-                    
-                    
-                    //            ################################################################################
-                    //            Exclusions - Clear
-                    //            ################################################################################
-                    
-                    Divider()
-                    
-                    Text("Exclusions").fontWeight(.bold)
-                    
-                    Button(action: {
-                        
-                        showingWarningClearExclusions = true
-                        progress.showProgressView = true
-                        print("Set showProgressView to true")
-                        print(progress.showProgressView)
-                        progress.waitForABit()
-//                        print("Check processingComplete")
-//                        print(String(describing: networkController.processingComplete))
-                    }) {
-                        Text("Clear Exclusions")
-                    }
-                    .alert(isPresented: $showingWarningClearExclusions) {
-                        Alert(
-                            title: Text("Caution!"),
-                            message: Text("This action will remove any devices excluded from the current policy scoping.\n Policies may deploy immediately to devices previously excluded!"),
-                            primaryButton: .destructive(Text("I understand!")) {
-                                // Code to execute when "Yes" is tapped
-                                xmlController.clearExclusionsBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
-                                print("Yes tapped")
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                           
-                    LazyVGrid(columns: columns) {
-                    }
                 }
                 .padding()
                 
@@ -800,10 +414,58 @@ struct PoliciesActionView: View {
                         Text("Processing")
                             .padding()
                     }
+                    .padding()
                 } else {
                     Text("")
                 }
                 
+                // Add bottom TabView with two tabs: Scope and Packages
+                TabView {
+                    PoliciesActionScopeTab(
+                        policiesSelection: $policiesSelection,
+                        server: server,
+                        computerGroupSelection: $computerGroupSelection,
+                        computerGroupFilter: $computerGroupFilter,
+                        allComputersStaticEnable: $allComputersStaticEnable,
+                        allComputersSmartEnable: $allComputersSmartEnable,
+                        ldapSearchCustomGroupSelection: $ldapSearchCustomGroupSelection,
+                        ldapServerSelection: $ldapServerSelection,
+                        ldapSearch: $ldapSearch,
+                        onUpdateScopeCompGroupSet: { group, smartStatus, allComp in
+                            Task {
+                                await updateScopeCompGroupSet(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: smartStatus, all_computersStatus: allComp)
+                            }
+                        },
+                        onUpdatePolicyScopeLimitationsAuto: { group, policyID in
+                            Task {
+                                await updatePolicyScopeLimitationsAuto(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID)
+                            }
+                        },
+                        onClearLimitations: { policyID in
+                            Task {
+                                do {
+                                    let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkController.authToken)
+                                    xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
+                                } catch {
+                                    print("Error clearing limitations: \(error)")
+                                }
+                            }
+                        },
+                        onClearExclusions: {
+                            xmlController.clearExclusionsBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
+                        }
+                    )
+                    .tabItem {
+                        Label("Scope", systemImage: "person.3")
+                    }
+                    PoliciesActionPackagesTab()
+                        .tabItem {
+                            Label("Packages", systemImage: "shippingbox")
+                        }
+                }
+                 .frame(maxWidth: .infinity, maxHeight: 200)
+                 .padding()
+            
             } else {
                 
                 ProgressView {
@@ -971,3 +633,244 @@ struct PoliciesActionView: View {
 //        PoliciesActionView(server: server, username: <#String#>, password: <#String#>, selectedResourceType: ResourceType.policyDetail)
 //    }
 //}
+
+// PoliciesActionScopeTab with bindings and action closures
+struct PoliciesActionScopeTab: View {
+    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var scopingController: ScopingBrain
+    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var progress: Progress
+
+    @Binding var policiesSelection: Set<Policy>
+    var server: String
+    @Binding var computerGroupSelection: ComputerGroup?
+    @Binding var computerGroupFilter: String
+    @Binding var allComputersStaticEnable: Bool
+    @Binding var allComputersSmartEnable: Bool
+    @Binding var ldapSearchCustomGroupSelection: LDAPCustomGroup
+    @Binding var ldapServerSelection: LDAPServer?
+    @Binding var ldapSearch: String
+
+    // Action closures provided by the parent view
+    var onUpdateScopeCompGroupSet: (_ group: ComputerGroup, _ smartStatus: String, _ allComputersStatus: Bool) -> Void
+    var onUpdatePolicyScopeLimitationsAuto: (_ group: LDAPCustomGroup, _ policyID: String) -> Void
+    var onClearLimitations: (_ policyID: String) -> Void
+    var onClearExclusions: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Policies Action - Scope")
+                    .font(.headline)
+                Text("Controls for scoping, limitations and exclusions for selected policies.")
+                    .font(.subheadline)
+                Divider()
+
+                // Batch scope buttons (operate on policiesSelection)
+                HStack(spacing: 12) {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        // call networkController with current selection
+                        networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                    }) {
+                        Label("Scope To All Computers", systemImage: "plus.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                    }) {
+                        Label("Scope To All Users", systemImage: "plus.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                        networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                    }) {
+                        Label("Scope To All Computers & Users", systemImage: "plus.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+
+                    Button(action: {
+                        // Clear scope for selected policies via parent's closure
+                        onClearExclusions()
+                    }) {
+                        Label("Clear Scope", systemImage: "eraser")
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                }
+
+                Divider()
+
+                Text("Scope to Group").fontWeight(.bold)
+
+                // Static groups
+                LazyVGrid(columns: layout.columns, spacing: 10) {
+                    Picker(selection: $computerGroupSelection, label: Label("Static Groups", systemImage: "person.3")) {
+                        Text("No group selected").tag(nil as ComputerGroup?)
+                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}), id: \.self) { group in
+                            if group.isSmart != true {
+                                Text(group.name).tag(group as ComputerGroup?)
+                            }
+                        }
+                    }
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        if let group = computerGroupSelection {
+                            onUpdateScopeCompGroupSet(group, "false", allComputersStaticEnable)
+                        }
+                    }) {
+                        Label("Update", systemImage: "plus.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+
+                // Smart groups
+                LazyVGrid(columns: layout.columns, spacing: 10) {
+                    Picker(selection: $computerGroupSelection, label: Label("Smart Groups", systemImage: "person.3")) {
+                        Text("No group selected").tag(nil as ComputerGroup?)
+                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}), id: \.self) { group in
+                            if group.isSmart == true {
+                                Text(group.name).tag(group as ComputerGroup?)
+                            }
+                        }
+                    }
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        if let group = computerGroupSelection {
+                            onUpdateScopeCompGroupSet(group, "true", allComputersSmartEnable)
+                        }
+                    }) {
+                        Label("Update", systemImage: "plus.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+
+                // LDAP limitations
+                Divider()
+                Text("Limitations").fontWeight(.bold)
+                Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Limitations:")) {
+                    ForEach(scopingController.allLdapCustomGroupsCombinedArray, id: \.self) { group in
+                        Text(group.name).tag(group as LDAPCustomGroup?)
+                    }
+                }
+
+                HStack(spacing: 10) {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        for eachItem in policiesSelection {
+                            let currentPolicyID = String(describing: eachItem.jamfId ?? 0)
+                            onUpdatePolicyScopeLimitationsAuto(ldapSearchCustomGroupSelection, currentPolicyID)
+                        }
+                    }) {
+                        Label("Add", systemImage: "plus.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        for eachItem in policiesSelection {
+                            let currentPolicyID = String(describing: eachItem.jamfId ?? 0)
+                            onClearLimitations(currentPolicyID)
+                        }
+                    }) {
+                        Label("Clear Limitations", systemImage: "minus.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                }
+
+                // LDAP search
+                LazyVGrid(columns: layout.threeColumns, spacing: 20) {
+                    HStack {
+                        Text("Search Ldap")
+                        TextField("", text: $ldapSearch)
+                    }
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        Task { try await scopingController.getLdapGroupsSearch(server: server, search: ldapSearch, authToken: networkController.authToken) }
+                    }) {
+                        Label("Search", systemImage: "magnifyingglass")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+
+                // LDAP servers
+                LazyVGrid(columns: layout.threeColumns, spacing: 20) {
+                    Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:").bold()) {
+                        Text("No server selected").tag(nil as LDAPServer?)
+                        ForEach(scopingController.allLdapServers, id: \.self) { srv in
+                            Text(srv.name).tag(srv as LDAPServer?)
+                        }
+                    }
+                }
+
+                // Exclusions
+                Divider()
+                Text("Exclusions").fontWeight(.bold)
+                Button(action: {
+                    progress.showProgressView = true
+                    onClearExclusions()
+                }) {
+                    Text("Clear Exclusions")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+
+                Spacer()
+            }
+            .padding()
+        }
+    }
+}
+
+struct PoliciesActionPackagesTab: View {
+    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var progress: Progress
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Policies Action - Packages")
+                .font(.headline)
+            Text("Manage package assignments for selected policies.")
+                .font(.subheadline)
+            Divider()
+            HStack {
+                Button("Add Package") {
+                    progress.showProgress()
+                    progress.waitForABit()
+                }
+                .buttonStyle(.borderedProminent)
+                Button("Remove Package") {
+                    progress.showProgress()
+                    progress.waitForABit()
+                }
+                .buttonStyle(.bordered)
+            }
+            Spacer()
+        }
+        .padding()
+    }
+}
