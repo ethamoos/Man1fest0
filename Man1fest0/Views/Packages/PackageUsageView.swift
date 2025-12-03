@@ -225,9 +225,9 @@ struct PackageUsageView: View {
                 Button(action: {
                     
                     networkController.allPoliciesDetailed.removeAll()
-                    
-                    networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                    
+                    Task {
+                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    }
                 }) {
                     Text("Refresh Policy Data")
                 }
@@ -266,8 +266,9 @@ struct PackageUsageView: View {
             if networkController.fetchedDetailedPolicies == false {
                 
                 print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-                networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                
+                Task {
+                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                }
                 if networkController.allPoliciesDetailed.count == networkController.policies.count {
                     print("Detailed policies have downloaded - analyse usage")
                

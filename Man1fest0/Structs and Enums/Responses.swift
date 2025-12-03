@@ -201,6 +201,12 @@ struct PackageDetailed: Codable, Hashable, Identifiable {
 struct TriggeringFiles: Codable {
 }
 
+// MARK: - SelfServiceIcon
+struct SelfServiceIcon: Codable, Hashable  {
+    let filename: String?
+    let id: Int?
+    let uri: String?
+}
 
 //MARK: - SCRIPTS
 struct Scripts: Codable, Identifiable, Hashable {
