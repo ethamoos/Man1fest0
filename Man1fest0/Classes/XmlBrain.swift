@@ -2082,7 +2082,8 @@ class XmlBrain: ObservableObject {
         self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
 //        return self.currentPolicyAsXML
 //        DEBUG
-//                    print("Policy as XML is:\(self.currentPolicyAsXML ?? ""))")
+        separationLine()
+                    print("Policy as XML is:\(self.currentPolicyAsXML ?? ""))")
 
         return (String(data: data, encoding: .utf8)!)
 

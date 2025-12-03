@@ -117,14 +117,19 @@ struct PolicyScopeTabView: View {
     @State private var showingWarningClearLimit = false
     
     @State private var showingWarningAllUsers = false
+    @State private var showingWarningDisableAllUsers = false
     
     @State private var showingWarningAllComputers = false
+    @State private var showingWarningDisableAllComputers = false
     
     @State private var showingWarningClearComputers = false
     
     @State private var showingWarningClearComputerGroups = false
     
     @State private var showingWarningAllComputersAndUsers = false
+    @State private var showingWarningDisableAllComputersAndUsers = false
+    
+    
     
 
     // ########################################################################################
@@ -163,13 +168,19 @@ struct PolicyScopeTabView: View {
                     VStack(alignment: .leading) {
 
                         //  ################################################################################
-                        //  Show All Computers scoping
+                        //  Show All Computers and users scoping
                         //  ################################################################################
                         
                         if networkController.policyDetailed?.scope?.allComputers == true {
                             Text("Scoped To All Computers").font(.subheadline)
                         } else {
                             Text("All Computers is not enabled").font(.subheadline)
+                        }
+                          
+                        if networkController.policyDetailed?.scope?.all_jss_users == true {
+                            Text("Scoped To All Users").font(.subheadline)
+                        } else {
+                            Text("All Users is not enabled").font(.subheadline)
                         }
                         
                         //  ################################################################################
@@ -346,7 +357,7 @@ struct PolicyScopeTabView: View {
                         HStack {
                             
                             Button(action: {
-                                showingWarningAllComputers = true
+                                showingWarningDisableAllComputers = true
                                 progress.showProgress()
                                 progress.waitForABit()
                             }) {
@@ -354,7 +365,7 @@ struct PolicyScopeTabView: View {
                                     Image(systemName: "eraser")
                                     Text("Disable All Computers")
                                 }
-                                .alert(isPresented: $showingWarningAllComputers) {
+                                .alert(isPresented: $showingWarningDisableAllComputers) {
                                     Alert(
                                         title: Text("Caution!"),
                                         message: Text("This action will disable the policy scoping for all computers.\n This might cause the policy to stop running on many devices"),
@@ -376,7 +387,7 @@ struct PolicyScopeTabView: View {
                             //  ################################################################################
                             
                             Button(action: {
-                                showingWarningAllUsers = true
+                                showingWarningDisableAllUsers = true
                                 progress.showProgress()
                                 progress.waitForABit()
                             }) {
@@ -384,7 +395,7 @@ struct PolicyScopeTabView: View {
                                     Image(systemName: "eraser")
                                     Text("Disable All Users")
                                 }
-                                .alert(isPresented: $showingWarningAllUsers) {
+                                .alert(isPresented: $showingWarningDisableAllUsers) {
                                     Alert(
                                         title: Text("Caution!"),
                                         message: Text("This action will disable the policy scoping for all users.\n This might cause the policy to stop running on many devices"),
