@@ -51,6 +51,8 @@ struct PoliciesActionView: View {
     @State private var policiesSelection = Set<Policy>()
     
     @State var searchText = ""
+    // Focus for the inline search field so it can be focused via Cmd-F
+    @FocusState private var searchFieldFocused: Bool
     
     @State var status: Bool = true
     
@@ -72,6 +74,8 @@ struct PoliciesActionView: View {
     
     @State private var showingWarningClearScope = false
 
+    // Confirmation for Set DP action
+    @State private var showingWarningSetDP = false
     
     
     //  ########################################################################################
@@ -123,19 +127,39 @@ struct PoliciesActionView: View {
         //              ################################################################################
         
         VStack(alignment: .leading) {
-            
+
             if networkController.policies.count > 0 {
+
+                // Inline search field (visible in the view) — useful when .searchable is disabled in the toolbar
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    TextField("Search policies", text: $searchText)
+                        .focused($searchFieldFocused)
+                        .accessibilityLabel("Search policies")
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(minWidth: 200)
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .help("Clear search")
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding([.leading, .trailing, .top])
                 
                 List(searchResults, id: \.self, selection: $policiesSelection) { policy in
-                    
+
                     HStack {
                         Image(systemName:"text.justify")
                         Text("\(policy.name)")
                     }
                     .foregroundColor(.blue)
                 }
-                .searchable(text: $searchText)
-                .onReceive([self.policiesSelection].publisher.first()) { (value) in
+                // .searchable removed to avoid multiple SwiftUI search toolbar items in the same window
+                 .onReceive([self.policiesSelection].publisher.first()) { (value) in
                     
                     //                    print("policiesSelection List is:\(value)")
                     print("getDetailedPolicyHasRun is:\(getDetailedPolicyHasRun)")
@@ -179,6 +203,12 @@ struct PoliciesActionView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    // Hidden shortcut to focus the inline search (Cmd-F)
+                    Button(action: { searchFieldFocused = true }) {
+                        EmptyView()
+                    }
+                    .keyboardShortcut("f", modifiers: [.command])
+                    .hidden()
                     //                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 }
                 
@@ -274,17 +304,17 @@ struct PoliciesActionView: View {
                             
                             progress.showProgress()
                             progress.waitForABit()
-                            
+
                             for eachItem in policiesSelection {
-                                
+
                                 let currentPolicyID = (eachItem.jamfId ?? 0)
-                                
+
                                 print("Download file for \(eachItem.name)")
                                 print("jamfId is \(String(describing: eachItem.jamfId ?? 0))")
-                                
+
                                 ASyncFileDownloader.downloadFileAsyncAuth( objectID: currentPolicyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in}
                             }
-                            
+
                         }) {
                             Image(systemName: "plus.circle")
                             Text("Download")
@@ -292,7 +322,34 @@ struct PoliciesActionView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.yellow)
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
-
+                        
+                        
+                        Button(action: {
+                            // Ask for confirmation before executing the batch operation
+                            showingWarningSetDP = true
+                            progress.showProgress()
+                            progress.waitForABit()
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "archivebox")
+                                Text("Set DP to Default")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .alert(isPresented: $showingWarningSetDP) {
+                            Alert(
+                                title: Text("Caution!"),
+                                message: Text("This action will set the distribution point to default for all selected policies."),
+                                primaryButton: .destructive(Text("I understand!")) {
+                                    print("Confirmed: calling xmlController.batchSetDPToDefault for selection: \(policiesSelection.map{ $0.name })")
+                                    xmlController.batchSetDPToDefault(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                                    progress.endProgress()
+                                },
+                                secondaryButton: .cancel({ progress.endProgress() })
+                            )
+                        }
+                        
                     }
                     
                     // ######################################################################
@@ -329,18 +386,23 @@ struct PoliciesActionView: View {
                     //              UPDATE POLICY - COMPLETE
                     // ######################################################################
 
-                    Divider()
-                    VStack(alignment: .leading) {
-                        
-                        Text("Selections").fontWeight(.bold)
-                        
-                        List(Array(policiesSelection), id: \.self) { policy in
-                            
-                            Text(policy.name )
-                            
-                        }
-                        .frame(height: 50)
-                    }
+                    // ######################################################################
+                    //              Show selections
+                    // ######################################################################
+
+                    
+//                    Divider()
+//                    VStack(alignment: .leading) {
+//
+//                        Text("Selections").fontWeight(.bold)
+//
+//                        List(Array(policiesSelection), id: \.self) { policy in
+//
+//                            Text(policy.name )
+//
+//                        }
+//                        .frame(height: 50)
+//                    }
                     
                     
                     // ######################################################################

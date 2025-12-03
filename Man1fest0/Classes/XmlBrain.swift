@@ -897,7 +897,7 @@ class XmlBrain: ObservableObject {
                     print("resourceType is set as:\(resourceType)")
                     // print("xml is set as:\(xml)")
                     sendRequestAsXML(url: url,authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT" )
-                    //                    appendStatus("Connecting to \(url)...")
+                    // appendStatus("Connecting to \(url)...")
                 }
             }
         }
@@ -1130,7 +1130,7 @@ class XmlBrain: ObservableObject {
     // addPackageToPolicy
     // ######################################################################################
     
-    func addPackageToPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, packageName: String, packageId: String,policyId: String, resourceType: ResourceType, newPolicyFlag: Bool) {
+    func addPackageToPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, server: String, packageName: String, packageId: String,policyId: String, resourceType: ResourceType, newPolicyFlag: Bool, action: String,fut: String, feu: String) {
         
         //        if newPolicyFlag == false {
         //            self.separationLine()
@@ -1164,7 +1164,7 @@ class XmlBrain: ObservableObject {
         let packages = xmlContent.root["package_configuration"]["packages"].addChild(name: "package")
         packages.addChild(name: "id", value: packageId)
         packages.addChild(name: "name", value: packageName)
-        packages.addChild(name: "action", value: "Install")
+        packages.addChild(name: "action", value: action)
         packages.addChild(name: "fut", value: "false")
         packages.addChild(name: "feu", value: "false")
         packages.addChild(name: "update_autorun", value: "false")
@@ -1657,8 +1657,7 @@ class XmlBrain: ObservableObject {
     //   addSelectedPackagesToPolicy
     //   #################################################################################
     
-    func addSelectedPackagesToPolicy(selection: Set<Package>, authToken: String, server: String, xmlContent: AEXMLDocument, policyId: String) {
-        
+    func addSelectedPackagesToPolicy(selection: Set<Package>, authToken: String, server: String, xmlContent: AEXMLDocument, policyId: String, action: String, fut: String, feu: String) {
         
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
@@ -1682,7 +1681,7 @@ class XmlBrain: ObservableObject {
                     print("Current currentPackageIdInt is:\(String(describing: self.currentPackageIdInt))")
                     print("Current currentPackageNameString is:\(String(describing: self.currentPackageNameString))")
                     print("Adding package:\(eachPackage.name) to list")
-                    self.addPackageToPolicy(xmlContent: self.aexmlDoc, xmlContentString: "", authToken: authToken, server: server, packageName: currentPackageNameString, packageId: String(describing: currentPackageIdInt), policyId: policyId, resourceType: ResourceType.policyDetail, newPolicyFlag: true)
+                    self.addPackageToPolicy(xmlContent: self.aexmlDoc, xmlContentString: "", authToken: authToken, server: server, packageName: currentPackageNameString, packageId: String(describing: currentPackageIdInt), policyId: policyId, resourceType: ResourceType.policyDetail, newPolicyFlag: true, action: action, fut: fut, feu: feu)
                 }
             }
             
@@ -1772,19 +1771,19 @@ class XmlBrain: ObservableObject {
         readXMLDataFromString(xmlContent: xmlContent)
         if self.aexmlDoc.name.isEmpty != true {
             separationLine()
-            print("Running setPolicyTriggers - xmlDoc available:\(xmlContent)")
+//            print("Running setPolicyTriggers - xmlDoc available:\(xmlContent)")
             let wholeDoc = aexmlDoc.root
             let policyGeneral = aexmlDoc.root["general"]
-            //            let policyID = policyGeneral["id"].last!
-            //            let policyName = policyGeneral["name"].last!
+
             //    #################################################################################
             //        ADD NEW STRINGS
             //    #################################################################################
             separationLine()
             //            print("Policy name is:\(policyName)")
             print("Policy id is:\(itemIDString)")
+            print("Update all triggers")
             
-            if trigger_checkin == true {
+//            if trigger_checkin == true {
                 self.separationLine()
                 print("Remove current trigger_checkin")
                 let _trigger_checkin = policyGeneral["trigger_checkin"].last!
@@ -1792,11 +1791,18 @@ class XmlBrain: ObservableObject {
                 _trigger_checkin.removeFromParent()
                 policyGeneral.addChild(name: "trigger_checkin", value: String(describing: trigger_checkin))
                 print("Setting trigger_checkin as:\(trigger_checkin)")
-            } else {
-                print("trigger_checkin is set as false")
-            }
+//            } else {
+//                print("trigger_checkin is set as false")
+//                self.separationLine()
+//                print("Remove current trigger_checkin")
+//                let _trigger_checkin = policyGeneral["trigger_checkin"].last!
+//                print("Removing:\(_trigger_checkin.xml)")
+//                _trigger_checkin.removeFromParent()
+//                policyGeneral.addChild(name: "trigger_checkin", value: String(describing: trigger_checkin))
+//                print("Setting trigger_checkin as:\(trigger_checkin)")
+//            }
             
-            if trigger_login == true {
+//            if trigger_login == true {
                 self.separationLine()
                 print("Remove current trigger_login")
                 let _trigger_login = policyGeneral["trigger_login"].last!
@@ -1804,11 +1810,11 @@ class XmlBrain: ObservableObject {
                 _trigger_login.removeFromParent()
                 policyGeneral.addChild(name: "trigger_login", value: String(describing: trigger_login))
                 print("Setting trigger_login as:\(trigger_login)")
-            } else {
-                print("trigger_login is set as false")
-            }
+//            } else {
+//                print("trigger_login is set as false")
+//            }
             
-            if trigger_startup == true {
+//            if trigger_startup == true {
                 self.separationLine()
                 print("Remove current trigger_startup")
                 let _trigger_startup = policyGeneral["trigger_startup"].last!
@@ -1816,11 +1822,11 @@ class XmlBrain: ObservableObject {
                 _trigger_startup.removeFromParent()
                 policyGeneral.addChild(name: "trigger_startup", value: String(describing: trigger_startup))
                 print("Setting trigger_startup as:\(trigger_startup)")
-            } else {
-                print("trigger_startup is set as false")
-            }
+//            } else {
+//                print("trigger_startup is set as false")
+//            }
             
-            if trigger_enrollment_complete == true {
+//            if trigger_enrollment_complete == true {
                 self.separationLine()
                 print("Remove current trigger_enrollment_complete")
                 let _trigger_enrollment_complete = policyGeneral["trigger_enrollment_complete"].last!
@@ -1828,9 +1834,9 @@ class XmlBrain: ObservableObject {
                 _trigger_enrollment_complete.removeFromParent()
                 policyGeneral.addChild(name: "trigger_enrollment_complete", value: String(describing: trigger_enrollment_complete))
                 print("Setting trigger_enrollment_complete as:\(trigger_enrollment_complete)")
-            } else {
-                print("trigger_enrollment_complete is set as false")
-            }
+//            } else {
+//                print("trigger_enrollment_complete is set as false")
+//            }
             
             if trigger_other != "" {
                 self.separationLine()
@@ -2628,7 +2634,8 @@ class XmlBrain: ObservableObject {
 //    ICONS
     
     func updateIconBatch(selectedPoliciesInt: [Int?], server: String,authToken: String, iconFilename: String, iconID: String, iconURI: String) {
-        
+        self.separationLine()
+        print("Running updateIconBatch")
         for eachItem in selectedPoliciesInt {
             let currentPolicyID = (eachItem ?? 0)
             self.separationLine()
@@ -2874,6 +2881,66 @@ class XmlBrain: ObservableObject {
             print("removeExclusions request failed")
         }
     }
+    
+    
+    
+    
+    //    #################################################################################
+    //    Set distribution point to default
+    //    #################################################################################
+    
+    func setDPToDefault(server: String, policyID: String, authToken: String) {
+        
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
+        
+        var xml: String
+        xml = """
+                    <policy>
+                        <general>
+                            <override_default_settings>
+                                <distribution_point/>
+                                <force_afp_smb>false</force_afp_smb>
+                                <sus>default</sus>                               
+                            </override_default_settings>
+                        </general>
+                        <package_configuration>
+                            <distribution_point>default</distribution_point>
+                        </package_configuration>
+                    </policy>
+       """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Setting distribution point to default for policyID:\(policyID)")
+                print("xml is set as:\(xml)")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
+            }
+        }
+        else {
+            print("setDPToDefault request failed")
+        }
+    }
+    
+    
+    //    #################################################################################
+    //    batchUpdateDPSelectedPolicies
+    //    #################################################################################
+    
+    
+    func batchSetDPToDefault(policiesSelection: Set<Policy>, server: String, authToken: String) {
+        self.separationLine()
+        print("Running: batchSetDPToDefault")
+        for eachItem in policiesSelection {
+            self.separationLine()
+            let jamfID: Int = eachItem.jamfId ?? 0
+            print("Current jamfID is:\(String(describing: jamfID))")
+            self.setDPToDefault(server: server, policyID: String(describing: jamfID), authToken: authToken )
+        }
+    }
+    
+    
     
     
 }

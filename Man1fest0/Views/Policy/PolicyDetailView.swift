@@ -185,10 +185,16 @@ struct PolicyDetailView: View {
                     Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")")
+                    Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")\n")
+                    
+                    
+                    if networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
+                        
+                        Text("Distribution Point :\t\t\t\(networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
+                    }
                     
                     if pushTriggerActiveWarning == true {
-                        Text("⚠️ Push Trigger Active! ⚠️").foregroundColor(.red)
+                        Text("⚠️ Push Trigger Active! ⚠️\n").foregroundColor(.red)
                     }
                     
                     
@@ -611,16 +617,13 @@ struct PolicyDetailView: View {
                    pushTriggerActiveWarning = false
                    print("Push trigger has been deactivated")
                }
-                
-                
-                
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
             
             Task {
                 print("getPolicyAsXML - running get policy as xml function")
-                try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                _ = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
             }
             
             if networkController.categories.count <= 1 {
@@ -654,7 +657,7 @@ struct PolicyDetailView: View {
                     try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
                 }
             }
-        
+          
           
          
           
@@ -667,6 +670,26 @@ struct PolicyDetailView: View {
                 }
         }
     }
+
+        // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
+        HStack {
+            Spacer()
+            Button(action: {
+                // Use the current URL provided by the network controller
+                let urlToOpen = networkController.currentURL
+                print("Opening URL: \(urlToOpen)")
+                layout.openURL(urlString: urlToOpen)
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "safari")
+                    Text("Open in Browser")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .padding(.top, 6)
+            Spacer()
+        }
         .padding()
         .textSelection(.enabled)
 }

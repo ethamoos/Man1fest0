@@ -87,11 +87,12 @@ struct CreatePolicyView: View {
     
     @State var selectedComputer: Computer = Computer(id: 0, name: "")
     
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Selection IDs used by Pickers to avoid mismatched tag/selection warnings
+    @State var selectedCategoryId: Int? = nil
     
-    @State var selectedDepartment: Department = Department(jamfId: 0, name: "")
+    @State var selectedDepartmentId: Int? = nil
     
-    @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
+    @State var selectedScriptId: Int? = nil
     
     @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
     
@@ -101,7 +102,8 @@ struct CreatePolicyView: View {
     
     @State var selectedIconString = ""
     
-    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
+    // Use optional ID selection for icon picker
+    @State var selectedIconId: Int? = nil
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
@@ -152,22 +154,20 @@ struct CreatePolicyView: View {
         //              ################################################################################
 #if os(macOS)
         .toolbar {
-
-            Button(action: {
-                progress.showProgress()
-                progress.waitForABit()
-                print("Refresh")
-                print("Icon selection is:\(String(describing: selectedIcon?.id))")
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                    networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-                    networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                    networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
-                }
-            }) {
-                HStack(spacing: 10) {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Refresh")
+            ToolbarItem(placement: .automatic) {
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    print("Refresh")
+                    print("Icon selection id is:\(String(describing: selectedIconId))")
+                    Task {
+                        networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                        networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                        networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                        networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                    }
+                }) {
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
             }
         }
@@ -206,25 +206,25 @@ struct CreatePolicyView: View {
 //                    HStack {
 //                        Image(systemName:"hammer")
 //                        TextField("Policy Name", text: $newPolicyName)
-//                        
+//
 //                        Button(action: {
-//                            
+//
 //                            progress.showProgress()
 //                            progress.waitForABit()
-//                            
+//
 //                            xmlController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
-//                            
-//                            
+//
+//
 //                            //
 //                            xmlController.addCategoryToPolicy(xmlContent: xmlController.aexmlDoc.xml, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
-//                            
+//
 //                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
-//                            
+//
 //                            if createDepartmentIsChecked == true {
 //                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
 //                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
 //                            }
-//                            
+//
 //                            layout.separationLine()
 //                            print("Creating New Policy:\(newPolicyName)")
 //                            print("Category:\(selectedCategory.name)")
@@ -236,7 +236,7 @@ struct CreatePolicyView: View {
 //                        }
 //                        .buttonStyle(.borderedProminent)
 //                        .tint(.blue)
-//                        
+//
 //                        Toggle(isOn: $createDepartmentIsChecked) {
 //                            Text("New Department")
 //                        }
@@ -250,21 +250,36 @@ struct CreatePolicyView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken, server: server, policyName: newPolicyName, policyID: newPolicyId, scriptName: scriptName, scriptID: scriptID, packageName: packageName, packageID: packageID, SelfServiceEnabled: enableSelfService, department: selectedDepartment.name, category: selectedCategory.name, enabledStatus: enableDisable,iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""))
+                            // Resolve selection values from the networkController arrays using the selected IDs
+                            // Find the category by jamfId (Int) which is what the Picker tags use
+                            let categoryNameLocal = networkController.categories.first(where: { $0.jamfId == selectedCategoryId })?.name ?? ""
+                            let departmentNameLocal = networkController.departments.first(where: { $0.jamfId == selectedDepartmentId })?.name ?? ""
+                            let iconLocal = networkController.allIconsDetailed.first(where: { $0.id == selectedIconId })
+                            let iconIdString = String(iconLocal?.id ?? 0)
+                            let iconNameLocal = iconLocal?.name ?? ""
+                            let iconUrlLocal = iconLocal?.url ?? ""
+                            let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
+                            let scriptNameLocal = scriptLocal?.name ?? ""
+                            let scriptIdString = String(scriptLocal?.jamfId ?? 0)
                             
-                            
-//                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
-//                            if createDepartmentIsChecked == true {
-//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-//                            }
+                            xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken,
+                                                                  server: server,
+                                                                  policyName: newPolicyName,
+                                                                  policyID: newPolicyId,
+                                                                  scriptName: scriptNameLocal,
+                                                                  scriptID: scriptIdString,
+                                                                  packageName: packageName,
+                                                                  packageID: packageID,
+                                                                  SelfServiceEnabled: enableSelfService,
+                                                                  department: departmentNameLocal,
+                                                                  category: categoryNameLocal,
+                                                                  enabledStatus: enableDisable,
+                                                                  iconId: iconIdString,
+                                                                  iconName: iconNameLocal,
+                                                                  iconUrl: iconUrlLocal)
                             
                             layout.separationLine()
                             print("Creating New Policy:\(newPolicyName)")
-//                            print("Category:\(selectedCategory.name)")
-//                            print("Department:\(selectedDepartment.name)")
-                            //                            print("xml is:\(policyController.newPolicyAsXML)")
-                            //                            print("authToken is:\(networkController.authToken)")
                         }) {
                             Text("Create Policy")
                         }
@@ -284,7 +299,7 @@ struct CreatePolicyView: View {
                 }
 
 //                LazyVGrid(columns: layout.columnsFixed, spacing: 5) {
-//                    
+//
 //                    VStack(alignment: .leading) {
 //                        Text("Note: All Fields Must Be Filled")
 //                    }
@@ -320,9 +335,9 @@ struct CreatePolicyView: View {
             Divider()
             
 //            LazyVGrid(columns: column, spacing: 30) {
-//                
+//
 //                VStack(alignment: .leading) {
-//                    
+//
 //                    Text("Icons").bold()
                     //#if os(macOS)
                     //                List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
@@ -369,21 +384,21 @@ struct CreatePolicyView: View {
         // ##########################################################################################
         
             LazyVGrid(columns: columns, spacing: 30) {
-                Picker(selection: $selectedIcon, label: Text("Icon:")) {
-                    Text("").tag("") //basically added empty tag and it solve the case
-                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-                        
-                            HStack {
-                                Text(String(describing: icon.name))
-                                AsyncImage(url: URL(string: icon.url )) { image in
-                                    image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
-                                } placeholder: {
-                                    //                        Color.red
-                                }
+                Picker(selection: $selectedIconId, label: Text("Icon:")) {
+                    ForEach(networkController.allIconsDetailed, id: \.id) { icon in
+                        HStack {
+                            Text(icon.name)
+                            AsyncImage(url: URL(string: icon.url )) { image in
+                                image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
+                            } placeholder: {
                             }
-
-//                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black).tag(icon?.name)
-
+                        }
+                        .tag(icon.id)
+                    }
+                }
+                .onChange(of: networkController.allIconsDetailed) { newIcons in
+                    if selectedIconId == nil {
+                        selectedIconId = newIcons.first?.id
                     }
                 }
             }
@@ -395,9 +410,15 @@ struct CreatePolicyView: View {
 
             Group {
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedCategory, label: Text("Category")) {
-                        ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
+                    Picker(selection: $selectedCategoryId, label: Text("Category")) {
+                        // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
+                        ForEach(networkController.categories, id: \.jamfId) { category in
+                            Text(category.name).tag(category.jamfId)
+                        }
+                    }
+                    .onChange(of: networkController.categories) { newCategories in
+                        if selectedCategoryId == nil {
+                            selectedCategoryId = newCategories.first?.jamfId
                         }
                     }
                 }
@@ -410,9 +431,14 @@ struct CreatePolicyView: View {
 
             Group {
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedDepartment, label: Text("Department:")) {
-                        ForEach(networkController.departments, id: \.self) { department in
-                            Text(String(describing: department.name)).tag(department.name)
+                    Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
+                        ForEach(networkController.departments, id: \.jamfId) { department in
+                            Text(department.name).tag(department.jamfId)
+                        }
+                    }
+                    .onChange(of: networkController.departments) { newDepartments in
+                        if selectedDepartmentId == nil {
+                            selectedDepartmentId = newDepartments.first?.jamfId
                         }
                     }
                 }
@@ -420,122 +446,33 @@ struct CreatePolicyView: View {
             Divider()
 
             Group {
-                
-                LazyVGrid(columns: columns, spacing: 20) {
-                    Picker(selection: $selectedScript, label: Text("Scripts")) {
-                        ForEach(networkController.scripts, id: \.self) { script in
-                            Text(String(describing: script.name))
+                 
+                 LazyVGrid(columns: columns, spacing: 20) {
+                    Picker(selection: $selectedScriptId, label: Text("Scripts")) {
+                        ForEach(networkController.scripts, id: \.jamfId) { script in
+                            Text(script.name).tag(script.jamfId)
                         }
                     }
-                }
-                
-                // ######################################################################################
-                //                        Script parameters
-                // ######################################################################################
-                
-                LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 5) {
-                    
-                    HStack(spacing: 20) {
-                        TextField("Parameter 4", text: $scriptParameter4)
-                        TextField("Parameter 5", text: $scriptParameter5)
-                        TextField("Parameter 6", text: $scriptParameter6)
-                    }
-                }
-                Divider()
-
-#if os(macOS)
-                VStack(alignment: .leading) {
-                    
-                    LazyVGrid(columns: layout.columnsFlexAdaptiveMedium, spacing: 20) {
-                        
-                        HStack {
-                            Button(action: {
-                                let openURL = importExportBrain.showOpenPanel()
-                                print("openURL is:\(String(describing: openURL))")
-                                if (openURL != nil) {
-                                    let path = openURL!.path
-                                    do {
-                                        print("Data imported - setting as importedString")
-                                        importExportBrain.importedString = try String(contentsOfFile: path, encoding: .ascii)
-                                        print(importExportBrain.importedString)
-                                    }
-                                    catch let error {
-                                        print("Something went wrong: \(error)")
-                                    }
-                                }
-                            }, label: {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.up")
-                                    Text("Select File")
-                                }
-                            })
-                            .buttonStyle(.borderedProminent)
-                            .tint(.yellow)
-                            .shadow(color: .gray, radius: 2, x: 0, y: 2)
-
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                policyController.clonePolicy(xmlContent: importExportBrain.importedString, server: server, policyName: newPolicyName, authToken: networkController.authToken )
-                                layout.separationLine()
-                                print("Creating New Policy:\(newPolicyName)")
-                            }) {
-                                Text("Import Policy")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
+                    .onChange(of: networkController.scripts) { newScripts in
+                        if selectedScriptId == nil {
+                            selectedScriptId = newScripts.first?.jamfId
                         }
                     }
-                }
-                #endif
+                 }
+                 
+                 // ######################################################################################
             }
-                
-                Divider()
-                
-    // ######################################################################################
-    //                        Create New Department
-    // ######################################################################################
-                
-//            VStack(alignment: .leading) {
-//                
-//                LazyVGrid(columns: layout.columnsAdaptive, spacing: 20) {
-//                    
-//                    HStack {
-//                        Image(systemName:"hammer")
-//                        Text("Department").bold()
-//                        TextField("Department Name", text: $newPolicyName)
-//                    
-//                    Button(action: {
-//                        
-//                        progress.showProgress()
-//                        progress.waitForABit()
-//                        
-//                        networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-//                        
-//                        networkController.separationLine()
-//                        print("Creating new department:\(newPolicyName)")
-//                        
-//                    }) {
-//                        Text("Create")
-//                    }
-//                    .buttonStyle(.borderedProminent)
-//                    .tint(.blue)
-//                    }
-//
-//                }
-//            }
         }
-        
+
         // ######################################################################################
         //                        onAppear
         // ######################################################################################
-        
         .onAppear {
             print("CreateView appeared - connecting")
             handleConnect()
         }
         .padding()
-        
+
         if progress.showProgressView == true {
             ProgressView {
                 Text("Processing")
@@ -545,7 +482,7 @@ struct CreatePolicyView: View {
             Text("")
         }
     }
-    
+
     func handleConnect() {
         print("Running handleConnect.")
         networkController.fetchStandardData()
@@ -557,7 +494,7 @@ struct CreatePolicyView: View {
             print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
         }
     }
-    
+
     var searchResults: [Package] {
         if searchText.isEmpty {
             return networkController.packages
@@ -566,9 +503,3 @@ struct CreatePolicyView: View {
         }
     }
 }
-
-
-
-//#Preview {
-//    CreatePolicyView()
-//}

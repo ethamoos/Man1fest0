@@ -19,7 +19,7 @@ struct PolicyDetailGeneralTabView: View {
     var server: String
     var selectedPoliciesInt: [Int?]
     @State var iconFilter = ""
-
+    
     
     //  ####################################################################################
     //  BOOLS
@@ -34,11 +34,15 @@ struct PolicyDetailGeneralTabView: View {
     @State private var showingWarningClearScripts = false
     
     //  ####################################################################################
-    //    Category SELECTION
+    //    Category SELECTION (use jamfId Int for Picker tags)
     //  ####################################################################################
     
     @State var categories: [Category] = []
-    @State  var selectedCategory: Category? = nil
+    // Bind pickers to the stable integer jamfId to avoid UUID identity mismatches
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     //  ########################################################################################
     //  SELECTIONS
@@ -52,28 +56,28 @@ struct PolicyDetailGeneralTabView: View {
     
     @State var selectedIcon: Icon? = nil
     
-//  ############################################################################
-//  Sort order
-//  ############################################################################
-
+    //  ############################################################################
+    //  Sort order
+    //  ############################################################################
+    
     
     @State private var sortOption: SortOption = .alphabetical
+    
+    enum SortOption: String, CaseIterable, Identifiable {
+        case alphabetical = "Alphabetical"
+        case reverseAlphabetical = "Reverse Alphabetical"
         
-        enum SortOption: String, CaseIterable, Identifiable {
-            case alphabetical = "Alphabetical"
-            case reverseAlphabetical = "Reverse Alphabetical"
-            
-            var id: String { self.rawValue }
+        var id: String { self.rawValue }
+    }
+    
+    var sortedIcons: [Icon?] {
+        switch sortOption {
+        case .alphabetical:
+            return networkController.allIconsDetailed.sorted { $0.name < $1.name }
+        case .reverseAlphabetical:
+            return networkController.allIconsDetailed.sorted { $0.name > $1.name}
         }
-        
-        var sortedIcons: [Icon?] {
-            switch sortOption {
-            case .alphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name < $1.name }
-            case .reverseAlphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name > $1.name}
-            }
-        }
+    }
     
     
     var body: some View {
@@ -86,20 +90,20 @@ struct PolicyDetailGeneralTabView: View {
             
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
-                    Picker(selection: $selectedCategory, label: Text("Category:")) {
-                        Text("No category selected").tag(nil as Category?)
+                    Picker(selection: $selectedCategoryId, label: Text("Category:")) {
+                        Text("No category selected").tag(nil as Int?)
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name)).tag(category as Category?)
+                            Text(String(describing: category.name)).tag(category.jamfId as Int?)
                         }
                     }
                     .onAppear {
-                        if !networkController.categories.isEmpty {
-                            selectedCategory = networkController.categories.first
+                        if selectedCategoryId == nil {
+                            selectedCategoryId = networkController.categories.first?.jamfId
                         }
                     }
                     .onChange(of: networkController.categories) { newCategories in
                         if !newCategories.isEmpty {
-                            selectedCategory = newCategories.first
+                            selectedCategoryId = newCategories.first?.jamfId
                         }
                     }
                     Button(action: {
@@ -181,7 +185,7 @@ struct PolicyDetailGeneralTabView: View {
             //                        Icons - picker
             // ################################################################################
             
-          
+            
             LazyVGrid(columns: layout.columns, spacing: 10) {
                 
                 
@@ -268,7 +272,7 @@ struct PolicyDetailGeneralTabView: View {
                         .tint(.blue)
                 }
             }
-                    Spacer()
+            Spacer()
         }
         .padding()
     }

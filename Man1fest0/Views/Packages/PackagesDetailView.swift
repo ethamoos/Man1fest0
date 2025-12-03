@@ -1,9 +1,5 @@
-//
-//  PackagesDetailView.swift
-//  PackageTourist
-//
-//  Created by Amos Deane on 15/09/2022.
-//
+// PackagesDetailView.swift
+// Restored PackageDetailView with editors for Info and Notes
 
 import SwiftUI
 
@@ -11,6 +7,12 @@ struct PackageDetailView: View {
     
     var package: Package
     var server: String
+    
+    @State private var packageID = ""
+    @State private var packageName = ""
+    @State private var packageFileName = ""
+    @State private var packageInfo = ""
+    @State private var packageNotes = ""
     
     //  ########################################################################################
     //  EnvironmentObjects
@@ -24,7 +26,11 @@ struct PackageDetailView: View {
     //  Selections
     //  ########################################################################################
 
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Use jamfId-based selection for Category to avoid Picker tag/selection mismatches
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     @State private var showingWarning = false
     
@@ -41,8 +47,8 @@ struct PackageDetailView: View {
                     Text("ID:\t\t\t\(String(describing: currentPackage?.id ?? 0) )")
                     Text("Filename:\t\(String(describing: currentPackage?.filename ?? "") )")
                     Text("Category:\t\(String(describing: currentPackage?.category ?? "") )")
-                    Text("Info:\t\t\t\(String(describing: currentPackage?.info ?? "") )")
-                    Text("Notes:\n\n\(String(describing: currentPackage?.notes ?? "") )")
+//                    Text("Info:\t\t\t\(String(describing: currentPackage?.info ?? "") )")
+//                    Text("Notes:\n\n\(String(describing: currentPackage?.notes ?? "") )")
                     Text("Priority:\t\t\(String(describing: currentPackage?.priority ?? 10) )")
                     Text("Fill Template:\t\(String(describing: currentPackage?.fillUserTemplate ?? false) )")
                     Text("Fill Users:\t\(String(describing: currentPackage?.fillExistingUsers ?? false) )")
@@ -85,29 +91,32 @@ struct PackageDetailView: View {
                 
                     Divider()
 
-                LazyVGrid(columns: layout.columnsFlex) {
+//                LazyVGrid(columns: layout.columnsFlex) {
                     HStack {
                         
-                        Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                        Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
+                            Text("No category selected").tag(nil as Int?)
                             ForEach(networkController.categories, id: \.self) { category in
                                 Text(String(describing: category.name))
-                                    .tag(category as Category?)
-                                    .tag(selectedCategory as Category?)
+                                    .tag(category.jamfId as Int?)
                             }
                         }
                         .onAppear {
-                        
-                        if networkController.categories.isEmpty != true {
-                            print("Setting categories picker default")
-                            selectedCategory = networkController.categories[0] }
-                    }
+                            if selectedCategoryId == nil {
+                                selectedCategoryId = networkController.categories.first?.jamfId
+                            }
+                        }
                         
                         Button(action: {
                             
                             progress.showProgress()
                             progress.waitForABit()
                            
-                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.package, categoryID: String(describing: selectedCategory.jamfId), categoryName: String(describing: selectedCategory.name), updatePressed: true, resourceID: String(describing: currentPackage?.id ?? 0))
+                            if let cat = selectedCategory {
+                                networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.package, categoryID: String(describing: cat.jamfId), categoryName: String(describing: cat.name), updatePressed: true, resourceID: String(describing: currentPackage?.id ?? 0))
+                            } else {
+                                print("No category selected")
+                            }
 
                         }) {
                             HStack(spacing: 10) {
@@ -118,20 +127,151 @@ struct PackageDetailView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                     }
+                    
+                    //              ####################################################################
+                    //              UPDATE NAME AND FILENAME
+                    //              ####################################################################
+                    
+                    
+//                    HStack {
+//                        
+//
+//                    }
+                    
+                    HStack {
+                        
+                        // Placeholder shows current filename; bind the TextField to $packageFileName
+                        TextField(currentPackage?.filename ?? "", text: $packageFileName)
+                             .textSelection(.enabled)
+                        
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updatePackageFileName(server: server, authToken: networkController.authToken, resourceType:  ResourceType.package, packageFileName: packageFileName, packageID: String(describing: currentPackage?.id ?? 0))
+                            
+                            networkController.separationLine()
+                            print("Renaming Package Filename:\(packageName)")
+                        }) {
+                            Text("Rename File")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        
+                        TextField(currentPackage?.name ?? "", text: $packageName)
+                            .textSelection(.enabled)
+                        
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updatePackageName(server: server, authToken: networkController.authToken, resourceType:  ResourceType.package, packageName: packageName, packageID: String(describing: currentPackage?.id ?? 0))
+                            
+                            networkController.separationLine()
+                            print("Renaming Package:\(packageName)")
+                        }) {
+                            Text("Rename Package")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                    
+//                }
+
+                //              ####################################################################
+                //              PACKAGE INFO & NOTES EDITORS
+                //              ####################################################################
+
+                Divider()
+
+                // Package Info editor
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Package Info").fontWeight(.bold)
+                    TextEditor(text: $packageInfo)
+                        .frame(minHeight: 120)
+                        .border(Color.gray)
+
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            // Call NetBrain to update the package info
+                            networkController.updatePackageInfo(server: server, authToken: networkController.authToken, resourceType: ResourceType.package, packageInfo: packageInfo, packageID: String(describing: currentPackage?.id ?? 0))
+                            networkController.separationLine()
+                            print("Updated Package Info for id: \(String(describing: currentPackage?.id ?? 0))")
+                        }) {
+                            Text("Update Info")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                }
+
+                Divider()
+
+                // Package Notes editor
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Package Notes").fontWeight(.bold)
+                    TextEditor(text: $packageNotes)
+                        .frame(minHeight: 120)
+                        .border(Color.gray)
+
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            // Call NetBrain to update the package notes
+                            networkController.updatePackageNotes(server: server, authToken: networkController.authToken, resourceType: ResourceType.package, packageNotes: packageNotes, packageID: String(describing: currentPackage?.id ?? 0))
+                            networkController.separationLine()
+                            print("Updated Package Notes for id: \(String(describing: currentPackage?.id ?? 0))")
+                        }) {
+                            Text("Update Notes")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                }
+
+                // Refresh button to re-fetch detailed package after updates
+                Divider()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        progress.showProgress()
+                        Task {
+                            do {
+                                try await networkController.getDetailedPackage(server: server, authToken: networkController.authToken, packageID: String(describing: package.jamfId))
+                                progress.endProgress()
+                                print("Refresh: fetched detailed package for id \(String(describing: package.jamfId))")
+                            } catch {
+                                progress.endProgress()
+                                print("Refresh failed: \(error)")
+                                networkController.separationLine()
+                            }
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
             }
         }
         .multilineTextAlignment(.leading)
-        .padding(30)
         .textSelection(.enabled)
         .frame(minWidth: 400, alignment: .leading)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(
-                    Color.black.opacity(0.4),
-                    style: StrokeStyle()
-                )
-        )
+        .padding(30)
+
+//        .overlay(
+//            RoundedRectangle(cornerRadius: 8)
+//                .strokeBorder(
+//                    Color.black.opacity(0.4),
+//                    style: StrokeStyle()
+//                )
+//        )
         
         .onAppear() {
             Task {
@@ -142,14 +282,18 @@ struct PackageDetailView: View {
                 networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
             }
         }
+        // When the detailed package is updated, populate the edit state if it's currently empty
+        .onChange(of: networkController.packageDetailed) { newPackage in
+            if let p = newPackage {
+                if packageName.isEmpty {
+                    packageName = p.name
+                }
+                if packageFileName.isEmpty {
+                    packageFileName = p.filename
+                }
+                packageInfo = p.info
+                packageNotes = p.notes
+            }
+        }
     }
 }
-
-
-//}
-
-//struct PackagesDetailView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        PackagesDetailView()
-//    }
-//}

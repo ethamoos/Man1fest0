@@ -22,6 +22,7 @@ import AEXML
     //  #############################################################################
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
+    var currentURL: String = ""
     //  #############################################################################
     //  Login and Tokens Confirmations
     //  #############################################################################
@@ -701,6 +702,7 @@ import AEXML
             print("Running getDetailedPolicy - policyID is:\(policyID)")
 //        }
         let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
+        self.currentURL = jamfURLQuery
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -1375,13 +1377,13 @@ import AEXML
     }
     
 //    static func get(server: String, username: String, password: String) async throws -> JamfAuthToken {
-//      
+//
 //      // MARK: Prepare Request
 //      // encode username name and password
 //      let base64 = "\(username):\(password)"
 //        .data(using: String.Encoding.utf8)!
 //        .base64EncodedString()
-//      
+//
 //      // assemble the URL for the Jamf API
 //      guard var components = URLComponents(string: server) else {
 //        throw JamfAPIError.badURL
@@ -1390,41 +1392,41 @@ import AEXML
 //      guard let url = components.url else {
 //        throw JamfAPIError.badURL
 //      }
-//      
+//
 //      // MARK: Send Request and get Data
-//      
+//
 //      // create the request
 //      var authRequest = URLRequest(url: url)
 //      authRequest.httpMethod = "POST"
 //      authRequest.addValue("Basic " + base64, forHTTPHeaderField: "Authorization")
-//      
+//
 //      // send request and get data
 //      guard let (data, response) = try? await URLSession.shared.data(for: authRequest)
 //      else {
 //        throw JamfAPIError.requestFailed
 //      }
-//      
+//
 //      // MARK: Handle Errors
-//      
+//
 //      // check the response code
 //      let authStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 //      if authStatusCode != 200 {
 //        throw JamfAPIError.http(authStatusCode)
 //      }
-//      
+//
 //      // print(String(data: data, encoding: .utf8) ?? "no data")
-//      
+//
 //      // MARK: Parse JSON returned
 //      let decoder = JSONDecoder()
-//      
+//
 //      guard let auth = try? decoder.decode(JamfAuthToken.self, from: data)
 //      else {
 //        throw JamfAPIError.decode
 //      }
-//      
+//
 //      return auth
 //    }
-//    
+//
     
     
     
@@ -1448,10 +1450,10 @@ import AEXML
     
     
 //    func connectDetailed(server: String, authToken: String, resourceType: ResourceType, itemID: Int) {
-//        
+//
 //        let resourcePath = getURLFormat(data: (resourceType))
 //        let itemIDString = String(itemID)
-//        
+//
 //        if let serverURL = URL(string: server) {
 //            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
 //            asteriskSeparationLine()
@@ -1477,7 +1479,7 @@ import AEXML
     
     
 //    func detailedRequest(url: URL,resourceType: ResourceType, authToken: String) {
-//        
+//
 //        asteriskSeparationLine()
 //        print("Running detailedRequest function - resourceType is set as:\(resourceType)")
 //        print("URL is set as:\n\(url)")
@@ -1485,24 +1487,24 @@ import AEXML
 //            "Accept": "application/json",
 //            "Authorization": "Bearer \(self.authToken)"
 //        ]
-//        
+//
 //        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //        request.allHTTPHeaderFields = headers
-//        
+//
 //        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //            if let data = data, let response = response {
 //                //                self.separationLine()
 //                //                self.doubleSeparationLine()
 //                print("Data returned - processing detailed request")
-//                
+//
 //                DispatchQueue.main.async {
-//                    
+//
 //                    self.processPolicyDetail(data: data, response: response, resourceType: resourceType)
-//                    
+//
 //                }
-//                            
+//
 //            } else {
-//                
+//
 //                var text = "\n\nDetailed Request Failed."
 //                print(text)
 //                print("Request is:")
@@ -1749,7 +1751,7 @@ import AEXML
 //            //        self.status = ""
 //            print("Adding:policyDetailed to: allPoliciesDetailed ")
 //            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-//            
+//
 //        }
 //    }
     
@@ -1849,8 +1851,7 @@ import AEXML
         }
     }
     
-    
-    
+ 
     
     
     
@@ -2130,13 +2131,13 @@ import AEXML
     
     
 //    func processComputerDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-//        
+//
 //        separationLine()
 //        print("Running: processComputerDetail")
-//        
+//
 //        let decoded = PoliciesDetailReply.decode(data)
-//        
-//        
+//
+//
 //        switch decoded {
 //        case .success(let policyDetailed):
 //            receivedPolicyDetail(policyDetailed: policyDetailed)
@@ -2194,13 +2195,13 @@ import AEXML
     
     
 //    func processPolicyDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-//        
+//
 //        separationLine()
 //        print("Running: processPolicyDetail")
 //        print("ResourceType is:\(String(describing: ResourceType.self))")
-//        
+//
 //        let decoded = PoliciesDetailReply.decode(data)
-//        
+//
 //        switch decoded {
 //        case .success(let policyDetailed):
 //            receivedPolicyDetail(policyDetailed: policyDetailed)
@@ -2437,7 +2438,7 @@ import AEXML
     //    #################################################################################
     
     
-    func editPolicy(server: String, authToken: String, resourceType: ResourceType, packageName: String, packageID: String, policyID: Int) {
+    func editPolicy(server: String, authToken: String, resourceType: ResourceType, packageName: String, packageID: String, policyID: Int, action: String,fut: String, feu: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
         let packageIDString = String(packageID)
@@ -2454,9 +2455,9 @@ import AEXML
                 <package>
                     <id>\(packageIDString)</id>
                     <name>\(packageName)</name>
-                    <action>Install</action>
-                    <fut>false</fut>
-                    <feu>false</feu>
+                    <action>\(action)</action>
+                    <fut>\(fut)</fut>
+                    <feu>\(feu)</feu>
                     <update_autorun>false</update_autorun>
                 </package>
             </packages>
@@ -2561,6 +2562,144 @@ import AEXML
         else {
             print("Nothing to do")
             
+        }
+    }
+        
+    //    #################################################################################
+    //    updatePackageName -editName - rename
+    //    #################################################################################
+    
+    
+    func updatePackageName(server: String,authToken: String, resourceType: ResourceType, packageName: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updateName XML")
+        print("packageName is set as:\(packageName)")
+        xml = """
+                <package>
+                        <name>\(packageName)</name>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
+    
+    //    #################################################################################
+    //    updatePackageFileName -editName - rename
+    //    #################################################################################
+    
+    func updatePackageFileName(server: String,authToken: String, resourceType: ResourceType, packageFileName: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updateName XML")
+        print("packageName is set as:\(packageFileName)")
+        xml = """
+                <package>
+                        <filename>\(packageFileName)</filename>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
+    
+    
+    //    #################################################################################
+    //    updatePackageNotes
+    //    #################################################################################
+    
+    func updatePackageNotes(server: String,authToken: String, resourceType: ResourceType, packageNotes: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updatePackageNotes XML")
+        print("packageNotes is set as:\(packageNotes)")
+        xml = """
+                <package>
+                        <notes>\(packageNotes)</notes>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
+        }
+    }
+    
+    //    #################################################################################
+    //    updatePackageInfo
+    //    #################################################################################
+    
+    func updatePackageInfo(server: String,authToken: String, resourceType: ResourceType, packageInfo: String, packageID: String) {
+        
+        let resourcePath = getURLFormat(data: (resourceType))
+        let packageID = packageID
+        var xml: String
+        self.separationLine()
+        print("updatePackageInfo XML")
+        print("packageInfo is set as:\(packageInfo)")
+        xml = """
+                <package>
+                        <info>\(packageInfo)</info>
+                </package>
+                """
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(packageID)
+                print("Running update policy name function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                //                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+        else {
+            print("Nothing to do")
         }
     }
     
@@ -3459,7 +3598,7 @@ xml = """
                 appendStatus("Connecting to \(url)...")
             }
         }
-    }    
+    }
     //    #################################################################################
     //    scopeAllComputers  - enable AllComputers
     //    #################################################################################
@@ -4589,6 +4728,32 @@ xml = """
         }
     }
     
+//<<<<<<< HEAD
+//=======
+//    func getAllIcons(server: String) async throws {
+//        let jamfURLQuery = server + "/JSSResource/packages"
+//        let url = URL(string: jamfURLQuery)!
+//        var request = URLRequest(url: url)
+//        request.httpMethod = "GET"
+//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+//
+//        request.setValue("application/json", forHTTPHeaderField: "Accept")
+//        separationLine()
+//        print("Running func: getAllPackages")
+//
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+//            print("Code not 200")
+//            throw JamfAPIError.badResponseCode
+//        }
+//        let decoder = JSONDecoder()
+//        self.allPackages = try decoder.decode(Packages.self, from: data).packages
+//        allPackagesComplete = true
+//        print("allPackagesComplete status is set to:\(allPackagesComplete)")
+//
+//    }
+//>>>>>>> main
     
     
     
