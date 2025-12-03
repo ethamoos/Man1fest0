@@ -3086,6 +3086,7 @@ import AEXML
                        <policy>
                            <scope>
                                <all_computers>false</all_computers>
+                               <all_jss_users>false</all_jss_users>
                                <computers/>
                                <computer_groups/>
                                <buildings/>
@@ -3097,7 +3098,7 @@ import AEXML
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("Making clearScope request")
+                print("Running clearScope ")
                 print("resourceType is set as:\(resourceType)")
                 print("xml is set as:\(xml)")
                 self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
@@ -3571,7 +3572,7 @@ xml = """
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-                print("ItemID is set as:\(itemIDString)")
+                print("policyID is set as:\(itemIDString)")
                 print("resourceType is set as:\(resourceType)")
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
@@ -3579,25 +3580,48 @@ xml = """
         }
     }
     //    #################################################################################
-    //    scopeAllComputers  - enable AllComputers
+    //    scopeAllComputers - enable AllComputers
     //    #################################################################################
     
     func scopeAllComputers(server: String, authToken: String, policyID: String) {
         let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
 //        let policyIDString = String(policyID)
         var xml: String
-        print("Running enableSelfService")
+        print("Running scopeAllComputers")
         xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("ItemID is set as:\(policyID)")
+                print("policyID is set as:\(policyID)")
                 print("resourceType is set as:\(ResourceType.policyDetail)")
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
             }
         }
     }
+    
+    //    #################################################################################
+    //    scopeDisableAllComputers - disable All Computers
+    //    #################################################################################
+    
+    func scopeDisableAllComputers(server: String, authToken: String, policyID: String) {
+        
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
+        var xml: String
+        print("Running scopeDisableAllComputers")
+        xml = "<policy><scope><all_computers>false</all_computers></scope></policy>"
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("policyID is set as:\(policyID)")
+                print("resourceType is set as:\(ResourceType.policyDetail)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+    
+    
     
     //    #################################################################################
     //    scopeAllUsers - enable All Users
@@ -3607,12 +3631,12 @@ xml = """
         
         let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
         var xml: String
-        print("Running enableSelfService")
+        print("Running scopeAllUsers")
         xml = "<policy><scope><all_jss_users>true</all_jss_users></scope></policy>"
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("ItemID is set as:\(policyID)")
+                print("policyID is set as:\(policyID)")
                 print("resourceType is set as:\(ResourceType.policyDetail)")
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
@@ -3620,15 +3644,38 @@ xml = """
         }
     }
     
+    
     //    #################################################################################
-    //    scopeAllComputersAndU  - enable AllComputers and Allsers
+    //    scopeDisableAllUsers - disable All Users
+    //    #################################################################################
+    
+    func scopeDisableAllUsers(server: String, authToken: String, policyID: String) {
+        
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
+        var xml: String
+        print("Running scopeDisableAllUsers")
+        xml = "<policy><scope><all_jss_users>false</all_jss_users></scope></policy>"
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("policyID is set as:\(policyID)")
+                print("resourceType is set as:\(ResourceType.policyDetail)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+    
+    
+    //    #################################################################################
+    //    scopeAllComputersAndUsers  - enable AllComputers and Allsers
     //    #################################################################################
     
     func scopeAllComputersAndUsers(server: String, authToken: String, policyID: String) {
         let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
 //        let policyIDString = String(policyID)
         var xml: String
-        print("Running enableSelfService")
+        print("Running scopeAllComputersAndUsers")
         
                 xml = """
                         <policy>
@@ -3642,7 +3689,7 @@ xml = """
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("ItemID is set as:\(policyID)")
+                print("policyID is set as:\(policyID)")
                 print("resourceType is set as:\(ResourceType.policyDetail)")
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
@@ -3650,8 +3697,7 @@ xml = """
         }
     }
     
-    
-    
+
     //    #################################################################################
     //    togglePolicyAllComputers - yes/no
     //    #################################################################################
@@ -3664,7 +3710,6 @@ xml = """
         print("Running toggleScopeAllComputers")
         if policyToggle == false {
             
-            print("Enabling SelfService")
             xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
             
             if URL(string: server) != nil {
@@ -3680,9 +3725,7 @@ xml = """
         }
         
         else {
-            print("Disabling SelfService")
             xml = "<policy><scope><all_computers>false</all_computers></scope></policy>"
-            
             if URL(string: server) != nil {
                 if let serverURL = URL(string: server) {
                     let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
