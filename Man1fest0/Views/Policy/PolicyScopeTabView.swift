@@ -132,14 +132,14 @@ struct PolicyScopeTabView: View {
     
     
 
-    // ########################################################################################
-    // Interval picker state and options for logFlushInterval
-    @State private var selectedIntervalNumber = "Three"
-    @State private var selectedIntervalUnit = "Months"
-    private let intervalNumbers = ["Zero", "One", "Two", "Three", "Six"]
-    private let intervalUnits = ["Days", "Weeks", "Months", "Years"]
-    // Computed property to combine number and unit
-    private var combinedInterval: String { "\(selectedIntervalNumber)+\(selectedIntervalUnit)" }
+//    ########################################################################################
+//    Interval picker state and options for logFlushInterval
+//    @State private var selectedIntervalNumber = "Three"
+//    @State private var selectedIntervalUnit = "Months"
+//    private let intervalNumbers = ["Zero", "One", "Two", "Three", "Six"]
+//    private let intervalUnits = ["Days", "Weeks", "Months", "Years"]
+//    Computed property to combine number and unit
+//    private var combinedInterval: String { "\(selectedIntervalNumber)+\(selectedIntervalUnit)" }
     
     @State var computerSearchText = ""
 
@@ -950,46 +950,7 @@ struct PolicyScopeTabView: View {
                 }
             }
             Spacer(minLength: 30)
-            Divider()
-            LazyVGrid(columns: layout.columns, spacing: 20) {
-                
-                Text("Flush Log Interval").font(.headline)
-                HStack {
-                    Picker("Interval Number", selection: $selectedIntervalNumber) {
-                        ForEach(intervalNumbers, id: \.self) { number in
-                            Text(number)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    Text("+")
-                    Picker("Interval Unit", selection: $selectedIntervalUnit) {
-                        ForEach(intervalUnits, id: \.self) { unit in
-                            Text(unit)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                }
-                Button(action: {
-                    
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    Task {
-                        try await scopingController.logFlushInterval(server: server, policyId: String(describing: policyID), logType: "policy", interval: combinedInterval,authToken: networkController.authToken)
-                    }
-                    //
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                        Text("Flush Log Interval")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-            }
-//            }
-//            .padding(.top, 24)
-//            .padding(.bottom, 32)
+            
         }
         .frame(minHeight: 1)
         .padding()

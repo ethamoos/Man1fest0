@@ -20,6 +20,8 @@ struct PolicyRemoveItemsTabView: View {
     
     @EnvironmentObject var xmlController: XmlBrain
     
+    @EnvironmentObject var scopingController: ScopingBrain
+    
     @EnvironmentObject var layout: Layout
     
     var policyID: Int
@@ -31,6 +33,15 @@ struct PolicyRemoveItemsTabView: View {
     @State var showingWarningClearExclusions: Bool = false
     
     @State private var selectedResourceType = ResourceType.policyDetail
+    
+    // ########################################################################################
+    // Interval picker state and options for logFlushInterval
+    @State private var selectedIntervalNumber = "Three"
+    @State private var selectedIntervalUnit = "Months"
+    private let intervalNumbers = ["Zero", "One", "Two", "Three", "Six"]
+    private let intervalUnits = ["Days", "Weeks", "Months", "Years"]
+    // Computed property to combine number and unit
+    private var combinedInterval: String { "\(selectedIntervalNumber)+\(selectedIntervalUnit)" }
     
     //  #############################################################################
     //              Selection
@@ -45,7 +56,7 @@ struct PolicyRemoveItemsTabView: View {
         
         VStack(alignment: .leading) {
             
-            LazyVGrid(columns: layout.columnsWide, alignment: .leading, spacing: 20) {
+            LazyVGrid(columns: layout.columns, alignment: .leading, spacing: 20) {
                 
                 HStack(spacing: 10) {
                     
@@ -212,7 +223,48 @@ struct PolicyRemoveItemsTabView: View {
                     .tint(.blue)
                     .help("This refreshes the data for the latest selected policy")
                 }
-//                Spacer()
+
+//                LazyVGrid(columns: layout.columns, spacing: 20) {
+                //                Divider()
+                HStack{
+                    Text("Flush Log Interval").font(.headline)
+                    Image(systemName: "delete.left.fill")
+                }
+
+                HStack {
+                    Picker("Interval Number", selection: $selectedIntervalNumber) {
+                        ForEach(intervalNumbers, id: \.self) { number in
+                            Text(number)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    Text("+")
+                    Picker("Interval Unit", selection: $selectedIntervalUnit) {
+                        ForEach(intervalUnits, id: \.self) { unit in
+                            Text(unit)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                }
+                Button(action: {
+                    
+                    progress.showProgress()
+                    progress.waitForABit()
+                    
+                    Task {
+                        try await scopingController.logFlushInterval(server: server, policyId: String(describing: policyID), logType: "policy", interval: combinedInterval,authToken: networkController.authToken)
+                    }
+                    //
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Text("Flush Log Interval")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                //                }
+                //                Spacer()
             }
             .padding()
             Spacer()

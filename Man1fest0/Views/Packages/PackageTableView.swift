@@ -627,7 +627,9 @@ struct PackageTableView: View {
                 
                 progress.showProgress()
                 
-                networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                Task {
+                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                }
                 
                 convertToallPoliciesDetailedGeneral()
             

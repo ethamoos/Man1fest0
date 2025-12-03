@@ -183,6 +183,12 @@ import AEXML
     @Published var allPolicyScripts: [PolicyScripts] = []
     
     //  #############################################################################
+    //    ############  Search properties
+    //  #############################################################################
+
+    @Published var policiesMissingItems: [Int] = []
+    @Published var policiesMatchingItems: [Int] = [0]
+    //  #############################################################################
     //    ############ SELECTIONS
     //  #############################################################################
 
@@ -739,28 +745,43 @@ import AEXML
     
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
-//        let secondDecodedData = try decoder.decode(PoliciesDetailed.self, from: data)
-
-//        var newCurrentDetailedPolicy: PolicyDetailed = decodedData
         
         self.policyDetailed = decodedData
 
 //        if self.debug_enabled == true {
             separationLine()
             print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
-        print("Policy Trigger:\t\t\t\(self.policyDetailed?.general?.triggerOther ?? "")\n")
+//        print("Policy Trigger:\t\t\t\(self.policyDetailed?.general?.triggerOther ?? "")\n")
 
 //        }
-//      On completion add policy to array of detailed policies
+        //      On completion add policy to array of detailed policies
         self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
       
-//        self.policyDetailed2? = newCurrentDetailedPolicy
     }
     
-    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
+    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
         
         self.separationLine()
         print("Running func: getAllPoliciesDetailed")
+        
+        //        ########################################################
+        //        Rate limiting
+        //        ########################################################
+
+        let now = Date()
+        if let last = lastRequestDate {
+            print("Last request ran at:\(String(describing: last))")
+            let elapsed = now.timeIntervalSince(last)
+            if elapsed < minInterval {
+                let delay = minInterval - elapsed
+                print("Waiting:\(String(describing: delay))")
+                Task {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                }
+            }
+        }
+        lastRequestDate = Date()
+        
         for policy in policies {
             Task {
                 try await getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: policy.jamfId ?? 1))
@@ -4720,15 +4741,15 @@ xml = """
         //        ########################################################
 
         let now = Date()
-        if let last = lastRequestDate {
-            print("Last request ran at:\(String(describing: last))")
-            let elapsed = now.timeIntervalSince(last)
-            if elapsed < minInterval {
-                let delay = minInterval - elapsed
-                print("Waiting:\(String(describing: delay))")
-                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            }
-        }
+//        if let last = lastRequestDate {
+//            print("Last request ran at:\(String(describing: last))")
+//            let elapsed = now.timeIntervalSince(last)
+//            if elapsed < minInterval {
+//                let delay = minInterval - elapsed
+//                print("Waiting:\(String(describing: delay))")
+//                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+//            }
+//        }
         lastRequestDate = Date()
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -4748,9 +4769,10 @@ xml = """
         } else {
             print("Decoding failed")
         }
-        //        print("All icons are:\(self.allIconsDetailed)")
     }
     
+//<<<<<<< HEAD
+//=======
 //    func getAllIcons(server: String) async throws {
 //        let jamfURLQuery = server + "/JSSResource/packages"
 //        let url = URL(string: jamfURLQuery)!
@@ -4774,6 +4796,7 @@ xml = """
 //        print("allPackagesComplete status is set to:\(allPackagesComplete)")
 //
 //    }
+//>>>>>>> main
     
     
     
@@ -4864,7 +4887,7 @@ xml = """
     }
     
     
-    func fetchDetailedData() {
+    func fetchDetailedData() async throws {
         
         if self.fetchedDetailedPolicies == false {
             
@@ -4873,8 +4896,10 @@ xml = """
             if self.allPoliciesDetailed.count < self.allPoliciesConverted.count {
                 
                 print("fetching detailed policies")
-                self.getAllPoliciesDetailed(server: server, authToken: self.authToken, policies: self.allPoliciesConverted)
-                //                convertToArray()
+                Task {
+                    try await self.getAllPoliciesDetailed(server: server, authToken: self.authToken, policies: self.allPoliciesConverted)
+                }
+                    //                convertToArray()
                 self.fetchedDetailedPolicies = true
             } else {
                 print("detailed policies already fetched")
