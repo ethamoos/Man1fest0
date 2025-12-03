@@ -125,8 +125,14 @@ struct  IconsView: View {
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     .tint(.yellow)
                     Button(action: {
+//<<<<<<< HEAD
+//                        progress.showProgress()
+//                        progress.waitForABit()
+//                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)}) {
+//=======
                         showingRefreshIconsWarning = true
                     }) {
+//>>>>>>> main
                         Text("Refresh Icons")
                     }
                     .buttonStyle(.borderedProminent)

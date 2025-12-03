@@ -205,7 +205,9 @@ struct ScriptUsageView: View {
                         Button(action: {
                             
                             networkController.allPoliciesDetailed.removeAll()
-                            networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                            Task {
+                                try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                            }
                         }) {
                             Text("Refresh Policy Data")
                         }
@@ -235,7 +237,9 @@ struct ScriptUsageView: View {
             
             if networkController.fetchedDetailedPolicies == false {
                 
-                networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                Task {
+                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                }
                 print("Setting: fetchedPolicies to true")
                 networkController.fetchedDetailedPolicies = true
             } else {
