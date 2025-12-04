@@ -126,55 +126,55 @@ struct PolicyActionsDetailTableView: View {
         }
         .searchable(text: $searchText)
         .toolbar {
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Button(action: {
-                        print("convertToallPoliciesDetailedGeneral")
-                        progress.showProgress()
-                        progress.waitForABit()
-                        Task {
-                            await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server)
-                        }
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Refresh")
+            ToolbarItemGroup(placement: .automatic) {
+                Button(action: {
+                    print("convertToallPoliciesDetailedGeneral")
+                    progress.showProgress()
+                    progress.waitForABit()
+                    Task {
+                        await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server)
                     }
-                    .buttonStyle(.borderedProminent)
-                    
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        print("Clearing allPoliciesDetailed")
-                        networkController.allPoliciesDetailed.removeAll()
-                        print("Fetching allPoliciesDetailed")
-                        Task {
-                            try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                        }
-                        convertToallPoliciesDetailedGeneral()
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Reset")
-                    }
-                    Button(action: {
-                        let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
-                        let rowsString = selectedRows.map { policy in
-                            let name = String(policy.name ?? "")
-                            let category = policy.category?.name ?? ""
-                            let enabled = String(policy.enabled ?? true)
-                            let jamfId = String(policy.jamfId ?? 0)
-                            let triggerOther = policy.triggerOther ?? ""
-                            return [name, category, enabled, jamfId, triggerOther].joined(separator: "\t")
-                        }.joined(separator: "\n")
-                        let pasteboard = NSPasteboard.general
-                        pasteboard.clearContents()
-                        pasteboard.setString(rowsString, forType: .string)
-                    }) {
-                        Image(systemName: "doc.on.doc")
-                        Text("Copy Selected")
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(selectedPolicyIDs.isEmpty)
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Refresh")
                 }
+                .buttonStyle(.borderedProminent)
+                
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    print("Clearing allPoliciesDetailed")
+                    networkController.allPoliciesDetailed.removeAll()
+                    print("Fetching allPoliciesDetailed")
+                    Task {
+                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    }
+                    convertToallPoliciesDetailedGeneral()
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Reset")
+                }
+                .buttonStyle(.bordered)
+                
+                Button(action: {
+                    let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
+                    let rowsString = selectedRows.map { policy in
+                        let name = String(policy.name ?? "")
+                        let category = policy.category?.name ?? ""
+                        let enabled = String(policy.enabled ?? true)
+                        let jamfId = String(policy.jamfId ?? 0)
+                        let triggerOther = policy.triggerOther ?? ""
+                        return [name, category, enabled, jamfId, triggerOther].joined(separator: "\t")
+                    }.joined(separator: "\n")
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.setString(rowsString, forType: .string)
+                }) {
+                    Image(systemName: "doc.on.doc")
+                    Text("Copy Selected")
+                }
+                .buttonStyle(.bordered)
+                .disabled(selectedPolicyIDs.isEmpty)
             }
         }
         .onChange(of: sortOrder) { newOrder in
