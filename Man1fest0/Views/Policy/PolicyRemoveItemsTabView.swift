@@ -1,4 +1,3 @@
-
 //  PolicyRemoveItemsView.swift
 //  Man1fest0
 //
@@ -83,7 +82,7 @@ struct PolicyRemoveItemsTabView: View {
                         progress.waitForABit()
                         xmlController.clearMaintenance(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
                         
-                        networkController.separationLine()
+                        Debug.separationLine()
                         print("Pressing clear Maintenance")
                     }) {
                         Text("Clear Maintenance")
@@ -99,7 +98,7 @@ struct PolicyRemoveItemsTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         xmlController.clearPrinters()
-                        networkController.separationLine()
+                        Debug.separationLine()
                         print("Pressing clear Printers")
                         xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
                         
@@ -118,7 +117,7 @@ struct PolicyRemoveItemsTabView: View {
                         progress.waitForABit()
                         xmlController.clearDockItems()
                         xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
-                        networkController.separationLine()
+                        Debug.separationLine()
                         print("Pressing clear DockItems")
                     }) {
                         Text("Clear DockItems")
@@ -135,7 +134,7 @@ struct PolicyRemoveItemsTabView: View {
                         progress.waitForABit()
                         xmlController.clearReboot()
                         xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
-                        networkController.separationLine()
+                        Debug.separationLine()
                         print("Pressing clear reboot")
                     }) {
                         Text("Clear Reboot")
