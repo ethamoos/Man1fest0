@@ -47,7 +47,7 @@ class Layout: ObservableObject {
         GridItem(.fixed(250)),
         GridItem(.fixed(200)),
         GridItem(.flexible()),
-    ] 
+    ]
     
     let columnAdaptive = [
         GridItem(.adaptive(minimum: 250), alignment: .leading)
@@ -274,7 +274,52 @@ class Layout: ObservableObject {
         return nil
     }
 
-    func openURL(urlString: String) {
+    // Translate a Jamf API URL to the format used by the Jamf Pro web UI for a given request type.
+    // Example:
+    //  input:  https://server/JSSResource/computers/id/18562, requestType: "computers"
+    //  output: https://server/JSSResource/computers?id=18562&o=r
+    func translateJamfURL(_ url: URL, requestType: String) -> URL? {
+        // Normalize path components and remove empty segments caused by double slashes
+        let components = url.pathComponents.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) }.filter { !$0.isEmpty }
+        guard !components.isEmpty else { return nil }
+
+        // Try to find an explicit "id" segment first
+        var idValue: String? = nil
+        if let idIndex = components.firstIndex(where: { $0.lowercased() == "id" }), components.indices.contains(idIndex + 1) {
+            idValue = components[idIndex + 1]
+        } else {
+            // Fallback: find the requestType segment and take the following component if it looks numeric
+            if let rtIndex = components.firstIndex(where: { $0.lowercased() == requestType.lowercased() }), components.indices.contains(rtIndex + 1) {
+                let possible = components[rtIndex + 1]
+                if Int(possible) != nil {
+                    idValue = possible
+                }
+            }
+        }
+
+        guard let idUnwrapped = idValue else { return nil }
+
+        var newComponents = URLComponents()
+        newComponents.scheme = url.scheme
+        newComponents.host = url.host
+        newComponents.port = url.port
+        if let user = url.user, !user.isEmpty { newComponents.user = user }
+        if let password = url.password, !password.isEmpty { newComponents.password = password }
+
+        // Build the target path: /JSSResource/{requestType}
+        newComponents.path = "/JSSResource/\(requestType)"
+        newComponents.queryItems = [
+            URLQueryItem(name: "id", value: idUnwrapped),
+            URLQueryItem(name: "o", value: "r")
+        ]
+
+        return newComponents.url
+    }
+
+    /// Open a URL in the default browser. If `requestType` is provided, prefer translating
+    /// the URL using `translateJamfURL(_:requestType:)`. Otherwise fall back to the
+    /// automatic `translateJamfAPIURL(_:)` translation (if any).
+    func openURL(urlString: String, requestType: String? = nil) {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             alertMessage = "Please enter a URL."
@@ -294,8 +339,15 @@ class Layout: ObservableObject {
             return
         }
 
-        // If it's a Jamf API-style URL, translate to the Jamf Pro web UI page
-        let urlToOpen = self.translateJamfAPIURL(url) ?? url
+        // If a requestType is supplied prefer that translation (e.g. "computers").
+        var urlToOpen: URL = url
+        if let req = requestType, !req.trimmingCharacters(in: .whitespaces).isEmpty,
+           let translated = self.translateJamfURL(url, requestType: req) {
+            urlToOpen = translated
+        } else if let translated = self.translateJamfAPIURL(url) {
+            // Fallback to existing automatic translation
+            urlToOpen = translated
+        }
 
         if !NSWorkspace.shared.open(urlToOpen) {
             alertMessage = "Failed to open the URL in the default browser."

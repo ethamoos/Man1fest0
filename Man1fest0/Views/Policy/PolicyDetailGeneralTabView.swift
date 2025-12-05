@@ -198,24 +198,24 @@ struct PolicyDetailGeneralTabView: View {
                                 ZStack {
                                     Circle()
                                         .fill(Color.gray.opacity(0.15))
-                                        .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                                        .frame(width: 32, height: 32)
                                     AsyncImage(url: URL(string: icon.url ))  { image in
                                         image
                                             .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                                            .scaledToFit()
+                                            .frame(width: 20, height: 20)
                                             .clipped()
                                     } placeholder: {
                                         ProgressView()
-                                            .frame(width: 32, height: 32)
+                                            .frame(width: 20, height: 20)
                                     }
                                 }
                                 Text(String(describing: icon.name))
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.primary)
+                                Spacer()
                             }
                             .frame(height: 36)
-                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
                             .tag(icon as Icon?)
                         }
                     }

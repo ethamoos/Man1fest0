@@ -1040,6 +1040,242 @@ import AEXML
     
     
     
+    //    #################################################################################
+    //    Process functions
+    //    #################################################################################
+    
+    
+    func processPolicies(data: Data, response: URLResponse, resourceType: ResourceType) {
+        
+        separationLine()
+        let decoded = PoliciesReply.decode(data)
+        switch decoded {
+        case .success(let policies):
+            receivedPolicies(policies: policies)
+            //            DEBUG
+            //            print("Policies are:\(policies)")
+            
+        case .failure(let error):
+            appendStatus("Corrupt data. \(response) \(error)")
+        }
+    }
+    
+    func processComputer(data: Data, response: URLResponse, resourceType: String) {
+        
+        separationLine()
+        let decoded = ComputersReply.decode(data)
+        separationLine()
+        
+        //        DEBUG
+        //        print("Unprocessed computers data is:")
+        //        print(String(data: data, encoding: .utf8)!)
+        //        print("Decoded is:\(decoded)")
+        //        print("resourceType is:\(String(resourceType))")
+        
+        switch decoded {
+        case .success(let computers):
+            receivedComputers(computers: computers)
+            
+            //            DEBUG
+            //            print("Computers are:\(computers)")
+            
+        case .failure(let error):
+            appendStatus("Corrupt data. \(response) \(error)")
+        }
+    }
+    
+    func processCategory(data: Data, response: URLResponse, resourceType: String) {
+        
+        let decoded = CategoryReply.decode(data)
+        
+        //         print("Processed: \(resourceType) data is:")
+        //         print(String(data: data, encoding: .utf8)!)
+        //         print("Decoded is:\(decoded)")
+        //         print("resourceType is:\(String(resourceType))")
+        
+        switch decoded {
+        case .success(let categories):
+            print("Decoding success")
+            receivedCategory(categories: categories)
+            
+        case .failure(let error):
+            appendStatus("Corrupt data. \(response) \(error)")
+        }
+    }
+    
+    
+    func processComputersBasic(data: Data, response: URLResponse, resourceType: String) {
+        
+        separationLine()
+        print("Running:processComputersBasic")
+        
+        //        DEBUG
+        //        print("Unprocessed computersBasic data is:")
+        //        print(data)
+        //        print(String(data: data, encoding: .utf8)!)
+        
+        let decoded = ComputersBasicReply.decode(data)
+        
+        //        DEBUG
+        //        separationLine()
+        //        print("Processed computersBasic data is:")
+        //        print(String(data: data, encoding: .utf8)!)
+        //        print("Decoded computersBasic is:\(decoded)")
+        //        print("resourceType is:\(String(resourceType))")
+        //        separationLine()
+        
+        switch decoded {
+        case .success(let computers):
+            receivedComputersBasic(computers: computersBasic)
+            
+        case .failure(let error):
+            appendStatus("Corrupt data. \(response) \(error)")
+        }
+    }
+    
+    func processDepartment(data: Data, response: URLResponse, resourceType: String) {
+        
+        let decoded = DepartmentReply.decode(data)
+        
+        print("Running:processDepartment")
+        //        DEBUG
+        //        print("Processed: \(resourceType) data is:")
+        //        print(String(data: data, encoding: .utf8)!)
+        //        print("Decoded is:\(decoded)")
+        //         print("resourceType is:\(String(resourceType))")
+        
+        switch decoded {
+        case .success(let departments):
+            print("Decoding success")
+            receivedDepartment(departments: departments)
+            //             print("resourceType: \(resourceType) is:\(scripts)")
+            
+        case .failure(let error):
+            appendStatus("Corrupt data. \(response) \(error)")
+        }
+    }
+    
+    
+    func processScripts(data: Data, response: URLResponse, resourceType: String) {
+        
+        let decoded = ScriptsReply.decode(data)
+        print("Running:processScripts")
+        //        DEBUG
+        //        print("Processed: \(resourceType) data is:")
+        //        print(String(data: data, encoding: .utf8)!)
+        //        print("Decoded is:\(decoded)")
+        //        print("resourceType is:\(String(resourceType))")
+        
+        switch decoded {
+        case .success(let scripts):
+            print("Decoding success")
+            receivedScripts(scripts: scripts)
+            print("resourceType: is \(resourceType)")
+            //            DEBUG
+            //            print("Printing scripts:\(scripts)")
+            
+        case .failure(let error):
+            print("Decoding failure")
+            print("Response is:\(response)")
+            print("Error is:\(error)")
+            appendStatus("Corrupt data. \(response) \(error)")
+        }
+    }
+    
+    func processPackages(data: Data, response: URLResponse, resourceType: String) {
+        
+        let decoded = PackagesReply.decode(data)
+        
+        switch decoded {
+        case .success(let packages):
+            print("Decoding packages success")
+            receivedPackages(packages: packages)
+            
+        case .failure(let error):
+            appendStatus("Corrupt data. \(response) \(error)")
+        }
+    }
+    //
+    
+    
+    //    #################################################################################
+    //    RECEIVED - funcs to send to main queue
+    //    #################################################################################
+    
+    
+    
+    func receivedComputers(computers: [Computer]) {
+        print("Running receivedComputers")
+        DispatchQueue.main.async {
+            self.computers = computers
+            // self.status = "Computers retrieved"
+            //        self.status = "Computers retrieved"
+        }
+    }
+    
+    func receivedComputersBasic(computers: [Computers.ComputerResponse]) {
+        //        DEBUG
+        print("Running ComputersBasic Received")
+        //        print("ComputersBasic Received are:\(computers)")
+        DispatchQueue.main.async {
+            self.computersBasic = computers
+            // self.status = "Computers retrieved"
+            //        self.status = "ComputersBasic retrieved"
+        }
+    }
+    
+    func receivedDepartment(departments: [Department]) {
+        DispatchQueue.main.async {
+            self.departments = departments
+            // self.status = "Computers retrieved"
+            //        self.status = "Departments retrieved"
+        }
+    }
+    
+    func receivedPackages(packages: [Package]) {
+        DispatchQueue.main.async {
+            self.packages = packages
+            // self.status = "Computers retrieved"
+            //        self.status = "Packages retrieved"
+        }
+    }
+    
+    func receivedPolicies(policies: [Policy]) {
+        DispatchQueue.main.async {
+            self.policies = policies
+            // self.status = "Computers retrieved"
+            //        self.status = "Policies retrieved"
+        }
+    }
+    
+    func receivedScripts(scripts: [ScriptClassic]) {
+        DispatchQueue.main.async {
+            self.scripts = scripts
+            // self.status = "Computers retrieved"
+            //        self.status = "Scripts retrieved"
+        }
+    }
+    
+//    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
+//        DispatchQueue.main.async {
+//            self.policyDetailed = policyDetailed
+//            // self.status = "Computers retrieved"
+//            //        self.status = ""
+//            print("Adding:policyDetailed to: allPoliciesDetailed ")
+//            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+//
+//        }
+//    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     func appendStatus(_ string: String) {
         doubleSeparationLine()
@@ -1080,6 +1316,10 @@ import AEXML
     func debugSomething(dataThing: Any) {
         print("Printing out:\(dataThing)")
     }
+    
+    
+    
+    
     
     //    #################################################################################
     //    Delete - functions
@@ -1527,233 +1767,6 @@ import AEXML
     
     
     
-    
-    //    #################################################################################
-    //    Process functions
-    //    #################################################################################
-    
-    
-    func processPolicies(data: Data, response: URLResponse, resourceType: ResourceType) {
-        
-        separationLine()
-        let decoded = PoliciesReply.decode(data)
-        switch decoded {
-        case .success(let policies):
-            receivedPolicies(policies: policies)
-            //            DEBUG
-            //            print("Policies are:\(policies)")
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    func processComputer(data: Data, response: URLResponse, resourceType: String) {
-        
-        separationLine()
-        let decoded = ComputersReply.decode(data)
-        separationLine()
-        
-        //        DEBUG
-        //        print("Unprocessed computers data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded is:\(decoded)")
-        //        print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let computers):
-            receivedComputers(computers: computers)
-            
-            //            DEBUG
-            //            print("Computers are:\(computers)")
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    func processCategory(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = CategoryReply.decode(data)
-        
-        //         print("Processed: \(resourceType) data is:")
-        //         print(String(data: data, encoding: .utf8)!)
-        //         print("Decoded is:\(decoded)")
-        //         print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let categories):
-            print("Decoding success")
-            receivedCategory(categories: categories)
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    
-    func processComputersBasic(data: Data, response: URLResponse, resourceType: String) {
-        
-        separationLine()
-        print("Running:processComputersBasic")
-        
-        //        DEBUG
-        //        print("Unprocessed computersBasic data is:")
-        //        print(data)
-        //        print(String(data: data, encoding: .utf8)!)
-        
-        let decoded = ComputersBasicReply.decode(data)
-        
-        //        DEBUG
-        //        separationLine()
-        //        print("Processed computersBasic data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded computersBasic is:\(decoded)")
-        //        print("resourceType is:\(String(resourceType))")
-        //        separationLine()
-        
-        switch decoded {
-        case .success(let computers):
-            receivedComputersBasic(computers: computersBasic)
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    func processDepartment(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = DepartmentReply.decode(data)
-        
-        print("Running:processDepartment")
-        //        DEBUG
-        //        print("Processed: \(resourceType) data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded is:\(decoded)")
-        //         print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let departments):
-            print("Decoding success")
-            receivedDepartment(departments: departments)
-            //             print("resourceType: \(resourceType) is:\(scripts)")
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    
-    func processScripts(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = ScriptsReply.decode(data)
-        print("Running:processScripts")
-        //        DEBUG
-        //        print("Processed: \(resourceType) data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded is:\(decoded)")
-        //        print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let scripts):
-            print("Decoding success")
-            receivedScripts(scripts: scripts)
-            print("resourceType: is \(resourceType)")
-            //            DEBUG
-            //            print("Printing scripts:\(scripts)")
-            
-        case .failure(let error):
-            print("Decoding failure")
-            print("Response is:\(response)")
-            print("Error is:\(error)")
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    func processPackages(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = PackagesReply.decode(data)
-        
-        switch decoded {
-        case .success(let packages):
-            print("Decoding packages success")
-            receivedPackages(packages: packages)
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    //
-    
-    
-    //    #################################################################################
-    //    RECEIVED - funcs to send to main queue
-    //    #################################################################################
-    
-    
-    
-    func receivedComputers(computers: [Computer]) {
-        print("Running receivedComputers")
-        DispatchQueue.main.async {
-            self.computers = computers
-            // self.status = "Computers retrieved"
-            //        self.status = "Computers retrieved"
-        }
-    }
-    
-    func receivedComputersBasic(computers: [Computers.ComputerResponse]) {
-        //        DEBUG
-        print("Running ComputersBasic Received")
-        //        print("ComputersBasic Received are:\(computers)")
-        DispatchQueue.main.async {
-            self.computersBasic = computers
-            // self.status = "Computers retrieved"
-            //        self.status = "ComputersBasic retrieved"
-        }
-    }
-    
-    func receivedDepartment(departments: [Department]) {
-        DispatchQueue.main.async {
-            self.departments = departments
-            // self.status = "Computers retrieved"
-            //        self.status = "Departments retrieved"
-        }
-    }
-    
-    func receivedPackages(packages: [Package]) {
-        DispatchQueue.main.async {
-            self.packages = packages
-            // self.status = "Computers retrieved"
-            //        self.status = "Packages retrieved"
-        }
-    }
-    
-    func receivedPolicies(policies: [Policy]) {
-        DispatchQueue.main.async {
-            self.policies = policies
-            // self.status = "Computers retrieved"
-            //        self.status = "Policies retrieved"
-        }
-    }
-    
-    func receivedScripts(scripts: [ScriptClassic]) {
-        DispatchQueue.main.async {
-            self.scripts = scripts
-            // self.status = "Computers retrieved"
-            //        self.status = "Scripts retrieved"
-        }
-    }
-    
-//    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
-//        DispatchQueue.main.async {
-//            self.policyDetailed = policyDetailed
-//            // self.status = "Computers retrieved"
-//            //        self.status = ""
-//            print("Adding:policyDetailed to: allPoliciesDetailed ")
-//            self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
-//
-//        }
-//    }
     
     
     //    #################################################################################
