@@ -217,8 +217,8 @@ struct PolicyDetailView: View {
             // ################################################################################
             
             HStack(spacing: 20) {
-                
-                Toggle("", isOn: $enableDisableButton)
+                 
+                 Toggle("", isOn: $enableDisableButton)
                     .toggleStyle(SwitchToggleStyle(tint: .red))
                     .onChange(of: enableDisableButton) { value in
                         networkController.togglePolicyOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, policyToggle: enableDisableButton)
@@ -247,7 +247,7 @@ struct PolicyDetailView: View {
                     showingWarning = true
                 }) {
                     HStack(spacing: 10) {
-                        Image(systemName: "delete.left.fill")
+//                        Image(systemName: "delete.left.fill")
                         Text("Delete")
                     }
                 }
@@ -323,7 +323,7 @@ struct PolicyDetailView: View {
                     
                 }) {
                     HStack(spacing: 10) {
-                        Text("Refresh Detail")
+                        Text("Refresh")
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -331,35 +331,60 @@ struct PolicyDetailView: View {
                 
                 
                 HStack {
+                    
+                    // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            // Use the current URL provided by the network controller
+                            let urlToOpen = networkController.currentURL
+                            print("Opening URL: \(urlToOpen)")
+                            layout.openURL(urlString: urlToOpen)
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "safari")
+                                Text("Open in Browser")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .padding(.top, 6)
+                        Spacer()
+                    }
+                    .padding()
+                    .textSelection(.enabled)
+            }
+                
                 //              ##########################################################################
                 //              CLONE
                 //              ##########################################################################
                 
-                TextField(policyNameClone, text: $policyName)
-                    .textSelection(.enabled)
+                HStack {
+                    TextField(policyNameClone, text: $policyName)
+                        .textSelection(.enabled)
+                    
+                    Button(action: {
+                        print("Cloning policy:\(policyName)")
+                        progress.showProgress()
+                        progress.waitForABit()
+                        if policyNameClone.isEmpty == true {
+                            policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
+                            let newPolicyName = "\(policyNameInitial)-1"
+                            print("No name provided - policy is:\(newPolicyName)")
+                            policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+                        } else {
+                            print("Policy name is set as:\(policyName)")
+                            policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
+                        }
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "dog")
+                            Text("Clone")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)}
                 
-                Button(action: {
-                    print("Cloning policy:\(policyName)")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    if policyNameClone.isEmpty == true {
-                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                        let newPolicyName = "\(policyNameInitial)-1"
-                        print("No name provided - policy is:\(newPolicyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
-                    } else {
-                        print("Policy name is set as:\(policyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
-                    }
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "dog")
-                        Text("Clone")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-            }
 #endif
             }
             
@@ -471,6 +496,10 @@ struct PolicyDetailView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
+                            
+                            
+                            
+                            
 #endif
                         }
                     }
@@ -484,44 +513,45 @@ struct PolicyDetailView: View {
             Divider()
                 
             LazyVGrid(columns: layout.columnsFlex) {
-                    HStack {
-                        
-                        if !networkController.categories.isEmpty {
-                            Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                                ForEach(networkController.categories, id: \.self) { category in
-                                    Text(category.name).tag(category)
-                                }
-                            }
-                            .onAppear {
-                                if !networkController.categories.isEmpty {
-                                    if !networkController.categories.contains(selectedCategory) {
-                                        selectedCategory = networkController.categories.first!
-                                    }
-                                }
-                            }
-                            .onChange(of: networkController.categories) { newCategories in
-                                if !newCategories.isEmpty {
-                                    if !newCategories.contains(selectedCategory) {
-                                        selectedCategory = newCategories.first!
-                                    }
-                                }
-                            }
-                        } else {
-                            Text("No categories available")
-                        }
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
-                        }) {
-                            HStack(spacing: 10) {
-                                Text("Update")
+                HStack {
+                    
+                    if !networkController.categories.isEmpty {
+                        Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
+                            ForEach(networkController.categories, id: \.self) { category in
+                                Text(category.name).tag(category)
                             }
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        .disabled(networkController.categories.isEmpty)
+                        .onAppear {
+                            if !networkController.categories.isEmpty {
+                                if !networkController.categories.contains(selectedCategory) {
+                                    selectedCategory = networkController.categories.first!
+                                }
+                            }
+                        }
+                        .onChange(of: networkController.categories) { newCategories in
+                            if !newCategories.isEmpty {
+                                if !newCategories.contains(selectedCategory) {
+                                    selectedCategory = newCategories.first!
+                                }
+                            }
+                        }
+                    } else {
+                        Text("No categories available")
                     }
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
+                    }) {
+                        HStack(spacing: 10) {
+                            Text("Update")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .disabled(networkController.categories.isEmpty)
+                    
+                }
                 }
 //            }
             .padding()
@@ -671,27 +701,7 @@ struct PolicyDetailView: View {
         }
     }
 
-        // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
-        HStack {
-            Spacer()
-            Button(action: {
-                // Use the current URL provided by the network controller
-                let urlToOpen = networkController.currentURL
-                print("Opening URL: \(urlToOpen)")
-                layout.openURL(urlString: urlToOpen)
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "safari")
-                    Text("Open in Browser")
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
-            .padding(.top, 6)
-            Spacer()
-        }
-        .padding()
-        .textSelection(.enabled)
+        
 }
     
     func fetchData() {
