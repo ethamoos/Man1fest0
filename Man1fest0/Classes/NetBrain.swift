@@ -873,328 +873,334 @@ import AEXML
         let expires: String
     }
     
+    
+    
+    
+    
+    
+    
     //    #################################################################################
     //    REPLY STRUCTS
     //    #################################################################################
     
-    struct CategoryReply: Codable {
-        
-        let categories: [Category]
-        static func decode(_ data: Data) -> Result<[Category],Error> {
-            let decoder = JSONDecoder()
-            
-            do {
-                let response = try decoder.decode(CategoryReply.self, from: data)
-                print("CategoryReply Decoding succeeded")
-                return .success(response.categories)
-            } catch {
-                return .failure(error)
-            }
-        }
-    }
-    
-    
-    struct ComputersReply: Codable {
-        
-        let computers: [Computer]
-        static func decode(_ data: Data) -> Result<[Computer],Error> {
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(ComputersReply.self, from: data)
-                print("ComputersReply Decoding succeeded")
-                return .success(response.computers)
-            } catch {
-                print("ComputersReply Decoding failed")
-                return .failure(error)
-            }
-        }
-    }
-    
-    struct ComputersBasicReply: Codable {
-        
-        let computersBasic: [Computers.ComputerResponse]
-        static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
-            //             separationLine()
-            print("ComputersBasicReply data is:")
-            print(String(data: data, encoding: .utf8)!)
-            
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(ComputersBasicReply.self, from: data)
-                print("ComputersBasicReply Decoding succeeded")
-                return .success(response.computersBasic)
-            } catch {
-                print("ComputersBasicReply Decoding failed")
-                return .failure(error)
-            }
-        }
-    }
-    
-    
-    struct ComputersDetailReply: Codable {
-        
-        let computersBasic: [Computers.ComputerResponse]
-        static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
-            //             separationLine()
-            print("ComputersBasicReply data is:")
-            //            print(String(data: data, encoding: .utf8)!)
-            
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(ComputersBasicReply.self, from: data)
-                print("ComputersBasicReply Decoding succeeded")
-                return .success(response.computersBasic)
-            } catch {
-                print("ComputersBasicReply Decoding failed")
-                return .failure(error)
-            }
-        }
-    }
-    
-    
-    struct DepartmentReply: Codable {
-        
-        let departments: [Department]
-        static func decode(_ data: Data) -> Result<[Department],Error> {
-            let decoder = JSONDecoder()
-            
-            do {
-                let response = try decoder.decode(DepartmentReply.self, from: data)
-                print("DepartmentReply Decoding succeeded")
-                return .success(response.departments)
-            } catch {
-                return .failure(error)
-            }
-        }
-    }
-    
-    
-    struct PackagesReply: Codable {
-        
-        let packages: [Package]
-        static func decode(_ data: Data) -> Result<[Package],Error> {
-            let decoder = JSONDecoder()
-            
-            do {
-                let response = try decoder.decode(PackagesReply.self, from: data)
-                print("PackagesReply Decoding succeeded")
-                //                print("DEBUG --------------------------")
-                //                print(response.packages)
-                return .success(response.packages)
-            } catch {
-                return .failure(error)
-            }
-        }
-    }
-    
-    
-    struct PoliciesReply: Codable {
-        
-        let policies: [Policy]
-        static func decode(_ data: Data) -> Result<[Policy],Error> {
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(PoliciesReply.self, from: data)
-                print("PoliciesReply Decoding succeeded")
-                return .success(response.policies)
-            } catch {
-                return .failure(error)
-            }
-        }
-    }
-    
-    
-    struct PoliciesDetailReply: Codable {
-        
-        let policyDetailed: PoliciesDetailed
-        
-        static func decode(_ data: Data) -> Result<PoliciesDetailed,Error> {
-            
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(PoliciesDetailed.self, from: data)
-                print("PoliciesDetailReply Decoding succeeded")
-                return .success(response)
-            } catch {
-                print("PoliciesDetailReply Failed - Decoding errror")
-                return .failure(error)
-            }
-        }
-    }
-    
-    struct ScriptsReply: Codable {
-        
-        let scripts: [ScriptClassic]
-        static func decode(_ data: Data) -> Result<[ScriptClassic],Error> {
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(ScriptsReply.self, from: data)
-                print("ScriptsReply Decoding succeeded")
-                return .success(response.scripts)
-            } catch {
-                return .failure(error)
-            }
-        }
-    }
-    
-    
-    
+//    struct CategoryReply: Codable {
+//        
+//        let categories: [Category]
+//        static func decode(_ data: Data) -> Result<[Category],Error> {
+//            let decoder = JSONDecoder()
+//            
+//            do {
+//                let response = try decoder.decode(CategoryReply.self, from: data)
+//                print("CategoryReply Decoding succeeded")
+//                return .success(response.categories)
+//            } catch {
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    
+//    struct ComputersReply: Codable {
+//        
+//        let computers: [Computer]
+//        static func decode(_ data: Data) -> Result<[Computer],Error> {
+//            let decoder = JSONDecoder()
+//            do {
+//                let response = try decoder.decode(ComputersReply.self, from: data)
+//                print("ComputersReply Decoding succeeded")
+//                return .success(response.computers)
+//            } catch {
+//                print("ComputersReply Decoding failed")
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    struct ComputersBasicReply: Codable {
+//        
+//        let computersBasic: [Computers.ComputerResponse]
+//        static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
+//            //             separationLine()
+//            print("ComputersBasicReply data is:")
+//            print(String(data: data, encoding: .utf8)!)
+//            
+//            let decoder = JSONDecoder()
+//            do {
+//                let response = try decoder.decode(ComputersBasicReply.self, from: data)
+//                print("ComputersBasicReply Decoding succeeded")
+//                return .success(response.computersBasic)
+//            } catch {
+//                print("ComputersBasicReply Decoding failed")
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    
+//    struct ComputersDetailReply: Codable {
+//        
+//        let computersBasic: [Computers.ComputerResponse]
+//        static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
+//            //             separationLine()
+//            print("ComputersBasicReply data is:")
+//            //            print(String(data: data, encoding: .utf8)!)
+//            
+//            let decoder = JSONDecoder()
+//            do {
+//                let response = try decoder.decode(ComputersBasicReply.self, from: data)
+//                print("ComputersBasicReply Decoding succeeded")
+//                return .success(response.computersBasic)
+//            } catch {
+//                print("ComputersBasicReply Decoding failed")
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    
+//    struct DepartmentReply: Codable {
+//        
+//        let departments: [Department]
+//        static func decode(_ data: Data) -> Result<[Department],Error> {
+//            let decoder = JSONDecoder()
+//            
+//            do {
+//                let response = try decoder.decode(DepartmentReply.self, from: data)
+//                print("DepartmentReply Decoding succeeded")
+//                return .success(response.departments)
+//            } catch {
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    
+//    struct PackagesReply: Codable {
+//        
+//        let packages: [Package]
+//        static func decode(_ data: Data) -> Result<[Package],Error> {
+//            let decoder = JSONDecoder()
+//            
+//            do {
+//                let response = try decoder.decode(PackagesReply.self, from: data)
+//                print("PackagesReply Decoding succeeded")
+//                //                print("DEBUG --------------------------")
+//                //                print(response.packages)
+//                return .success(response.packages)
+//            } catch {
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    
+//    struct PoliciesReply: Codable {
+//        
+//        let policies: [Policy]
+//        static func decode(_ data: Data) -> Result<[Policy],Error> {
+//            let decoder = JSONDecoder()
+//            do {
+//                let response = try decoder.decode(PoliciesReply.self, from: data)
+//                print("PoliciesReply Decoding succeeded")
+//                return .success(response.policies)
+//            } catch {
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    
+//    struct PoliciesDetailReply: Codable {
+//        
+//        let policyDetailed: PoliciesDetailed
+//        
+//        static func decode(_ data: Data) -> Result<PoliciesDetailed,Error> {
+//            
+//            let decoder = JSONDecoder()
+//            do {
+//                let response = try decoder.decode(PoliciesDetailed.self, from: data)
+//                print("PoliciesDetailReply Decoding succeeded")
+//                return .success(response)
+//            } catch {
+//                print("PoliciesDetailReply Failed - Decoding errror")
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    struct ScriptsReply: Codable {
+//        
+//        let scripts: [ScriptClassic]
+//        static func decode(_ data: Data) -> Result<[ScriptClassic],Error> {
+//            let decoder = JSONDecoder()
+//            do {
+//                let response = try decoder.decode(ScriptsReply.self, from: data)
+//                print("ScriptsReply Decoding succeeded")
+//                return .success(response.scripts)
+//            } catch {
+//                return .failure(error)
+//            }
+//        }
+//    }
+//    
+//    
+//    
     
     //    #################################################################################
     //    Process functions
     //    #################################################################################
     
     
-    func processPolicies(data: Data, response: URLResponse, resourceType: ResourceType) {
-        
-        separationLine()
-        let decoded = PoliciesReply.decode(data)
-        switch decoded {
-        case .success(let policies):
-            receivedPolicies(policies: policies)
-            //            DEBUG
-            //            print("Policies are:\(policies)")
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
+//    func processPolicies(data: Data, response: URLResponse, resourceType: ResourceType) {
+//        
+//        separationLine()
+//        let decoded = PoliciesReply.decode(data)
+//        switch decoded {
+//        case .success(let policies):
+//            receivedPolicies(policies: policies)
+//            //            DEBUG
+//            //            print("Policies are:\(policies)")
+//            
+//        case .failure(let error):
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
+//    
+//    func processComputer(data: Data, response: URLResponse, resourceType: String) {
+//        
+//        separationLine()
+//        let decoded = ComputersReply.decode(data)
+//        separationLine()
+//        
+//        //        DEBUG
+//        //        print("Unprocessed computers data is:")
+//        //        print(String(data: data, encoding: .utf8)!)
+//        //        print("Decoded is:\(decoded)")
+//        //        print("resourceType is:\(String(resourceType))")
+//        
+//        switch decoded {
+//        case .success(let computers):
+//            receivedComputers(computers: computers)
+//            
+//            //            DEBUG
+//            //            print("Computers are:\(computers)")
+//            
+//        case .failure(let error):
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
+//    
+//    func processCategory(data: Data, response: URLResponse, resourceType: String) {
+//        
+//        let decoded = CategoryReply.decode(data)
+//        
+//        //         print("Processed: \(resourceType) data is:")
+//        //         print(String(data: data, encoding: .utf8)!)
+//        //         print("Decoded is:\(decoded)")
+//        //         print("resourceType is:\(String(resourceType))")
+//        
+//        switch decoded {
+//        case .success(let categories):
+//            print("Decoding success")
+//            receivedCategory(categories: categories)
+//            
+//        case .failure(let error):
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
+//    
+//    
+//    func processComputersBasic(data: Data, response: URLResponse, resourceType: String) {
+//        
+//        separationLine()
+//        print("Running:processComputersBasic")
+//        
+//        //        DEBUG
+//        //        print("Unprocessed computersBasic data is:")
+//        //        print(data)
+//        //        print(String(data: data, encoding: .utf8)!)
+//        
+//        let decoded = ComputersBasicReply.decode(data)
+//        
+//        //        DEBUG
+//        //        separationLine()
+//        //        print("Processed computersBasic data is:")
+//        //        print(String(data: data, encoding: .utf8)!)
+//        //        print("Decoded computersBasic is:\(decoded)")
+//        //        print("resourceType is:\(String(resourceType))")
+//        //        separationLine()
+//        
+//        switch decoded {
+//        case .success(let computers):
+//            receivedComputersBasic(computers: computersBasic)
+//            
+//        case .failure(let error):
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
     
-    func processComputer(data: Data, response: URLResponse, resourceType: String) {
-        
-        separationLine()
-        let decoded = ComputersReply.decode(data)
-        separationLine()
-        
-        //        DEBUG
-        //        print("Unprocessed computers data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded is:\(decoded)")
-        //        print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let computers):
-            receivedComputers(computers: computers)
-            
-            //            DEBUG
-            //            print("Computers are:\(computers)")
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    func processCategory(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = CategoryReply.decode(data)
-        
-        //         print("Processed: \(resourceType) data is:")
-        //         print(String(data: data, encoding: .utf8)!)
-        //         print("Decoded is:\(decoded)")
-        //         print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let categories):
-            print("Decoding success")
-            receivedCategory(categories: categories)
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    
-    func processComputersBasic(data: Data, response: URLResponse, resourceType: String) {
-        
-        separationLine()
-        print("Running:processComputersBasic")
-        
-        //        DEBUG
-        //        print("Unprocessed computersBasic data is:")
-        //        print(data)
-        //        print(String(data: data, encoding: .utf8)!)
-        
-        let decoded = ComputersBasicReply.decode(data)
-        
-        //        DEBUG
-        //        separationLine()
-        //        print("Processed computersBasic data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded computersBasic is:\(decoded)")
-        //        print("resourceType is:\(String(resourceType))")
-        //        separationLine()
-        
-        switch decoded {
-        case .success(let computers):
-            receivedComputersBasic(computers: computersBasic)
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    func processDepartment(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = DepartmentReply.decode(data)
-        
-        print("Running:processDepartment")
-        //        DEBUG
-        //        print("Processed: \(resourceType) data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded is:\(decoded)")
-        //         print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let departments):
-            print("Decoding success")
-            receivedDepartment(departments: departments)
-            //             print("resourceType: \(resourceType) is:\(scripts)")
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    
-    func processScripts(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = ScriptsReply.decode(data)
-        print("Running:processScripts")
-        //        DEBUG
-        //        print("Processed: \(resourceType) data is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        //        print("Decoded is:\(decoded)")
-        //        print("resourceType is:\(String(resourceType))")
-        
-        switch decoded {
-        case .success(let scripts):
-            print("Decoding success")
-            receivedScripts(scripts: scripts)
-            print("resourceType: is \(resourceType)")
-            //            DEBUG
-            //            print("Printing scripts:\(scripts)")
-            
-        case .failure(let error):
-            print("Decoding failure")
-            print("Response is:\(response)")
-            print("Error is:\(error)")
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
-    
-    func processPackages(data: Data, response: URLResponse, resourceType: String) {
-        
-        let decoded = PackagesReply.decode(data)
-        
-        switch decoded {
-        case .success(let packages):
-            print("Decoding packages success")
-            receivedPackages(packages: packages)
-            
-        case .failure(let error):
-            appendStatus("Corrupt data. \(response) \(error)")
-        }
-    }
+//    func processDepartment(data: Data, response: URLResponse, resourceType: String) {
+//        
+//        let decoded = DepartmentReply.decode(data)
+//        
+//        print("Running:processDepartment")
+//        //        DEBUG
+//        //        print("Processed: \(resourceType) data is:")
+//        //        print(String(data: data, encoding: .utf8)!)
+//        //        print("Decoded is:\(decoded)")
+//        //         print("resourceType is:\(String(resourceType))")
+//        
+//        switch decoded {
+//        case .success(let departments):
+//            print("Decoding success")
+//            receivedDepartment(departments: departments)
+//            //             print("resourceType: \(resourceType) is:\(scripts)")
+//            
+//        case .failure(let error):
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
+//    
+//    
+//    func processScripts(data: Data, response: URLResponse, resourceType: String) {
+//        
+//        let decoded = ScriptsReply.decode(data)
+//        print("Running:processScripts")
+//        //        DEBUG
+//        //        print("Processed: \(resourceType) data is:")
+//        //        print(String(data: data, encoding: .utf8)!)
+//        //        print("Decoded is:\(decoded)")
+//        //        print("resourceType is:\(String(resourceType))")
+//        
+//        switch decoded {
+//        case .success(let scripts):
+//            print("Decoding success")
+//            receivedScripts(scripts: scripts)
+//            print("resourceType: is \(resourceType)")
+//            //            DEBUG
+//            //            print("Printing scripts:\(scripts)")
+//            
+//        case .failure(let error):
+//            print("Decoding failure")
+//            print("Response is:\(response)")
+//            print("Error is:\(error)")
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
+//    
+//    func processPackages(data: Data, response: URLResponse, resourceType: String) {
+//        
+//        let decoded = PackagesReply.decode(data)
+//        
+//        switch decoded {
+//        case .success(let packages):
+//            print("Decoding packages success")
+//            receivedPackages(packages: packages)
+//            
+//        case .failure(let error):
+//            appendStatus("Corrupt data. \(response) \(error)")
+//        }
+//    }
     //
     
     
@@ -1203,58 +1209,58 @@ import AEXML
     //    #################################################################################
     
     
-    
-    func receivedComputers(computers: [Computer]) {
-        print("Running receivedComputers")
-        DispatchQueue.main.async {
-            self.computers = computers
-            // self.status = "Computers retrieved"
-            //        self.status = "Computers retrieved"
-        }
-    }
-    
-    func receivedComputersBasic(computers: [Computers.ComputerResponse]) {
-        //        DEBUG
-        print("Running ComputersBasic Received")
-        //        print("ComputersBasic Received are:\(computers)")
-        DispatchQueue.main.async {
-            self.computersBasic = computers
-            // self.status = "Computers retrieved"
-            //        self.status = "ComputersBasic retrieved"
-        }
-    }
-    
-    func receivedDepartment(departments: [Department]) {
-        DispatchQueue.main.async {
-            self.departments = departments
-            // self.status = "Computers retrieved"
-            //        self.status = "Departments retrieved"
-        }
-    }
-    
-    func receivedPackages(packages: [Package]) {
-        DispatchQueue.main.async {
-            self.packages = packages
-            // self.status = "Computers retrieved"
-            //        self.status = "Packages retrieved"
-        }
-    }
-    
-    func receivedPolicies(policies: [Policy]) {
-        DispatchQueue.main.async {
-            self.policies = policies
-            // self.status = "Computers retrieved"
-            //        self.status = "Policies retrieved"
-        }
-    }
-    
-    func receivedScripts(scripts: [ScriptClassic]) {
-        DispatchQueue.main.async {
-            self.scripts = scripts
-            // self.status = "Computers retrieved"
-            //        self.status = "Scripts retrieved"
-        }
-    }
+//    
+//    func receivedComputers(computers: [Computer]) {
+//        print("Running receivedComputers")
+//        DispatchQueue.main.async {
+//            self.computers = computers
+//            // self.status = "Computers retrieved"
+//            //        self.status = "Computers retrieved"
+//        }
+//    }
+//    
+//    func receivedComputersBasic(computers: [Computers.ComputerResponse]) {
+//        //        DEBUG
+//        print("Running ComputersBasic Received")
+//        //        print("ComputersBasic Received are:\(computers)")
+//        DispatchQueue.main.async {
+//            self.computersBasic = computers
+//            // self.status = "Computers retrieved"
+//            //        self.status = "ComputersBasic retrieved"
+//        }
+//    }
+//    
+//    func receivedDepartment(departments: [Department]) {
+//        DispatchQueue.main.async {
+//            self.departments = departments
+//            // self.status = "Computers retrieved"
+//            //        self.status = "Departments retrieved"
+//        }
+//    }
+//    
+//    func receivedPackages(packages: [Package]) {
+//        DispatchQueue.main.async {
+//            self.packages = packages
+//            // self.status = "Computers retrieved"
+//            //        self.status = "Packages retrieved"
+//        }
+//    }
+//    
+//    func receivedPolicies(policies: [Policy]) {
+//        DispatchQueue.main.async {
+//            self.policies = policies
+//            // self.status = "Computers retrieved"
+//            //        self.status = "Policies retrieved"
+//        }
+//    }
+//    
+//    func receivedScripts(scripts: [ScriptClassic]) {
+//        DispatchQueue.main.async {
+//            self.scripts = scripts
+//            // self.status = "Computers retrieved"
+//            //        self.status = "Scripts retrieved"
+//        }
+//    }
     
 //    func receivedPolicyDetail(policyDetailed: PoliciesDetailed) {
 //        DispatchQueue.main.async {
@@ -1961,7 +1967,6 @@ import AEXML
             //      run operation - download file
             //    #################################################################################
             
-            
             //            self.downloadFileAsync(objectID: String(describing: computerIDInt), resourceType: resourceType, server: server, url: url) { (path, error) in}
         }
     }
@@ -2050,12 +2055,6 @@ import AEXML
         self.processingComplete = true
         print(String(describing: self.processingComplete))
     }
-    
-    
-    
-    
-    
-    
     
     //    #################################################################################
     //    Delete polcies selection General
@@ -2432,9 +2431,6 @@ import AEXML
         print(String(describing: self.processingComplete))
         
     }
-    
-    
-    
     
     //    #################################################################################
     //    BATCH PROCESSING - END
@@ -3329,15 +3325,6 @@ import AEXML
         print("computerID is set as:\(computerID)")
         print("groupID is set as:\(groupID)")
         
-//        xml = """
-//                    <computer_group>
-//                        <computers>
-//                            <computer>
-//                                <id>\(computerID)</id>
-//                            </computer>
-//                        </computers>
-//                    </computer_group>
-//            """
         
 xml = """
     <computer_group>
@@ -3400,7 +3387,6 @@ xml = """
     //    #################################################################################
     
     
-//    func processAddComputersToGroup(selection: Set<Computer>, server: String, authToken: String, resourceType: ResourceType, Set<ComputerBasicRecord.ID>) {
     
     func processAddComputersToGroup(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
         
@@ -4332,38 +4318,38 @@ xml = """
                 //                self.doubleSeparationLine()
                 print("Doing processing of request:request")
                 
-                if resourceType == ResourceType.computer {
-                    print("Resource type is set in request to computer")
-                    
-                    self.processComputer(data: data, response: response, resourceType: "computer")
-                    
-                } else if resourceType == ResourceType.computerBasic {
-                    print("Resource type is set in request to computerBasic")
-                    
-                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-                    
-                } else if resourceType == ResourceType.category {
-                    print("Assigning to process - Resource type is set in request to categories")
-                    self.processCategory(data: data, response: response, resourceType: "category")
-                    
-                } else if resourceType == ResourceType.department {
-                    print("Assigning to process - Resource type is set in request to departments")
-                    self.processDepartment(data: data, response: response, resourceType: "department")
-                    
-                } else if resourceType == ResourceType.packages {
-                    print("Assigning to process - Resource type is set in request to packages")
-                    self.processPackages(data: data, response: response, resourceType: "packages")
-                    
-                } else if resourceType == ResourceType.scripts {
-                    print("Assigning to process - Resource type is set in request to scripts")
-                    self.processScripts(data: data, response: response, resourceType: "scripts")
-                    
-                } else {
-                    print("Assigning to process - Resource type is set in request to default - policy ")
-                    DispatchQueue.main.async {
-                        self.processPolicies(data: data, response: response, resourceType: resourceType)
-                    }
-                }
+//                if resourceType == ResourceType.computer {
+//                    print("Resource type is set in request to computer")
+//                    
+//                    self.processComputer(data: data, response: response, resourceType: "computer")
+//                    
+//                } else if resourceType == ResourceType.computerBasic {
+//                    print("Resource type is set in request to computerBasic")
+//                    
+//                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
+//                    
+//                } else if resourceType == ResourceType.category {
+//                    print("Assigning to process - Resource type is set in request to categories")
+//                    self.processCategory(data: data, response: response, resourceType: "category")
+//                    
+//                } else if resourceType == ResourceType.department {
+//                    print("Assigning to process - Resource type is set in request to departments")
+//                    self.processDepartment(data: data, response: response, resourceType: "department")
+//                    
+//                } else if resourceType == ResourceType.packages {
+//                    print("Assigning to process - Resource type is set in request to packages")
+//                    self.processPackages(data: data, response: response, resourceType: "packages")
+//                    
+//                } else if resourceType == ResourceType.scripts {
+//                    print("Assigning to process - Resource type is set in request to scripts")
+//                    self.processScripts(data: data, response: response, resourceType: "scripts")
+//                    
+//                } else {
+//                    print("Assigning to process - Resource type is set in request to default - policy ")
+//                    DispatchQueue.main.async {
+//                        self.processPolicies(data: data, response: response, resourceType: resourceType)
+//                    }
+//                }
                 
             } else {
                 DispatchQueue.main.async {
@@ -4402,35 +4388,35 @@ xml = """
                 
                 print("Doing processing of requestDelete")
                 
-                if resourceType == ResourceType.computer {
-                    print("Assigning to processComputer - Resource type is set in request to computer")
-                    self.processComputer(data: data, response: response, resourceType: "computer")
-                    
-                } else if resourceType == ResourceType.computerBasic {
-                    print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
-                    print("################################################")
-                    print(String(data: data, encoding: .utf8)!)
-                    print((response))
-                    print("Error is:\(String(describing: error))")
-                    //                    print(String(error: error, encoding: .utf8)!)
-                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-                    
-                } else if resourceType == ResourceType.scripts {
-                    print("Assigning to processScripts - Resource type is set in request to scripts")
-                    self.processScripts(data: data, response: response, resourceType: "scripts")
-                    
-                } else if resourceType == ResourceType.department {
-                    print("Assigning to processDepartment - Resource type is set in request to departments")
-                    self.processDepartment(data: data, response: response, resourceType: "department")
-                    
-                } else if resourceType == ResourceType.package {
-                    print("Assigning to processPackage - Resource type is set in request to package")
-                    
-                } else {
-                    print("Assigning to processPolicies - Resource type is set in request to policies")
-                    
-                    self.processPolicies(data: data, response: response, resourceType: resourceType)
-                }
+//                if resourceType == ResourceType.computer {
+//                    print("Assigning to processComputer - Resource type is set in request to computer")
+//                    self.processComputer(data: data, response: response, resourceType: "computer")
+//                    
+//                } else if resourceType == ResourceType.computerBasic {
+//                    print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
+//                    print("################################################")
+//                    print(String(data: data, encoding: .utf8)!)
+//                    print((response))
+//                    print("Error is:\(String(describing: error))")
+//                    //                    print(String(error: error, encoding: .utf8)!)
+//                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
+//                    
+//                } else if resourceType == ResourceType.scripts {
+//                    print("Assigning to processScripts - Resource type is set in request to scripts")
+//                    self.processScripts(data: data, response: response, resourceType: "scripts")
+//                    
+//                } else if resourceType == ResourceType.department {
+//                    print("Assigning to processDepartment - Resource type is set in request to departments")
+//                    self.processDepartment(data: data, response: response, resourceType: "department")
+//                    
+//                } else if resourceType == ResourceType.package {
+//                    print("Assigning to processPackage - Resource type is set in request to package")
+//                    
+//                } else {
+//                    print("Assigning to processPolicies - Resource type is set in request to policies")
+//                    
+//                    self.processPolicies(data: data, response: response, resourceType: resourceType)
+//                }
                 
             } else {
                 var text = "\n\nFailed."
@@ -4652,42 +4638,8 @@ xml = """
             
             
         }
-        
-        
-        //        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-        //            if let (data, response) = try await URLSession.shared.data(for: request)
-        //                guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-        //                print("Code not 200")
-        //                self.hasError = true
-        //
-        //                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        //                self.currentResponseCode = String(describing: statusCode)
-        //                print("getComputerExtAttributes Status code is:\(statusCode)")
-        //                throw JamfAPIError.http(statusCode)
-        //            }
-        //    }
+   
     }
-//        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-//            if let data = data, let response = response {
-//                print("Doing processing of sendRequestAsXML:\(httpMethod)")
-//                print("Data is:\(data)")
-//                print("Data is:\(response)")
-//                return response
-//
-//            } else {
-//                print("Error encountered")
-//                var text = "\n\nFailed."
-//                if let error = error {
-//                    text += " \(error)."
-//                }
-//                //                self.appendStatus(text)
-//                print(text)
-//            }
-//        }
-//        dataTask.resume()
-//    }
-    
-    
     
     func sendRequestAsJson(url: URL, authToken: String, resourceType: ResourceType, httpMethod: String, parameters: String ) {
         
