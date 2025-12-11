@@ -21,7 +21,6 @@ struct Man1fest0App: App {
     let xmlController: XmlBrain
     let progress: Progress
     let backgroundTasks: BackgroundTasks
-    let deletionController: DeletionBrain
 #if os(macOS)
     let basher = Basher()
 #endif
@@ -30,6 +29,7 @@ struct Man1fest0App: App {
     let scopingController: ScopingBrain
     let policyController: PolicyBrain
     let exportController: ImportExportBrain
+    let deletionController: DeletionBrain
     
     init() {
         self.photoController = PhotoViewModel()
@@ -37,6 +37,10 @@ struct Man1fest0App: App {
         self.extensionAttributeController = EaBrain()
 //        self.jamfController = JamfController()
         self.networkController = NetBrain()
+        // Initialize DeletionBrain and inject into NetBrain
+        let del = DeletionBrain(net: self.networkController)
+        self.deletionController = del
+        self.networkController.deletionController = del
         self.prestageController = PrestageBrain()
         self.xmlController = XmlBrain()
         self.progress = Progress()
@@ -45,10 +49,6 @@ struct Man1fest0App: App {
         self.scopingController = ScopingBrain()
         self.policyController = PolicyBrain()
         self.exportController = ImportExportBrain()
-+        // create DeletionBrain and link to networkController
-+        let del = DeletionBrain(net: self.networkController)
-+        self.deletionController = del
-+        self.networkController.deletionController = del
     }
     
     var body: some Scene {
@@ -62,10 +62,10 @@ struct Man1fest0App: App {
                 .environmentObject(pushController)
                 .environmentObject(extensionAttributeController)
                 .environmentObject(networkController)
-+                .environmentObject(deletionController)
                 .environmentObject(prestageController)
                 .environmentObject(xmlController)
                 .environmentObject(progress)
+                .environmentObject(deletionController)
 #if os(macOS)
                 .environmentObject(basher)
 #endif

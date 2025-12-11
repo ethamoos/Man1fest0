@@ -205,16 +205,16 @@ class PolicyBrain: ObservableObject {
         }
         dataTask.resume()
     }
-//    
+//
 //    //    #################################################################################
 //    //    Create Policies - via XML
 //    //    #################################################################################
-//    
+//
 //    func createNewPolicyXML(server: String, authToken: String, policyName: String, customTrigger: String, departmentID: String, notificationName: String, notificationStatus: String, iconId: String, iconName: String, iconUrl: String, selfServiceEnable: String ) {
-//        
+//
 //        var xml:String
 ////        let sem = DispatchSemaphore.init(value: 0)
-//        
+//
 //        self.separationLine()
 //        print("DEBUGGING - DISABLE IF NOT TESTING")
 //        self.separationLine()
@@ -226,11 +226,11 @@ class PolicyBrain: ObservableObject {
 //        print("policyName is set as:\(policyName)")
 //        print("notificationName is set as:\(notificationName)")
 //        print("notificationStatus is set as:\(notificationStatus)")
-//        
+//
 //        //    #################################################################################
 //        //    newPolicyXml
 //        //    #################################################################################
-//        
+//
 //        xml = """
 //        <?xml version="1.0" encoding="utf-8"?>
 //        <policy>
@@ -308,12 +308,12 @@ class PolicyBrain: ObservableObject {
 //            </self_service>
 //        </policy>
 //        """
-////        
-//        
+////
+//
 //        //              ################################################################################
 //        //              DEBUG
 //        //              ################################################################################
-//        
+//
 //        self.separationLine()
 //        print("Setting newPolicyAsXML variable - PolicyBrain")
 //        self.newPolicyAsXML = xml
@@ -324,11 +324,11 @@ class PolicyBrain: ObservableObject {
 //        print(xml)
 //        print("Reading xml data with AEXML")
 //        self.readXMLDataFromStringPolicyBrain(xmlContent: xml)
-//        
+//
 //        print("XML data is now stored in:self.aexmlDoc.root - PolicyBrain")
 //        print(self.aexmlDoc.root)
 //        self.separationLine()
-//        
+//
 //        //        if URL(string: server) != nil {
 //        //            if let serverURL = URL(string: server) {
 //        //
@@ -359,7 +359,7 @@ class PolicyBrain: ObservableObject {
 //        //            }
 //        //        }
 //    }
-//    
+//
     
     
     //    #################################################################################
@@ -457,12 +457,12 @@ class PolicyBrain: ObservableObject {
 //    // ######################################################################################
 //    // addCategoryToPolicy
 //    // ######################################################################################
-//    
-//    
+//
+//
 //    func addCategoryToPolicy(xmlContent: String,authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
-//        
+//
 //        self.readXMLDataFromStringPolicyBrain(xmlContent: xmlContent)
-//        
+//
 //        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
 //        let url = URL(string: jamfURLQuery)!
 //        self.separationLine()
@@ -477,23 +477,23 @@ class PolicyBrain: ObservableObject {
 //        //        }
 //        if categoryName != "" && categoryId != "" {
 //            category.addChild(name: "name", value: categoryName)
-//            
-//            
+//
+//
 //        print("updatedContent is:")
 //        print(xmlContent)
-//            
+//
 //            if newPolicyFlag == false {
 //                print("Posting data")
-//      
-//                
+//
+//
 //                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent, httpMethod: "PUT")
 //            }
-//            
+//
 //        } else {
 //            print("Category is not set - not updating")
 //        }
 //    }
-//    
+//
     
     
     
@@ -871,4 +871,3 @@ class PolicyBrain: ObservableObject {
     
     
 }
-

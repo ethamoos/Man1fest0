@@ -1,4 +1,4 @@
-//
+    //
 //  ConfigProfileViewMacOS.swift
 //  Man1fest0
 //
@@ -13,6 +13,7 @@ struct ConfigProfileViewMacOSTable: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var pushController: PushBrain
     @EnvironmentObject var layout: Layout
+    @EnvironmentObject var deletionController: DeletionBrain
     
     @State var server: String
     @State private var searchText = ""

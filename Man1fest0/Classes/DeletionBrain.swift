@@ -14,7 +14,7 @@ class DeletionBrain: ObservableObject {
 
     func deleteComputer(server: String, authToken: String, resourceType: ResourceType, itemID: String) {
         guard let net = net else { return }
-        let resourcePath = net.getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: resourceType)
 
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
@@ -32,7 +32,7 @@ class DeletionBrain: ObservableObject {
 
     func deleteConfigProfile(server: String,authToken: String, resourceType: ResourceType, itemID: String) {
         guard let net = net else { return }
-        let resourcePath = net.getURLFormat(data: (ResourceType.configProfileDetailedMacOS))
+        let resourcePath = getURLFormat(data: ResourceType.configProfileDetailedMacOS)
 
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
@@ -52,7 +52,7 @@ class DeletionBrain: ObservableObject {
     func deletePackage(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
         guard let net = net else { return }
         print("[DeletionBrain] Running deletePackage for item\(itemID)")
-        let resourcePath = net.getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: resourceType)
 
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
@@ -67,7 +67,7 @@ class DeletionBrain: ObservableObject {
 
     func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
         guard let net = net else { return }
-        let resourcePath = net.getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: resourceType)
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
             net.separationLine()
@@ -83,7 +83,7 @@ class DeletionBrain: ObservableObject {
 
     func deleteScript(server: String,resourceType: ResourceType, itemID: String, authToken: String) async throws {
         guard let net = net else { return }
-        let resourcePath = net.getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: resourceType)
 
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)

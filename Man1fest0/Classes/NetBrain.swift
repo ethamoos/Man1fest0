@@ -5,7 +5,7 @@ import AEXML
 
 
 @MainActor class NetBrain: ObservableObject {
-    
+
     // #########################################################################
     // Global Variables
     // #########################################################################
@@ -23,6 +23,10 @@ import AEXML
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
     var currentURL: String = ""
+
+    // New: reference to DeletionBrain so other classes can call deletion methods via networkController
+    var deletionController: DeletionBrain? = nil
+
     //  #############################################################################
     //  Login and Tokens Confirmations
     //  #############################################################################
@@ -170,9 +174,6 @@ import AEXML
     @Published var computerGroupMembersXML: String = ""
 //    @Published var currentPolicyAsXML: String = ""
     @Published var updateXML: Bool = false
-
-    // Hook for DeletionBrain (set from App init)
-    var deletionController: DeletionBrain?
     
     //  #############################################################################
     //    ############ Scripts
@@ -1330,101 +1331,50 @@ import AEXML
     
     
     
-    //    #################################################################################
-    //    Delete - functions
-    //    #################################################################################
-    
-    func deleteComputer(server: String, authToken: String, resourceType: ResourceType, itemID: String) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
-            separationLine()
-            print("Running deleteComputer - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            requestDelete(url: url, authToken: authToken, resourceType: resourceType)
-            appendStatus("Connecting to \(url)...")
-            print("deleteComputer has finished")
-            print("Set processingComplete to true")
-            self.processingComplete = true
-            print(String(describing: self.processingComplete))
-        }
+//    #################################################################################
+//    Delete - functions (forwarders to DeletionBrain)
+//    #################################################################################
+
+func deleteComputer(server: String, authToken: String, resourceType: ResourceType, itemID: String) {
+    if let del = self.deletionController {
+        del.deleteComputer(server: server, authToken: authToken, resourceType: resourceType, itemID: itemID)
+    } else {
+        appendStatus("Deletion controller not available; cannot delete computer \(itemID)")
     }
-    
-    func deleteConfigProfile(server: String,authToken: String, resourceType: ResourceType, itemID: String) {
-        
-        let resourcePath = getURLFormat(data: (ResourceType.configProfileDetailedMacOS))
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
-            separationLine()
-            print("Running delete computer function - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            requestDelete(url: url, authToken: authToken, resourceType: resourceType)
-            appendStatus("Connecting to \(url)...")
-            
-            print("deleteComputer has finished")
-            print("Set processingComplete to true")
-            self.processingComplete = true
-            print(String(describing: self.processingComplete))
-        }
+}
+
+func deleteConfigProfile(server: String, authToken: String, resourceType: ResourceType, itemID: String) {
+    if let del = self.deletionController {
+        del.deleteConfigProfile(server: server, authToken: authToken, resourceType: resourceType, itemID: itemID)
+    } else {
+        appendStatus("Deletion controller not available; cannot delete config profile \(itemID)")
     }
-    
-    func deletePackage(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
-        
-        print("Running deletePackage for item\(itemID)")
-        let resourcePath = getURLFormat(data: (resourceType))
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
-            separationLine()
-            print("Running delete package function - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            print("itemID is set as:\(itemID)")
-            requestDelete(url: url, authToken: authToken, resourceType: resourceType)
-            appendStatus("Connecting to \(url)...")
-        }
+}
+
+func deletePackage(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
+    if let del = self.deletionController {
+        del.deletePackage(server: server, resourceType: resourceType, itemID: itemID, authToken: authToken)
+    } else {
+        appendStatus("Deletion controller not available; cannot delete package \(itemID)")
     }
-    
-    func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
-            separationLine()
-            print("Running deletePolicy function - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            requestDelete(url: url, authToken: authToken, resourceType: resourceType)
-//            appendStatus("Connecting to \(url)...")
-            print("deletePolicy has finished for:\(itemID)")
-            print("Set processingComplete to true")
-            self.processingComplete = true
-            print(String(describing: self.processingComplete))
-        }
+}
+
+func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
+    if let del = self.deletionController {
+        del.deletePolicy(server: server, resourceType: resourceType, itemID: itemID, authToken: authToken)
+    } else {
+        appendStatus("Deletion controller not available; cannot delete policy \(itemID)")
     }
-    
-    func deleteScript(server: String,resourceType: ResourceType, itemID: String, authToken: String) async throws {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
-            separationLine()
-            print("Running delete script function - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            
-            do {
-                try await requestDeleteXML(url: url, authToken: authToken, resourceType: resourceType)
-            } catch {
-                throw JamfAPIError.badURL
-            }
-            
-//            appendStatus("Connecting to \(url)...")
-            
-            print("deleteScript has finished")
-        }
+}
+
+func deleteScript(server: String, resourceType: ResourceType, itemID: String, authToken: String) async throws {
+    if let del = self.deletionController {
+        try await del.deleteScript(server: server, resourceType: resourceType, itemID: itemID, authToken: authToken)
+    } else {
+        appendStatus("Deletion controller not available; cannot delete script \(itemID)")
+        throw JamfAPIError.requestFailed
     }
+}
     
     
     
