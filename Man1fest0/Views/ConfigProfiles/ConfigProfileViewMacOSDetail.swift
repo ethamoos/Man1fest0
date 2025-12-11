@@ -13,6 +13,7 @@ struct ConfigProfileViewMacOSDetail: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var pushController: PushBrain
     @EnvironmentObject var layout: Layout
+    @EnvironmentObject var deletionController: DeletionBrain
 
     @State var selection: ConfigurationProfiles.ConfigurationProfile
     @State private var selectedDevice = ""
@@ -42,7 +43,7 @@ struct ConfigProfileViewMacOSDetail: View {
 //                    }
 //                }
 //            }
-//            
+//
 //            LazyVGrid(columns: layout.columnsFlex) {
 //                Picker("Commands", selection: $selectedCommand) {
 //                    ForEach(pushController.flushCommands, id: \.self) {
@@ -50,12 +51,12 @@ struct ConfigProfileViewMacOSDetail: View {
 //                    }
 //                }
 //            }
-//            
+//
 //            Button("Flush Commands") {
-//                
+//
 //                progress.showProgress()
 //                progress.waitForABit()
-//                
+//
 //                Task {
 //                   try await pushController.flushCommands(deviceId: selection.jamfId!, deviceType: selectedDevice, command: selectedCommand, authToken: networkController.authToken, server: server )
 //                }
@@ -69,7 +70,7 @@ struct ConfigProfileViewMacOSDetail: View {
                 progress.waitForABit()
                 showingWarning = true
                 print("Deleting:\($selection)")
-                networkController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selection.jamfId))
+                deletionController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selection.jamfId))
                 print("Deleting ConfigProfile:\(String(describing: selection.jamfId ?? 0))")
             }) {
                 HStack(spacing: 10) {

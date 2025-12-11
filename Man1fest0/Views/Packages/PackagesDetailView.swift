@@ -21,6 +21,7 @@ struct PackageDetailView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var layout: Layout
+    @EnvironmentObject var deletionController: DeletionBrain
 
     //  ########################################################################################
     //  Selections
@@ -75,7 +76,7 @@ struct PackageDetailView: View {
                         message: Text("This action will delete data.\n Always ensure that you have a backup!"),
                         primaryButton: .destructive(Text("I understand!")) {
                             // Code to execute when "Yes" is tapped
-                            networkController.deletePackage( server: server, resourceType: ResourceType.package, itemID: String(describing: currentPackage?.id ?? 0), authToken: networkController.authToken)
+                            deletionController.deletePackage( server: server, resourceType: ResourceType.package, itemID: String(describing: currentPackage?.id ?? 0), authToken: networkController.authToken)
                             
                             print("Yes tapped")
                         },
@@ -84,7 +85,7 @@ struct PackageDetailView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
-                
+
                 //              ####################################################################
                 //              CATEGORY
                 //              ####################################################################
@@ -134,7 +135,7 @@ struct PackageDetailView: View {
                     
                     
 //                    HStack {
-//                        
+//
 //
 //                    }
                     

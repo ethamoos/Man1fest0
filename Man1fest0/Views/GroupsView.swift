@@ -15,6 +15,7 @@ struct GroupsView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var deletionController: DeletionBrain
     
     @State var server: String
     @State private var showingWarning = false

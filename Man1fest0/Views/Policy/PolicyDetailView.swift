@@ -24,6 +24,8 @@ struct PolicyDetailView: View {
     
     @EnvironmentObject var layout: Layout
     
+    @EnvironmentObject var deletionController: DeletionBrain
+    
     //  ########################################################################################
     
     @State var categoryName = ""
@@ -261,7 +263,7 @@ struct PolicyDetailView: View {
                         message: Text("This action will delete data.\n Always ensure that you have a backup!"),
                         primaryButton: .destructive(Text("I understand!")) {
                             // Code to execute when "Yes" is tapped
-                            networkController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
+                            deletionController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
                             print("Yes tapped")
                         },
                         secondaryButton: .cancel()

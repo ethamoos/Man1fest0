@@ -4,6 +4,7 @@
 //
 //  Created by Amos Deane on 24/11/2023.
 //
+//
 
 import SwiftUI
 
@@ -15,6 +16,7 @@ struct ScriptUsageView: View {
     
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var deletionController: DeletionBrain
     @EnvironmentObject var policyController: PolicyBrain
     // @EnvironmentObject var controller: JamfController
     
@@ -144,7 +146,7 @@ struct ScriptUsageView: View {
                             let eachItemTrimmed = eachItem.trimmingCharacters(in: .whitespacesAndNewlines)
                             print("Item trimmed:\(eachItemTrimmed)")
                             Task {
-                                try await networkController.deleteScript(server: server, resourceType: ResourceType.script, itemID: eachItemTrimmed, authToken: networkController.authToken)
+                                try await deletionController.deleteScript(server: server, resourceType: ResourceType.script, itemID: eachItemTrimmed, authToken: networkController.authToken)
                             }
                         }
                     }) {

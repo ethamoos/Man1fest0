@@ -1,4 +1,3 @@
-
 //  PackageUsageView.swift
 //  Man1fest0
 //
@@ -14,6 +13,7 @@ struct PackageUsageView: View {
     
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var deletionController: DeletionBrain
     @EnvironmentObject var backgroundTasks: BackgroundTasks
 //    // @EnvironmentObject var controller: JamfController
     @State private var searchText = ""
@@ -146,8 +146,8 @@ struct PackageUsageView: View {
                         print("Item untrimmed:\(eachItem)")
                         let eachItemTrimmed = eachItem.trimmingCharacters(in: .whitespacesAndNewlines)
                         print("Item trimmed:\(eachItemTrimmed)")
-                        
-                        networkController.deletePackage(server: server, resourceType: ResourceType.package, itemID: eachItemTrimmed, authToken: networkController.authToken )
+
+                        deletionController.deletePackage(server: server, resourceType: ResourceType.package, itemID: eachItemTrimmed, authToken: networkController.authToken )
                     }
                     
                 }) {

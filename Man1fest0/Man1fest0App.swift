@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 
@@ -22,6 +21,7 @@ struct Man1fest0App: App {
     let xmlController: XmlBrain
     let progress: Progress
     let backgroundTasks: BackgroundTasks
+    let deletionController: DeletionBrain
 #if os(macOS)
     let basher = Basher()
 #endif
@@ -45,6 +45,10 @@ struct Man1fest0App: App {
         self.scopingController = ScopingBrain()
         self.policyController = PolicyBrain()
         self.exportController = ImportExportBrain()
++        // create DeletionBrain and link to networkController
++        let del = DeletionBrain(net: self.networkController)
++        self.deletionController = del
++        self.networkController.deletionController = del
     }
     
     var body: some Scene {
@@ -58,6 +62,7 @@ struct Man1fest0App: App {
                 .environmentObject(pushController)
                 .environmentObject(extensionAttributeController)
                 .environmentObject(networkController)
++                .environmentObject(deletionController)
                 .environmentObject(prestageController)
                 .environmentObject(xmlController)
                 .environmentObject(progress)
@@ -72,7 +77,7 @@ struct Man1fest0App: App {
                 .environmentObject(policyController)
                 .environmentObject(exportController)
         }.commands {
-            SidebarCommands() 
+            SidebarCommands()
         }
         .onChange(of: scenePhase) { _ in
             coreDataStack.save()

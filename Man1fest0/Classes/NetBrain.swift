@@ -170,6 +170,9 @@ import AEXML
     @Published var computerGroupMembersXML: String = ""
 //    @Published var currentPolicyAsXML: String = ""
     @Published var updateXML: Bool = false
+
+    // Hook for DeletionBrain (set from App init)
+    var deletionController: DeletionBrain?
     
     //  #############################################################################
     //    ############ Scripts
@@ -884,11 +887,11 @@ import AEXML
     //    #################################################################################
     
 //    struct CategoryReply: Codable {
-//        
+//
 //        let categories: [Category]
 //        static func decode(_ data: Data) -> Result<[Category],Error> {
 //            let decoder = JSONDecoder()
-//            
+//
 //            do {
 //                let response = try decoder.decode(CategoryReply.self, from: data)
 //                print("CategoryReply Decoding succeeded")
@@ -898,10 +901,10 @@ import AEXML
 //            }
 //        }
 //    }
-//    
-//    
+//
+//
 //    struct ComputersReply: Codable {
-//        
+//
 //        let computers: [Computer]
 //        static func decode(_ data: Data) -> Result<[Computer],Error> {
 //            let decoder = JSONDecoder()
@@ -915,15 +918,15 @@ import AEXML
 //            }
 //        }
 //    }
-//    
+//
 //    struct ComputersBasicReply: Codable {
-//        
+//
 //        let computersBasic: [Computers.ComputerResponse]
 //        static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
 //            //             separationLine()
 //            print("ComputersBasicReply data is:")
 //            print(String(data: data, encoding: .utf8)!)
-//            
+//
 //            let decoder = JSONDecoder()
 //            do {
 //                let response = try decoder.decode(ComputersBasicReply.self, from: data)
@@ -935,16 +938,16 @@ import AEXML
 //            }
 //        }
 //    }
-//    
-//    
+//
+//
 //    struct ComputersDetailReply: Codable {
-//        
+//
 //        let computersBasic: [Computers.ComputerResponse]
 //        static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
 //            //             separationLine()
 //            print("ComputersBasicReply data is:")
 //            //            print(String(data: data, encoding: .utf8)!)
-//            
+//
 //            let decoder = JSONDecoder()
 //            do {
 //                let response = try decoder.decode(ComputersBasicReply.self, from: data)
@@ -956,14 +959,14 @@ import AEXML
 //            }
 //        }
 //    }
-//    
-//    
+//
+//
 //    struct DepartmentReply: Codable {
-//        
+//
 //        let departments: [Department]
 //        static func decode(_ data: Data) -> Result<[Department],Error> {
 //            let decoder = JSONDecoder()
-//            
+//
 //            do {
 //                let response = try decoder.decode(DepartmentReply.self, from: data)
 //                print("DepartmentReply Decoding succeeded")
@@ -973,14 +976,14 @@ import AEXML
 //            }
 //        }
 //    }
-//    
-//    
+//
+//
 //    struct PackagesReply: Codable {
-//        
+//
 //        let packages: [Package]
 //        static func decode(_ data: Data) -> Result<[Package],Error> {
 //            let decoder = JSONDecoder()
-//            
+//
 //            do {
 //                let response = try decoder.decode(PackagesReply.self, from: data)
 //                print("PackagesReply Decoding succeeded")
@@ -992,10 +995,10 @@ import AEXML
 //            }
 //        }
 //    }
-//    
-//    
+//
+//
 //    struct PoliciesReply: Codable {
-//        
+//
 //        let policies: [Policy]
 //        static func decode(_ data: Data) -> Result<[Policy],Error> {
 //            let decoder = JSONDecoder()
@@ -1008,14 +1011,14 @@ import AEXML
 //            }
 //        }
 //    }
-//    
-//    
+//
+//
 //    struct PoliciesDetailReply: Codable {
-//        
+//
 //        let policyDetailed: PoliciesDetailed
-//        
+//
 //        static func decode(_ data: Data) -> Result<PoliciesDetailed,Error> {
-//            
+//
 //            let decoder = JSONDecoder()
 //            do {
 //                let response = try decoder.decode(PoliciesDetailed.self, from: data)
@@ -1027,9 +1030,9 @@ import AEXML
 //            }
 //        }
 //    }
-//    
+//
 //    struct ScriptsReply: Codable {
-//        
+//
 //        let scripts: [ScriptClassic]
 //        static func decode(_ data: Data) -> Result<[ScriptClassic],Error> {
 //            let decoder = JSONDecoder()
@@ -1042,9 +1045,9 @@ import AEXML
 //            }
 //        }
 //    }
-//    
-//    
-//    
+//
+//
+//
     
     //    #################################################################################
     //    Process functions
@@ -1052,7 +1055,7 @@ import AEXML
     
     
 //    func processPolicies(data: Data, response: URLResponse, resourceType: ResourceType) {
-//        
+//
 //        separationLine()
 //        let decoded = PoliciesReply.decode(data)
 //        switch decoded {
@@ -1060,68 +1063,68 @@ import AEXML
 //            receivedPolicies(policies: policies)
 //            //            DEBUG
 //            //            print("Policies are:\(policies)")
-//            
+//
 //        case .failure(let error):
 //            appendStatus("Corrupt data. \(response) \(error)")
 //        }
 //    }
-//    
+//
 //    func processComputer(data: Data, response: URLResponse, resourceType: String) {
-//        
+//
 //        separationLine()
 //        let decoded = ComputersReply.decode(data)
 //        separationLine()
-//        
+//
 //        //        DEBUG
 //        //        print("Unprocessed computers data is:")
 //        //        print(String(data: data, encoding: .utf8)!)
 //        //        print("Decoded is:\(decoded)")
 //        //        print("resourceType is:\(String(resourceType))")
-//        
+//
 //        switch decoded {
 //        case .success(let computers):
 //            receivedComputers(computers: computers)
-//            
+//
 //            //            DEBUG
 //            //            print("Computers are:\(computers)")
-//            
+//
 //        case .failure(let error):
 //            appendStatus("Corrupt data. \(response) \(error)")
 //        }
 //    }
-//    
+//
 //    func processCategory(data: Data, response: URLResponse, resourceType: String) {
-//        
+//
 //        let decoded = CategoryReply.decode(data)
-//        
+//
 //        //         print("Processed: \(resourceType) data is:")
 //        //         print(String(data: data, encoding: .utf8)!)
 //        //         print("Decoded is:\(decoded)")
 //        //         print("resourceType is:\(String(resourceType))")
-//        
+//
 //        switch decoded {
 //        case .success(let categories):
 //            print("Decoding success")
 //            receivedCategory(categories: categories)
-//            
+//
 //        case .failure(let error):
 //            appendStatus("Corrupt data. \(response) \(error)")
 //        }
 //    }
-//    
-//    
+//
+//
 //    func processComputersBasic(data: Data, response: URLResponse, resourceType: String) {
-//        
+//
 //        separationLine()
 //        print("Running:processComputersBasic")
-//        
+//
 //        //        DEBUG
 //        //        print("Unprocessed computersBasic data is:")
 //        //        print(data)
 //        //        print(String(data: data, encoding: .utf8)!)
-//        
+//
 //        let decoded = ComputersBasicReply.decode(data)
-//        
+//
 //        //        DEBUG
 //        //        separationLine()
 //        //        print("Processed computersBasic data is:")
@@ -1129,41 +1132,41 @@ import AEXML
 //        //        print("Decoded computersBasic is:\(decoded)")
 //        //        print("resourceType is:\(String(resourceType))")
 //        //        separationLine()
-//        
+//
 //        switch decoded {
 //        case .success(let computers):
 //            receivedComputersBasic(computers: computersBasic)
-//            
+//
 //        case .failure(let error):
 //            appendStatus("Corrupt data. \(response) \(error)")
 //        }
 //    }
     
 //    func processDepartment(data: Data, response: URLResponse, resourceType: String) {
-//        
+//
 //        let decoded = DepartmentReply.decode(data)
-//        
+//
 //        print("Running:processDepartment")
 //        //        DEBUG
 //        //        print("Processed: \(resourceType) data is:")
 //        //        print(String(data: data, encoding: .utf8)!)
 //        //        print("Decoded is:\(decoded)")
 //        //         print("resourceType is:\(String(resourceType))")
-//        
+//
 //        switch decoded {
 //        case .success(let departments):
 //            print("Decoding success")
 //            receivedDepartment(departments: departments)
 //            //             print("resourceType: \(resourceType) is:\(scripts)")
-//            
+//
 //        case .failure(let error):
 //            appendStatus("Corrupt data. \(response) \(error)")
 //        }
 //    }
-//    
-//    
+//
+//
 //    func processScripts(data: Data, response: URLResponse, resourceType: String) {
-//        
+//
 //        let decoded = ScriptsReply.decode(data)
 //        print("Running:processScripts")
 //        //        DEBUG
@@ -1171,7 +1174,7 @@ import AEXML
 //        //        print(String(data: data, encoding: .utf8)!)
 //        //        print("Decoded is:\(decoded)")
 //        //        print("resourceType is:\(String(resourceType))")
-//        
+//
 //        switch decoded {
 //        case .success(let scripts):
 //            print("Decoding success")
@@ -1179,7 +1182,7 @@ import AEXML
 //            print("resourceType: is \(resourceType)")
 //            //            DEBUG
 //            //            print("Printing scripts:\(scripts)")
-//            
+//
 //        case .failure(let error):
 //            print("Decoding failure")
 //            print("Response is:\(response)")
@@ -1187,16 +1190,16 @@ import AEXML
 //            appendStatus("Corrupt data. \(response) \(error)")
 //        }
 //    }
-//    
+//
 //    func processPackages(data: Data, response: URLResponse, resourceType: String) {
-//        
+//
 //        let decoded = PackagesReply.decode(data)
-//        
+//
 //        switch decoded {
 //        case .success(let packages):
 //            print("Decoding packages success")
 //            receivedPackages(packages: packages)
-//            
+//
 //        case .failure(let error):
 //            appendStatus("Corrupt data. \(response) \(error)")
 //        }
@@ -1209,7 +1212,7 @@ import AEXML
     //    #################################################################################
     
     
-//    
+//
 //    func receivedComputers(computers: [Computer]) {
 //        print("Running receivedComputers")
 //        DispatchQueue.main.async {
@@ -1218,7 +1221,7 @@ import AEXML
 //            //        self.status = "Computers retrieved"
 //        }
 //    }
-//    
+//
 //    func receivedComputersBasic(computers: [Computers.ComputerResponse]) {
 //        //        DEBUG
 //        print("Running ComputersBasic Received")
@@ -1229,7 +1232,7 @@ import AEXML
 //            //        self.status = "ComputersBasic retrieved"
 //        }
 //    }
-//    
+//
 //    func receivedDepartment(departments: [Department]) {
 //        DispatchQueue.main.async {
 //            self.departments = departments
@@ -1237,7 +1240,7 @@ import AEXML
 //            //        self.status = "Departments retrieved"
 //        }
 //    }
-//    
+//
 //    func receivedPackages(packages: [Package]) {
 //        DispatchQueue.main.async {
 //            self.packages = packages
@@ -1245,7 +1248,7 @@ import AEXML
 //            //        self.status = "Packages retrieved"
 //        }
 //    }
-//    
+//
 //    func receivedPolicies(policies: [Policy]) {
 //        DispatchQueue.main.async {
 //            self.policies = policies
@@ -1253,7 +1256,7 @@ import AEXML
 //            //        self.status = "Policies retrieved"
 //        }
 //    }
-//    
+//
 //    func receivedScripts(scripts: [ScriptClassic]) {
 //        DispatchQueue.main.async {
 //            self.scripts = scripts
@@ -4320,30 +4323,30 @@ xml = """
                 
 //                if resourceType == ResourceType.computer {
 //                    print("Resource type is set in request to computer")
-//                    
+//
 //                    self.processComputer(data: data, response: response, resourceType: "computer")
-//                    
+//
 //                } else if resourceType == ResourceType.computerBasic {
 //                    print("Resource type is set in request to computerBasic")
-//                    
+//
 //                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-//                    
+//
 //                } else if resourceType == ResourceType.category {
 //                    print("Assigning to process - Resource type is set in request to categories")
 //                    self.processCategory(data: data, response: response, resourceType: "category")
-//                    
+//
 //                } else if resourceType == ResourceType.department {
 //                    print("Assigning to process - Resource type is set in request to departments")
 //                    self.processDepartment(data: data, response: response, resourceType: "department")
-//                    
+//
 //                } else if resourceType == ResourceType.packages {
 //                    print("Assigning to process - Resource type is set in request to packages")
 //                    self.processPackages(data: data, response: response, resourceType: "packages")
-//                    
+//
 //                } else if resourceType == ResourceType.scripts {
 //                    print("Assigning to process - Resource type is set in request to scripts")
 //                    self.processScripts(data: data, response: response, resourceType: "scripts")
-//                    
+//
 //                } else {
 //                    print("Assigning to process - Resource type is set in request to default - policy ")
 //                    DispatchQueue.main.async {
@@ -4391,7 +4394,7 @@ xml = """
 //                if resourceType == ResourceType.computer {
 //                    print("Assigning to processComputer - Resource type is set in request to computer")
 //                    self.processComputer(data: data, response: response, resourceType: "computer")
-//                    
+//
 //                } else if resourceType == ResourceType.computerBasic {
 //                    print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
 //                    print("################################################")
@@ -4400,21 +4403,21 @@ xml = """
 //                    print("Error is:\(String(describing: error))")
 //                    //                    print(String(error: error, encoding: .utf8)!)
 //                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-//                    
+//
 //                } else if resourceType == ResourceType.scripts {
 //                    print("Assigning to processScripts - Resource type is set in request to scripts")
 //                    self.processScripts(data: data, response: response, resourceType: "scripts")
-//                    
+//
 //                } else if resourceType == ResourceType.department {
 //                    print("Assigning to processDepartment - Resource type is set in request to departments")
 //                    self.processDepartment(data: data, response: response, resourceType: "department")
-//                    
+//
 //                } else if resourceType == ResourceType.package {
 //                    print("Assigning to processPackage - Resource type is set in request to package")
-//                    
+//
 //                } else {
 //                    print("Assigning to processPolicies - Resource type is set in request to policies")
-//                    
+//
 //                    self.processPolicies(data: data, response: response, resourceType: resourceType)
 //                }
                 

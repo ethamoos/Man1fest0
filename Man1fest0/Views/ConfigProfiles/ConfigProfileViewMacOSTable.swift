@@ -55,7 +55,7 @@ struct ConfigProfileViewMacOSTable: View {
                             progress.waitForABit()
                             showingWarning = true
                             print("Deleting:\($selectionID)")
-                            networkController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selectionID))
+                            deletionController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selectionID))
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "trash")
@@ -148,5 +148,3 @@ struct ConfigProfileViewMacOSTable: View {
 //        ConfigProfilesView()
 //    }
 //}
-
-
