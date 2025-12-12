@@ -4004,36 +4004,45 @@ xml = """
         }
     }
     
+    //    #################################################################################
+    //    Create Package Record
+    //    #################################################################################
     
     func createPackageRecord(name: String, server: String,authToken: String) {
+
+        let id = "0"
+//        var xml: String
         
-        print("Running createPackageRecord - updating via xml")
-        print("name is set as:\(name)")
-//        print("authToken is set as:\n\(authToken)")
+        separationLine()
+        print("Running createPackageName - updating via xml")
+        print("Package name is set as:\(name)")
+        //        print("authToken is set as:\(authToken)")
         
-        let parameters = "<package>\n\t<name>\(name)</name>\n\t<category>Unknown</category>\n\t<filename>\(name)</filename>\n\t<info>string</info>\n\t<notes>string</notes>\n\t<priority>5</priority>\n\t<reboot_required>true</reboot_required>\n\t<fill_user_template>true</fill_user_template>\n\t<fill_existing_users>true</fill_existing_users>\n\t<boot_volume_required>true</boot_volume_required>\n\t<allow_uninstalled>true</allow_uninstalled>\n\t<os_requirements>string</os_requirements>\n\t<required_processor>None</required_processor>\n\t<switch_with_package>Do Not Install</switch_with_package>\n\t<install_if_reported_available>true</install_if_reported_available>\n\t<reinstall_option>Do Not Reinstall</reinstall_option>\n\t<triggering_files>string</triggering_files>\n\t<send_notification>true</send_notification>\n</package>"
+       let xml = """
+        <package>
+         <name>\(name)</name>
+         <filename>\(name)</filename>
+         <priority>10</priority>
+         <reboot_required>false</reboot_required>
+         <boot_volume_required>true</boot_volume_required>
+        </package>
+        """
         
-        let postData = parameters.data(using: .utf8)
         
-        var request = URLRequest(url: URL(string: "\(server)/JSSResource/packages/id/0")!,timeoutInterval: Double.infinity)
-        request.addValue("application/xml", forHTTPHeaderField: "Accept")
-        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        print("Request is:\(String(describing: request))")
-        request.httpMethod = "POST"
-        request.httpBody = postData
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data else {
-                print(String(describing: error))
-                return
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/packages/id/").appendingPathComponent(id)
+                print("Running create group function - url is set as:\(url)")
+//                print("resourceType is set as:\(resourceType)")
+                // print("xml is set as:\(xml)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.package, xml: xml, httpMethod: "POST")
+                appendStatus("Connecting to \(url)...")
             }
-            print(String(data: data, encoding: .utf8)!)
         }
-        
-        task.resume()
-        
     }
+    
+    
+   
     
     
     
