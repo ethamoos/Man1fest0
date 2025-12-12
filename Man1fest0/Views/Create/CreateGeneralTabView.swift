@@ -323,56 +323,44 @@ struct CreateGeneralTabView: View {
             
 #if os(macOS)
             
-            HStack {
-                Button(action: {
-                    let openURL = importExportController.showOpenPanel()
-                    print("openURL path is:\(String(describing: openURL?.path ?? ""))")
-                    if (openURL != nil) {
-                        self.filePath = openURL!.path
-                    } else {
-                        print("Something went wrong setting openURL")
-                    }
-                }, label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                        Text("Select File")
-                    }
-                })
-                
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    // Safely unwrap selectedPackage in case it's nil
-                    packageID = String(describing: selectedPackage?.jamfId ?? 0)
-                    importExportController.uploadPackage(authToken: networkController.authToken, server: server, packageId: packageID, pathToFile: self.filePath)
-                    layout.separationLine()
-
-                }) {
-                    HStack {
-                        Image(systemName: "suitcase.fill")
-                    Text("Upload Package")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                
-
+            
+//            HStack {
+//                Button(action: {
+//                    let openURL = importExportController.showOpenPanel()
+//                    print("openURL path is:\(String(describing: openURL?.path ?? ""))")
+//                    if (openURL != nil) {
+//                        self.filePath = openURL!.path
+//                    } else {
+//                        print("Something went wrong setting openURL")
+//                    }
+//                }, label: {
+//                    HStack {
+//                        Image(systemName: "square.and.arrow.up")
+//                        Text("Select File")
+//                    }
+//                })
+//                
 //                Button(action: {
 //                    progress.showProgress()
 //                    progress.waitForABit()
-//                    networkController.separationLine()
-//                    print("Selected package is:\(String(describing: selectedPackage.name))")
-//                    print("Selected packageID is:\(String(describing: selectedPackage.jamfId))")
+//                    // Safely unwrap selectedPackage in case it's nil
+//                    packageID = String(describing: selectedPackage?.jamfId ?? 0)
+//                    importExportController.uploadPackage(authToken: networkController.authToken, server: server, packageId: packageID, pathToFile: self.filePath)
+//                    layout.separationLine()
+//
 //                }) {
-//                    HStack(spacing: 10) {
-//                        Image(systemName: "plus.square.fill.on.square.fill")
-//                        Text("Test Package")
+//                    HStack {
+//                        Image(systemName: "suitcase.fill")
+//                    Text("Upload Package")
 //                    }
 //                }
 //                .buttonStyle(.borderedProminent)
 //                .tint(.blue)
-//                }
-            }
+//                
+//
+//            }
+            
+            
 #endif
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
