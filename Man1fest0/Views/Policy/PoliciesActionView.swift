@@ -324,31 +324,7 @@ struct PoliciesActionView: View {
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
                         
                         
-                        Button(action: {
-                            // Ask for confirmation before executing the batch action
-                            showingWarningSetDP = true
-                            progress.showProgress()
-                            progress.waitForABit()
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "archivebox")
-                                Text("Set DP to Default")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
-                        .alert(isPresented: $showingWarningSetDP) {
-                            Alert(
-                                title: Text("Caution!"),
-                                message: Text("This action will set the distribution point to default for all selected policies."),
-                                primaryButton: .destructive(Text("I understand!")) {
-                                    print("Confirmed: calling xmlController.batchSetDPToDefault for selection: \(policiesSelection.map{ $0.name })")
-                                    xmlController.batchSetDPToDefault(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                                    progress.endProgress()
-                                },
-                                secondaryButton: .cancel({ progress.endProgress() })
-                            )
-                        }
+                        
                         
                     }
                     
@@ -458,13 +434,13 @@ struct PoliciesActionView: View {
                     .tabItem {
                         Label("Scope", systemImage: "person.3")
                     }
-                    PoliciesActionPackagesTab()
+                    PoliciesActionPackagesTab(server: server, policiesSelection: $policiesSelection)
                         .tabItem {
                             Label("Packages", systemImage: "shippingbox")
                         }
-                }
-                 .frame(maxWidth: .infinity, maxHeight: 200)
-                 .padding()
+                 }
+                  .frame(maxWidth: .infinity, maxHeight: 200)
+                  .padding()
             
             } else {
                 
@@ -850,6 +826,14 @@ struct PoliciesActionPackagesTab: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var layout: Layout
     @EnvironmentObject var progress: Progress
+    @EnvironmentObject var xmlController: XmlBrain
+    
+    @State private var showingAlert = false
+    
+    var server: String
+    
+    @Binding var policiesSelection: Set<Policy>
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Policies Action - Packages")
@@ -869,6 +853,32 @@ struct PoliciesActionPackagesTab: View {
                 }
                 .buttonStyle(.bordered)
             }
+            
+            // ######################################################################
+            //              Set DP to Default
+            // ######################################################################
+
+            Divider()
+            Text("Set DP to Default").fontWeight(.bold)
+            Button(action: {
+                showingAlert = true
+            }) {
+                Text("Set Default")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
+            .alert(isPresented: $showingAlert) {
+                Alert(
+                    title: Text("Confirm Set DP to Default"),
+                    message: Text("This will set the selected policies' distribution points to default. Do you want to continue?"),
+                    primaryButton: .destructive(Text("Confirm")) {
+                        // Call the batchSetDPToDefault function
+                        xmlController.batchSetDPToDefault(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
+            
             Spacer()
         }
         .padding()
