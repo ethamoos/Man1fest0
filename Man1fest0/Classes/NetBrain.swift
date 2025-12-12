@@ -1689,81 +1689,11 @@ import AEXML
     }
     
     
-//    func connectDetailed(server: String, authToken: String, resourceType: ResourceType, itemID: Int) {
-//
-//        let resourcePath = getURLFormat(data: (resourceType))
-//        let itemIDString = String(itemID)
-//
-//        if let serverURL = URL(string: server) {
-//            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-//            asteriskSeparationLine()
-//            doubleSeparationLine()
-//            print("Running connectDetailed function")
-//            print("URL is set as:\n\(url)")
-//            print("resourceType is set as:\(resourceType)")
-//            detailedRequest(url: url, resourceType: resourceType, authToken: authToken)
-//            appendStatus("Connecting to \(url)...")
-//        }
-//    }
-    
     
     func handleConnect(server: String, authToken: String,resourceType: ResourceType) {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
         self.connect(server: server,resourceType: resourceType, authToken: authToken)
     }
-    
-    
-    //    #################################################################################
-    //    Request functions
-    //    #################################################################################
-    
-    
-//    func detailedRequest(url: URL,resourceType: ResourceType, authToken: String) {
-//
-//        asteriskSeparationLine()
-//        print("Running detailedRequest function - resourceType is set as:\(resourceType)")
-//        print("URL is set as:\n\(url)")
-//        let headers = [
-//            "Accept": "application/json",
-//            "Authorization": "Bearer \(self.authToken)"
-//        ]
-//
-//        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-//        request.allHTTPHeaderFields = headers
-//
-//        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-//            if let data = data, let response = response {
-//                //                self.separationLine()
-//                //                self.doubleSeparationLine()
-//                print("Data returned - processing detailed request")
-//
-//                DispatchQueue.main.async {
-//
-//                    self.processPolicyDetail(data: data, response: response, resourceType: resourceType)
-//
-//                }
-//
-//            } else {
-//
-//                var text = "\n\nDetailed Request Failed."
-//                print(text)
-//                print("Request is:")
-//                //                print(request)
-//                if let error = error {
-//                    text += " \(error)."
-//                }
-//                DispatchQueue.main.async {
-//                    self.appendStatus(text)
-//                }
-//            }
-//        }
-//        dataTask.resume()
-//    }
-    
-    
-    
-    
-    
     
     
     
@@ -1773,19 +1703,6 @@ import AEXML
     //    BATCH PROCESSING
     //    #################################################################################
     
-    
-    //
-    //    func batchProcessComputers(computers: [Computers]) {
-    //        print("Running: batchProcessComputers")
-    //        //        DEBUG
-    //        //        print("Doing thing to computer:\(computers)")
-    //    }
-    //
-    //
-    //    func batchProcessPackages(packages: [Packages]) {
-    //        print("Doing thing to packages:\(packages)")
-    //    }
-    //
     
     
     func batchDeleteGroup(selection:  Set<ComputerGroup>, server: String, authToken: String, resourceType: ResourceType) async throws {
@@ -1944,27 +1861,26 @@ import AEXML
     //    #################################################################################
     
     
-    func processAllComputers(computers: [Computer],  server: String, resourceType: ResourceType, url: String) {
-        
-        print("Running processAllComputers")
-        for eachItem in computers {
-            self.separationLine()
-            print("Item is \(eachItem)")
-            let computerIDInt = eachItem.id
-            print("Current computerID is:\(computerIDInt)")
-            print("Adding computer:\(eachItem.name) to list")
-            computerProcessList.insert(eachItem, at: 0)
-            print("Doing function for item:\(computerIDInt)")
-            
-            
-            //    #################################################################################
-            //      run operation - download file
-            //    #################################################################################
-            
-            
-            //            self.downloadFileAsync(objectID: String(describing: computerIDInt), resourceType: resourceType, server: server, url: url) { (path, error) in}
-        }
-    }
+//    func processAllComputers(computers: [Computer],  server: String, resourceType: ResourceType, url: String) {
+//        
+//        print("Running processAllComputers")
+//        for eachItem in computers {
+//            self.separationLine()
+//            print("Item is \(eachItem)")
+//            let computerIDInt = eachItem.id
+//            print("Current computerID is:\(computerIDInt)")
+//            print("Adding computer:\(eachItem.name) to list")
+//            computerProcessList.insert(eachItem, at: 0)
+//            print("Doing function for item:\(computerIDInt)")
+//            
+//            
+//            //    #################################################################################
+//            //      run operation - download file
+//            //    #################################################################################
+//            
+//            //            self.downloadFileAsync(objectID: String(describing: computerIDInt), resourceType: resourceType, server: server, url: url) { (path, error) in}
+//        }
+//    }
     
     
     
@@ -2052,11 +1968,6 @@ import AEXML
     }
     
     
-    
-    
-    
-    
-    
     //    #################################################################################
     //    Delete polcies selection General
     //    #################################################################################
@@ -2137,36 +2048,9 @@ import AEXML
         print(String(describing: self.processingComplete))
     }
     
-    //    #################################################################################
-    //    processComputerDetail
-    //    #################################################################################
-    
-    
-    
-//    func processComputerDetail(data: Data, response: URLResponse, resourceType: ResourceType) {
-//
-//        separationLine()
-//        print("Running: processComputerDetail")
-//
-//        let decoded = PoliciesDetailReply.decode(data)
-//
-//
-//        switch decoded {
-//        case .success(let policyDetailed):
-//            receivedPolicyDetail(policyDetailed: policyDetailed)
-//            //            separationLine()
-//            //            print("policyDetailed is:\(String(describing: policyDetailed.policy.general?.name ?? nil))")
-//        case .failure(let error):
-//            print("Decoding failed - Corrupt data. \(response) \(error)")
-//            separationLine()
-//            appendStatus("Corrupt data. \(response) \(error)")
-//        }
-//    }
-    
-    
     
     //    #################################################################################
-    //    processComputerDetail
+    //    processUpdateComputerName
     //    #################################################################################
     
     
@@ -2203,7 +2087,7 @@ import AEXML
     
     
     //    #################################################################################
-    //    processPolicyDetail
+    //    processPolicyDetail EXAMPLE
     //    #################################################################################
     
     
@@ -2327,6 +2211,7 @@ import AEXML
         print(String(describing: self.processingComplete))
         
     }
+    
       //    #################################################################################
     //    processUpdateCategory - run on an Array  - update category
     //    #################################################################################
@@ -2348,7 +2233,6 @@ import AEXML
             print("policyID is:\(String(describing: policyID))")
             
 //            self.connectDetailed(server: server, authToken: authToken, resourceType: resourceType, itemID: policyID ?? 0 )
-            
 //            let newCategoryName: String = self.selectedCategory.name
 //            let newCategoryID: String = String(describing: self.selectedCategory.jamfId)
             
@@ -2432,7 +2316,6 @@ import AEXML
         print(String(describing: self.processingComplete))
         
     }
-    
     
     
     
@@ -2570,7 +2453,6 @@ import AEXML
                 
             }
         }
-        //        }
         
         else {
             print("Nothing to do")
@@ -2744,7 +2626,6 @@ import AEXML
                 appendStatus("Connecting to \(url)...")
             }
         }
-        //        }
         
         else {
             print("Nothing to do")
@@ -3000,7 +2881,6 @@ import AEXML
                 </computer>
                 """
         
-        
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(computerID)
@@ -3018,7 +2898,6 @@ import AEXML
         } else {
             print("error encountered with server:\(server)")
         }
-        
     }
     
     
@@ -3213,78 +3092,6 @@ import AEXML
     }
     
     
-    
-    
-    
-    //    Update Extension Attribute
-    //
-    //    var request = URLRequest(url: URL(string: "https://https//testJamfserver.jamfcloud.com/JSSResource/computerextensionattributes/id/{{id}}")!,timeoutInterval: Double.infinity)
-    //    request.addValue("application/xml", forHTTPHeaderField: "Accept")
-    //    request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-    
-    //
-    //    request.httpMethod = "PUT"
-    //
-    //    let task = URLSession.shared.dataTask(with: request) { data, response, error in
-    //      guard let data = data else {
-    //        print(String(describing: error))
-    //        return
-    //      }
-    //      print(String(data: data, encoding: .utf8)!)
-    //    }
-    //
-    //    task.resume()
-    //
-    //    var request = URLRequest(url: URL(string: "https://https//testJamfserver.jamfcloud.com/JSSResource/computerextensionattributes/name/{{name}}")!,timeoutInterval: Double.infinity)
-    //    request.addValue("application/xml", forHTTPHeaderField: "Accept")
-    //    request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-    //
-    //    request.httpMethod = "PUT"
-    //
-    //    let task = URLSession.shared.dataTask(with: request) { data, response, error in
-    //      guard let data = data else {
-    //        print(String(describing: error))
-    //        return
-    //      }
-    //      print(String(data: data, encoding: .utf8)!)
-    //    }
-    //
-    //    task.resume()
-    
-    //    <?xml version="1.0" encoding="UTF-8"?>
-    //    <user_extension_attribute>
-    //        <id>1</id>
-    //        <name>username Test EA</name>
-    //        <description/>
-    //        <data_type>Date</data_type>
-    //        <input_type>
-    //            <type>Text Field</type>
-    //        </input_type>
-    //    </user_extension_attribute>
-    
-    //    <?xml version="1.0" encoding="UTF-8"?>
-    //    <computer_extension_attribute>
-    //        <id>1</id>
-    //        <name>Extension Attribute 1</name>
-    //        <description/>
-    //        <data_type>String</data_type>
-    //        <input_type>
-    //            <type>Pop-up Menu</type>
-    //            <popup_choices>
-    //                <choice>Value 1</choice>
-    //                <choice>Value 2</choice>
-    //                <choice>Value 3</choice>
-    //            </popup_choices>
-    //        </input_type>
-    //        <inventory_display>General</inventory_display>
-    //        <recon_display>Extension Attributes</recon_display>
-    //    </computer_extension_attribute>
-    //
-    
-    
-    
-    
-    
     //    #################################################################################
     //    updateGroup - addToGroup
     //    #################################################################################
@@ -3329,15 +3136,6 @@ import AEXML
         print("computerID is set as:\(computerID)")
         print("groupID is set as:\(groupID)")
         
-//        xml = """
-//                    <computer_group>
-//                        <computers>
-//                            <computer>
-//                                <id>\(computerID)</id>
-//                            </computer>
-//                        </computers>
-//                    </computer_group>
-//            """
         
 xml = """
     <computer_group>
@@ -3363,8 +3161,7 @@ xml = """
     }
      func updateGroupNameID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
         
-        //        let resourcePath = getURLFormat(data: (resourceType))
-        //           let policyID = policyID
+
         var xml: String
         
         print("Running updateGroup - updating via xml")
@@ -3399,8 +3196,6 @@ xml = """
     //    processAddComputersToGroup
     //    #################################################################################
     
-    
-//    func processAddComputersToGroup(selection: Set<Computer>, server: String, authToken: String, resourceType: ResourceType, Set<ComputerBasicRecord.ID>) {
     
     func processAddComputersToGroup(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
         
@@ -4591,38 +4386,8 @@ xml = """
         request.httpMethod = httpMethod
         request.httpBody = xmldata
         
-        //        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-        //            if let (data, response) = try await URLSession.shared.data(for: request)
-        //                guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-        //                print("Code not 200")
-        //                self.hasError = true
-        //
-        //                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        //                self.currentResponseCode = String(describing: statusCode)
-        //                print("getComputerExtAttributes Status code is:\(statusCode)")
-        //                throw JamfAPIError.http(statusCode)
-        //            }
     }
-//}
-//        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-//            if let data = data, let response = response {
-//                print("Doing processing of sendRequestAsXML:\(httpMethod)")
-//                print("Data is:\(data)")
-//                print("Data is:\(response)")
-//                return response
-//
-//            } else {
-//                print("Error encountered")
-//                var text = "\n\nFailed."
-//                if let error = error {
-//                    text += " \(error)."
-//                }
-//                //                self.appendStatus(text)
-//                print(text)
-//            }
-//        }
-//        dataTask.resume()
-//    }
+    
     
     func sendRequestAsXMLAsyncID(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String, policyID: String ) async throws {
         
@@ -4662,41 +4427,7 @@ xml = """
             
         }
         
-        
-        //        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-        //            if let (data, response) = try await URLSession.shared.data(for: request)
-        //                guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-        //                print("Code not 200")
-        //                self.hasError = true
-        //
-        //                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        //                self.currentResponseCode = String(describing: statusCode)
-        //                print("getComputerExtAttributes Status code is:\(statusCode)")
-        //                throw JamfAPIError.http(statusCode)
-        //            }
-        //    }
     }
-//        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-//            if let data = data, let response = response {
-//                print("Doing processing of sendRequestAsXML:\(httpMethod)")
-//                print("Data is:\(data)")
-//                print("Data is:\(response)")
-//                return response
-//
-//            } else {
-//                print("Error encountered")
-//                var text = "\n\nFailed."
-//                if let error = error {
-//                    text += " \(error)."
-//                }
-//                //                self.appendStatus(text)
-//                print(text)
-//            }
-//        }
-//        dataTask.resume()
-//    }
-    
-    
     
     func sendRequestAsJson(url: URL, authToken: String, resourceType: ResourceType, httpMethod: String, parameters: String ) {
         
@@ -5036,38 +4767,15 @@ xml = """
         //  #######################################################################
     //  #######################################################################
 
-    //
-    //  JamfController.swift
-    //  JamfList
-    //
-    //  Created by Armin Briegel on 2022-12-20.
-    //
-    
-    //    import Foundation
-    //
-    //    class JamfController: ObservableObject {
-    
-    //  #######################################################################
-    //    Jamf objects fetched
-    //  #######################################################################
-    
-    //        @Published var computers: [ComputerSample] = []
-    //        @Published var scripts: [Script] = []
-    //        @Published var buildings: [Building] = []
-    
-    //  #######################################################################
-    //    Jamf objects fetched - FINISHED
-    //  #######################################################################
+
     
     @Published var isLoading = false
     @Published var needsCredentials = false
     @Published var connected = false
     //        @Published var hasError = false
-    
-    //
-    //
     //        var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     //        var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
+    
     var password = ""
     
     var auth: JamfAuthToken?
@@ -5076,10 +4784,7 @@ xml = """
     @Published var computersample: [ComputerSample] = []
     @Published var scriptclassic: [ScriptClassic] = []
     @Published var scriptold: [Script] = []
-    //    @Published var buildings: [Building] = []
-    
-    
-    
+
     
     @MainActor
     func load() async {

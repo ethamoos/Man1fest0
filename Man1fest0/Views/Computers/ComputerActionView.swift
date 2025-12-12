@@ -149,7 +149,7 @@ struct ComputerActionView: View {
 //              DELETE AND PROCESS SELECTION
 //              ##########################################################################
 
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading) {
             
             HStack {
                 

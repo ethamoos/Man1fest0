@@ -1763,7 +1763,7 @@ class XmlBrain: ObservableObject {
     //    #################################################################################
     
     
-    func setPolicyTriggers(xmlContent: String, server: String, authToken: String, resourceType: ResourceType, itemID: Int, trigger_checkin: Bool,trigger_enrollment_complete: Bool, trigger_login: Bool, trigger_startup: Bool, trigger_other: String) {
+    func setPolicyTriggers(xmlContent: String, server: String, authToken: String, resourceType: ResourceType, itemID: Int, trigger_checkin: Bool,trigger_enrollment_complete: Bool, trigger_login: Bool, trigger_startup: Bool, trigger_other: String, frequency: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
         let itemIDString = String(itemID)
@@ -1791,18 +1791,7 @@ class XmlBrain: ObservableObject {
                 _trigger_checkin.removeFromParent()
                 policyGeneral.addChild(name: "trigger_checkin", value: String(describing: trigger_checkin))
                 print("Setting trigger_checkin as:\(trigger_checkin)")
-//            } else {
-//                print("trigger_checkin is set as false")
-//                self.separationLine()
-//                print("Remove current trigger_checkin")
-//                let _trigger_checkin = policyGeneral["trigger_checkin"].last!
-//                print("Removing:\(_trigger_checkin.xml)")
-//                _trigger_checkin.removeFromParent()
-//                policyGeneral.addChild(name: "trigger_checkin", value: String(describing: trigger_checkin))
-//                print("Setting trigger_checkin as:\(trigger_checkin)")
-//            }
-            
-//            if trigger_login == true {
+
                 self.separationLine()
                 print("Remove current trigger_login")
                 let _trigger_login = policyGeneral["trigger_login"].last!
@@ -1810,11 +1799,7 @@ class XmlBrain: ObservableObject {
                 _trigger_login.removeFromParent()
                 policyGeneral.addChild(name: "trigger_login", value: String(describing: trigger_login))
                 print("Setting trigger_login as:\(trigger_login)")
-//            } else {
-//                print("trigger_login is set as false")
-//            }
-            
-//            if trigger_startup == true {
+
                 self.separationLine()
                 print("Remove current trigger_startup")
                 let _trigger_startup = policyGeneral["trigger_startup"].last!
@@ -1822,11 +1807,7 @@ class XmlBrain: ObservableObject {
                 _trigger_startup.removeFromParent()
                 policyGeneral.addChild(name: "trigger_startup", value: String(describing: trigger_startup))
                 print("Setting trigger_startup as:\(trigger_startup)")
-//            } else {
-//                print("trigger_startup is set as false")
-//            }
-            
-//            if trigger_enrollment_complete == true {
+
                 self.separationLine()
                 print("Remove current trigger_enrollment_complete")
                 let _trigger_enrollment_complete = policyGeneral["trigger_enrollment_complete"].last!
@@ -1834,10 +1815,7 @@ class XmlBrain: ObservableObject {
                 _trigger_enrollment_complete.removeFromParent()
                 policyGeneral.addChild(name: "trigger_enrollment_complete", value: String(describing: trigger_enrollment_complete))
                 print("Setting trigger_enrollment_complete as:\(trigger_enrollment_complete)")
-//            } else {
-//                print("trigger_enrollment_complete is set as false")
-//            }
-            
+
             if trigger_other != "" {
                 self.separationLine()
                 print("Remove current trigger_other")
@@ -1853,6 +1831,25 @@ class XmlBrain: ObservableObject {
                 print("Removing:\(_trigger_other.xml)")
                 _trigger_other.removeFromParent()
             }
+            
+            if frequency != "" {
+                self.separationLine()
+                print("Remove current frequency")
+                let _frequency = policyGeneral["frequency"].last!
+                print("Removing:\(_frequency.xml)")
+                _frequency.removeFromParent()
+                policyGeneral.addChild(name: "frequency", value: String(describing: frequency))
+                print("Setting frequency as:\(frequency)")
+            } else {
+                print("frequency is set as false")
+                print("Remove current frequency")
+                let _frequency = policyGeneral["frequency"].last!
+                print("Removing:\(_frequency.xml)")
+                _frequency.removeFromParent()
+            }
+            
+            
+            
             
             //    #################################################################################
             //        REMOVE LAST STRINGS

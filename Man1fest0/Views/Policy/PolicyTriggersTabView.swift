@@ -34,8 +34,21 @@ struct PolicyTriggersTabView: View {
     @State var trigger_enrollment_complete: Bool
     @State var trigger_other: String = ""
     
+    var frequency: [String] = [
+        "Once per computer",
+        "Once every day",
+        "Once every week",
+        "Once every month",
+        "Once per user per computer",
+        "Once per user",
+        "Ongoing"
+    ]
+    
+    @State var selectedFrequency: String = "Once per computer"
+    
+    
     var body: some View {
-        
+
 
         VStack(alignment: .leading) {
             
@@ -50,7 +63,7 @@ struct PolicyTriggersTabView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     
-                    xmlController.setPolicyTriggers(xmlContent: xmlController.currentPolicyAsXML, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID, trigger_checkin: trigger_checkin, trigger_enrollment_complete: trigger_enrollment_complete, trigger_login: trigger_login, trigger_startup: trigger_startup, trigger_other: trigger_other)
+                    xmlController.setPolicyTriggers(xmlContent: xmlController.currentPolicyAsXML, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID, trigger_checkin: trigger_checkin, trigger_enrollment_complete: trigger_enrollment_complete, trigger_login: trigger_login, trigger_startup: trigger_startup, trigger_other: trigger_other, frequency: selectedFrequency)
                     
                     
                     // ##########################################################################
@@ -105,6 +118,16 @@ struct PolicyTriggersTabView: View {
                         .textSelection(.enabled)
                 }
                 .frame(width: 250)
+           
+                LazyVGrid(columns: layout.columns, alignment: .leading, spacing: 10) {
+                    
+                    Picker("Frequency", selection: $selectedFrequency) {
+                        ForEach(frequency, id: \.self) {
+                            Text(String(describing: $0))
+                        }
+                    }
+                }
+             
                         
                         
             }
