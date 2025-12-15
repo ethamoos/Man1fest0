@@ -198,37 +198,39 @@ struct ComputersBasicTableView: View {
                 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
                     VStack(alignment: .leading) {
-                        TextField("Filter Departments", text: $departmentFilterText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                            Text("").tag(Department(jamfId: 0, name: ""))
-                            ForEach(filteredDepartments, id: \.self) { department in
-                                Text(String(describing: department.name)).tag(department)
+                        HStack {
+                            TextField("Filter Departments", text: $departmentFilterText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            Button(action: {
+                                
+                                //  ##########################################################################
+                                //  processUpdateComputerDepartment
+                                //  ##########################################################################
+                                
+                                networkController.processUpdateComputerDepartmentBasic(selection: selection, server: server, authToken: networkController.authToken, resourceType: selectedResourceType, department: selectionDepartment.name)
+                                progress.showProgress()
+                                progress.waitForABit()
+                                
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Update")
+                                }
                             }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                        }
+                    
+                    Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
+                        Text("").tag(Department(jamfId: 0, name: ""))
+                        ForEach(filteredDepartments, id: \.self) { department in
+                            Text(String(describing: department.name)).tag(department)
                         }
                     }
-                    Button(action: {
-                            
-                            //  ##########################################################################
-                            //  processUpdateComputerDepartment
-                            //  ##########################################################################
-                            
-                            networkController.processUpdateComputerDepartmentBasic(selection: selection, server: server, authToken: networkController.authToken, resourceType: selectedResourceType, department: selectionDepartment.name)
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "arrow.clockwise")
-                                Text("Update")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                    
-                    
-                   
+                    }
+
                 }
+             
                     
                 
                 //  ##########################################################################
@@ -249,7 +251,7 @@ struct ComputersBasicTableView: View {
                     progress.waitForABit()
                     
                     Task {
-                        try await pushController.flushCommandBatch( server: server, authToken: networkController.authToken, selectionComp: selection, selectedCommand: selectedCommand, deviceType: "computers")
+                        await pushController.flushCommandBatch(server: server, authToken: networkController.authToken, selectionComp: selection, selectedCommand: selectedCommand, deviceType: "computers")
                     }
                 }
                 .buttonStyle(.borderedProminent)
