@@ -34,14 +34,22 @@ struct PolicyTriggersTabView: View {
     @State var trigger_enrollment_complete: Bool
     @State var trigger_other: String = ""
     
+    var frequency: [String] = [
+        "Once per computer",
+        "Once every day",
+        "Once every week",
+        "Once every month",
+        "Once per user per computer",
+        "Once per user",
+        "Ongoing"
+    ]
+    
+    @State var selectedFrequency: String = "Once per computer"
+    
+    
     var body: some View {
-        
-        let currentTrigger_login = networkController.currentDetailedPolicy?.policy.general?.triggerLogin ?? false
-        let currentTrigger_checkin = networkController.currentDetailedPolicy?.policy.general?.triggerCheckin ?? false
-        let currentTrigger_startup = networkController.currentDetailedPolicy?.policy.general?.triggerStartup ?? false
-        let currentTrigger_enrollment_complete = networkController.currentDetailedPolicy?.policy.general?.triggerEnrollmentComplete ?? false
-        let currentTrigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? ""
-        
+
+
         VStack(alignment: .leading) {
             
             LazyVGrid(columns: layout.columnFlexWide, alignment: .leading, spacing: 10) {
@@ -55,7 +63,7 @@ struct PolicyTriggersTabView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     
-                    xmlController.setPolicyTriggers(xmlContent: xmlController.currentPolicyAsXML, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID, trigger_checkin: trigger_checkin, trigger_enrollment_complete: trigger_enrollment_complete, trigger_login: trigger_login, trigger_startup: trigger_startup, trigger_other: trigger_other)
+                    xmlController.setPolicyTriggers(xmlContent: xmlController.currentPolicyAsXML, server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: policyID, trigger_checkin: trigger_checkin, trigger_enrollment_complete: trigger_enrollment_complete, trigger_login: trigger_login, trigger_startup: trigger_startup, trigger_other: trigger_other, frequency: selectedFrequency)
                     
                     
                     // ##########################################################################
@@ -74,7 +82,7 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_checkin) {
                     HStack {
                         Text("Checkin:")
-                        Text("\(currentTrigger_checkin)")
+                        Text("\(trigger_checkin)")
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -82,7 +90,7 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_login) {
                     HStack {
                         Text("Login:")
-                        Text("\(currentTrigger_login)")
+                        Text("\(trigger_login)")
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -90,7 +98,7 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_startup) {
                     HStack {
                         Text("Startup:")
-                        Text("\(currentTrigger_startup)")
+                        Text("\(trigger_startup)")
                     }
                 }
                 .toggleStyle(.checkbox)
@@ -98,31 +106,41 @@ struct PolicyTriggersTabView: View {
                 Toggle(isOn: $trigger_enrollment_complete) {
                     HStack {
                         Text("Enrollment Complete:")
-                        Text("\(currentTrigger_enrollment_complete)")
+                        Text("\(trigger_enrollment_complete)")
                     }
                 }
                 .toggleStyle(.checkbox)
                 
-//                    if currentTrigger_other.isEmpty != true {
-                        
-                        HStack {
-                            Text("Custom Trigger")
-                            TextField(trigger_other, text: $trigger_other)
-                                .textSelection(.enabled)
+                
+                HStack {
+                    Text("Custom Trigger")
+                    TextField(trigger_other, text: $trigger_other)
+                        .textSelection(.enabled)
+                }
+                .frame(width: 250)
+           
+                LazyVGrid(columns: layout.columns, alignment: .leading, spacing: 10) {
+                    
+                    Picker("Frequency", selection: $selectedFrequency) {
+                        ForEach(frequency, id: \.self) {
+                            Text(String(describing: $0))
                         }
-                        .frame(width: 250)
+                    }
+                }
+             
                         
                         
-//                    } else {
-//                        
-//                        Text("Custom Trigger not configured")
-//                    }
             }
             Spacer()
         }
         .padding()
         .onAppear() {
-            trigger_other = networkController.currentDetailedPolicy?.policy.general?.triggerOther ?? ""
+            trigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
+            trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
+            trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
+            trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+            trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
+            
         }
     }
 }

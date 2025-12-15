@@ -1,0 +1,230 @@
+{
+    "policy": {
+        "general": {
+            "id": "21797",
+            "name": "Crayfish",
+            "enabled": "true",
+            "trigger": "EVENT",
+            "trigger_checkin": "false",
+            "trigger_enrollment_complete": "false",
+            "trigger_login": "false",
+            "trigger_network_state_changed": "false",
+            "trigger_startup": "false",
+            "trigger_other": "Crayfish",
+            "frequency": "Ongoing",
+            "retry_event": "none",
+            "retry_attempts": "-1",
+            "notify_on_each_failed_retry": "false",
+            "location_user_only": "false",
+            "target_drive": "/",
+            "offline": "false",
+            "category": {
+                "id": "150",
+                "name": "ABBA"
+            },
+            "date_time_limitations": {
+                "activation_date": "",
+                "activation_date_epoch": "0",
+                "activation_date_utc": "",
+                "expiration_date": "",
+                "expiration_date_epoch": "0",
+                "expiration_date_utc": "",
+                "no_execute_on": "",
+                "no_execute_start": "",
+                "no_execute_end": ""
+            },
+            "network_limitations": {
+                "minimum_network_connection": "No Minimum",
+                "any_ip_address": "true",
+                "network_segments": ""
+            },
+            "override_default_settings": {
+                "target_drive": "/",
+                "distribution_point": "default",
+                "force_afp_smb": "false",
+                "sus": "default"
+            },
+            "network_requirements": "Any",
+            "site": {
+                "id": "-1",
+                "name": "None"
+            }
+        },
+        "scope": {
+            "computers": "",
+            "computer_groups": {
+                "computer_group": {
+                    "name": "ABBA",
+                    "id": "379",
+                    "isSmart": "true"
+                }
+            },
+            "buildings": "",
+            "departments": "",
+            "limit_to_users": {
+                "user_groups": ""
+            },
+            "limitations": {
+                "users": "",
+                "user_groups": "",
+                "network_segments": "",
+                "ibeacons": ""
+            },
+            "exclusions": {
+                "computers": "",
+                "computer_groups": "",
+                "buildings": "",
+                "departments": "",
+                "users": "",
+                "user_groups": "",
+                "network_segments": "",
+                "ibeacons": ""
+            },
+            "all_computers": "false"
+        },
+        "self_service": {
+            "use_for_self_service": "true",
+            "self_service_display_name": "Crayfish",
+            "install_button_text": "Run",
+            "reinstall_button_text": "Run",
+            "self_service_description": "",
+            "force_users_to_view_description": "false",
+            "self_service_icon": {
+                "id": "3",
+                "filename": "configuration.png",
+                "uri": "https://ics.services.jamfcloud.com/icon/hash_9c8c0e95f9547f2aa9e069a4da7267d8a49db51c195f3ec6b7dbfbe04ac60d50"
+            },
+            "feature_on_main_page": "false",
+            "self_service_categories": {
+                "category": {
+                    "id": "58",
+                    "name": "Testing",
+                    "display_in": "true",
+                    "feature_in": "false"
+                }
+            },
+            "notification": "false",
+            "notification_type": "Self Service",
+            "notification_subject": "Testing",
+            "notification_message": ""
+        },
+        "package_configuration": {
+            "packages": {
+                "size": "1",
+                "package": {
+                    "id": "1207",
+                    "name": "1Password_8.pkg",
+                    "action": "Install",
+                    "fut": "false",
+                    "feu": "false"
+                }
+            },
+            "distribution_point": "default"
+        },
+        "scripts": {
+            "size": "1",
+            "script": {
+                "id": "100",
+                "name": "set_time",
+                "priority": "After",
+                "parameter4": "1112112112121212",
+                "parameter5": "",
+                "parameter6": "",
+                "parameter7": "",
+                "parameter8": "",
+                "parameter9": "",
+                "parameter10": "",
+                "parameter11": ""
+            }
+        },
+        "printers": {
+            "size": "2",
+            "leave_existing_default": "",
+            "printer": [
+                {
+                    "id": "122",
+                    "name": "Colour",
+                    "action": "install",
+                    "make_default": "false"
+                },
+                {
+                    "id": "121",
+                    "name": "Greyscale",
+                    "action": "install",
+                    "make_default": "false"
+                }
+            ]
+        },
+        "dock_items": {
+            "size": "1",
+            "dock_item": {
+                "id": "228",
+                "name": "Terminal",
+                "action": "Add To Beginning"
+            }
+        },
+        "account_maintenance": {
+            "accounts": {
+                "size": "0"
+            },
+            "directory_bindings": {
+                "size": "1",
+                "binding": {
+                    "id": "1",
+                    "name": "Bind To AD"
+                }
+            },
+            "management_account": {
+                "action": "rotate"
+            },
+            "open_firmware_efi_password": {
+                "of_mode": "command",
+                "of_password_sha256": "********************"
+            }
+        },
+        "reboot": {
+            "message": "This computer will restart in 5 minutes. Please save anything you are working on and log out by choosing Log Out from the bottom of the Apple menu.",
+            "startup_disk": "Current Startup Disk",
+            "specify_startup": "",
+            "no_user_logged_in": "Restart if a package or update requires it",
+            "user_logged_in": "Restart if a package or update requires it",
+            "minutes_until_reboot": "5",
+            "start_reboot_timer_immediately": "false",
+            "file_vault_2_reboot": "false"
+        },
+        "maintenance": {
+            "recon": "false",
+            "reset_name": "false",
+            "install_all_cached_packages": "false",
+            "heal": "false",
+            "prebindings": "false",
+            "permissions": "false",
+            "byhost": "false",
+            "system_cache": "false",
+            "user_cache": "false",
+            "verify": "false"
+        },
+        "files_processes": {
+            "search_by_path": "",
+            "delete_file": "false",
+            "locate_file": "",
+            "update_locate_database": "false",
+            "spotlight_search": "",
+            "search_for_process": "",
+            "kill_process": "false",
+            "run_command": "echo \"Test\""
+        },
+        "user_interaction": {
+            "message_start": "Running login policy",
+            "allow_users_to_defer": "false",
+            "allow_deferral_until_utc": "",
+            "allow_deferral_minutes": "0",
+            "message_finish": "Policy completed."
+        },
+        "disk_encryption": {
+            "action": "apply",
+            "disk_encryption_configuration_id": "4",
+            "auth_restart": "false"
+        }
+    }
+}

@@ -14,18 +14,34 @@ struct ComputersBasicTableView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var layout: Layout
     @EnvironmentObject var pushController: PushBrain
-    
+    @EnvironmentObject var xmlController: XmlBrain
+
     var selectedResourceType = ResourceType.computerBasic
     
     @State private var showingWarning = false
     @State private var searchText = ""
+    @State private var departmentFilterText = ""
     
+    
+    //              ##########################################################################
+    //              Selections
+    //              ##########################################################################
+    
+//
+    
+//    @State var selection = Set<ComputerBasicRecord.ID>()
     @State var selection = Set<ComputerBasicRecord.ID>()
-    @State var selectionComp = Set<Computer>()
+
+//    @State var selectionComp = Set<Computer>()
+//    @State var selectionGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
     @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
+   
+    @State private var computerGroupFilter: String = ""
+    @State private var selectionCompGroup: ComputerGroup? = nil
     @State private var selectedDevice = ""
     @State private var selectedCommand = ""
+    
     
     @State private var sortOrder = [KeyPathComparator(\ComputerBasicRecord.id)]
     @State private var newComputerName = ""
@@ -36,8 +52,25 @@ struct ComputersBasicTableView: View {
         VStack(alignment: .leading) {
             
             if networkController.allComputersBasic.computers.count > 0 {
-                
-                Table(networkController.allComputersBasicDict, selection: $selection, sortOrder: $sortOrder) {
+
+                // Inline refresh button (removed ambiguous .toolbar usage)
+                HStack {
+                    Button(action: {
+                        handleConnect(resourceType: ResourceType.computerBasic)
+                        progress.showProgress()
+                        progress.waitForABit()
+                        print("Refresh")
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    Spacer()
+                }
+
+                Table(searchResults, selection: $selection, sortOrder: $sortOrder) {
                     
                     TableColumn("Name", value: \.name)
                     TableColumn("User", value: \.username)
@@ -52,22 +85,9 @@ struct ComputersBasicTableView: View {
                     TableColumn("Checkin", value: \.reportDateUTC)
                 }
                 .searchable(text: $searchText)
-                .toolbar {
-                    
-                    Button(action: {
-                        handleConnect(resourceType: ResourceType.computerBasic)
-                        progress.showProgress()
-                        progress.waitForABit()
-                        print("Refresh")
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Refresh")
-                        }
-                    }
-                }
                 .onChange(of: sortOrder) { newOrder in
-                    networkController.allComputersBasicDict.sort(using: newOrder)
+                    // Optionally, sort searchResults if needed
+                    // If sorting is required, implement sorting logic here
                 }
                 
             } else {
@@ -177,17 +197,17 @@ struct ComputersBasicTableView: View {
                 //              ##########################################################################
                 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
-                    
-                    HStack {
-                        
+                    VStack(alignment: .leading) {
+                        TextField("Filter Departments", text: $departmentFilterText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
                         Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                            Text("").tag("") //basically added empty tag and it solve the case
-                            ForEach(networkController.departments, id: \.self) { department in
-                                Text(String(describing: department.name))
+                            Text("").tag(Department(jamfId: 0, name: ""))
+                            ForEach(filteredDepartments, id: \.self) { department in
+                                Text(String(describing: department.name)).tag(department)
                             }
                         }
-                        
-                        Button(action: {
+                    }
+                    Button(action: {
                             
                             //  ##########################################################################
                             //  processUpdateComputerDepartment
@@ -205,20 +225,23 @@ struct ComputersBasicTableView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                    }
+                    
+                    
+                   
                 }
                     
+                
+                //  ##########################################################################
+                //  Commands
+                //  ##########################################################################
+                
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
-//                    LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
-                    
-//                    LazyVGrid(columns: layout.columnsFlex) {
                         Picker("Commands", selection: $selectedCommand) {
                             ForEach(pushController.flushCommands, id: \.self) {
                                 Text(String(describing: $0))
                             }
                         }
                     }
-//                }
                             
                 Button("Flush Commands") {
                     
@@ -232,16 +255,98 @@ struct ComputersBasicTableView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                //                        }
-//            }
-//                }
-            }
-            .padding()
+
+                
+                
+                
+                
+                
+                
+         
             
             
             //              ##########################################################################
             //              Selections
             //              ##########################################################################
+            
+           
+            //              ##########################################################################
+            //              Computer Group Picker
+            //              ##########################################################################
+           
+            Divider()
+            
+            //  ##########################################################################
+            //  processUpdateAddComputersToGroup
+            //  ##########################################################################
+            
+    Button(action: {
+        
+        progress.showProgress()
+        progress.waitForABit()
+        
+        // Call the real update group function and show progress
+        guard let compGroup = selectionCompGroup else {
+            // No group selected - nothing to do
+            return
+        }
+        
+        // Request group members XML then call addMultipleComputersToGroup when the XML is available.
+        Task {
+            xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
+
+            // wait for the xmlController to populate computerGroupMembersXML (timeout after ~3s)
+            var attempts = 0
+            while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
+                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+                attempts += 1
+            }
+
+            if xmlController.computerGroupMembersXML.isEmpty {
+                print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
+            } else {
+                print("Got groupMembers XML")
+            }
+
+            xmlController.addMultipleComputersToGroupOld(xmlContent: xmlController.computerGroupMembersXML,
+                                                     computers: selection,
+                                                     authToken: networkController.authToken,
+                                                     groupId: String(compGroup.id),
+                                                     resourceType: ResourceType.computerGroup,
+                                                     server: server)
+        }
+        
+    }) {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.clockwise")
+            Text("Add Selection To Group")
+        }
+    }
+    .buttonStyle(.borderedProminent)
+    .tint(.blue)
+          
+            HStack(spacing: 10) {
+                TextField("Filter", text: $computerGroupFilter)
+                Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
+                    ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
+                        Text(group.name)
+                            .tag(group as ComputerGroup?)
+                    }
+                }
+                .onAppear {
+                    if let first = networkController.allComputerGroups.first {
+                        selectionCompGroup = first
+                    } else {
+                        selectionCompGroup = nil
+                    }
+                }
+            }
+               
+            }
+            .padding()
+                      
+                                
+//        #if os(macOS)
             
             Divider()
             
@@ -267,46 +372,47 @@ struct ComputersBasicTableView: View {
             
         .onAppear {
             
-            //                Task {
-            //                    try await networkController.getToken(server: server)
-            //                }
             networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
             handleConnect(resourceType: ResourceType.computerBasic)
-//                }
+            
+            
+            if networkController.allComputerGroups.count <= 1 {
+                Task {
+                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                }
+            }
+        
         }
     }
     
     var searchResults: [ComputerBasicRecord] {
-        
         let allComputers = networkController.allComputersBasic.computers
-        let allComputersArray = Array (allComputers)
-        
+        let allComputersArray = Array(allComputers)
+        let filtered: [ComputerBasicRecord]
         if searchText.isEmpty {
-            return networkController.allComputersBasic.computers
+            filtered = allComputersArray
         } else {
-            print("Search Added")
-            return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
+            filtered = allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+        }
+        return filtered.sorted(using: sortOrder)
+    }
+        
+    
+    var filteredDepartments: [Department] {
+        if departmentFilterText.isEmpty {
+            return networkController.departments
+        } else {
+            return networkController.departments.filter { $0.name.lowercased().contains(departmentFilterText.lowercased()) }
         }
     }
     
-    
-    //}
-    
-    //        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
-    
-    //}
+  
     
     func handleConnect(resourceType: ResourceType) {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
         
         Task {
-            
-            do {
-                try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
-            } catch {
-                print("Error fetching basic computers")
-                print(error)
-            }
+            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
         }
         
     }

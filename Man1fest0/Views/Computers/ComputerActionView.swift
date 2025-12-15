@@ -1,5 +1,3 @@
-
-
 import SwiftUI
 
 struct ComputerActionView: View {
@@ -24,31 +22,14 @@ struct ComputerActionView: View {
     //              ################################################################################
     
     @State var selectionComp = Set<Computer>()
-//    @State var selectionComp = Set<Computer>()
-    
-//    @State var selection = Set<ComputerBasicRecord>()
+
     @State var selection: ComputerBasicRecord = ComputerBasicRecord(id: 0, name: "", managed: false, username: "", model: "", department: "", building: "",macAddress: "", udid: "", serialNumber: "", reportDateUTC: "", reportDateEpoch: 0)
   
-//    let id: Int
-//    let name: String
-//    let managed: Bool
-//    let username, model, department, building: String
-//    let macAddress, udid, serialNumber, reportDateUTC: String
-//    let reportDateEpoch: Int
-
-//    enum CodingKeys: String, CodingKey {
-//        case id, name, managed, username, model, department, building
-//        case macAddress = "mac_address"
-//        case udid
-//        case serialNumber = "serial_number"
-//        case reportDateUTC = "report_date_utc"
-//        case reportDateEpoch = "report_date_epoch"
     
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
 
     @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
     
-//    @State  var selectionBuilding: Building = Building(jamfId: 0, name: "")
     
     @State var showDetailScreen = true
     
@@ -126,7 +107,6 @@ struct ComputerActionView: View {
 #endif
                                 
                         }
-                        .searchable(text: $searchText)
                         .frame(width: 400, alignment: .leading)
                     }
                 
@@ -161,8 +141,6 @@ struct ComputerActionView: View {
             
             Text("\(networkController.allComputersBasic.computers.count) total computers")
             
-//            Text("You have:\(selection.count) selections")
-            
         }
 
         Divider()
@@ -171,16 +149,13 @@ struct ComputerActionView: View {
 //              DELETE AND PROCESS SELECTION
 //              ##########################################################################
 
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading) {
             
             HStack {
-                
-                //                LazyVGrid(columns: columns) {
                 
                 Button(action: {
                     
                     showingWarning = true
-                    
                     progress.showProgress()
                     progress.waitForABit()
                     
@@ -258,9 +233,6 @@ struct ComputerActionView: View {
         //              ##########################################################################
         //              Selections
         //              ##########################################################################
-        
-        Divider()
-        
 //        Text("Selections").fontWeight(.bold)
 //        List(Array(selection), id: \.self) { computer in//
 //            Text(computer.name )
@@ -273,7 +245,8 @@ struct ComputerActionView: View {
         //              ##########################################################################
         //              Progress view
         //              ##########################################################################
-        
+        Divider()
+
         if progress.showProgressView == true {
             
             ProgressView {
@@ -306,10 +279,8 @@ struct ComputerActionView: View {
         
         //        func processComputersSelected(selectionConverted: [Computer], operation:(String)->Void) {
         //        (networkController.downloadFileAsync)->Void)
-        
         print("Selection is:\(String(describing: item))")
         print("deleting item:\(item) !!!!!!!!!!!!!!!!!!!!!!")
-        
     }
     
     func hideDetailScreen() {

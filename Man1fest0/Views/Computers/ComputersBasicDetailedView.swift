@@ -17,7 +17,7 @@ struct ComputersBasicDetailedView: View {
     @EnvironmentObject var networkController: NetBrain
     
     @EnvironmentObject var layout: Layout
-    
+
     @EnvironmentObject var progress: Progress
     
     @EnvironmentObject var pushController: PushBrain
@@ -118,6 +118,18 @@ struct ComputersBasicDetailedView: View {
                         Task {
                            try await pushController.flushCommands(targetId: computer.id, deviceType: "computers", command: selectedCommand, authToken: networkController.authToken, server: server )
                         }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                
+                
+                Button("Open Web Page") {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                    layout.openURL(urlString: "\(server)/computers.html?id=\(computer.id)&o=r", requestType: "computers")
+
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)

@@ -59,7 +59,7 @@ class ImportExportBrain: ObservableObject {
 #if os(macOS)
     func showOpenPanel() -> URL? {
         let openPanel = NSOpenPanel()
-        openPanel.allowedFileTypes = ["txt", "xml","pkg","dmg","png", "jpg", "jpgeg"]
+        openPanel.allowedFileTypes = ["txt", "xml","pkg","dmg","png", "jpg", "jpeg"]
 //        openPanel.allowedContentTypes = ["txt"]
         openPanel.allowsMultipleSelection = false
         openPanel.canChooseDirectories = false
@@ -99,13 +99,20 @@ class ImportExportBrain: ObservableObject {
         let fileData = try! Data(contentsOf: fileURL)
         print("fileData is:\(fileData)")
 
-        // Adding file data to the request body
-        body += Data("--\(boundary)--\r\n".utf8);
-        body += Data("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileURL.lastPathComponent)\"\r\n".utf8);
-        body += Data("Content-Type: application/octet-stream\r\n\r\n".utf8);
-        body += Data(fileData)
-        body += Data ("\r\n".utf8)
-        body += Data ("--\(boundary)--\r\n".utf8)
+        // Build multipart body correctly
+        // start boundary
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        // content disposition
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"".data(using: .utf8)!)
+        body.append(fileURL.lastPathComponent.data(using: .utf8)!)
+        body.append("\"\r\n".data(using: .utf8)!)
+        // content type for file
+        body.append("Content-Type: application/octet-stream\r\n\r\n".data(using: .utf8)!)
+        // file bytes
+        body.append(fileData)
+        body.append("\r\n".data(using: .utf8)!)
+        // closing boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
         request.httpBody = body
 
@@ -126,7 +133,7 @@ class ImportExportBrain: ObservableObject {
     
     
 //    func uploadPackage2(authToken: String, server: String, packageId: String, pathToFile: String) {
-//        
+//
 //        let parameters = [
 //          [
 //            "key": "file",
@@ -184,20 +191,20 @@ class ImportExportBrain: ObservableObject {
    
         
 //    func uploadPackage3(authToken: String, server: String, packageId: String, pathToFile: String) {
-//                
+//
 //        self.atSeparationLine()
 //        print("Running:uploadPackage3")
 //        print("pathToFile is:\(pathToFile)")
 //        print("packageId is:\(packageId)")
 //        print("server is:\(server)")
-//        
+//
 //        let parameters = [
 //          [
 //            "key": "file",
 //            "src": "\(pathToFile)",
 //            "type": "file"
 //          ]] as [[String: Any]]
-//        
+//
 //        let boundary = "Boundary-\(UUID().uuidString)"
 //        var body = Data()
 ////        var error: Error? = nil
@@ -239,7 +246,7 @@ class ImportExportBrain: ObservableObject {
 //        request.addValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 //        request.httpMethod = "POST"
 //        request.httpBody = postData
-//        
+//
 //        let task = URLSession.shared.dataTask(with: request) { data, response, error in
 //            let responseCode = (response as? HTTPURLResponse)?.statusCode
 //            print("Response code is:\(String(describing: responseCode ?? 0))")
@@ -254,31 +261,31 @@ class ImportExportBrain: ObservableObject {
 //    }
     
 //    func uploadPackage4(url: URL, authToken: String, parameters: String ) {
-//            
+//
 //        atSeparationLine()
 //        print("Running uploadPackage4 function")
 //        print("url is:\(url)")
 //        self.atSeparationLine()
-//            
+//
 //            let headers = [
 //                "Accept": "application/json",
 //                "Content-Type": "application/json",
 //                "Authorization": "Bearer \(authToken)"
 //            ]
-//            
+//
 //            let postData = parameters.data(using: .utf8)
-//            
+//
 //            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //            request.allHTTPHeaderFields = headers
 //            request.httpMethod = "PUT"
 //            request.httpBody = postData
-//            
+//
 //            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //                if let data = data, let response = response {
 ////                    print("Doing processing of sendRequestAsXML:\(httpMethod)")
 //                    print("Data is:\(data)")
 //                    print("Data is:\(response)")
-//                    
+//
 //                } else {
 //                    print("Error encountered")
 //                    var text = "\n\nFailed."
@@ -420,13 +427,13 @@ class ImportExportBrain: ObservableObject {
 //        panel.allowsMultipleSelection = false
 //        panel.allowedFileTypes = ["png", "jpg", "jpeg", "heic"]
 //        panel.directoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
-//        
+//
 //        if panel.runModal() == .OK {
 //            self.selectedImageURL = panel.url
 //            self.uploadStatus = ""
 //        }
 //    }
-//    
+//
     func uploadPhoto(server: String, authToken: String, selectedImageURL: URL?) {
         guard let imageURL = selectedImageURL else { return }
         self.isUploading = true

@@ -28,49 +28,35 @@ struct ScriptsActionView: View {
             
             if networkController.scripts.count > 0 {
                 
-                NavigationView {
-                    
-                    List(searchResults, id: \.self, selection: $selection) { script in
-                        
-                        HStack {
-                            Image(systemName: "applescript")
-                            Text("\(script.name)").font(.system(size: 12.0)).foregroundColor(.blue)
-                        }
-#if os(macOS)
-                        .navigationTitle("Scripts")
-                        
-#endif
-                        .foregroundColor(.blue)
-                        //                    Text("\(networkController.scripts.count) total scripts")
+                // Removed inner NavigationView to avoid creating duplicate NSToolbar search items.
+                List(searchResults, id: \.self, selection: $selection) { script in
+                    HStack {
+                        Image(systemName: "applescript")
+                        Text("\(script.name)").font(.system(size: 12.0)).foregroundColor(.blue)
                     }
-                    //              ################################################################################
-                    //              Toolbar
-                    //              ################################################################################
 #if os(macOS)
-
-                    .frame(minWidth: 300, maxWidth: .infinity)
+                    .navigationTitle("Scripts")
 #endif
-
-                    .toolbar {
-                        
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            print("Refresh")
-                            networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
-                            
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "arrow.clockwise")
-                                Text("Refresh")
-                            }
-                        }
-                    }
-                    .searchable(text: $searchText)
+                    .foregroundColor(.blue)
                 }
+#if os(macOS)
+                .frame(minWidth: 300, maxWidth: .infinity)
+#endif
+                .toolbar {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        print("Refresh")
+                        networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh")
+                        }
+                    }
+                }
+                .searchable(text: $searchText)
                 
-                .navigationViewStyle(DefaultNavigationViewStyle())
-
                 //              ################################################################################
                 //              Toolbar - END
                 //              ################################################################################
@@ -83,8 +69,6 @@ struct ScriptsActionView: View {
                     List(Array(selection), id: \.self) { script in
                         Text(script.name )
                     }
-                    
-                    .searchable(text: $searchText)
                     
                     //              ################################################################################
                     //              DELETE

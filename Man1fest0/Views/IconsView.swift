@@ -27,8 +27,11 @@ struct  IconsView: View {
 
     @State var path = ""
     @State private var showList = false
-    @State private var allItemsList = [""]
+    @State var allItemsList = [""]
     @State private var searchText = ""
+
+    // Show confirmation before downloading all icons (can take time)
+    @State private var showingRefreshIconsWarning = false
 
     var body: some View {
         
@@ -40,9 +43,18 @@ struct  IconsView: View {
                     NavigationView {
                         List(searchResults, id: \.self, selection: $selectedIcon) { icon in
                             NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
+//                                HStack {
+//                                    Image(systemName: "photo.circle")
+//                                    Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
+//                                }
+                                
                                 HStack {
                                     Image(systemName: "photo.circle")
-                                    Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
+                                    Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black)
+                                    AsyncImage(url: URL(string: icon.url )) { image in
+                                        image.resizable().frame(width: 15, height: 15)
+                                    } placeholder: {
+                                    }
                                 }
                             }
                             .cornerRadius(8)
@@ -112,6 +124,27 @@ struct  IconsView: View {
                     .buttonStyle(.borderedProminent)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     .tint(.yellow)
+                    Button(action: {
+//<<<<<<< HEAD
+//                        progress.showProgress()
+//                        progress.waitForABit()
+//                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)}) {
+//=======
+                        showingRefreshIconsWarning = true
+                    }) {
+//>>>>>>> main
+                        Text("Refresh Icons")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .alert("This will download all icons again, which may take some time. Do you want to continue?", isPresented: $showingRefreshIconsWarning) {
+                        Button("Cancel", role: .cancel) { }
+                        Button("Continue") {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                        }
+                    }
                 }
                 
                 Text(importExportController.uploadStatus)
@@ -124,7 +157,7 @@ struct  IconsView: View {
 //                    if networkController.allIconsDetailed.count > 0 {
 
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 5000)
                 } else {
                     print("getAllIconsDetailed has already run")
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")

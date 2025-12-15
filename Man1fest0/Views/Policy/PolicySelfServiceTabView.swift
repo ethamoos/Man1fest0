@@ -71,13 +71,15 @@ struct PolicySelfServiceTabView: View {
     @State  var selectionBuilding: Building = Building(id: 0, name: "")
     
     
-    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
+    @State var selectedIcon: Icon? = nil
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
     @State var iconMultiSelection = Set<String>()
     
     @State var selectedIconString = ""
+    
+    @State var newSelfServiceName = ""
     
     //  ########################################################################################
     //  LDAP
@@ -104,7 +106,9 @@ struct PolicySelfServiceTabView: View {
     @State private var showingWarningLimitScope = false
     
     @State private var showingWarningClearLimit = false
-    
+
+    // Show confirmation before downloading all icons (can take time)
+    @State private var showingRefreshIconsWarning = false
     //  ########################################################################################
     
     var body: some View {
@@ -128,8 +132,8 @@ struct PolicySelfServiceTabView: View {
                     List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
-                            Text(String(describing: icon.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                            Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+                            AsyncImage(url: URL(string: icon.url)) { image in
                                 image.resizable().frame(width: 15, height: 15)
                             } placeholder: {
                             }
@@ -147,8 +151,8 @@ struct PolicySelfServiceTabView: View {
                     List(networkController.allIconsDetailed, id: \.self) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
-                            Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon.url ?? "" )) { image in
+                            Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
+                            AsyncImage(url: URL(string: icon.url)) { image in
                                 image.resizable().frame(width: 15, height: 15)
                             } placeholder: {
                             }
@@ -171,23 +175,23 @@ struct PolicySelfServiceTabView: View {
                         TextField("Filter", text: $iconFilter)
                         Picker(selection: $selectedIcon, label: Text("").bold()) {
                                 
-                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter)}), id: \.self) { icon in
+                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter.lowercased())}), id: \.self) { icon in
                                 HStack {
                                     Text(String(describing: icon.name))
-                                        .tag(icon as Icon?)
-                                        .tag(selectedIcon as Icon?)
-                                    AsyncImage(url: URL(string: icon.url ))  { image in
+                                    AsyncImage(url: URL(string: icon.url))  { image in
                                         image.resizable()
                                             .aspectRatio(contentMode: .fit)
-                                                                     .frame(maxWidth: 30, maxHeight: 10)
+                                            .frame(maxWidth: 30, maxHeight: 30)
 
                                     } placeholder: {
                                         ProgressView()
                                     }
-                                    .frame(width: 05, height: 05)
+                                    .frame(width: 30, height: 30)
                                     .background(Color.gray)
                                     .clipShape(Circle())
                                 }
+                                // Tag must match the Picker selection type (Icon?) so provide the optional Icon as tag
+                                .tag(icon as Icon?)
                             }
                         }
                     }
@@ -210,14 +214,24 @@ struct PolicySelfServiceTabView: View {
 //                    }
 //                    HStack {
                         Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                            // Show confirmation before kicking off a potentially long download
+                            showingRefreshIconsWarning = true
+                        }) {
                             Text("Refresh Icons")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                    }
+                        .alert("Warning", isPresented: $showingRefreshIconsWarning) {
+                            Button("Proceed") {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                            }
+                            Button("Cancel", role: .cancel) { }
+                        } message: {
+                            Text("please note downloading all the icons can take some time")
+                        }
+                     }
                 }
                 HStack {
                     Button(action: {
@@ -231,6 +245,23 @@ struct PolicySelfServiceTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+//                    HStack {
+                        TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $newSelfServiceName)
+                            .textSelection(.enabled)
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: newSelfServiceName, policyID: String(describing: policyID))
+                            
+                            networkController.separationLine()
+                            print("Name Self-Service to:\(newSelfServiceName)")
+                        }) {
+                            Text("Set Name")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+//                    }
                 }
             }
             .frame(minHeight: 1)
@@ -238,6 +269,27 @@ struct PolicySelfServiceTabView: View {
             
             
             
+        }
+        .onAppear{
+            if networkController.allIconsDetailed.count <= 1 {
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                Task {
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 2000)
+                }
+            } else {
+                print("getAllIconsDetailed has already run")
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+            }
+        }
+        .onChange(of: networkController.allIconsDetailed) { newIcons in
+            // If no icon is currently selected, pick the first available icon so Picker has a valid selection
+            if selectedIcon == nil, let first = newIcons.first {
+                selectedIcon = first
+            }
+        }
+        .onChange(of: selectedIcon) { newSelection in
+            // Keep the string in sync for row highlighting and other uses
+            selectedIconString = newSelection?.name ?? ""
         }
     }
 }

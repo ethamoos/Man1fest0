@@ -1,11 +1,4 @@
 //
-//  Untitled 2.swift
-//  Man1fest0
-//
-//  Created by Amos Deane on 30/01/2025.
-//
-
-//
 //  ConfigProfilesView.swift
 //  PackageTourist
 //
@@ -18,7 +11,6 @@ struct ConfigProfileViewMacOS: View {
     
     @EnvironmentObject var networkController: NetBrain
     @State private var searchText = ""
-    @State private var selection = ConfigurationProfiles.ConfigurationProfile(name: "")
     
     @State var server: String
     
@@ -29,13 +21,13 @@ struct ConfigProfileViewMacOS: View {
             
             if networkController.allConfigProfiles.computerConfigurations?.count ?? 0 > 0 {
                 
-                List(searchResults, id: \.self, selection: $selection) { config in
-                    NavigationLink(destination: ConfigProfileViewMacOSDetail(selection: selection, server: server)) {
+                // Use List without selection and pass the tapped `config` to the detail view.
+                List(searchResults, id: \.id) { config in
+                    NavigationLink(destination: ConfigProfileViewMacOSDetail(selection: config, server: server)) {
                         HStack {
                             Image(systemName: "gear")
                             Text(config.name )
                         }
-                            .searchable(text: $searchText)
                     }
                 }
                 .searchable(text: $searchText)

@@ -20,10 +20,10 @@ import AEXML
     //    Environment objects
     //    #################################################################################
     
-    @EnvironmentObject var layout: Layout
-    @EnvironmentObject var xmlBrain: XmlBrain
+//    @EnvironmentObject var layout: Layout
+//    @EnvironmentObject var xmlBrain: XmlBrain
 //    // @EnvironmentObject var controller: JamfController
-    @EnvironmentObject var networkController: NetBrain
+//    @EnvironmentObject var networkController: NetBrain
     
     //    #################################################################################
     //    Policies
@@ -303,7 +303,7 @@ import AEXML
                 print("Running updateSSName name function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
                 // print("xml is set as:\(xml)")
-                networkController.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
             }
         }
         else {
@@ -370,7 +370,7 @@ import AEXML
                 self.separationLine()
                 print("Passing to sendRequestAsXML")
                 // print("xml is set as:\(xml)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
                 //                    appendStatus("Connecting to \(url)...")
             }
         }
@@ -492,4 +492,80 @@ import AEXML
         self.allLdapServers = try decoder.decode(LDAPServers.self, from: data).ldapServers
 
     }
+    
+    
+    // Flush log for policies with configurable interval and log_id specifying computers
+    func flushLogComputer(serverURL: String, authToken: String, interval: String, policyId: String, computer_id: String) async throws {
+//        Supported values are a combination of [Zero, One, Two, Three, Six] and [Days, Weeks, Months, Years]. For example: "Three+Months"
+        
+        
+        let parameters = """
+        <logflush>
+            <log>policy</log>
+            <log_id>\(policyId)</log_id>
+            <interval>\(interval)</interval>
+            <computers>
+                <computer>
+                    <id>\(computer_id)</id>
+                </computer>
+            </computers>
+        </logflush>
+        """
+        let postData = parameters.data(using: .utf8)
+        guard let url = URL(string: "\(serverURL)/JSSResource/logflush") else {
+            print("Invalid URL")
+            return
+        }
+        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.httpMethod = "DELETE"
+        request.httpBody = postData
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            print("Data is:\(data)")
+            print("Response is:\(response)")
+            print("URL is:\(url)")
+            throw JamfAPIError.badResponseCode
+        }
+        
+//        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+//            guard let data = data else {
+//                print(String(describing: error))
+//                return
+//            }
+//            print(String(data: data, encoding: .utf8) ?? "No response data")
+//        }
+//        task.resume()
+    }
+    
+    
+    // Flush log for a specific interval using RESTful path
+    func logFlushInterval(server: String, policyId: String, logType: String, interval: String,authToken: String) async throws {
+        let jamfURLQuery = "\(server)/JSSResource/logflush/\(logType)/id/\(policyId)/interval/\(interval)"
+        
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
+        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.httpMethod = "DELETE"
+      
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            print("Data is:\(data)")
+            print("Response is:\(response)")
+            print("URL is:\(url)")
+            throw JamfAPIError.badResponseCode
+        }
+    }
+    
+    
 }

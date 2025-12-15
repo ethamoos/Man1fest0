@@ -75,13 +75,21 @@ struct CreatePolicyTabView: View {
     
     @State var selectedComputer: Computer = Computer(id: 0, name: "")
     
-    @State var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Use selectedCategoryId (Int?) so Picker tags (jamfId) match selection type
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     @State var selectedDepartment: Department = Department(jamfId: 0, name: "")
     
     @State var selectedScript: Script = Script(id: "", name: "")
     
-    @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
+    // Use selectedPackageId (Int?) so Picker tags (jamfId) match selection type
+    @State var selectedPackageId: Int? = nil
+    private var selectedPackage: Package? {
+        networkController.packages.first(where: { $0.jamfId == selectedPackageId })
+    }
     
     //    ########################################
     //    scriptParameters
@@ -116,7 +124,7 @@ struct CreatePolicyTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory.jamfId), category: selectedCategory.name, departmentID: String(describing: selectedDepartment.jamfId ?? 0) , department: selectedDepartment.name , scriptID: String(describing: $selectedScript.id), scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
+                            networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory?.jamfId ?? 0), category: selectedCategory?.name ?? "", departmentID: String(describing: selectedDepartment.jamfId ?? 0) , department: selectedDepartment.name , scriptID: String(describing: $selectedScript.id), scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
                     
                             if createDepartmentIsChecked == true {
                                 networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
@@ -128,10 +136,10 @@ struct CreatePolicyTabView: View {
                             
                             networkController.separationLine()
                             print("Creating new Policy:\(policyName)")
-                            print("categoryID:\(selectedCategory.jamfId)")
-                            print("Category:\(selectedCategory.name)")
+                            print("categoryID:\(selectedCategory?.jamfId ?? 0)")
+                            print("Category:\(selectedCategory?.name ?? "")")
                             print("selectedDepartment ID:\(String(describing: selectedDepartment.jamfId ?? 0))")
-                            print("selectedCategory:\(selectedCategory.name)")
+                            print("selectedCategory:\(selectedCategory?.name ?? "")")
                             
                         }) {
                             Text("Create Policy")
@@ -164,19 +172,23 @@ struct CreatePolicyTabView: View {
     // ##########################################################################################
     
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedCategory, label: Text("Category")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
+                    Picker(selection: $selectedCategoryId, label: Text("Category")) {
+                        Text("No category").tag(nil as Int?)
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
+                            Text(category.name).tag(category.jamfId as Int?)
+                        }
+                    }
+                    .onAppear {
+                        if selectedCategoryId == nil {
+                            selectedCategoryId = networkController.categories.first?.jamfId
                         }
                     }
                 }
                 
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedDepartment, label: Text("Department:")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
                         ForEach(networkController.departments, id: \.self) { department in
-                            Text(String(describing: department.name)).tag(department.name)
+                            Text(department.name).tag(department)
                         }
                     }
                 }
@@ -185,19 +197,18 @@ struct CreatePolicyTabView: View {
             Group {
                 
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedPackage, label: Text("Package:")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
+                    Picker(selection: $selectedPackageId, label: Text("Package:")) {
+                        Text("No package selected").tag(nil as Int?)
                         ForEach(networkController.packages, id: \.self) { package in
-                            Text(String(describing: package.name))
+                            Text(package.name).tag(package.jamfId as Int?)
                         }
                     }
                 }
                 
                 LazyVGrid(columns: columns, spacing: 20) {
                     Picker(selection: $selectedScript, label: Text("Scripts")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
                         ForEach(networkController.scripts, id: \.self) { script in
-                            Text(String(describing: script.name))
+                            Text(script.name).tag(script)
                         }
                     }
                 }

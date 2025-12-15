@@ -41,7 +41,6 @@ struct PolicyView: View {
     //    SELECTIONS
     //    ########################################################################################
     
-//    @State private var selection = Set<Policy>()
     @State private var selection: Policy = Policy(name: "")
     
     @State var searchText = ""
@@ -76,20 +75,22 @@ struct PolicyView: View {
 #endif
                         .toolbar {
                             Button(action: {
-                                networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
-                                xmlController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
-                                print("Refresh policyView - get all policies")
-                                networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
                                 progress.showProgress()
                                 progress.waitForABit()
                                 if selection.name.isEmpty == false {
                                     print("Policy is selected")
                                     print("Refreshing detailed policy:\(selection.jamfId ?? 0)")
-                                    networkController.connectDetailed(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, itemID: Int(selection.jamfId ?? 0))
+                                    Task {
+                                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: selection.jamfId ?? 0))
+                                    }
                                     print("Refreshing all policies")
                                     networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
                                     print("Refresh getPolicyAsXML")
-                                        xmlController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
+                                    xmlController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
+                                } else {
+                                    
+                                    print("Refresh policyView - get all policies")
+                                    networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
                                 }
                             }) {
                                 HStack(spacing: 10) {

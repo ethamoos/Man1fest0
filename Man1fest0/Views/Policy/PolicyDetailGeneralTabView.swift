@@ -19,7 +19,7 @@ struct PolicyDetailGeneralTabView: View {
     var server: String
     var selectedPoliciesInt: [Int?]
     @State var iconFilter = ""
-
+    
     
     //  ####################################################################################
     //  BOOLS
@@ -34,11 +34,15 @@ struct PolicyDetailGeneralTabView: View {
     @State private var showingWarningClearScripts = false
     
     //  ####################################################################################
-    //    Category SELECTION
+    //    Category SELECTION (use jamfId Int for Picker tags)
     //  ####################################################################################
     
     @State var categories: [Category] = []
-    @State  var selectedCategory: Category = Category(jamfId: 0, name: "")
+    // Bind pickers to the stable integer jamfId to avoid UUID identity mismatches
+    @State var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
     
     //  ########################################################################################
     //  SELECTIONS
@@ -50,32 +54,30 @@ struct PolicyDetailGeneralTabView: View {
     
     @State var selectedIconString = ""
     
-    @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
+    @State var selectedIcon: Icon? = nil
     
-    @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
+    //  ############################################################################
+    //  Sort order
+    //  ############################################################################
     
-//  ############################################################################
-//  Sort order
-//  ############################################################################
-
     
     @State private var sortOption: SortOption = .alphabetical
+    
+    enum SortOption: String, CaseIterable, Identifiable {
+        case alphabetical = "Alphabetical"
+        case reverseAlphabetical = "Reverse Alphabetical"
         
-        enum SortOption: String, CaseIterable, Identifiable {
-            case alphabetical = "Alphabetical"
-            case reverseAlphabetical = "Reverse Alphabetical"
-            
-            var id: String { self.rawValue }
+        var id: String { self.rawValue }
+    }
+    
+    var sortedIcons: [Icon?] {
+        switch sortOption {
+        case .alphabetical:
+            return networkController.allIconsDetailed.sorted { $0.name < $1.name }
+        case .reverseAlphabetical:
+            return networkController.allIconsDetailed.sorted { $0.name > $1.name}
         }
-        
-        var sortedIcons: [Icon?] {
-            switch sortOption {
-            case .alphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name < $1.name }
-            case .reverseAlphabetical:
-                return networkController.allIconsDetailed.sorted { $0.name > $1.name}
-            }
-        }
+    }
     
     
     var body: some View {
@@ -88,20 +90,30 @@ struct PolicyDetailGeneralTabView: View {
             
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
-                    Picker(selection: $selectedCategory, label: Text("Category:")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
+                    Picker(selection: $selectedCategoryId, label: Text("Category:")) {
+                        Text("No category selected").tag(nil as Int?)
                         ForEach(networkController.categories, id: \.self) { category in
-                            Text(String(describing: category.name))
+                            Text(String(describing: category.name)).tag(category.jamfId as Int?)
                         }
                     }
-                    
+                    .onAppear {
+                        if selectedCategoryId == nil {
+                            selectedCategoryId = networkController.categories.first?.jamfId
+                        }
+                    }
+                    .onChange(of: networkController.categories) { newCategories in
+                        if !newCategories.isEmpty {
+                            selectedCategoryId = newCategories.first?.jamfId
+                        }
+                    }
                     Button(action: {
-                        
                         progress.showProgress()
                         progress.waitForABit()
-                        
-                        networkController.processBatchUpdateCategory(selection: selectedPoliciesInt, server: server,  resourceType: ResourceType.policyDetail, authToken: networkController.authToken, newCategoryName: String(describing: selectedCategory.name), newCategoryID:  String(describing: selectedCategory.jamfId))
-                        
+                        if let category = selectedCategory {
+                            networkController.processBatchUpdateCategory(selection: selectedPoliciesInt, server: server,  resourceType: ResourceType.policyDetail, authToken: networkController.authToken, newCategoryName: String(describing: category.name), newCategoryID:  String(describing: category.jamfId))
+                        } else {
+                            print("No category selected")
+                        }
                     }) {
                         HStack(spacing: 10) {
                             Text("Update")
@@ -120,16 +132,19 @@ struct PolicyDetailGeneralTabView: View {
             //  ####################################################################
             
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
-                
                 HStack {
                     Button(action: {
                         progress.showProgressView = true
                         networkController.processingComplete = false
                         progress.waitForABit()
-                        print("Setting category to:\(String(describing: selectedCategory))")
+                        if let category = selectedCategory {
+                            print("Setting category to:\(String(describing: category))")
+                            networkController.selectedCategory = category
+                            networkController.processUpdatePoliciesCombined(selection: selectedPoliciesInt, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
+                        } else {
+                            print("No category selected")
+                        }
                         print("Policy enable/disable status is set as:\(String(describing: enableDisable))")
-                        networkController.selectedCategory = selectedCategory
-                        networkController.processUpdatePoliciesCombined(selection: selectedPoliciesInt, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
                     }) {
                         Text("Update Category/Enable")
                             .help("This updates the category and also applies the enable/disable settings")
@@ -165,133 +180,58 @@ struct PolicyDetailGeneralTabView: View {
             //                        Icons
             // ################################################################################
             
-            //        VStack(alignment: .leading) {
-            //
-            //            Text("Icons").bold()
-            //#if os(macOS)
-            //            List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-            //                HStack {
-            //                    Image(systemName: "photo.circle")
-            //                    Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-            //                    AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-            //                        image.resizable().frame(width: 15, height: 15)
-            //                    } placeholder: {
-            //                    }
-            //                }
-            //                .foregroundColor(.gray)
-            //                .listRowBackground(selectedIconString == icon?.name
-            //                                   ? Color.green.opacity(0.3)
-            //                                   : Color.clear)
-            //                .tag(icon)
-            //            }
-            //            .cornerRadius(8)
-            //            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-            //#else
-            //
-            //            List(networkController.allIconsDetailed, id: \.self) { icon in
-            //                HStack {
-            //                    Image(systemName: "photo.circle")
-            //                    Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-            //                    AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-            //                        image.resizable().frame(width: 15, height: 15)
-            //                    } placeholder: {
-            //                    }
-            //                }
-            //            }
-            //#endif
-            //            .background(.gray)
-            //        }
             
             // ################################################################################
             //                        Icons - picker
             // ################################################################################
             
-          
+            
             LazyVGrid(columns: layout.columns, spacing: 10) {
-                
-//                VStack {
-//                    Picker("Sort Order", selection: $sortOrder) {
-//                        Text("Ascending").tag(SortOrder.ascending)
-//                        Text("Descending").tag(SortOrder.descending)
-//                    }
-//                    .pickerStyle(SegmentedPickerStyle())
-//                    .padding()
-//
-//                    List(sortedItems, id: \.self) { item in
-//                        Text(item)
-//                    }
-//                }
-                
-//                VStack {
-//                    Picker("Sort Options", selection: $sortOption) {
-//                        ForEach(SortOption.allCases) { option in
-//                            Text(option.rawValue).tag(option)
-//                        }
-//                    }
-//                    .pickerStyle(SegmentedPickerStyle())
-//                    .padding()
-//
-//                    List(sortedIcons) { icon in
-//                        Text(icon.id)
-//                    }
-//                }
-                
-                
-//                Picker(selection: $selectedIcon, label: Text("Icon:")) {
-//                    //                            Text("").tag("")
-//                    ForEach(networkController.allIconsDetailed, id: \.self) { icon in
-//                        HStack {
-//                            Text(String(describing: icon.name ?? ""))
-//
-//                            AsyncImage(url: URL(string: icon.url ?? "" ))  { image in
-//                                image
-//                                    .resizable()
-//                                    .scaledToFill()
-//                            } placeholder: {
-//                                ProgressView()
-//                            }
-//                            .frame(width: 05, height: 05)
-//                            .background(Color.gray)
-//                            .clipShape(Circle())
-//                        }
-//                        .frame(width: 05, height: 05)
-//                    }
-//                    //
-//                    //                ############################################################
-//                    //                Update Icon Button
-//                    //                ############################################################
-//
-//                }
-//
                 
                 
                 HStack {
                     TextField("Filter", text: $iconFilter)
                     Picker(selection: $selectedIcon, label: Text("").bold()) {
+                        Text("No icon selected").tag(nil as Icon?)
                         ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }, id: \.self) { icon in
                             HStack(spacing: 10) {
                                 ZStack {
                                     Circle()
                                         .fill(Color.gray.opacity(0.15))
-                                        .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                                        .frame(width: 32, height: 32)
                                     AsyncImage(url: URL(string: icon.url ))  { image in
                                         image
                                             .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
+                                            .scaledToFit()
+                                            .frame(width: 20, height: 20)
                                             .clipped()
                                     } placeholder: {
                                         ProgressView()
-                                            .frame(width: 32, height: 32)
+                                            .frame(width: 20, height: 20)
                                     }
                                 }
                                 Text(String(describing: icon.name))
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.primary)
+                                Spacer()
                             }
                             .frame(height: 36)
-                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
                             .tag(icon as Icon?)
+                        }
+                    }
+                    .onAppear {
+                        if !networkController.allIconsDetailed.isEmpty {
+                            // Only set selectedIcon if the first icon exists
+                            selectedIcon = networkController.allIconsDetailed.first
+                        } else {
+                            selectedIcon = nil
+                        }
+                    }
+                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+                        if !newIcons.isEmpty {
+                            selectedIcon = newIcons.first
+                        } else {
+                            selectedIcon = nil
                         }
                     }
                 }
@@ -308,12 +248,13 @@ struct PolicyDetailGeneralTabView: View {
                 
                 HStack {
                     Button(action: {
-                        
                         progress.showProgress()
                         progress.waitForABit()
-                        
-                        xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
-                        
+                        if let icon = selectedIcon {
+                            xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
+                        } else {
+                            print("No icon selected")
+                        }
                     }) {
                         Text("Update Icon")
                     }
@@ -331,7 +272,7 @@ struct PolicyDetailGeneralTabView: View {
                         .tint(.blue)
                 }
             }
-                    Spacer()
+            Spacer()
         }
         .padding()
     }

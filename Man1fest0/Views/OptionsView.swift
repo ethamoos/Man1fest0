@@ -86,9 +86,13 @@ struct OptionsView: View {
                                 NavigationLink(destination: ComputerActionView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
                                     Text("Computers")
                                 }
+                                
+                                NavigationLink(destination: ComputersBasicView( server: server )) {
+                                                                 Text("Computers Basic Actions")
+                                                             }
 #if os(macOS)
 
-                                NavigationLink(destination: ComputersBasicTableView( server: server )) {
+                                NavigationLink(destination: ComputersBasicTableView(server: server)) {
                                     Text("Computer Actions")
                                 }
 #endif
@@ -132,6 +136,9 @@ struct OptionsView: View {
                                     Text("Policy Actions - Detailed")
                                 }
                                 
+                                NavigationLink(destination: PolicyListView(server: server)) {
+                                    Text("Policy List View - Detailed")
+                                }
 //                                NavigationLink(destination: NotesView()) {
 //                                    Text("Notes View")
 //                                }
@@ -343,11 +350,13 @@ struct OptionsView: View {
                             networkController.needsCredentials = true
                         }) {
                             HStack {
-                                Label("Connect", systemImage: networkController.connected ? "bolt.horizontal.fill" : "bolt.horizontal")
+//                                Label("Connect", systemImage: networkController.connected ? "bolt.horizontal.fill" : "bolt.horizontal")
                                 Text("Connect")
                             }
                             .foregroundColor(.blue)
                         }
+                        
+                      
                     }
                  
                     ToolbarItem(id: "Status") {
@@ -359,6 +368,23 @@ struct OptionsView: View {
                                     .foregroundColor(.green)
                             }
                         }
+                    }
+                    
+                    ToolbarItem(id: "Refresh") {
+                        Button(action: {
+                            
+                            Task {
+                                try? await networkController.getToken(server: server, username: username, password: networkController.password)
+                            }
+                        }) {
+                            HStack {
+//                                Text("Refresh")
+                                Image(systemName: "arrow.clockwise")
+
+                            }
+                            .foregroundColor(.blue)
+                        }
+//                    }
                     }
                 }
                 .foregroundColor(.blue)

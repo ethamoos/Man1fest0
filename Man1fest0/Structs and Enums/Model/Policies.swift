@@ -19,7 +19,7 @@ import Foundation
 
 struct PolicyBasic: Codable, Hashable {
     
-    let policies: [Policy]    
+    let policies: [Policy]
 
 }
 
@@ -52,6 +52,7 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
     let self_service: SelfService?
     //    let files_processes: FilesProcesses?
     //    let printer:[PrinterClass]?
+    let printers: [String]?
     
     enum CodingKeys: String, CodingKey {
         case general = "general"
@@ -59,6 +60,7 @@ struct PolicyDetailed: Codable, Hashable, Identifiable {
         case package_configuration = "package_configuration"
         case scripts = "scripts"
         case self_service = "self_service"
+        case printers = "printers"
         //        case printers = "printers"
         //        case files_processes = "files_processes"
         //        case printer
@@ -156,7 +158,7 @@ struct General: Codable, Hashable, Identifiable {
     let category: Category?
     //    let dateTimeLimitations: DateTimeLimitations?
     //    let networkLimitations: NetworkLimitations?
-    //    let overrideDefaultSettings: OverrideDefaultSettings?
+        let overrideDefaultSettings: OverrideDefaultSettings?
 //    let networkRequirements: String?
     //    let site: Category?
     let mac_address: String?
@@ -182,13 +184,21 @@ struct General: Codable, Hashable, Identifiable {
         case category = "category"
         //        case dateTimeLimitations = "date_time_limitations"
         //        case networkLimitations = "network_limitations"
-        //        case overrideDefaultSettings = "override_default_settings"
+                case overrideDefaultSettings = "override_default_settings"
 //        case networkRequirements = "network_requirements"
         //        case site = "site"
         case mac_address = "mac_address"
         case ip_address = "ip_address"
 //        case payloads = "payloads"
     }
+    
+    var enabledInt: Int {
+        enabled == true ? 1 : 0
+    }
+    var categoryNameForSort: String { category?.name ?? "" }
+    var nameForSort: String { name ?? "" }
+    var triggerOtherForSort: String { triggerOther ?? "" }
+    var jamfIdForSort: Int { jamfId ?? 0 }
 }
 
 
@@ -458,3 +468,10 @@ struct UserGroups: Codable, Hashable, Identifiable {
 }
 
 // ################# END OF DETAILED POLICY ####################
+
+
+extension General {
+    var enabledForSort: Bool {
+        enabled ?? false
+    }
+}

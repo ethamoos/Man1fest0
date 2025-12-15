@@ -1,8 +1,8 @@
-
-
 import SwiftUI
 
-struct PolicyDetailView: View {
+// Renamed duplicate to avoid redeclaration conflict with `Views/Policy/PolicyDetailView.swift`.
+// This file's view appears to be a legacy/alternate detail layout, so rename to keep it available.
+struct PolicyDetailLegacyView: View {
     
     var server: String
     var user: String

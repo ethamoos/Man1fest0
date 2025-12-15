@@ -15,7 +15,9 @@ class Layout: ObservableObject {
     
     let date = String(DateFormatter.localizedString(from: NSDate() as Date, dateStyle: .short, timeStyle: .short))
 
-   
+//   var urlString: String = ""
+   var showAlert = false
+   var alertMessage = ""
     
     
     let column = [
@@ -45,7 +47,7 @@ class Layout: ObservableObject {
         GridItem(.fixed(250)),
         GridItem(.fixed(200)),
         GridItem(.flexible()),
-    ] 
+    ]
     
     let columnAdaptive = [
         GridItem(.adaptive(minimum: 250), alignment: .leading)
@@ -106,7 +108,7 @@ class Layout: ObservableObject {
     ]
     
     let columnFlex = [
-        GridItem(.flexible(minimum: 250))
+        GridItem(.flexible(minimum: 250), alignment: .leading)
     ]
     
     let columnsFlex = [
@@ -139,6 +141,10 @@ class Layout: ObservableObject {
     let columnsAllFlex = [
         GridItem(.flexible(), alignment: .leading),
         GridItem(.flexible())
+    ]
+    
+    let columnFlexAdaptive = [
+        GridItem(.adaptive(minimum: 300), alignment: .leading)
     ]
     
     let columnsFlexAdaptive = [
@@ -213,6 +219,11 @@ class Layout: ObservableObject {
         GridItem(.fixed(200), alignment: .leading)
     ]
     
+    let threeColumnsFixed = [
+        GridItem(.fixed(200), alignment: .leading),
+        GridItem(.fixed(200), alignment: .leading),
+        GridItem(.fixed(200), alignment: .leading)
+    ]
     
     func separationLine() {
         print("------------------------------------------------")
@@ -230,4 +241,120 @@ class Layout: ObservableObject {
         print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     }
     
+    private func translateJamfAPIURL(_ url: URL) -> URL? {
+        // We're only interested in paths that contain `/JSSResource/{resource}/id/{id}`
+        let components = url.pathComponents.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) }.filter { !$0.isEmpty }
+        // components would be ["JSSResource","policies","id","1111"] for the example
+        guard components.count >= 4 else { return nil }
+        guard components[0].lowercased() == "jssresource" else { return nil }
+
+        let resource = components[1]
+
+        // find the "id" segment and the following value
+        if let idIndex = components.firstIndex(where: { $0.lowercased() == "id" }), components.indices.contains(idIndex + 1) {
+            let idValue = components[idIndex + 1]
+
+            var newComponents = URLComponents()
+            newComponents.scheme = url.scheme
+            newComponents.host = url.host
+            newComponents.port = url.port
+            // Preserve user/password if present
+            if let user = url.user, !user.isEmpty { newComponents.user = user }
+            if let password = url.password, !password.isEmpty { newComponents.password = password }
+
+            newComponents.path = "/\(resource).html"
+            newComponents.queryItems = [
+                URLQueryItem(name: "id", value: idValue),
+                URLQueryItem(name: "o", value: "r")
+            ]
+
+            return newComponents.url
+        }
+
+        return nil
+    }
+
+    // Translate a Jamf API URL to the format used by the Jamf Pro web UI for a given request type.
+    // Example:
+    //  input:  https://server/JSSResource/computers/id/18562, requestType: "computers"
+    //  output: https://server/JSSResource/computers?id=18562&o=r
+    func translateJamfURL(_ url: URL, requestType: String) -> URL? {
+        // Normalize path components and remove empty segments caused by double slashes
+        let components = url.pathComponents.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) }.filter { !$0.isEmpty }
+        guard !components.isEmpty else { return nil }
+
+        // Try to find an explicit "id" segment first
+        var idValue: String? = nil
+        if let idIndex = components.firstIndex(where: { $0.lowercased() == "id" }), components.indices.contains(idIndex + 1) {
+            idValue = components[idIndex + 1]
+        } else {
+            // Fallback: find the requestType segment and take the following component if it looks numeric
+            if let rtIndex = components.firstIndex(where: { $0.lowercased() == requestType.lowercased() }), components.indices.contains(rtIndex + 1) {
+                let possible = components[rtIndex + 1]
+                if Int(possible) != nil {
+                    idValue = possible
+                }
+            }
+        }
+
+        guard let idUnwrapped = idValue else { return nil }
+
+        var newComponents = URLComponents()
+        newComponents.scheme = url.scheme
+        newComponents.host = url.host
+        newComponents.port = url.port
+        if let user = url.user, !user.isEmpty { newComponents.user = user }
+        if let password = url.password, !password.isEmpty { newComponents.password = password }
+
+        // Build the target path: /JSSResource/{requestType}
+        newComponents.path = "/JSSResource/\(requestType)"
+        newComponents.queryItems = [
+            URLQueryItem(name: "id", value: idUnwrapped),
+            URLQueryItem(name: "o", value: "r")
+        ]
+
+        return newComponents.url
+    }
+
+    /// Open a URL in the default browser. If `requestType` is provided, prefer translating
+    /// the URL using `translateJamfURL(_:requestType:)`. Otherwise fall back to the
+    /// automatic `translateJamfAPIURL(_:)` translation (if any).
+    func openURL(urlString: String, requestType: String? = nil) {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            alertMessage = "Please enter a URL."
+            showAlert = true
+            return
+        }
+
+        // If the user didn't include a scheme, default to https
+        var candidate = trimmed
+        if URL(string: candidate)?.scheme == nil {
+            candidate = "https://" + candidate
+        }
+
+        guard let url = URL(string: candidate) else {
+            alertMessage = "The text you entered is not a valid URL."
+            showAlert = true
+            return
+        }
+
+        // If a requestType is supplied prefer that translation (e.g. "computers").
+        var urlToOpen: URL = url
+        if let req = requestType, !req.trimmingCharacters(in: .whitespaces).isEmpty,
+           let translated = self.translateJamfURL(url, requestType: req) {
+            urlToOpen = translated
+        } else if let translated = self.translateJamfAPIURL(url) {
+            // Fallback to existing automatic translation
+            urlToOpen = translated
+        }
+
+        if !NSWorkspace.shared.open(urlToOpen) {
+            alertMessage = "Failed to open the URL in the default browser."
+            showAlert = true
+        }
+    }
+    
 }
+    
+//}

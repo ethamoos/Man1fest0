@@ -113,7 +113,8 @@ import SwiftUI
 
         self.allPsComplete = false
         print("Setting allPsComplete to:\(self.allPsComplete)")
-        let jamfURLQuery = server + "/api/v2/computer-prestages?page=0&page-size=100&sort=id%3Adesc"
+//        let jamfURLQuery = server + "/api/v2/computer-prestages?page=0&page-size=100&sort=id%3Adesc"
+        let jamfURLQuery = server + "/api/v3/computer-prestages"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"

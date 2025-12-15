@@ -54,49 +54,17 @@ struct PolicyActionsDetailTableView: View {
     
     @State private var isAscending = true
     
-    @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
-    
-//    @State private var sortOrder2 = [KeyPathComparator(\General.name, order: .forward)]
-//    @State private var sortOrder2: [KeyPathComparator\General.enabled] = [
-//        .init(\.name, order: .forward)
-//    ]
-//    @State private var sortOrder: [KeyPathComparator<Item>] = [
-//        .init(\.name, order: .forward)
-//    ]
-            @State private var sortOrder2: [KeyPathComparator<General>] = [
-        .init(\.name, order: .forward)
+    @State private var sortOrder: [KeyPathComparator<General>] = [
+        KeyPathComparator(\General.nameForSort, order: .forward),
+        KeyPathComparator(\General.categoryNameForSort, order: .forward),
+        KeyPathComparator(\General.enabledInt, order: .forward), // Use Int for sorting
+        KeyPathComparator(\General.jamfIdForSort, order: .forward),
+        KeyPathComparator(\General.triggerOtherForSort, order: .forward)
     ]
 
     
     var body: some View {
         
-        
-//        Button("Sort by Active") {
-//            isAscending.toggle()
-//            networkController.allPoliciesDetailedGeneral.sort { isAscending ? $0.General.enabled && !$1.General.enabled : !$0.General.enabled && $1.General.enabled }
-//        }
-//        
-//        Table(searchResults, sortOrder: $sortOrder2) {
-//            TableColumn("Name", value: \.name)
-////            TableColumn("Active") { item in
-////                Text(item.isActive ? "Yes" : "No")
-////            }
-////            Text(policy.enabled ? "true" : "false")
-//
-//            TableColumn("Category", value: \.category!.name)
-//
-//            TableColumn("Enabled") {
-//                policy in
-//                Text(policy.enabled ?? true ? "true" : "false")
-//            }
-//        }
-//        .onChange(of: sortOrder2) { newOrder in
-//            networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
-//        }
-        
-//        .onChange(of: sortOrder) { newOrder in
-//            items.sort(using: newOrder)
-//        }
         //  ########################################################################################
         //  This variable is a mapping of the ID to the jamfId property in the selection so that although you select the id you actually return the jamfID - meaning that you can do stuff with this
         
@@ -106,9 +74,12 @@ struct PolicyActionsDetailTableView: View {
         
         //  selectedPoliciesInt is an array of the jamf ids from the mapping
         
+        let filteredPolicies = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
         
-        let selectedPoliciesInt: [Int?] = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
-            .map(\.jamfId)
+        // Move selectedPoliciesInt logic to a computed property
+        var selectedPoliciesInt: [Int?] {
+            networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }.map { $0.jamfId }
+        }
         
         LazyVGrid(columns: layout.fiveColumns, spacing: 5) {
             
@@ -128,85 +99,87 @@ struct PolicyActionsDetailTableView: View {
         
         
         Table(searchResults, selection: $selectedPolicyIDs, sortOrder: $sortOrder) {
-            
-            TableColumn("Name", value: \.name!) {
-                policy in
-                Text(String(policy.name ?? ""))
+            TableColumn("Name", value: \ .nameForSort) { policy in
+                let name = policy.name ?? ""
+                Text(name)
+                    .textSelection(.enabled)
             }
-            
-//            TableColumn("Enabled") {
-//                policy in
-//                Text(policy.enabled ? "true" : "false")
-//            }
-            
-            TableColumn("Category", value: \.category!.name)
-
-            
-            TableColumn("Enabled") {
-                policy in
-                Text(String(policy.enabled ?? true))
+            TableColumn("Category", value: \ .categoryNameForSort) { policy in
+                let category = policy.category?.name ?? ""
+                Text(category)
+                    .textSelection(.enabled)
             }
-            
-//            TableColumn("Active") { item in
-//                           Text(item.isActive ? "Yes" : "No")
-//                       }
-            
-            TableColumn("ID", value: \.jamfId!) {
-                policy in
-                Text(String(policy.jamfId ?? 0))
+            TableColumn("Enabled", value: \ .enabledInt) { policy in
+                let enabledText = policy.enabled == true ? "true" : "false"
+                Text(enabledText)
             }
-            
-            //            TableColumn("Scope", value: \.scope!) {
-            //                policy in
-            //                Text(String(policy.scope ?? ""))
-            //            }
-            
-            TableColumn("Trigger", value: \.triggerOther!) {
-                policy in
-                Text(String(policy.triggerOther ?? ""))
+            TableColumn("ID", value: \ .jamfIdForSort) { policy in
+                let idText = String(policy.jamfId ?? 0)
+                Text(idText)
+                    .textSelection(.enabled)
             }
-            
-            //            TableColumn("Scripts", value: \.parameter4!) {
-            //                policy in
-            //                Text(String(policy.scripts ?? ""))
-            //            }
+            TableColumn("Trigger", value: \ .triggerOtherForSort) { policy in
+                let triggerText = policy.triggerOther ?? ""
+                Text(triggerText)
+                    .textSelection(.enabled)
+            }
         }
         .searchable(text: $searchText)
+        .toolbar {
+            ToolbarItemGroup(placement: .automatic) {
+                Button(action: {
+                    print("convertToallPoliciesDetailedGeneral")
+                    progress.showProgress()
+                    progress.waitForABit()
+                    Task {
+                        await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server)
+                    }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Refresh")
+                }
+                .buttonStyle(.borderedProminent)
+                
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    print("Clearing allPoliciesDetailed")
+                    networkController.allPoliciesDetailed.removeAll()
+                    print("Fetching allPoliciesDetailed")
+                    Task {
+                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    }
+                    convertToallPoliciesDetailedGeneral()
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Reset")
+                }
+                .buttonStyle(.bordered)
+                
+                Button(action: {
+                    let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
+                    let rowsString = selectedRows.map { policy in
+                        let name = String(policy.name ?? "")
+                        let category = policy.category?.name ?? ""
+                        let enabled = String(policy.enabled ?? true)
+                        let jamfId = String(policy.jamfId ?? 0)
+                        let triggerOther = policy.triggerOther ?? ""
+                        return [name, category, enabled, jamfId, triggerOther].joined(separator: "\t")
+                    }.joined(separator: "\n")
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.setString(rowsString, forType: .string)
+                }) {
+                    Image(systemName: "doc.on.doc")
+                    Text("Copy Selected")
+                }
+                .buttonStyle(.bordered)
+                .disabled(selectedPolicyIDs.isEmpty)
+            }
+        }
         .onChange(of: sortOrder) { newOrder in
             networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
         }
-        .toolbar {
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Button(action: {
-                        print("convertToallPoliciesDetailedGeneral")
-                        Task {
-                            await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server)
-                        }
-                        progress.showProgress()
-                        progress.waitForABit()
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Refresh")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        print("Clearing allPoliciesDetailed")
-                        networkController.allPoliciesDetailed.removeAll()
-                        print("Fetching allPoliciesDetailed")
-                        networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                        convertToallPoliciesDetailedGeneral()
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Reset")
-                    }
-                }
-            }
-        }
-        //        VStack(alignment: .leading) {
         
 #if os(macOS)
         
@@ -236,8 +209,7 @@ struct PolicyActionsDetailTableView: View {
         //        .border(Color.yellow)
         //        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
         
-        
-#endif
+        #endif
         
         //        Text("")
         Divider()
@@ -368,7 +340,9 @@ struct PolicyActionsDetailTableView: View {
                 
                 progress.showProgress()
                 
-                networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                Task {
+                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                }
                 
                 convertToallPoliciesDetailedGeneral()
                 
@@ -386,11 +360,13 @@ struct PolicyActionsDetailTableView: View {
     
     
     var searchResults: [General] {
+        let filtered: [General]
         if searchText.isEmpty {
-            return networkController.allPoliciesDetailedGeneral
+            filtered = networkController.allPoliciesDetailedGeneral
         } else {
-            return networkController.allPoliciesDetailedGeneral.filter { $0.name!.lowercased().contains(searchText.lowercased())}
+            filtered = networkController.allPoliciesDetailedGeneral.filter { $0.name?.lowercased().contains(searchText.lowercased()) ?? false }
         }
+        return filtered
     }
 }
 
