@@ -142,9 +142,11 @@ struct PolicyView: View {
         
         .onAppear {
 
-            networkController.connect(server: server,resourceType: ResourceType.policy, authToken: networkController.authToken)
-            
+          
+                
             Task {
+                try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
         }

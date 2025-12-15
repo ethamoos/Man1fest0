@@ -185,6 +185,10 @@ struct OptionsView: View {
                                 NavigationLink(destination: CreateScriptView(server: server)) {
                                     Text("Create Script")
                                 }
+                                
+                                NavigationLink(destination: BreakoutGameView(server: server)) {
+                                    Text("Downtime")
+                                }
                             }
                         }
 #endif
