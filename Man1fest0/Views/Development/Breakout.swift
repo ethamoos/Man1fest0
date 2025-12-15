@@ -136,7 +136,7 @@ struct BreakoutGameView: View {
             updateGame()
         }
         .focusable()
-        .onKeyDown { key in
+        .modifier(KeyEventsModifier(down: { key in
             // Global keys that work regardless of running state
             if key == .reset {
                 restartGame()
@@ -171,14 +171,13 @@ struct BreakoutGameView: View {
             } else if key == .rightArrow {
                rightPressed = true
             }
-        }
-        .onKeyUp { key in
-           if key == .leftArrow {
-               leftPressed = false
-           } else if key == .rightArrow {
-               rightPressed = false
-           }
-        }
+        }, up: { key in
+            if key == .leftArrow {
+                leftPressed = false
+            } else if key == .rightArrow {
+                rightPressed = false
+            }
+        }))
     }
 
     // MARK: - Extracted subviews to reduce body complexity
@@ -509,88 +508,68 @@ fileprivate enum KeyPress: Equatable {
 }
 
 // This view modifier allows keyboard events in SwiftUI for macOS.
-fileprivate struct KeyDownModifier: ViewModifier {
-    let action: (KeyPress) -> Void
+fileprivate struct KeyEventsModifier: ViewModifier {
+     let down: (KeyPress) -> Void
+     let up: (KeyPress) -> Void
 
-    func body(content: Content) -> some View {
-        content
-            .background(KeyEventHandlingView(action: action))
-    }
-
-    struct KeyEventHandlingView: NSViewRepresentable {
-        let action: (KeyPress) -> Void
-
-        func makeNSView(context: Context) -> NSView {
-            // NSView subclass that accepts first responder and forwards key events
-            class KeyCatcherView: NSView {
-                var onKeyDown: ((NSEvent) -> Void)?
-                override var acceptsFirstResponder: Bool { true }
-                override func keyDown(with event: NSEvent) {
-                    onKeyDown?(event)
-                }
-                override func viewDidMoveToWindow() {
-                    super.viewDidMoveToWindow()
-                    // Request first responder in the window when available
-                    window?.makeFirstResponder(self)
-                }
-            }
-
-            let view = KeyCatcherView()
-            view.onKeyDown = { event in
-                if let key = KeyPress(event: event) {
-                    action(key)
-                }
-            }
-
-            return view
-        }
-
-        func updateNSView(_ nsView: NSView, context: Context) {}
-        func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {}
-        func makeCoordinator() -> Coordinator { Coordinator() }
-        class Coordinator {}
-    }
-}
-
-extension View {
-    fileprivate func onKeyDown(_ action: @escaping (KeyPress) -> Void) -> some View {
-        self.modifier(KeyDownModifier(action: action))
-    }
-}
-
-// Add onKeyUp modifier for key release
-extension View {
-    fileprivate func onKeyUp(_ action: @escaping (KeyPress) -> Void) -> some View {
-        self.background(KeyUpEventHandlingView(action: action))
-    }
-}
-fileprivate struct KeyUpEventHandlingView: NSViewRepresentable {
-    let action: (KeyPress) -> Void
-    func makeNSView(context: Context) -> NSView {
-        class KeyCatcherView: NSView {
-            var onKeyUp: ((NSEvent) -> Void)?
-            override var acceptsFirstResponder: Bool { true }
-            override func keyUp(with event: NSEvent) {
-                onKeyUp?(event)
-            }
-            override func viewDidMoveToWindow() {
-                super.viewDidMoveToWindow()
-                window?.makeFirstResponder(self)
-            }
-        }
-
-        let view = KeyCatcherView()
-        view.onKeyUp = { event in
-            if let key = KeyPress(event: event) {
-                action(key)
-            }
-        }
-        return view
+     func body(content: Content) -> some View {
+         content
+             .background(KeyEventHandlingView(down: down, up: up))
      }
-     func updateNSView(_ nsView: NSView, context: Context) {}
-     func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {}
-     func makeCoordinator() -> Coordinator { Coordinator() }
-    class Coordinator {}
+
+     struct KeyEventHandlingView: NSViewRepresentable {
+         let down: (KeyPress) -> Void
+         let up: (KeyPress) -> Void
+
+         func makeNSView(context: Context) -> NSView {
+             // NSView subclass that accepts first responder and forwards key events
+             class KeyCatcherView: NSView {
+                 var onKeyDown: ((NSEvent) -> Void)?
+                 var onKeyUp: ((NSEvent) -> Void)?
+
+                 override var acceptsFirstResponder: Bool { true }
+
+                 override func keyDown(with event: NSEvent) {
+                     onKeyDown?(event)
+                 }
+
+                 override func keyUp(with event: NSEvent) {
+                     onKeyUp?(event)
+                 }
+
+                 override func viewDidMoveToWindow() {
+                     super.viewDidMoveToWindow()
+                     // Request first responder in the window when available
+                     window?.makeFirstResponder(self)
+                 }
+             }
+
+             let view = KeyCatcherView()
+             view.onKeyDown = { event in
+                 if let key = KeyPress(event: event) {
+                     down(key)
+                 }
+             }
+             view.onKeyUp = { event in
+                 if let key = KeyPress(event: event) {
+                     up(key)
+                 }
+             }
+
+             return view
+         }
+
+         func updateNSView(_ nsView: NSView, context: Context) {}
+         func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {}
+         func makeCoordinator() -> Coordinator { Coordinator() }
+         class Coordinator {}
+     }
+ }
+
+extension View {
+    fileprivate func onKeyEvents(down: @escaping (KeyPress) -> Void, up: @escaping (KeyPress) -> Void) -> some View {
+        self.modifier(KeyEventsModifier(down: down, up: up))
+    }
 }
 
 // Map NSEvent to our KeyPress enum. Prefer character matching for letters so layout-agnostic.
