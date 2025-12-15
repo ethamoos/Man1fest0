@@ -36,23 +36,20 @@ struct  IconsView: View {
     var body: some View {
         
         VStack {
-            VStack {
+            
+            VStack(alignment: .leading) {
                 
                 if networkController.allIconsDetailed.count > 0 {
-                    
+                    Text("Icons")
                     NavigationView {
                         List(searchResults, id: \.self, selection: $selectedIcon) { icon in
                             NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
-//                                HStack {
-//                                    Image(systemName: "photo.circle")
-//                                    Text(icon.name ).font(.system(size: 12.0)).foregroundColor(.black)
-//                                }
-                                
+
                                 HStack {
                                     Image(systemName: "photo.circle")
-                                    Text(String(describing: icon.name)).font(.system(size: 12.0)).foregroundColor(.black)
+                                    Text(String(describing: icon.name)).font(.system(size: 12.0))
                                     AsyncImage(url: URL(string: icon.url )) { image in
-                                        image.resizable().frame(width: 15, height: 15)
+                                        image.resizable().frame(width: 25, height: 25)
                                     } placeholder: {
                                     }
                                 }
@@ -114,7 +111,6 @@ struct  IconsView: View {
                     .buttonStyle(.borderedProminent)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     .tint(.blue)
-//                    .disabled(selectedImageURL == nil || importExportController.isUploading)
                     
                     Button("Download All Icons") {
                         progress.showProgress()
@@ -125,14 +121,9 @@ struct  IconsView: View {
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     .tint(.yellow)
                     Button(action: {
-//<<<<<<< HEAD
-//                        progress.showProgress()
-//                        progress.waitForABit()
-//                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)}) {
-//=======
+
                         showingRefreshIconsWarning = true
                     }) {
-//>>>>>>> main
                         Text("Refresh Icons")
                     }
                     .buttonStyle(.borderedProminent)
@@ -146,15 +137,12 @@ struct  IconsView: View {
                         }
                     }
                 }
-                
                 Text(importExportController.uploadStatus)
                     .foregroundColor(importExportController.uploadStatus.contains("Success") ? .green : .red)
-              
             }
             .frame(width: 400, height: 50)
             .onAppear() {
                 if networkController.allIconsDetailed.count <= 1 {
-//                    if networkController.allIconsDetailed.count > 0 {
 
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
                     networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 5000)

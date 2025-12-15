@@ -128,6 +128,15 @@ struct PolicySelfServiceTabView: View {
                 VStack(alignment: .leading) {
                     
                     Text("Icons").bold()
+                    
+                    AsyncImage(url: URL(string: networkController.policyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
+                        image.resizable()
+                    } placeholder: {
+                        Color.red.opacity(0.1)
+                    }
+                    .frame(width: 50, height: 50)
+                    .clipShape(.rect(cornerRadius: 25))
+                    
 #if os(macOS)
                     List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                         HStack {
@@ -166,8 +175,6 @@ struct PolicySelfServiceTabView: View {
                 //                        Icons - picker
                 // ##########################################################################################
                 
-           
-             
                 
                 LazyVGrid(columns: layout.columns, spacing: 10) {
                     
@@ -261,7 +268,6 @@ struct PolicySelfServiceTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-//                    }
                 }
             }
             .frame(minHeight: 1)

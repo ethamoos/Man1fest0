@@ -44,9 +44,9 @@ struct PolicyPackageTabView: View {
     
     @State var action: String = "Install"
     
-    @State var fut: String = "false"
-    
-    @State var feu: String = "false"
+    // Represent FUT/FEU as booleans in the UI; APIs accept string "true"/"false"
+    @State private var fut: Bool = false
+    @State private var feu: Bool = false
     
     
     
@@ -172,8 +172,8 @@ struct PolicyPackageTabView: View {
                                                          resourceType: ResourceType.policyDetail,
                                                          newPolicyFlag: false,
                                                          action: "Install",
-                                                         fut: "false",
-                                                         feu: "false")
+                                                         fut: String(fut),
+                                                         feu: String(feu))
                         
                     }) {
                         HStack(spacing: 10) {
@@ -199,7 +199,7 @@ struct PolicyPackageTabView: View {
                         packageID = String(describing: selectedPackageId ?? 0)
                         packageName = selectedPackage?.name ?? ""
                         
-                        networkController.editPolicy(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, packageName: packageName, packageID: packageID, policyID: policyID,action: action,fut: fut, feu: feu)
+                        networkController.editPolicy(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, packageName: packageName, packageID: packageID, policyID: policyID, action: action, fut: String(fut), feu: String(feu))
                         
                     }) {
                         HStack(spacing: 10) {
@@ -212,10 +212,10 @@ struct PolicyPackageTabView: View {
                     
                     TextField("Action", text: $action)
                         .textFieldStyle(.roundedBorder)
-                        TextField("FUT", text: $fut)
-                            .textFieldStyle(.roundedBorder)
-                    TextField("FEU", text: $feu)
-                        .textFieldStyle(.roundedBorder)
+                    Toggle("FUT", isOn: $fut)
+                        .toggleStyle(CheckboxToggleStyle())
+                    Toggle("FEU", isOn: $feu)
+                        .toggleStyle(CheckboxToggleStyle())
                     
                     //  ################################################################################
                     //              Replace package in policy

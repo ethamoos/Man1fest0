@@ -186,7 +186,13 @@ struct PolicyDetailView: View {
                     Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
                     Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
                     Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")\n")
-                    
+                    AsyncImage(url: URL(string: networkController.policyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
+                        image.resizable()
+                    } placeholder: {
+                        Color.red.opacity(0.1)
+                    }
+                    .frame(width: 50, height: 50)
+                    .clipShape(.rect(cornerRadius: 25))
                     
                     if networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
                         

@@ -280,7 +280,6 @@ struct PoliciesActionView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                         
-                        
                         // ######################################################################
                         //  Enable or Disable Policies Toggle
                         // ######################################################################
@@ -323,9 +322,6 @@ struct PoliciesActionView: View {
                         .tint(.yellow)
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
                         
-                        
-                        
-                        
                     }
                     
                     // ######################################################################
@@ -333,7 +329,7 @@ struct PoliciesActionView: View {
                     // ######################################################################
 
                     Divider()
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 300)), GridItem(.flexible(minimum: 200))], spacing: 20) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 200)), GridItem(.flexible(minimum: 100))], spacing: 10) {
                         HStack {
                             if !networkController.categories.isEmpty {
                                 Picker(selection: $categorySelection, label: Text("Category:\t\t")) {

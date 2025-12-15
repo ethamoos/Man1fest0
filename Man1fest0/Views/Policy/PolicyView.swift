@@ -50,7 +50,8 @@ struct PolicyView: View {
         VStack(alignment: .leading) {
             
             if networkController.resourceAccess == false {
-                Text("Access to this resource is not available")
+                Text("Loading...... please wait")
+                    
             } else {
                 
                 if networkController.policies.count > 0 {
