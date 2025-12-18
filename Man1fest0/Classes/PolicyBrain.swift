@@ -367,6 +367,9 @@ class PolicyBrain: ObservableObject {
     //    #################################################################################
     
     
+// ##################################
+// UNUSED
+// ##################################
     func postNewPolicy(server: String, authToken: String, xml: String ) {
         
         let sem = DispatchSemaphore.init(value: 0)
@@ -544,6 +547,9 @@ class PolicyBrain: ObservableObject {
     //    #################################################################################
     
     
+// ##################################
+// UNUSED
+// ##################################
     func removeAllPackagesSelectionNestedFunction(selection:  Set<Policy>, server: String, authToken: String, operation:(String, String, String)->Void ) {
         
 //    #################################################################################
@@ -579,6 +585,9 @@ class PolicyBrain: ObservableObject {
     //    #################################################################################
     
     
+// ##################################
+// UNUSED
+// ##################################
     func testPostNewPolicyXML(server: String, authToken: String, xml: String ) {
         
         let sem = DispatchSemaphore.init(value: 0)
@@ -656,6 +665,9 @@ class PolicyBrain: ObservableObject {
         }
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func setValues(assignedScriptsArray: [String], unassignedScriptsArray: [String]) {
         
         print("Setting script values")
@@ -829,6 +841,9 @@ class PolicyBrain: ObservableObject {
     }
     
     
+// ##################################
+// UNUSED
+// ##################################
     func createPolicyManual(xmlContent: String,  server: String, resourceType: ResourceType, policyName: String, authToken: String) {
         
         let sem = DispatchSemaphore.init(value: 0)

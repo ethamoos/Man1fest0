@@ -357,35 +357,39 @@ import AEXML
     }
     
     
-    func getDepartmentScope(server: String, id: String) async throws {
-        
-        let jamfURLQuery = server + "/v1/departments/" + id
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-  
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running func: getDepartments")
-        print("jamfURLQuery is: \(jamfURLQuery)")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-        separationLine()
-        print("getDepartmentScope - processDetail Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
-        let decoder = JSONDecoder()
-        self.departments = try decoder.decode([Department].self, from: data)
-        //        print("Decoded departments are:\(allDepartments)")
-        //        for department in allDepartments {
-        //            print("- \(department)")
-        //        }
-    }
+// ##################################
+// UNUSED
+// ##################################
+    
+//    func getDepartmentScope(server: String, id: String) async throws {
+//        
+//        let jamfURLQuery = server + "/v1/departments/" + id
+//        let url = URL(string: jamfURLQuery)!
+//        var request = URLRequest(url: url)
+//        request.httpMethod = "GET"
+//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+//  
+//        request.setValue("application/json", forHTTPHeaderField: "Accept")
+//        separationLine()
+//        print("Running func: getDepartments")
+//        print("jamfURLQuery is: \(jamfURLQuery)")
+//        
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+//            print("Code not 200")
+//            throw JamfAPIError.badResponseCode
+//        }
+//        separationLine()
+//        print("getDepartmentScope - processDetail Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
+//        let decoder = JSONDecoder()
+//        self.departments = try decoder.decode([Department].self, from: data)
+//        //        print("Decoded departments are:\(allDepartments)")
+//        //        for department in allDepartments {
+//        //            print("- \(department)")
+//        //        }
+//    }
     
     func receivedCategory(categories: [Category]) {
         DispatchQueue.main.async {
@@ -395,35 +399,39 @@ import AEXML
         }
     }
     
-    func getCategoryScope(server: String, id: String) async throws {
-        
-        let jamfURLQuery = server + "/v1/categories/" + id
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-  
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue("\(String(describing: product_name))/\(String(describing: product_version))", forHTTPHeaderField: "User-Agent")
-        separationLine()
-        print("User-Agent is: \(String(describing: product_name))/\(String(describing: product_version))")
-        
-        separationLine()
-        print("Running func: getDepartments")
-        print("jamfURLQuery is: \(jamfURLQuery)")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-        separationLine()
-        print("processDetail Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
-        let decoder = JSONDecoder()
-        self.categories = try decoder.decode([Category].self, from: data)
-    }
+// ##################################
+// UNUSED
+// ##################################
+    
+//    func getCategoryScope(server: String, id: String) async throws {
+//        
+//        let jamfURLQuery = server + "/v1/categories/" + id
+//        let url = URL(string: jamfURLQuery)!
+//        var request = URLRequest(url: url)
+//        request.httpMethod = "GET"
+//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+//  
+//        request.setValue("application/json", forHTTPHeaderField: "Accept")
+//        request.addValue("\(String(describing: product_name))/\(String(describing: product_version))", forHTTPHeaderField: "User-Agent")
+//        separationLine()
+//        print("User-Agent is: \(String(describing: product_name))/\(String(describing: product_version))")
+//        
+//        separationLine()
+//        print("Running func: getDepartments")
+//        print("jamfURLQuery is: \(jamfURLQuery)")
+//        
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+//            print("Code not 200")
+//            throw JamfAPIError.badResponseCode
+//        }
+//        separationLine()
+//        print("processDetail Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
+//        let decoder = JSONDecoder()
+//        self.categories = try decoder.decode([Category].self, from: data)
+//    }
     
     func getCategories(server: String, authToken: String) async throws {
         
@@ -463,32 +471,36 @@ import AEXML
            
     }
     
-    func getDepartments(server: String) async throws {
-        
-        let jamfURLQuery = server + "/JSSResource/departments"
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-  
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running func: getDepartments")
-        print("jamfURLQuery is: \(jamfURLQuery)")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
-        separationLine()
-        print("processDetail Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
-        let decoder = JSONDecoder()
-        self.departments = try decoder.decode([Department].self, from: data)
-        
-    }
+// ##################################
+// UNUSED
+// ##################################
+    
+//    func getDepartments(server: String) async throws {
+//        
+//        let jamfURLQuery = server + "/JSSResource/departments"
+//        let url = URL(string: jamfURLQuery)!
+//        var request = URLRequest(url: url)
+//        request.httpMethod = "GET"
+//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+//  
+//        request.setValue("application/json", forHTTPHeaderField: "Accept")
+//        separationLine()
+//        print("Running func: getDepartments")
+//        print("jamfURLQuery is: \(jamfURLQuery)")
+//        
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+//            print("Code not 200")
+//            throw JamfAPIError.badResponseCode
+//        }
+//        separationLine()
+//        print("processDetail Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
+//        let decoder = JSONDecoder()
+//        self.departments = try decoder.decode([Department].self, from: data)
+//        
+//    }
     
     func getOSXConfigProfiles(server: String, authToken: String) async throws {
         
@@ -1313,10 +1325,14 @@ import AEXML
     //    Various
     //    #################################################################################
     
-    func debugSomething(dataThing: Any) {
-        print("Printing out:\(dataThing)")
-    }
-    
+// ##################################
+// UNUSED
+// ##################################
+//
+//    func debugSomething(dataThing: Any) {
+//        print("Printing out:\(dataThing)")
+//    }
+//    
     
     
     
@@ -2116,6 +2132,10 @@ import AEXML
     //    #################################################################################
     
     
+// ##################################
+// UNUSED
+// ##################################
+    
     func processPoliciesSelected(selectionConverted: [Policy], operation:(String)->Void) {
         
         //    #################################################################################
@@ -2564,33 +2584,37 @@ import AEXML
     //    #################################################################################
     
     
-    func processUpdateComputerDepartment(selection:  Set<ComputerBasicRecord>, server: String, authToken: String, resourceType: ResourceType, department: String ) {
-        
-        separationLine()
-        print("Running: processUpdateComputerDepartment function - working for resourceType:\(resourceType)")
-        print("Set processingComplete to false")
-        self.processingComplete = false
-        print(String(describing: self.processingComplete))
-        print("Selection is:\(selection)")
-        
-        for eachItem in selection {
-            separationLine()
-            print("Items as Dictionary is \(eachItem)")
-            let computerID: String = String(describing:eachItem.id )
-            let computerName: String = String(describing:eachItem.name )
-            separationLine()
-            print("computerID is:\(computerID)")
-            print("computerName is:\(computerName)")
-            self.updateComputerDepartment(server: server, authToken: authToken, resourceType: ResourceType.computerDetailed, departmentName: department, computerID: computerID)
-            print("Updating the department to \(department)")
-        }
-        
-        separationLine()
-        print("Finished - Set processingComplete to true")
-        self.processingComplete = true
-        print(String(describing: self.processingComplete))
-        
-    }
+// ##################################
+// UNUSED
+// ##################################
+    
+//    func processUpdateComputerDepartment(selection:  Set<ComputerBasicRecord>, server: String, authToken: String, resourceType: ResourceType, department: String ) {
+//        
+//        separationLine()
+//        print("Running: processUpdateComputerDepartment function - working for resourceType:\(resourceType)")
+//        print("Set processingComplete to false")
+//        self.processingComplete = false
+//        print(String(describing: self.processingComplete))
+//        print("Selection is:\(selection)")
+//        
+//        for eachItem in selection {
+//            separationLine()
+//            print("Items as Dictionary is \(eachItem)")
+//            let computerID: String = String(describing:eachItem.id )
+//            let computerName: String = String(describing:eachItem.name )
+//            separationLine()
+//            print("computerID is:\(computerID)")
+//            print("computerName is:\(computerName)")
+//            self.updateComputerDepartment(server: server, authToken: authToken, resourceType: ResourceType.computerDetailed, departmentName: department, computerID: computerID)
+//            print("Updating the department to \(department)")
+//        }
+//        
+//        separationLine()
+//        print("Finished - Set processingComplete to true")
+//        self.processingComplete = true
+//        print(String(describing: self.processingComplete))
+//        
+//    }
     
     //    #################################################################################
     //    processUpdateComputerDepartmentBasic - update department
@@ -3256,39 +3280,43 @@ import AEXML
     //    Remove Limitations
     //    #################################################################################
     
-    func removeLimitations(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        
-        var xml: String
-        
-        xml = """
-                       <policy>
-                           <scope>
-                               <limitations>
-                                   <users/>
-                                   <user_groups/>
-                                   <network_segments/>
-                                   <ibeacons/>
-                               </limitations>
-                           </scope>
-                       </policy>
-                       """
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("Making removeLimitations request")
-                print("resourceType is set as:\(resourceType)")
-                print("xml is set as:\(xml)")
-                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-            }
-        }
-        else {
-            print("removeLimitations request failed")
-        }
-    }
+// ##################################
+// UNUSED
+// ##################################
+    
+//    func removeLimitations(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
+//        
+//        let resourcePath = getURLFormat(data: (resourceType))
+//        
+//        var xml: String
+//        
+//        xml = """
+//                       <policy>
+//                           <scope>
+//                               <limitations>
+//                                   <users/>
+//                                   <user_groups/>
+//                                   <network_segments/>
+//                                   <ibeacons/>
+//                               </limitations>
+//                           </scope>
+//                       </policy>
+//                       """
+//        
+//        if URL(string: server) != nil {
+//            if let serverURL = URL(string: server) {
+//                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+//                print("Making removeLimitations request")
+//                print("resourceType is set as:\(resourceType)")
+//                print("xml is set as:\(xml)")
+//                self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
+//            }
+//        }
+//        else {
+//            print("removeLimitations request failed")
+//        }
+//    }
     
     
     //    #################################################################################
@@ -3403,36 +3431,39 @@ import AEXML
     //    #################################################################################
     
     
-    func updateGroup(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-        
-        var xml: String
-        
-        print("Running updateGroup - updating via xml")
-        print("computerID is set as:\(computerID)")
-        print("computerName is set as:\(computerName)")
-        print("groupID is set as:\(groupID)")
-        
-        xml = """
-                   <computer_group>
-                       <computers>
-                               <computer>
-                               <name>﻿\(computerName)</name>
-                               </computer>
-                       </computers>
-                   </computer_group>
-                   """
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
-                print("Running update group function - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                // print("xml is set as:\(xml)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-            }
-        }
-    }
+// ##################################
+// UNUSED
+// ##################################
+//    func updateGroup(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
+//        
+//        var xml: String
+//        
+//        print("Running updateGroup - updating via xml")
+//        print("computerID is set as:\(computerID)")
+//        print("computerName is set as:\(computerName)")
+//        print("groupID is set as:\(groupID)")
+//        
+//        xml = """
+//                   <computer_group>
+//                       <computers>
+//                               <computer>
+//                               <name>﻿\(computerName)</name>
+//                               </computer>
+//                       </computers>
+//                   </computer_group>
+//                   """
+//        
+//        if URL(string: server) != nil {
+//            if let serverURL = URL(string: server) {
+//                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+//                print("Running update group function - url is set as:\(url)")
+//                print("resourceType is set as:\(resourceType)")
+//                // print("xml is set as:\(xml)")
+//                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
+//            }
+//        }
+//    }
     
     func updateGroupID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int) {
         
@@ -3467,135 +3498,147 @@ xml = """
     }
     
     
-     func updateGroupNameID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-        
-
-        var xml: String
-        
-        print("Running updateGroup - updating via xml")
-        print("computerID is set as:\(computerID)")
-        print("computerName is set as:\(computerName)")
-        print("groupID is set as:\(groupID)")
-        
-        xml = """
-                   <computer_group>
-                       <computers>
-                               <computer>
-                               <name>﻿\(computerName)</name>
-                               <id>\(computerID)</id>
-                               </computer>
-                       </computers>
-                   </computer_group>
-                   """
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
-                print("Running update group function - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                // print("xml is set as:\(xml)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-            }
-        }
-    }
+// ##################################
+// UNUSED
+// ##################################
+    
+//     func updateGroupNameID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
+//        
+//
+//        var xml: String
+//        
+//        print("Running updateGroup - updating via xml")
+//        print("computerID is set as:\(computerID)")
+//        print("computerName is set as:\(computerName)")
+//        print("groupID is set as:\(groupID)")
+//        
+//        xml = """
+//                   <computer_group>
+//                       <computers>
+//                               <computer>
+//                               <name>﻿\(computerName)</name>
+//                               <id>\(computerID)</id>
+//                               </computer>
+//                       </computers>
+//                   </computer_group>
+//                   """
+//        
+//        if URL(string: server) != nil {
+//            if let serverURL = URL(string: server) {
+//                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+//                print("Running update group function - url is set as:\(url)")
+//                print("resourceType is set as:\(resourceType)")
+//                // print("xml is set as:\(xml)")
+//                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
+//            }
+//        }
+//    }
     
     //    #################################################################################
     //    processAddComputersToGroup
     //    #################################################################################
     
     
-    func processAddComputersToGroup(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
-        
-        separationLine()
-        print("Running: processAddComputersToGroup")
-        print("Set is:\(selection)")
-//        print("Set processingComplete to false")
+// ##################################
+// UNUSED
+// ##################################
+//
+//    func processAddComputersToGroup(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
+//        
+//        separationLine()
+//        print("Running: processAddComputersToGroup")
+//        print("Set is:\(selection)")
+////        print("Set processingComplete to false")
+////        self.processingComplete = true
+////        print(String(describing: self.processingComplete))
+//        var count = 1
+//        
+//        for eachItem in selection {
+//            
+//            //        ########################################################
+//            //        Rate limiting
+//            //        ########################################################
+//
+////            let now = Date()
+////            Task {
+////                if let last = lastRequestDate {
+////                    print("Last request ran at:\(String(describing: last))")
+////                    let elapsed = now.timeIntervalSince(last)
+////                    if elapsed < minInterval {
+////                        let delay = minInterval - elapsed
+////                        print("Waiting:\(String(describing: delay))")
+////                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+////                    }
+////                }
+////            }
+////            lastRequestDate = Date()
+//            
+//            separationLine()
+//            print("Count is currently:\(count)")
+//            print("Items as Dictionary is \(eachItem)")
+//            let computerID = String(describing:eachItem)
+//            print("Current computerID is:\(computerID)")
+//            updateGroupID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
+//            print("List is:\(computerProcessList)")
+//            count = count + 1
+//            print("Count is now:\(count)")
+//        }
+//        separationLine()
+//        print("Finished - Set processingComplete to true")
 //        self.processingComplete = true
 //        print(String(describing: self.processingComplete))
-        var count = 1
-        
-        for eachItem in selection {
-            
-            //        ########################################################
-            //        Rate limiting
-            //        ########################################################
-
-//            let now = Date()
-//            Task {
-//                if let last = lastRequestDate {
-//                    print("Last request ran at:\(String(describing: last))")
-//                    let elapsed = now.timeIntervalSince(last)
-//                    if elapsed < minInterval {
-//                        let delay = minInterval - elapsed
-//                        print("Waiting:\(String(describing: delay))")
-//                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-//                    }
-//                }
-//            }
-//            lastRequestDate = Date()
-            
-            separationLine()
-            print("Count is currently:\(count)")
-            print("Items as Dictionary is \(eachItem)")
-            let computerID = String(describing:eachItem)
-            print("Current computerID is:\(computerID)")
-            updateGroupID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
-            print("List is:\(computerProcessList)")
-            count = count + 1
-            print("Count is now:\(count)")
-        }
-        separationLine()
-        print("Finished - Set processingComplete to true")
-        self.processingComplete = true
-        print(String(describing: self.processingComplete))
-    }
+//    }
     
-    func processAddComputersToGroupAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) async {
-        
-        separationLine()
-        print("Running: processAddComputersToGroup")
-        print("Set is:\(selection)")
-//        print("Set processingComplete to false")
+// ##################################
+// UNUSED
+// ##################################
+   
+//    func processAddComputersToGroupAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) async {
+//        
+//        separationLine()
+//        print("Running: processAddComputersToGroup")
+//        print("Set is:\(selection)")
+////        print("Set processingComplete to false")
+////        self.processingComplete = true
+////        print(String(describing: self.processingComplete))
+//        var count = 1
+//        
+//        for eachItem in selection {
+//            
+//            //        ########################################################
+//            //        Rate limiting
+//            //        ########################################################
+//
+////            let now = Date()
+////            Task {
+////                if let last = lastRequestDate {
+////                    print("Last request ran at:\(String(describing: last))")
+////                    let elapsed = now.timeIntervalSince(last)
+////                    if elapsed < minInterval {
+////                        let delay = minInterval - elapsed
+////                        print("Waiting:\(String(describing: delay))")
+////                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+////                    }
+////                }
+////            }
+////            lastRequestDate = Date()
+//            
+//            separationLine()
+//            print("Count is currently:\(count)")
+//            print("Items as Dictionary is \(eachItem)")
+//            let computerID = String(describing:eachItem)
+//            print("Current computerID is:\(computerID)")
+//            updateGroupID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
+//            print("List is:\(computerProcessList)")
+//            count = count + 1
+//            print("Count is now:\(count)")
+//        }
+//        separationLine()
+//        print("Finished - Set processingComplete to true")
 //        self.processingComplete = true
 //        print(String(describing: self.processingComplete))
-        var count = 1
-        
-        for eachItem in selection {
-            
-            //        ########################################################
-            //        Rate limiting
-            //        ########################################################
-
-//            let now = Date()
-//            Task {
-//                if let last = lastRequestDate {
-//                    print("Last request ran at:\(String(describing: last))")
-//                    let elapsed = now.timeIntervalSince(last)
-//                    if elapsed < minInterval {
-//                        let delay = minInterval - elapsed
-//                        print("Waiting:\(String(describing: delay))")
-//                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-//                    }
-//                }
-//            }
-//            lastRequestDate = Date()
-            
-            separationLine()
-            print("Count is currently:\(count)")
-            print("Items as Dictionary is \(eachItem)")
-            let computerID = String(describing:eachItem)
-            print("Current computerID is:\(computerID)")
-            updateGroupID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
-            print("List is:\(computerProcessList)")
-            count = count + 1
-            print("Count is now:\(count)")
-        }
-        separationLine()
-        print("Finished - Set processingComplete to true")
-        self.processingComplete = true
-        print(String(describing: self.processingComplete))
-    }
+//    }
     
     
     
@@ -3839,42 +3882,45 @@ xml = """
     //    togglePolicyAllComputers - yes/no
     //    #################################################################################
     
-    func toggleScopeAllComputers(server: String, authToken: String, resourceType: ResourceType, itemID: Int, policyToggle: Bool) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        let itemIDString = String(itemID)
-        var xml: String
-        print("Running toggleScopeAllComputers")
-        if policyToggle == false {
-            
-            xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
-            
-            if URL(string: server) != nil {
-                if let serverURL = URL(string: server) {
-                    let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-                    print("Running toggleScopeAllComputers policy function - url is set as:\(url)")
-                    print("resourceType is set as:\(resourceType)")
-                    print("xml is set as:\(xml)")
-                    sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                    appendStatus("Connecting to \(url)...")
-                }
-            }
-        }
-        
-        else {
-            xml = "<policy><scope><all_computers>false</all_computers></scope></policy>"
-            if URL(string: server) != nil {
-                if let serverURL = URL(string: server) {
-                    let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
-                    print("Running toggleScopeAllComputers policy function - url is set as:\(url)")
-                    print("resourceType is set as:\(resourceType)")
-                    print("xml is set as:\(xml)")
-                    self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                    appendStatus("Connecting to \(url)...")
-                }
-            }
-        }
-    }
+// ##################################
+// UNUSED
+// ##################################
+//    func toggleScopeAllComputers(server: String, authToken: String, resourceType: ResourceType, itemID: Int, policyToggle: Bool) {
+//        
+//        let resourcePath = getURLFormat(data: (resourceType))
+//        let itemIDString = String(itemID)
+//        var xml: String
+//        print("Running toggleScopeAllComputers")
+//        if policyToggle == false {
+//            
+//            xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
+//            
+//            if URL(string: server) != nil {
+//                if let serverURL = URL(string: server) {
+//                    let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
+//                    print("Running toggleScopeAllComputers policy function - url is set as:\(url)")
+//                    print("resourceType is set as:\(resourceType)")
+//                    print("xml is set as:\(xml)")
+//                    sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+//                    appendStatus("Connecting to \(url)...")
+//                }
+//            }
+//        }
+//        
+//        else {
+//            xml = "<policy><scope><all_computers>false</all_computers></scope></policy>"
+//            if URL(string: server) != nil {
+//                if let serverURL = URL(string: server) {
+//                    let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
+//                    print("Running toggleScopeAllComputers policy function - url is set as:\(url)")
+//                    print("resourceType is set as:\(resourceType)")
+//                    print("xml is set as:\(xml)")
+//                    self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
+//                    appendStatus("Connecting to \(url)...")
+//                }
+//            }
+//        }
+//    }
     
     //    #################################################################################
     //    EDITING POLICIES - via XML - END
@@ -4586,35 +4632,38 @@ xml = """
     }
     
     
-    func requestDeleteAwait(url: URL, authToken: String, resourceType: ResourceType) async throws {
-        
-        let headers = [
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": "Bearer \(authToken)"
-        ]
-        
-        atSeparationLine()
-        print("Running requestDeleteXML function - resourceType is set as:\(resourceType)")
-        print("URL is set as:\(url)")
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = "DELETE"
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
-
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            self.hasError = true
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-            self.currentResponseCode = String(describing: statusCode)
-            print("requestDeleteXML Status code is:\(statusCode)")
-            throw JamfAPIError.http(statusCode)
-        }
-    }
-    
+// ##################################
+// UNUSED
+// ##################################
+//    func requestDeleteAwait(url: URL, authToken: String, resourceType: ResourceType) async throws {
+//        
+//        let headers = [
+//            "Accept": "application/json",
+//            "Content-Type": "application/json",
+//            "Authorization": "Bearer \(authToken)"
+//        ]
+//        
+//        atSeparationLine()
+//        print("Running requestDeleteXML function - resourceType is set as:\(resourceType)")
+//        print("URL is set as:\(url)")
+//        
+//        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+//        request.allHTTPHeaderFields = headers
+//        request.httpMethod = "DELETE"
+//        
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
+//
+//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+//            print("Code not 200")
+//            self.hasError = true
+//            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+//            self.currentResponseCode = String(describing: statusCode)
+//            print("requestDeleteXML Status code is:\(statusCode)")
+//            throw JamfAPIError.http(statusCode)
+//        }
+//    }
+//    
     
     
     func sendRequestAsXML(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String) {
@@ -4668,33 +4717,36 @@ xml = """
     }
     
     
-    func sendRequestAsXMLAsync(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) async throws {
-    
-        
-        let xml = xml
-        let xmldata = xml.data(using: .utf8)
-        atSeparationLine()
-        print("Running sendRequestAsXML function - resourceType is set as:\(resourceType)")
-        print("url is:\(url)")
-        atSeparationLine()
-        print("xml is:\(xml)")
-        //        atSeparationLine()
-        //        print("xmldata is:\(String(describing: xmldata))")
-        atSeparationLine()
-        print("httpMethod is:\(httpMethod)")
-        
-        let headers = [
-            "Accept": "application/xml",
-            "Content-Type": "application/xml",
-            "Authorization": "Bearer \(authToken)"
-        ]
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = httpMethod
-        request.httpBody = xmldata
-        
-    }
+// ##################################
+// UNUSED
+// ##################################
+//    func sendRequestAsXMLAsync(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) async throws {
+//    
+//        
+//        let xml = xml
+//        let xmldata = xml.data(using: .utf8)
+//        atSeparationLine()
+//        print("Running sendRequestAsXML function - resourceType is set as:\(resourceType)")
+//        print("url is:\(url)")
+//        atSeparationLine()
+//        print("xml is:\(xml)")
+//        //        atSeparationLine()
+//        //        print("xmldata is:\(String(describing: xmldata))")
+//        atSeparationLine()
+//        print("httpMethod is:\(httpMethod)")
+//        
+//        let headers = [
+//            "Accept": "application/xml",
+//            "Content-Type": "application/xml",
+//            "Authorization": "Bearer \(authToken)"
+//        ]
+//        
+//        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+//        request.allHTTPHeaderFields = headers
+//        request.httpMethod = httpMethod
+//        request.httpBody = xmldata
+//        
+//    }
     
     
     func sendRequestAsXMLAsyncID(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String, policyID: String ) async throws {
@@ -4948,33 +5000,36 @@ xml = """
     }
     
     
-    func fetchDetailedData() async throws {
-        
-        if self.fetchedDetailedPolicies == false {
-            
-            print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-            
-            if self.allPoliciesDetailed.count < self.allPoliciesConverted.count {
-                
-                print("fetching detailed policies")
-                Task {
-                    try await self.getAllPoliciesDetailed(server: server, authToken: self.authToken, policies: self.allPoliciesConverted)
-                }
-                    //                convertToArray()
-                self.fetchedDetailedPolicies = true
-            } else {
-                print("detailed policies already fetched")
-            }
-        } else {
-            print("fetchedDetailedPolicies has run")
-            self.fetchedDetailedPolicies = true
-        }
-        
-        if self.allIconsDetailed.count == 0 {
-            self.getAllIconsDetailed(server: server, authToken: self.authToken, loopTotal: 1000)
-        }
-        
-    }
+// ##################################
+// UNUSED
+// ##################################
+//    func fetchDetailedData() async throws {
+//        
+//        if self.fetchedDetailedPolicies == false {
+//            
+//            print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
+//            
+//            if self.allPoliciesDetailed.count < self.allPoliciesConverted.count {
+//                
+//                print("fetching detailed policies")
+//                Task {
+//                    try await self.getAllPoliciesDetailed(server: server, authToken: self.authToken, policies: self.allPoliciesConverted)
+//                }
+//                    //                convertToArray()
+//                self.fetchedDetailedPolicies = true
+//            } else {
+//                print("detailed policies already fetched")
+//            }
+//        } else {
+//            print("fetchedDetailedPolicies has run")
+//            self.fetchedDetailedPolicies = true
+//        }
+//        
+//        if self.allIconsDetailed.count == 0 {
+//            self.getAllIconsDetailed(server: server, authToken: self.authToken, loopTotal: 1000)
+//        }
+//        
+//    }
     
     
     //    #################################################################################
@@ -5016,12 +5071,16 @@ xml = """
         return password == currentPassword
     }
     
-    func changePassword(currentPassword: String, newPassword: String) -> Bool {
-        guard validatePassword(currentPassword) == true else { return false }
-        updateKC(newPassword, account: self.username, service: self.server)
-        return true
-    }
-    
+// ##################################
+// UNUSED
+// ##################################
+  
+//    func changePassword(currentPassword: String, newPassword: String) -> Bool {
+//        guard validatePassword(currentPassword) == true else { return false }
+//        updateKC(newPassword, account: self.username, service: self.server)
+//        return true
+//    }
+//    
     //  #######################################################################
 //  REFRESH POLICY'S DATA
     //  #######################################################################

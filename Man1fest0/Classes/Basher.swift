@@ -40,6 +40,9 @@ class Basher: ObservableObject {
         print("-----------------------------------")
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func runScript(filePath: String, argument1: String, argument2: String, argument3: String, scriptArgument: String) {
         
         self.showProgressView = true
@@ -77,6 +80,9 @@ class Basher: ObservableObject {
         
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func resetView() {
         
         print("Reseting View")
@@ -94,6 +100,9 @@ class Basher: ObservableObject {
         
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func hideProgress() {
         
         self.showProgressView = false

@@ -24,6 +24,9 @@ enum JamfAPIError: Error {
 }
 
 
+// ##################################
+// UNUSED
+// ##################################
 func getErrorDescription(data: JamfAPIError, code: Int) -> String {
     print("Getting Error Description")
     switch data {

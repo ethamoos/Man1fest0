@@ -64,6 +64,9 @@ import SwiftUI
     
 //    #########################################################################
     
+// ##################################
+// UNUSED
+// ##################################
     func updateStatus(_ status: Status) {
         DispatchQueue.main.async {
             withAnimation {
@@ -220,6 +223,9 @@ import SwiftUI
     // Function to get the devices assigned to the specitfied computer pre-stage in preparation for adding
     // This sets the property selectedPrestageScope to contain these pre-stages
     
+// ##################################
+// UNUSED
+// ##################################
     func getPrestageCurrentScopeToAdd(jamfURL: String, prestageID: String, authToken: String) async throws {
         
         let jamfURLQuery = jamfURL + "/api/v2/computer-prestages/" + prestageID + "/scope"
@@ -324,6 +330,9 @@ import SwiftUI
         }
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func printAllPrestages() {
         separationLine()
         print("Running func: printAllPrestages")
@@ -334,6 +343,9 @@ import SwiftUI
         //        }
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func printSerialsByPrestageID() {
         separationLine()
         print("Running func: printSerialsByPrestageID")
@@ -343,6 +355,9 @@ import SwiftUI
         //        }
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func printSpecificPrestage() {
         separationLine()
         print("Running: printSpecificPrestage")

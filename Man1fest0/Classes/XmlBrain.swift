@@ -285,6 +285,9 @@ class XmlBrain: ObservableObject {
         }
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func addCategoryToPolicy2(authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
         
         //        self.readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
@@ -390,6 +393,9 @@ class XmlBrain: ObservableObject {
     }
     
     
+// ##################################
+// UNUSED
+// ##################################
     func createPolicyManual(xmlContent: String,  server: String, resourceType: ResourceType, policyName: String, authToken: String) {
         
         let sem = DispatchSemaphore.init(value: 0)
@@ -857,6 +863,9 @@ class XmlBrain: ObservableObject {
     //    editPolicyScript - computer
     //    #################################################################################
     
+// ##################################
+// UNUSED
+// ##################################
     func editPolicyScript(server: String, authToken: String, resourceType: ResourceType, scriptID: String, scriptName: String, updatePressed: Bool, policyID: String, parameter4: String, parameter5: String,parameter6: String, parameter7: String, parameter8: String, parameter9: String, parameter10: String, parameter11: String) {
         
         //        let resourcePath = getURLFormat(data: (resourceType))
@@ -1484,6 +1493,9 @@ class XmlBrain: ObservableObject {
     }
  
     
+// ##################################
+// UNUSED
+// ##################################
     func clearScopeBatch(selectedPolicies: Set<Policy>, server: String, authToken: String) {
         
         separationLine()
@@ -1530,6 +1542,9 @@ class XmlBrain: ObservableObject {
         }
     }
 
+// ##################################
+// UNUSED
+// ##################################
     func clearScopeAlt() {
         self.separationLine()
         print("Removing scope")
@@ -1553,6 +1568,9 @@ class XmlBrain: ObservableObject {
         self.readBackUpdatedXML()
     }
 
+// ##################################
+// UNUSED
+// ##################################
     func clearCategory() {
         self.separationLine()
         print("Removing category")
@@ -1578,6 +1596,9 @@ class XmlBrain: ObservableObject {
         self.updatePolicy(server: server, authToken: authToken, policyID: policyID, policyXML: policyXML)
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func clearPackage() {
         self.separationLine()
         print("Removing package")
@@ -1601,6 +1622,9 @@ class XmlBrain: ObservableObject {
         self.readBackUpdatedXML()
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func clearScripts() {
         self.separationLine()
         print("Removing scripts")
@@ -1622,6 +1646,9 @@ class XmlBrain: ObservableObject {
     
     
     
+// ##################################
+// UNUSED
+// ##################################
     func addPackageToPolicyXML (xmlString: String, packageName: String, packageId: String) -> String {
         
         let document = try! XMLDocument(xmlString: xmlString) //Change this to a suitable init
@@ -1709,6 +1736,9 @@ class XmlBrain: ObservableObject {
     //    Post new policy - via XML
     //    #################################################################################
     
+// ##################################
+// UNUSED
+// ##################################
     func postNewPolicy(server: String, authToken: String, xml: String ) {
         
         let sem = DispatchSemaphore.init(value: 0)
@@ -1878,6 +1908,9 @@ class XmlBrain: ObservableObject {
     //    updatePolicyScopeMultipleGroups - batch
     //    #################################################################################
     
+// ##################################
+// UNUSED
+// ##################################
     func updatePolicyScopeMultipleGroups(selectedPolicy: Int, server: String, authToken: String, groupSelection: Set<ComputerGroup>, xmlString: String) {
         
         //    #################################################################################
@@ -1973,6 +2006,9 @@ class XmlBrain: ObservableObject {
     //    updateScopeCompGroupSetAsync - update a single or multiple policies with a single group
     //    #################################################################################
     
+// ##################################
+// UNUSED
+// ##################################
     func updateScopeCompGroupSetAsync(groupSelection: ComputerGroup, authToken: String, resourceType: ResourceType, server: String, policiesSelection: [Int?]) async {
         
         let groupName = groupSelection.name
@@ -2782,6 +2818,9 @@ class XmlBrain: ObservableObject {
     
     
     
+// ##################################
+// UNUSED
+// ##################################
     func removeLastComputer(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String, authToken: String) {
         readXMLDataFromString(xmlContent: xmlContent)
         

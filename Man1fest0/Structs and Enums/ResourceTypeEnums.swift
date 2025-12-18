@@ -108,6 +108,9 @@ func getURLFormat(data: ResourceType) -> String {
     }
 }
 
+// ##################################
+// UNUSED
+// ##################################
 func getProcessFormat(data: ResourceType) -> String {
     print("Getting process format")
     switch data {
@@ -164,6 +167,9 @@ func getProcessFormat(data: ResourceType) -> String {
 
 
 
+// ##################################
+// UNUSED
+// ##################################
 func getReplyString(data: ResourceType) -> String {
     print("Getting reply format")
     switch data {
@@ -236,6 +242,9 @@ func getReplyString(data: ResourceType) -> String {
 //}
 
 
+// ##################################
+// UNUSED
+// ##################################
 func getSingleInstanceString(data: ResourceType) -> String {
     print("Getting single instance format")
     switch data {
@@ -288,6 +297,9 @@ func getSingleInstanceString(data: ResourceType) -> String {
     }
 }
 
+// ##################################
+// UNUSED
+// ##################################
 func getViewString(data: ResourceType) -> String {
     print("Getting view string format")
     switch data {
@@ -341,6 +353,9 @@ func getViewString(data: ResourceType) -> String {
     }
 }
 
+// ##################################
+// UNUSED
+// ##################################
 func getReceivedString(data: ResourceType) -> String {
     print("Getting received format")
     switch data {

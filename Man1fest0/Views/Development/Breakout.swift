@@ -521,6 +521,9 @@ fileprivate struct KeyEventsModifier: ViewModifier {
          let down: (KeyPress) -> Void
          let up: (KeyPress) -> Void
 
+// ##################################
+// UNUSED
+// ##################################
          func makeNSView(context: Context) -> NSView {
              // NSView subclass that accepts first responder and forwards key events
              class KeyCatcherView: NSView {
@@ -559,6 +562,9 @@ fileprivate struct KeyEventsModifier: ViewModifier {
              return view
          }
 
+// ##################################
+// UNUSED
+// ##################################
          func updateNSView(_ nsView: NSView, context: Context) {}
          func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {}
          func makeCoordinator() -> Coordinator { Coordinator() }

@@ -14,6 +14,9 @@ class PhotoViewModel: ObservableObject {
 
     let apiURL = "" // Replace with your actual API
 
+// ##################################
+// UNUSED
+// ##################################
     func fetchPhotos(apiURL: String) {
         isLoading = true
         errorMessage = nil

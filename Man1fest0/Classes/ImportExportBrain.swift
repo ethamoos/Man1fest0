@@ -51,6 +51,9 @@ class ImportExportBrain: ObservableObject {
             }
         }
         
+// ##################################
+// UNUSED
+// ##################################
         func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
             FileWrapper(regularFileWithContents: Data(text.utf8))
         }
@@ -298,6 +301,9 @@ class ImportExportBrain: ObservableObject {
 //        dataTask.resume()
 //    }
     
+// ##################################
+// UNUSED
+// ##################################
     func createPackage(server: String, authToken: String, resourceType: ResourceType, httpMethod: String, parameters: String, serialNumber: String, categoryId: Int, parentPackageId: Int, packageName: String, fillUserTemplate: String, priority: String, info: String, notes: String, manifestFileName: String, fileName: String ) {
 
         print("Running is:\(String(describing: uploadPackage))")
@@ -326,6 +332,9 @@ class ImportExportBrain: ObservableObject {
     
     
     
+// ##################################
+// UNUSED
+// ##################################
     func uploadIcon(jamfURL: String, authToken: String, file: String) throws {
         
         let jamfURLQuery = jamfURL + "/api/v1/icon/"

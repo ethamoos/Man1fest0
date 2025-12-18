@@ -90,6 +90,9 @@ struct AddNewContact: View {
         mainBody.isEmpty
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func saveNote() {
         print("Saving note")
         coreDataStack.insertNote(mainBody: mainBody,reference: reference, additionalNotes: additionalNotes)

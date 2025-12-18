@@ -233,6 +233,9 @@ import AEXML
     //    #################################################################################
     
             
+// ##################################
+// UNUSED
+// ##################################
             func updateScopeExclusions (xmlString: String, groupName: String, groupId: String) -> String {
                 
         #if os(macOS)
@@ -273,6 +276,9 @@ import AEXML
     //    #################################################################################
     
     
+// ##################################
+// UNUSED
+// ##################################
     func updatePolicyScopeGroup(server: String, authToken: String, resourceType: ResourceType, policyName: String, policyID: String, computer_groupID: String, computer_groupName: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
@@ -315,6 +321,9 @@ import AEXML
     //    updatePolicyScopeLimitations2Groups
     //    #################################################################################
     
+// ##################################
+// UNUSED
+// ##################################
     func updatePolicyScopeLimitations2Groups(server: String, authToken: String, resourceType: ResourceType, policyName: String, policyID: String, ldapUserGroupID: String, ldapUserGroupName: String, ldapUserGroupID2: String, ldapUserGroupName2: String) {
         
         //        Updated the limtations for a policy to 2 ldap groups
@@ -383,6 +392,9 @@ import AEXML
     //    updatePolicyScopeLimitations
     //    #################################################################################
     
+// ##################################
+// UNUSED
+// ##################################
     func updatePolicyScopeToAll(server: String, authToken: String, resourceType: ResourceType, policyName: String, policyID: String, building: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
@@ -418,6 +430,9 @@ import AEXML
     //    #################################################################################
     
     
+// ##################################
+// UNUSED
+// ##################################
     func updatePolicyScopeExclusions(server: String, authToken: String, resourceType: ResourceType, policyName: String, policyID: String, building: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
@@ -495,6 +510,9 @@ import AEXML
     
     
     // Flush log for policies with configurable interval and log_id specifying computers
+// ##################################
+// UNUSED
+// ##################################
     func flushLogComputer(serverURL: String, authToken: String, interval: String, policyId: String, computer_id: String) async throws {
 //        Supported values are a combination of [Zero, One, Two, Three, Six] and [Days, Weeks, Months, Years]. For example: "Three+Months"
         

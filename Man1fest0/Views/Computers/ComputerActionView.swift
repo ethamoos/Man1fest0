@@ -272,6 +272,9 @@ struct ComputerActionView: View {
         }
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func doBatchProcess(item: String) {
         
         //        let selectionArray = Array (arrayLiteral: $selection)
@@ -283,6 +286,9 @@ struct ComputerActionView: View {
         print("deleting item:\(item) !!!!!!!!!!!!!!!!!!!!!!")
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func hideDetailScreen() {
         showDetailScreen = false
     }

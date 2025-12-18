@@ -31,6 +31,9 @@ struct TextDocument: FileDocument {
         }
     }
     
+// ##################################
+// UNUSED
+// ##################################
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         FileWrapper(regularFileWithContents: Data(text.utf8))
     }
