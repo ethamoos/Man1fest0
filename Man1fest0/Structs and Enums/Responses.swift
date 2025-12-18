@@ -31,8 +31,13 @@ struct OsXConfigurationProfile: Codable, Hashable {
     var os_x_configuration_profile: ConfigurationProfile?
 }
 
+// ##################################
+// UNUSED - Struct
+// ##################################
 struct MobileConfigurationProfile: Codable, Hashable {
-    var configuration_profile: ConfigurationProfile?
+    var id: Int
+    var name: String
+    var profileUUID: String
 }
 
 struct ConfigurationProfile: Codable, Hashable {
@@ -140,13 +145,10 @@ struct NetworkLimitations: Codable, Hashable, Identifiable {
 // MARK: - OverrideDefaultSettings
 struct OverrideDefaultSettings: Codable, Hashable, Identifiable {
     var id = UUID()
-    // Make all properties optional to tolerate missing keys in the API response
-    let targetDrive: String?
-    let distributionPoint: String?
-    let forceAFPSMB: Bool?
-    let sus: String?
-    let netbootServer: String?
-
+    let targetDrive, distributionPoint: String
+    let forceAFPSMB: Bool
+    let sus, netbootServer: String
+    
     enum CodingKeys: String, CodingKey {
         case targetDrive = "target_drive"
         case distributionPoint = "distribution_point"
@@ -201,12 +203,6 @@ struct PackageDetailed: Codable, Hashable, Identifiable {
 struct TriggeringFiles: Codable {
 }
 
-// MARK: - SelfServiceIcon
-struct SelfServiceIcon: Codable, Hashable  {
-    let filename: String?
-    let id: Int?
-    let uri: String?
-}
 
 //MARK: - SCRIPTS
 struct Scripts: Codable, Identifiable, Hashable {

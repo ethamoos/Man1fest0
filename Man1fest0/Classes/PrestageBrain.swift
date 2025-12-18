@@ -16,10 +16,14 @@ import SwiftUI
         case badResponseCode
     }
     
-    struct JamfProAuth: Decodable {
-        let token: String
-        let expires: String
-    }
+// ##################################
+// UNUSED - Struct
+// ##################################
+struct JamfProAuth: Decodable {
+    var access_token: String?
+    var token_type: String?
+    var expires_in: Int?
+}
     
     @Published var searchText = ""
     @Published var status: Status = .none
@@ -64,9 +68,6 @@ import SwiftUI
     
 //    #########################################################################
     
-// ##################################
-// UNUSED
-// ##################################
     func updateStatus(_ status: Status) {
         DispatchQueue.main.async {
             withAnimation {
@@ -116,8 +117,7 @@ import SwiftUI
 
         self.allPsComplete = false
         print("Setting allPsComplete to:\(self.allPsComplete)")
-//        let jamfURLQuery = server + "/api/v2/computer-prestages?page=0&page-size=100&sort=id%3Adesc"
-        let jamfURLQuery = server + "/api/v3/computer-prestages"
+        let jamfURLQuery = server + "/api/v2/computer-prestages?page=0&page-size=100&sort=id%3Adesc"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -223,9 +223,6 @@ import SwiftUI
     // Function to get the devices assigned to the specitfied computer pre-stage in preparation for adding
     // This sets the property selectedPrestageScope to contain these pre-stages
     
-// ##################################
-// UNUSED
-// ##################################
     func getPrestageCurrentScopeToAdd(jamfURL: String, prestageID: String, authToken: String) async throws {
         
         let jamfURLQuery = jamfURL + "/api/v2/computer-prestages/" + prestageID + "/scope"
@@ -330,9 +327,6 @@ import SwiftUI
         }
     }
     
-// ##################################
-// UNUSED
-// ##################################
     func printAllPrestages() {
         separationLine()
         print("Running func: printAllPrestages")
@@ -343,9 +337,6 @@ import SwiftUI
         //        }
     }
     
-// ##################################
-// UNUSED
-// ##################################
     func printSerialsByPrestageID() {
         separationLine()
         print("Running func: printSerialsByPrestageID")
@@ -355,9 +346,6 @@ import SwiftUI
         //        }
     }
     
-// ##################################
-// UNUSED
-// ##################################
     func printSpecificPrestage() {
         separationLine()
         print("Running: printSpecificPrestage")
@@ -377,5 +365,3 @@ import SwiftUI
         separationLine()
     }
 }
-
-

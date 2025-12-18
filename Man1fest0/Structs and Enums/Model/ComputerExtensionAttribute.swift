@@ -12,14 +12,16 @@
 //    #################################################################################
 
 // MARK: - ComputerExtensionAttributes
+
+// ##################################
+// UNUSED - Struct
+// ##################################
 struct ComputerExtensionAttributesDetailed: Codable {
-    let computerExtensionAttributes: [ComputerExtensionAttribute]
-
-    enum CodingKeys: String, CodingKey {
-        case computerExtensionAttributes = "computer_extension_attribute"
-    }
+    
+    let prefill, form, defaultValue, name: String
+    let id, priority: Int
+    
 }
-
 
 struct ComputerExtensionAttributes: Codable {
     let computerExtensionAttributes: [ComputerExtensionAttribute]
@@ -68,4 +70,3 @@ struct InputType: Codable, Equatable {
     let platform: String
     let script: String
 }
-

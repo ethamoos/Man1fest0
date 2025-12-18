@@ -22,7 +22,9 @@ struct LDAPServer: Codable, Hashable {
     let name: String
 }
 
-// MARK: - Welcome
+// ##################################
+// UNUSED - Struct
+// ##################################
 struct LDAPGroups: Codable {
     let ldapGroups: [LDAPGroup]
 
@@ -31,11 +33,9 @@ struct LDAPGroups: Codable {
     }
 }
 
-// MARK: - LDAPGroup
-struct LDAPGroup: Codable, Hashable {
-    let uid, groupname: String
-}
-
+// ##################################
+// UNUSED - Struct
+// ##################################
 
 struct LDAPCombined: Codable, Hashable {
     let uuid, name,distinguishedName, ldapServerId: String

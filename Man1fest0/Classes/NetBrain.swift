@@ -362,19 +362,19 @@ import AEXML
 // ##################################
     
 //    func getDepartmentScope(server: String, id: String) async throws {
-//        
+//
 //        let jamfURLQuery = server + "/v1/departments/" + id
 //        let url = URL(string: jamfURLQuery)!
 //        var request = URLRequest(url: url)
 //        request.httpMethod = "GET"
 //          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
 //        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//  
+//
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
 //        separationLine()
 //        print("Running func: getDepartments")
 //        print("jamfURLQuery is: \(jamfURLQuery)")
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            print("Code not 200")
@@ -404,23 +404,23 @@ import AEXML
 // ##################################
     
 //    func getCategoryScope(server: String, id: String) async throws {
-//        
+//
 //        let jamfURLQuery = server + "/v1/categories/" + id
 //        let url = URL(string: jamfURLQuery)!
 //        var request = URLRequest(url: url)
 //        request.httpMethod = "GET"
 //          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
 //        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//  
+//
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
 //        request.addValue("\(String(describing: product_name))/\(String(describing: product_version))", forHTTPHeaderField: "User-Agent")
 //        separationLine()
 //        print("User-Agent is: \(String(describing: product_name))/\(String(describing: product_version))")
-//        
+//
 //        separationLine()
 //        print("Running func: getDepartments")
 //        print("jamfURLQuery is: \(jamfURLQuery)")
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            print("Code not 200")
@@ -476,19 +476,19 @@ import AEXML
 // ##################################
     
 //    func getDepartments(server: String) async throws {
-//        
+//
 //        let jamfURLQuery = server + "/JSSResource/departments"
 //        let url = URL(string: jamfURLQuery)!
 //        var request = URLRequest(url: url)
 //        request.httpMethod = "GET"
 //          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
 //        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//  
+//
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
 //        separationLine()
 //        print("Running func: getDepartments")
 //        print("jamfURLQuery is: \(jamfURLQuery)")
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            print("Code not 200")
@@ -499,7 +499,7 @@ import AEXML
 //        print(String(data: data, encoding: .utf8)!)
 //        let decoder = JSONDecoder()
 //        self.departments = try decoder.decode([Department].self, from: data)
-//        
+//
 //    }
     
     func getOSXConfigProfiles(server: String, authToken: String) async throws {
@@ -548,9 +548,9 @@ import AEXML
 //        self.buildings = allBuildings.buildings
 //        //        print("buildings is set to:\(self.buildings)")
 //    }
-//    
-//    
-//    
+//
+//
+//
 //    func getAllPackages(server: String) async throws {
 //        let jamfURLQuery = server + "/JSSResource/packages"
 //        let url = URL(string: jamfURLQuery)!
@@ -558,11 +558,11 @@ import AEXML
 //        request.httpMethod = "GET"
 //          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
 //        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//  
+//
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
 //        separationLine()
 //        print("Running func: getAllPackages")
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            print("Code not 200")
@@ -572,25 +572,25 @@ import AEXML
 //        self.allPackages = try decoder.decode(Packages.self, from: data).packages
 //        allPackagesComplete = true
 //        print("allPackagesComplete status is set to:\(allPackagesComplete)")
-//        
+//
 //    }
-//    
+//
 //    func getAllScripts(server: String, authToken: String) async throws {
-//        
+//
 //        print("Running func: getAllScripts")
-//        
+//
 //        let jamfURLQuery = server + "/api/v1/scripts?page=0&page-size=500"
-//        
+//
 //        let url = URL(string: jamfURLQuery)!
 //        print("url is set to:\(url)")
-//        
+//
 //        var request = URLRequest(url: url)
 //        request.httpMethod = "GET"
 //        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
 //        separationLine()
 //        print("Running func: getAllScripts")
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            print("Code not 200")
@@ -602,28 +602,28 @@ import AEXML
 //        let decoder = JSONDecoder()
 //        //        let allScriptResults = try decoder.decode(ScriptResults.self, from: data)
 //        //        let localScriptsDetailed = allScriptResults.results
-//        
+//
 //        //        print("localScriptsDetailed status is set to:\(localScriptsDetailed)")
 //        //        let allScriptsFullyDetailed = self.allScriptsVeryDetailed.results
-//        
+//
 //    }
     
 //    func getDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
-//        
+//
 //        separationLine()
 //        print("Running func: getDetailedScript")
 //        print("scriptID is set to:\(scriptID)")
-//        
+//
 //        let jamfURLQuery = server + "/api/v1/scripts/" + String(describing: scriptID)
-//        
+//
 //        let url = URL(string: jamfURLQuery)!
 //        print("url is set to:\(url)")
-//        
+//
 //        var request = URLRequest(url: url)
 //        request.httpMethod = "GET"
 //        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            print("Code not 200")
@@ -634,11 +634,11 @@ import AEXML
 //        scriptDetailed = try decoder.decode(Script.self, from: data)
 //        //        print("scriptDetailed is set to:\(scriptDetailed)")
 //    }
-//    
-//    
-//    
+//
+//
+//
 //    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String) async throws {
-//        
+//
 //        let xml = """
 //        <?xml version="1.0" encoding="utf-8"?>
 //        <script>
@@ -647,14 +647,14 @@ import AEXML
 //        </script>
 //        """
 //
-//        
+//
 //        separationLine()
 //        print("Running func: updateScript")
 //        print("scriptName is set to:\(scriptName)")
 //        print("scriptID is set to:\(scriptId)")
 //        separationLine()
 //        print("scriptContent is\(scriptContent)")
-//        
+//
 ////        let scriptData = Data(scriptContent.utf8)
 //        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
 ////        let url = URL(string: jamfURLQuery)!
@@ -880,16 +880,19 @@ import AEXML
         case badResponseCode
     }
     
-    struct JamfProAuth: Decodable {
-        let token: String
-        let expires: String
-    }
-    
-    //    #################################################################################
-    //    REPLY STRUCTS
-    //    #################################################################################
-    
-    struct CategoryReply: Codable {
+    // ##################################
+    // UNUSED - Struct
+    // ##################################
+        struct JamfProAuth: Decodable {
+            let token: String
+            let expires: String
+        }
+
+        //    #################################################################################
+        //    REPLY STRUCTS
+        //    #################################################################################
+
+        struct CategoryReply: Codable {
         
         let categories: [Category]
         static func decode(_ data: Data) -> Result<[Category],Error> {
@@ -943,25 +946,28 @@ import AEXML
     }
     
     
-    struct ComputersDetailReply: Codable {
-        
-        let computersBasic: [Computers.ComputerResponse]
-        static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
-            //             separationLine()
-            print("ComputersBasicReply data is:")
-            //            print(String(data: data, encoding: .utf8)!)
-            
-            let decoder = JSONDecoder()
-            do {
-                let response = try decoder.decode(ComputersBasicReply.self, from: data)
-                print("ComputersBasicReply Decoding succeeded")
-                return .success(response.computersBasic)
-            } catch {
-                print("ComputersBasicReply Decoding failed")
-                return .failure(error)
+    // ##################################
+    // UNUSED - Struct
+    // ##################################
+        struct ComputersDetailReply: Codable {
+
+            let computersBasic: [Computers.ComputerResponse]
+            static func decode(_ data: Data) -> Result<[Computers.ComputerResponse],Error> {
+                //             separationLine()
+                print("ComputersBasicReply data is:")
+                //            print(String(data: data, encoding: .utf8)!)
+
+                let decoder = JSONDecoder()
+                do {
+                    let response = try decoder.decode(ComputersBasicReply.self, from: data)
+                    print("ComputersBasicReply Decoding succeeded")
+                    return .success(response.computersBasic)
+                } catch {
+                    print("ComputersBasicReply Decoding failed")
+                    return .failure(error)
+                }
             }
         }
-    }
     
     
     struct DepartmentReply: Codable {
@@ -1332,7 +1338,7 @@ import AEXML
 //    func debugSomething(dataThing: Any) {
 //        print("Printing out:\(dataThing)")
 //    }
-//    
+//
     
     
     
@@ -1943,7 +1949,7 @@ import AEXML
         request.httpMethod = "PUT"
         request.httpBody = xml.data(using: .utf8)
 
-//        
+//
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
@@ -2007,7 +2013,7 @@ import AEXML
 //            print("getDetailedPolicy request error - code is:\(statusCode)")
 //            throw JamfAPIError.http(statusCode)
 //        }
-//        
+//
 ////        ########################################################
 ////        DEBUG
 ////        ########################################################
@@ -2017,7 +2023,7 @@ import AEXML
 ////        ########################################################
 ////        DEBUG
 ////        ########################################################
-//    
+//
 //        let decoder = JSONDecoder()
 //        let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
 //        self.policyDetailed = decodedData
@@ -2030,7 +2036,7 @@ import AEXML
 //        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
 //    }
      
-//  
+//
 //    func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
 //        if self.debug_enabled == true {
 //            print("Running getDetailedPolicy - policyID is:\(policyID)")
@@ -2042,7 +2048,7 @@ import AEXML
 //        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
 //        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        
+//
 //        //        ########################################################
 //        //        Rate limiting
 //        //        ########################################################
@@ -2058,7 +2064,7 @@ import AEXML
 //            }
 //        }
 //        lastRequestDate = Date()
-//                
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
 //            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -2066,7 +2072,7 @@ import AEXML
 //            print("getDetailedPolicy request error - code is:\(statusCode)")
 //            throw JamfAPIError.http(statusCode)
 //        }
-//        
+//
 ////        ########################################################
 ////        DEBUG
 ////        ########################################################
@@ -2076,7 +2082,7 @@ import AEXML
 ////        ########################################################
 ////        DEBUG
 ////        ########################################################
-//    
+//
 //        let decoder = JSONDecoder()
 //        let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
 //        self.policyDetailed = decodedData
@@ -2188,7 +2194,7 @@ import AEXML
     
     
 //    func processAllComputers(computers: [Computer],  server: String, resourceType: ResourceType, url: String) {
-//        
+//
 //        print("Running processAllComputers")
 //        for eachItem in computers {
 //            self.separationLine()
@@ -2198,12 +2204,12 @@ import AEXML
 //            print("Adding computer:\(eachItem.name) to list")
 //            computerProcessList.insert(eachItem, at: 0)
 //            print("Doing function for item:\(computerIDInt)")
-//            
-//            
+//
+//
 //            //    #################################################################################
 //            //      run operation - download file
 //            //    #################################################################################
-//            
+//
 //            //            self.downloadFileAsync(objectID: String(describing: computerIDInt), resourceType: resourceType, server: server, url: url) { (path, error) in}
 //        }
 //    }
@@ -2589,14 +2595,14 @@ import AEXML
 // ##################################
     
 //    func processUpdateComputerDepartment(selection:  Set<ComputerBasicRecord>, server: String, authToken: String, resourceType: ResourceType, department: String ) {
-//        
+//
 //        separationLine()
 //        print("Running: processUpdateComputerDepartment function - working for resourceType:\(resourceType)")
 //        print("Set processingComplete to false")
 //        self.processingComplete = false
 //        print(String(describing: self.processingComplete))
 //        print("Selection is:\(selection)")
-//        
+//
 //        for eachItem in selection {
 //            separationLine()
 //            print("Items as Dictionary is \(eachItem)")
@@ -2608,12 +2614,12 @@ import AEXML
 //            self.updateComputerDepartment(server: server, authToken: authToken, resourceType: ResourceType.computerDetailed, departmentName: department, computerID: computerID)
 //            print("Updating the department to \(department)")
 //        }
-//        
+//
 //        separationLine()
 //        print("Finished - Set processingComplete to true")
 //        self.processingComplete = true
 //        print(String(describing: self.processingComplete))
-//        
+//
 //    }
     
     //    #################################################################################
@@ -3285,11 +3291,11 @@ import AEXML
 // ##################################
     
 //    func removeLimitations(server: String, resourceType: ResourceType, policyID: String, authToken: String) {
-//        
+//
 //        let resourcePath = getURLFormat(data: (resourceType))
-//        
+//
 //        var xml: String
-//        
+//
 //        xml = """
 //                       <policy>
 //                           <scope>
@@ -3302,7 +3308,7 @@ import AEXML
 //                           </scope>
 //                       </policy>
 //                       """
-//        
+//
 //        if URL(string: server) != nil {
 //            if let serverURL = URL(string: server) {
 //                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
@@ -3435,14 +3441,14 @@ import AEXML
 // UNUSED
 // ##################################
 //    func updateGroup(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-//        
+//
 //        var xml: String
-//        
+//
 //        print("Running updateGroup - updating via xml")
 //        print("computerID is set as:\(computerID)")
 //        print("computerName is set as:\(computerName)")
 //        print("groupID is set as:\(groupID)")
-//        
+//
 //        xml = """
 //                   <computer_group>
 //                       <computers>
@@ -3452,7 +3458,7 @@ import AEXML
 //                       </computers>
 //                   </computer_group>
 //                   """
-//        
+//
 //        if URL(string: server) != nil {
 //            if let serverURL = URL(string: server) {
 //                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
@@ -3503,15 +3509,15 @@ xml = """
 // ##################################
     
 //     func updateGroupNameID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-//        
+//
 //
 //        var xml: String
-//        
+//
 //        print("Running updateGroup - updating via xml")
 //        print("computerID is set as:\(computerID)")
 //        print("computerName is set as:\(computerName)")
 //        print("groupID is set as:\(groupID)")
-//        
+//
 //        xml = """
 //                   <computer_group>
 //                       <computers>
@@ -3522,7 +3528,7 @@ xml = """
 //                       </computers>
 //                   </computer_group>
 //                   """
-//        
+//
 //        if URL(string: server) != nil {
 //            if let serverURL = URL(string: server) {
 //                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
@@ -3545,7 +3551,7 @@ xml = """
 // ##################################
 //
 //    func processAddComputersToGroup(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) {
-//        
+//
 //        separationLine()
 //        print("Running: processAddComputersToGroup")
 //        print("Set is:\(selection)")
@@ -3553,9 +3559,9 @@ xml = """
 ////        self.processingComplete = true
 ////        print(String(describing: self.processingComplete))
 //        var count = 1
-//        
+//
 //        for eachItem in selection {
-//            
+//
 //            //        ########################################################
 //            //        Rate limiting
 //            //        ########################################################
@@ -3573,7 +3579,7 @@ xml = """
 ////                }
 ////            }
 ////            lastRequestDate = Date()
-//            
+//
 //            separationLine()
 //            print("Count is currently:\(count)")
 //            print("Items as Dictionary is \(eachItem)")
@@ -3595,7 +3601,7 @@ xml = """
 // ##################################
    
 //    func processAddComputersToGroupAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String,resourceType: ResourceType, computerGroup: ComputerGroup) async {
-//        
+//
 //        separationLine()
 //        print("Running: processAddComputersToGroup")
 //        print("Set is:\(selection)")
@@ -3603,9 +3609,9 @@ xml = """
 ////        self.processingComplete = true
 ////        print(String(describing: self.processingComplete))
 //        var count = 1
-//        
+//
 //        for eachItem in selection {
-//            
+//
 //            //        ########################################################
 //            //        Rate limiting
 //            //        ########################################################
@@ -3623,7 +3629,7 @@ xml = """
 ////                }
 ////            }
 ////            lastRequestDate = Date()
-//            
+//
 //            separationLine()
 //            print("Count is currently:\(count)")
 //            print("Items as Dictionary is \(eachItem)")
@@ -3886,15 +3892,15 @@ xml = """
 // UNUSED
 // ##################################
 //    func toggleScopeAllComputers(server: String, authToken: String, resourceType: ResourceType, itemID: Int, policyToggle: Bool) {
-//        
+//
 //        let resourcePath = getURLFormat(data: (resourceType))
 //        let itemIDString = String(itemID)
 //        var xml: String
 //        print("Running toggleScopeAllComputers")
 //        if policyToggle == false {
-//            
+//
 //            xml = "<policy><scope><all_computers>true</all_computers></scope></policy>"
-//            
+//
 //            if URL(string: server) != nil {
 //                if let serverURL = URL(string: server) {
 //                    let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
@@ -3906,7 +3912,7 @@ xml = """
 //                }
 //            }
 //        }
-//        
+//
 //        else {
 //            xml = "<policy><scope><all_computers>false</all_computers></scope></policy>"
 //            if URL(string: server) != nil {
@@ -4636,21 +4642,21 @@ xml = """
 // UNUSED
 // ##################################
 //    func requestDeleteAwait(url: URL, authToken: String, resourceType: ResourceType) async throws {
-//        
+//
 //        let headers = [
 //            "Accept": "application/json",
 //            "Content-Type": "application/json",
 //            "Authorization": "Bearer \(authToken)"
 //        ]
-//        
+//
 //        atSeparationLine()
 //        print("Running requestDeleteXML function - resourceType is set as:\(resourceType)")
 //        print("URL is set as:\(url)")
-//        
+//
 //        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //        request.allHTTPHeaderFields = headers
 //        request.httpMethod = "DELETE"
-//        
+//
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 //
@@ -4663,7 +4669,7 @@ xml = """
 //            throw JamfAPIError.http(statusCode)
 //        }
 //    }
-//    
+//
     
     
     func sendRequestAsXML(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String) {
@@ -4721,8 +4727,8 @@ xml = """
 // UNUSED
 // ##################################
 //    func sendRequestAsXMLAsync(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) async throws {
-//    
-//        
+//
+//
 //        let xml = xml
 //        let xmldata = xml.data(using: .utf8)
 //        atSeparationLine()
@@ -4734,18 +4740,18 @@ xml = """
 //        //        print("xmldata is:\(String(describing: xmldata))")
 //        atSeparationLine()
 //        print("httpMethod is:\(httpMethod)")
-//        
+//
 //        let headers = [
 //            "Accept": "application/xml",
 //            "Content-Type": "application/xml",
 //            "Authorization": "Bearer \(authToken)"
 //        ]
-//        
+//
 //        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //        request.allHTTPHeaderFields = headers
 //        request.httpMethod = httpMethod
 //        request.httpBody = xmldata
-//        
+//
 //    }
     
     
@@ -5004,13 +5010,13 @@ xml = """
 // UNUSED
 // ##################################
 //    func fetchDetailedData() async throws {
-//        
+//
 //        if self.fetchedDetailedPolicies == false {
-//            
+//
 //            print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-//            
+//
 //            if self.allPoliciesDetailed.count < self.allPoliciesConverted.count {
-//                
+//
 //                print("fetching detailed policies")
 //                Task {
 //                    try await self.getAllPoliciesDetailed(server: server, authToken: self.authToken, policies: self.allPoliciesConverted)
@@ -5024,11 +5030,11 @@ xml = """
 //            print("fetchedDetailedPolicies has run")
 //            self.fetchedDetailedPolicies = true
 //        }
-//        
+//
 //        if self.allIconsDetailed.count == 0 {
 //            self.getAllIconsDetailed(server: server, authToken: self.authToken, loopTotal: 1000)
 //        }
-//        
+//
 //    }
     
     
@@ -5080,7 +5086,7 @@ xml = """
 //        updateKC(newPassword, account: self.username, service: self.server)
 //        return true
 //    }
-//    
+//
     //  #######################################################################
 //  REFRESH POLICY'S DATA
     //  #######################################################################

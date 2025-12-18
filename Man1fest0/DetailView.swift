@@ -1,30 +1,31 @@
 import SwiftUI
 
-// Renamed duplicate to avoid redeclaration conflict with `Views/Policy/PolicyDetailView.swift`.
-// This file's view appears to be a legacy/alternate detail layout, so rename to keep it available.
+// ##################################
+// UNUSED - Struct
+// ##################################
 struct PolicyDetailLegacyView: View {
     
     var server: String
     var user: String
     var password: String
     var itemID: Int
-    
+
     @EnvironmentObject var networkController: NetBrain
-    
+
     @State private var selectedResourceType = ResourceType.policyDetail
-    
+
     @State var currentDetailedPolicy: PolicyCodable? = nil
-    
+
     @State private var packageSelection = Set<Package>()
-    
+
     @State private var selection: Package? = nil
-    
+
     @State private var packages: [ Package ] = []
-    
+
     @State var enableDisable: Bool = true
 
     var policy: Policies
-    
+
     var body: some View {
         
         
