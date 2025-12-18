@@ -373,6 +373,9 @@ struct OptionsView: View {
                     ToolbarItem(id: "Refresh") {
                         Button(action: {
                             
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
                             Task {
                                 try? await networkController.getToken(server: server, username: username, password: networkController.password)
                             }
