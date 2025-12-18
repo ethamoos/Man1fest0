@@ -93,7 +93,7 @@ import AEXML
     var allPoliciesComplete = false
     var allPackagesComplete = false
     var allPoliciesStatusCode: Int = 0
-    var resourceAccess = false
+    var resourceAccess = true
     @Published var showingWarning = false
     
     //  #############################################################################
@@ -688,6 +688,7 @@ import AEXML
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
         self.allPoliciesConverted = decodedData
         allPoliciesComplete = true
+        self.resourceAccess = true
         separationLine()
         //        atSeparationLine()
         print("getAllPolicies status is set to:\(allPoliciesComplete)")

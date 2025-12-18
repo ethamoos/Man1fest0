@@ -870,5 +870,37 @@ class PolicyBrain: ObservableObject {
     
     
     
+    //    #################################################################################
+    //    addCustomCommand - to policy
+    //    #################################################################################
+    
+    func addCustomCommand(server: String, authToken: String, policyID: String, command: String) {
+        let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
+//        let policyIDString = String(policyID)
+        var xml: String
+        print("Running scopeAllComputersAndUsers")
+        
+                xml = """
+                        <policy>
+                            <files_processes>
+                                <run_command>\(command)</run_command>
+                            </files_processes>
+                        </policy>
+                    
+                    """
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("policyID is set as:\(policyID)")
+                print("resourceType is set as:\(ResourceType.policyDetail)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+            }
+        }
+    }
+    
+    
+    
+    
 }
 

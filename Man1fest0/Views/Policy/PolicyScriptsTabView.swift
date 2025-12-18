@@ -84,6 +84,9 @@ struct PolicyScriptsTabView: View {
     @State var scriptParameter11: String = ""
 //    @State var priority: String = "Before"
     
+    
+    @State var command: String = ""
+    
     var body: some View {
         
         VStack(alignment: .leading) {
@@ -363,6 +366,36 @@ struct PolicyScriptsTabView: View {
                     }
                 }   
             }
+            
+            Text("Run Command").fontWeight(.bold)
+                               TextEditor(text: $command)
+                                   .frame(minHeight: 20)
+                                   .border(Color.gray)
+            
+            //  ################################################################################
+            //  Add custom command in policy
+            //  ################################################################################
+            
+            Button(action: {
+                
+                progress.showProgress()
+                progress.waitForABit()
+                
+                networkController.separationLine()
+                print("Add custom command to policy:\(String(describing: policyID))")
+                policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
+                
+            }) {
+                HStack(spacing: 10) {
+                    Image(systemName: "minus.square.fill.on.square.fill")
+                    Text("Add Command")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            
+            
+            
             Spacer()
         }
         .frame(minWidth: 400, alignment: .leading)
