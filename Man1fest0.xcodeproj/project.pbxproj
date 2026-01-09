@@ -56,6 +56,9 @@
 		A877BED12E60F3400041D3C9 /* Sorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A877BED02E60F3390041D3C9 /* Sorting.swift */; };
 		A87BF5C62EB13CD000E065BB /* PolicyListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87BF5C52EB13CD000E065BB /* PolicyListView.swift */; };
 		A87BF5C82EB13CDC00E065BB /* PolicyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87BF5C72EB13CDC00E065BB /* PolicyRowView.swift */; };
+		A87E84702F10F2B200CF42D0 /* RequestSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */; };
+		A87E84722F10F31400CF42D0 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84712F10F30900CF42D0 /* APIRequest.swift */; };
+		A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84732F10F34000CF42D0 /* HTTPMethod.swift */; };
 		A88491912C8A1D8600C37DB7 /* IconsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491902C8A1D8600C37DB7 /* IconsView.swift */; };
 		A88491932C8A2D8C00C37DB7 /* Icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491922C8A2D8C00C37DB7 /* Icons.swift */; };
 		A88491952C8AE45900C37DB7 /* IconDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491942C8AE45900C37DB7 /* IconDetailedView.swift */; };
@@ -172,6 +175,9 @@
 		A877BED02E60F3390041D3C9 /* Sorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sorting.swift; sourceTree = "<group>"; };
 		A87BF5C52EB13CD000E065BB /* PolicyListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyListView.swift; sourceTree = "<group>"; };
 		A87BF5C72EB13CDC00E065BB /* PolicyRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyRowView.swift; sourceTree = "<group>"; };
+		A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestSender.swift; sourceTree = "<group>"; };
+		A87E84712F10F30900CF42D0 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
+		A87E84732F10F34000CF42D0 /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
 		A88491902C8A1D8600C37DB7 /* IconsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconsView.swift; sourceTree = "<group>"; };
 		A88491922C8A2D8C00C37DB7 /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
 		A88491942C8AE45900C37DB7 /* IconDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconDetailedView.swift; sourceTree = "<group>"; };
@@ -348,6 +354,8 @@
 		A86AF3842C3FE64A009349C4 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				A87E84712F10F30900CF42D0 /* APIRequest.swift */,
+				A87E84732F10F34000CF42D0 /* HTTPMethod.swift */,
 				A80DE2CA2E97D69800509F4F /* Structures.swift */,
 				A8BC96A72E6825670078AF53 /* Photo.swift */,
 				A83D011A2D7850E40091B794 /* JamfObjects */,
@@ -360,6 +368,7 @@
 				A88491922C8A2D8C00C37DB7 /* Icons.swift */,
 				A8ECF6502C6D275F0082BE21 /* Ldap.swift */,
 				A81B58082C4A5E83008C1C25 /* Policies.swift */,
+				A8B4EA6B2B04E46F000F059F /* Responses.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -486,7 +495,6 @@
 				A877BED02E60F3390041D3C9 /* Sorting.swift */,
 				A86AF3842C3FE64A009349C4 /* Model */,
 				A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */,
-				A8B4EA6B2B04E46F000F059F /* Responses.swift */,
 				A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */,
 				A83C94572D79D9B500F639A1 /* ResponseCodes.swift */,
 			);
@@ -503,6 +511,7 @@
 				A8DECD5D2BD999AE00D79A11 /* BackgroundTasks.swift */,
 				A8ECB7BE2C88478600FAFDC2 /* CommandBrain.swift */,
 				A8C4EAC82D53BDD10022E0ED /* EaBrain.swift */,
+				A88768982EE2DD3E009D97B9 /* Helper.swift */,
 				A86CB8602D3E595B00D8F22F /* ImportExportBrain.swift */,
 				A8DECD592BD7FA2700D79A11 /* Layout.swift */,
 				E4CE368429D336C100533707 /* NetBrain.swift */,
@@ -511,10 +520,10 @@
 				E48D59D52C5965AA00E1E35B /* PolicyBrain.swift */,
 				E493197E2B6429C300B58519 /* PrestageBrain.swift */,
 				A8ECB7C02C88492700FAFDC2 /* PushBrain.swift */,
+				A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */,
 				A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */,
 				A86CB8622D3E5C8100D8F22F /* TextDocument.swift */,
 				A86533ED2C3C22DB002894B2 /* XmlBrain.swift */,
-				A88768982EE2DD3E009D97B9 /* Helper.swift */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -666,6 +675,7 @@
 				A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */,
 				A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */,
 				A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */,
+				A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */,
 				A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */,
 				A8ECF6512C6D275F0082BE21 /* Ldap.swift in Sources */,
 				E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */,
@@ -704,6 +714,7 @@
 				A83D00DB2D774FCA0091B794 /* ErrorView.swift in Sources */,
 				A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */,
 				A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */,
+				A87E84722F10F31400CF42D0 /* APIRequest.swift in Sources */,
 				E493197F2B6429C300B58519 /* PrestageBrain.swift in Sources */,
 				A83898132C6686F3003D3F95 /* Buttons.swift in Sources */,
 				A813124629D4B52800BB1C9F /* PackagesDetailView.swift in Sources */,
@@ -718,6 +729,7 @@
 				A813124229D4B10100BB1C9F /* ScriptsDetailView.swift in Sources */,
 				A86533F22C3E99C2002894B2 /* PolicyPackageTabView.swift in Sources */,
 				A83D21072DE6125F00D9AD2F /* GroupsSmartView.swift in Sources */,
+				A87E84702F10F2B200CF42D0 /* RequestSender.swift in Sources */,
 				A87BF5C62EB13CD000E065BB /* PolicyListView.swift in Sources */,
 				A81B58092C4A5E83008C1C25 /* Policies.swift in Sources */,
 				A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */,
