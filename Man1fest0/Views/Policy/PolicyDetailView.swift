@@ -333,7 +333,7 @@ struct PolicyDetailView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .tint(.green)
                 
                 
                 HStack {
