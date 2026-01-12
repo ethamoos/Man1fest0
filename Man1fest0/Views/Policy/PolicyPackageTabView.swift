@@ -229,7 +229,7 @@ struct PolicyPackageTabView: View {
                         networkController.separationLine()
                         print("Clearing all packages in policy:\(String(describing: policyID))")
                         
-                        xmlController.removePackagesFromPolicy(xmlContent: networkController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                        xmlController.removePackagesFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
 //                        xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
 
                         
