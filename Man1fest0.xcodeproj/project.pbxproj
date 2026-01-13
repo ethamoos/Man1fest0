@@ -60,6 +60,8 @@
 		A87E84722F10F31400CF42D0 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84712F10F30900CF42D0 /* APIRequest.swift */; };
 		A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84732F10F34000CF42D0 /* HTTPMethod.swift */; };
 		A87E85192F165F2C00CF42D0 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E85182F165F2C00CF42D0 /* User.swift */; };
+		A87E851C2F16686E00CF42D0 /* UserDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */; };
+		A87E851D2F16686E00CF42D0 /* UsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E851B2F16686E00CF42D0 /* UsersView.swift */; };
 		A88491912C8A1D8600C37DB7 /* IconsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491902C8A1D8600C37DB7 /* IconsView.swift */; };
 		A88491932C8A2D8C00C37DB7 /* Icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491922C8A2D8C00C37DB7 /* Icons.swift */; };
 		A88491952C8AE45900C37DB7 /* IconDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491942C8AE45900C37DB7 /* IconDetailedView.swift */; };
@@ -180,6 +182,8 @@
 		A87E84712F10F30900CF42D0 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
 		A87E84732F10F34000CF42D0 /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
 		A87E85182F165F2C00CF42D0 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDetailedView.swift; sourceTree = "<group>"; };
+		A87E851B2F16686E00CF42D0 /* UsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersView.swift; sourceTree = "<group>"; };
 		A88491902C8A1D8600C37DB7 /* IconsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconsView.swift; sourceTree = "<group>"; };
 		A88491922C8A2D8C00C37DB7 /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
 		A88491942C8AE45900C37DB7 /* IconDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconDetailedView.swift; sourceTree = "<group>"; };
@@ -324,6 +328,8 @@
 				E45E132C2C53B5FB007C175F /* ReportsView.swift */,
 				A88A6A222DB79374009A64B8 /* Scripts */,
 				A8A46D0C2C47C91F00EF5987 /* PrestageViews */,
+				A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */,
+				A87E851B2F16686E00CF42D0 /* UsersView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -759,6 +765,8 @@
 				A87BF5C82EB13CDC00E065BB /* PolicyRowView.swift in Sources */,
 				A87E85192F165F2C00CF42D0 /* User.swift in Sources */,
 				A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */,
+				A87E851C2F16686E00CF42D0 /* UserDetailedView.swift in Sources */,
+				A87E851D2F16686E00CF42D0 /* UsersView.swift in Sources */,
 				E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */,
 				A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */,
 				E45E132B2C53B2CA007C175F /* OptionsView.swift in Sources */,

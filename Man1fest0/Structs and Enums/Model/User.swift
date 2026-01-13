@@ -36,8 +36,8 @@ struct UserDetail: Codable, Hashable, Identifiable {
     let enable_custom_photo_url: Bool?
     let custom_photo_url: String?
     let ldap_server: LdapServer?
-    let extension_attributes: [String]?
-    let sites: [String]?
+    let extension_attributes: [ExtensionAttribute]?    // was [String]?
+    let sites: [SiteRef]?                                // was [String]?
     let links: UserLinks?
     let user_groups: SizeObject?
 
@@ -64,11 +64,29 @@ struct UserDetail: Codable, Hashable, Identifiable {
         let name: String?
     }
 
+    // Represent simple id/name references returned for computers, peripherals, etc.
+    struct ResourceRef: Codable, Hashable {
+        let id: Int?
+        let name: String?
+    }
+
+    struct ExtensionAttribute: Codable, Hashable {
+        // Jamf extension attributes vary; include common fields
+        let id: Int?
+        let name: String?
+        let value: String?
+    }
+
+    struct SiteRef: Codable, Hashable {
+        let id: Int?
+        let name: String?
+    }
+
     struct UserLinks: Codable, Hashable {
-        let computers: [String]?
-        let peripherals: [String]?
-        let mobile_devices: [String]?
-        let vpp_assignments: [String]?
+        let computers: [ResourceRef]?
+        let peripherals: [ResourceRef]?
+        let mobile_devices: [ResourceRef]?
+        let vpp_assignments: [ResourceRef]?
         let total_vpp_code_count: Int?
     }
 

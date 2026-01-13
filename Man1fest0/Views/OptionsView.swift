@@ -115,7 +115,13 @@ struct OptionsView: View {
                                     Text("Package Usage")
                                 }
                             }
+                            
+                            Divider()
 #endif
+                            
+                            NavigationLink(destination: UsersView(server: server )) {
+                                Text("Users")
+                            }
                         }
                         
                         Group {

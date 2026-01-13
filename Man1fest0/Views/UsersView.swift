@@ -45,6 +45,14 @@ struct UsersView: View {
         .alert(isPresented: $networkController.showErrorAlert) {
             Alert(title: Text(networkController.lastErrorTitle ?? "Error"), message: Text(networkController.lastErrorMessage ?? ""), dismissButton: .default(Text("OK")) )
         }
+        .onAppear() {
+            
+            Task {
+                do {
+                    try await networkController.getAllUsers()
+                }
+            }
+        }
     }
 
     var searchResults: [UserSimple] {
