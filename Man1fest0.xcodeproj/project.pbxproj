@@ -56,18 +56,9 @@
 		A877BED12E60F3400041D3C9 /* Sorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A877BED02E60F3390041D3C9 /* Sorting.swift */; };
 		A87BF5C62EB13CD000E065BB /* PolicyListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87BF5C52EB13CD000E065BB /* PolicyListView.swift */; };
 		A87BF5C82EB13CDC00E065BB /* PolicyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87BF5C72EB13CDC00E065BB /* PolicyRowView.swift */; };
-<<<<<<< Updated upstream
 		A87E84702F10F2B200CF42D0 /* RequestSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */; };
 		A87E84722F10F31400CF42D0 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84712F10F30900CF42D0 /* APIRequest.swift */; };
 		A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84732F10F34000CF42D0 /* HTTPMethod.swift */; };
-=======
-		A87E84CF2F164C3F00CF42D0 /* UsersModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84CE2F164C3F00CF42D0 /* UsersModels.swift */; };
-		A87E84D22F164C7F00CF42D0 /* UserDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84D02F164C7F00CF42D0 /* UserDetailedView.swift */; };
-		A87E84D32F164C7F00CF42D0 /* UsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84D12F164C7F00CF42D0 /* UsersView.swift */; };
-		A87E84D52F164CDC00CF42D0 /* UserBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84D42F164CD000CF42D0 /* UserBrain.swift */; };
-		A87E84D72F164D7F00CF42D0 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84D62F164D7F00CF42D0 /* APIRequest.swift */; };
-		A87E84D92F164DA100CF42D0 /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84D82F164DA100CF42D0 /* HTTPMethod.swift */; };
->>>>>>> Stashed changes
 		A88491912C8A1D8600C37DB7 /* IconsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491902C8A1D8600C37DB7 /* IconsView.swift */; };
 		A88491932C8A2D8C00C37DB7 /* Icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491922C8A2D8C00C37DB7 /* Icons.swift */; };
 		A88491952C8AE45900C37DB7 /* IconDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491942C8AE45900C37DB7 /* IconDetailedView.swift */; };
@@ -184,18 +175,9 @@
 		A877BED02E60F3390041D3C9 /* Sorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sorting.swift; sourceTree = "<group>"; };
 		A87BF5C52EB13CD000E065BB /* PolicyListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyListView.swift; sourceTree = "<group>"; };
 		A87BF5C72EB13CDC00E065BB /* PolicyRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyRowView.swift; sourceTree = "<group>"; };
-<<<<<<< Updated upstream
 		A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestSender.swift; sourceTree = "<group>"; };
 		A87E84712F10F30900CF42D0 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
 		A87E84732F10F34000CF42D0 /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
-=======
-		A87E84CE2F164C3F00CF42D0 /* UsersModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersModels.swift; sourceTree = "<group>"; };
-		A87E84D02F164C7F00CF42D0 /* UserDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDetailedView.swift; sourceTree = "<group>"; };
-		A87E84D12F164C7F00CF42D0 /* UsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersView.swift; sourceTree = "<group>"; };
-		A87E84D42F164CD000CF42D0 /* UserBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserBrain.swift; sourceTree = "<group>"; };
-		A87E84D62F164D7F00CF42D0 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
-		A87E84D82F164DA100CF42D0 /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
->>>>>>> Stashed changes
 		A88491902C8A1D8600C37DB7 /* IconsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconsView.swift; sourceTree = "<group>"; };
 		A88491922C8A2D8C00C37DB7 /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
 		A88491942C8AE45900C37DB7 /* IconDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconDetailedView.swift; sourceTree = "<group>"; };
@@ -340,8 +322,6 @@
 				E45E132C2C53B5FB007C175F /* ReportsView.swift */,
 				A88A6A222DB79374009A64B8 /* Scripts */,
 				A8A46D0C2C47C91F00EF5987 /* PrestageViews */,
-				A87E84D02F164C7F00CF42D0 /* UserDetailedView.swift */,
-				A87E84D12F164C7F00CF42D0 /* UsersView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -374,14 +354,8 @@
 		A86AF3842C3FE64A009349C4 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-<<<<<<< Updated upstream
 				A87E84712F10F30900CF42D0 /* APIRequest.swift */,
 				A87E84732F10F34000CF42D0 /* HTTPMethod.swift */,
-=======
-				A87E84CE2F164C3F00CF42D0 /* UsersModels.swift */,
-				A87E84D62F164D7F00CF42D0 /* APIRequest.swift */,
-				A87E84D82F164DA100CF42D0 /* HTTPMethod.swift */,
->>>>>>> Stashed changes
 				A80DE2CA2E97D69800509F4F /* Structures.swift */,
 				A8BC96A72E6825670078AF53 /* Photo.swift */,
 				A83D011A2D7850E40091B794 /* JamfObjects */,
@@ -530,7 +504,6 @@
 		E4CD02852ADC3A2E00D210B2 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				A87E84D42F164CD000CF42D0 /* UserBrain.swift */,
 				A857A4292E25686600A96F3A /* NotesPersistent */,
 				A86AF3762C3FE1CC009349C4 /* JamfController */,
 				A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */,
@@ -702,11 +675,7 @@
 				A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */,
 				A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */,
 				A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */,
-<<<<<<< Updated upstream
 				A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */,
-=======
-				A87E84D52F164CDC00CF42D0 /* UserBrain.swift in Sources */,
->>>>>>> Stashed changes
 				A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */,
 				A8ECF6512C6D275F0082BE21 /* Ldap.swift in Sources */,
 				E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */,
@@ -718,7 +687,6 @@
 				E48D59DD2C5A457D00E1E35B /* CreateGeneralTabView.swift in Sources */,
 				E48D59D62C5965AA00E1E35B /* PolicyBrain.swift in Sources */,
 				A88491932C8A2D8C00C37DB7 /* Icons.swift in Sources */,
-				A87E84D92F164DA100CF42D0 /* HTTPMethod.swift in Sources */,
 				E4CE369329D3372400533707 /* PolicyView.swift in Sources */,
 				A83D210D2DE6F76200D9AD2F /* ScriptsActionView.swift in Sources */,
 				A8BC96A82E6825690078AF53 /* Photo.swift in Sources */,
@@ -767,8 +735,6 @@
 				A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */,
 				E4CE368529D336C100533707 /* NetBrain.swift in Sources */,
 				A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */,
-				A87E84D22F164C7F00CF42D0 /* UserDetailedView.swift in Sources */,
-				A87E84D32F164C7F00CF42D0 /* UsersView.swift in Sources */,
 				A8BC96A62E6822520078AF53 /* PhotoViewModel.swift in Sources */,
 				A88491912C8A1D8600C37DB7 /* IconsView.swift in Sources */,
 				A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */,
@@ -790,7 +756,6 @@
 				A87BF5C82EB13CDC00E065BB /* PolicyRowView.swift in Sources */,
 				A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */,
 				E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */,
-				A87E84D72F164D7F00CF42D0 /* APIRequest.swift in Sources */,
 				A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */,
 				E45E132B2C53B2CA007C175F /* OptionsView.swift in Sources */,
 				E4D434502C7FBDF600E90BAE /* ComputersBasicTableView.swift in Sources */,
@@ -800,7 +765,6 @@
 				A86CB8612D3E596200D8F22F /* ImportExportBrain.swift in Sources */,
 				A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */,
 				A83D210B2DE627AD00D9AD2F /* ComputerExtAttributeActionView.swift in Sources */,
-				A87E84CF2F164C3F00CF42D0 /* UsersModels.swift in Sources */,
 				A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */,
 				A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */,
 				A80DE2CB2E97D69800509F4F /* Structures.swift in Sources */,
