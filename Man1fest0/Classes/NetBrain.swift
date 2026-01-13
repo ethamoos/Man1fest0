@@ -5217,6 +5217,52 @@ xml = """
         connected = true
     }
     
+    
+    
+    
+    
+    
+    //
+    //  UserBrain.swift
+    //  Man1fest0
+    //
+    //  Created by Amos Deane on 13/01/2026.
+    //
+
+
+    // Fetch list of users (wrapper: { "users": [...] })
+    func getAllUsers() async throws {
+        do {
+            let request = APIRequest<UserListResponse>(endpoint: "users", method: .get)
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.allUsers = decoded.users
+            print("Loaded \(allUsers.count) users")
+        } catch {
+            publishError(error, title: "Failed to load users")
+            throw error
+        }
+    }
+
+    // Fetch detailed user by id
+    func getDetailUser(userID: String) async throws {
+        do {
+            let request = APIRequest<UserDetailResponse>(endpoint: "users/id/" + userID, method: .get)
+            print("APIRequest: \(request)")
+            // ensure we have an auth token
+            if authToken.isEmpty {
+                try await getToken(server: server)
+            }
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.userDetail = decoded.user
+            print("Loaded detail for user id: \(userID)")
+        } catch {
+            publishError(error, title: "Failed to load user details")
+            throw error
+        }
+    }
+
+    
+    
 }
 
     
