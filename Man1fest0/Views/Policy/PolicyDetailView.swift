@@ -333,7 +333,7 @@ struct PolicyDetailView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.green)
+                .tint(.blue)
                 
                 
                 HStack {
@@ -677,28 +677,44 @@ struct PolicyDetailView: View {
         }
     }
 
-        // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
-        HStack {
-            Spacer()
-            Button(action: {
-                // Use the current URL provided by the network controller
-                let urlToOpen = networkController.currentURL
-                print("Opening URL: \(urlToOpen)")
-                layout.openURL(urlString: urlToOpen)
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "safari")
-                    Text("Open in Browser")
+        // Whenever the XML representation of the current policy changes (children often edit XML),
+        // refresh the detailed policy from the server so the UI reflects server-side state.
+        .onChange(of: xmlController.currentPolicyAsXML) { _ in
+            Task {
+                do {
+                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    print("Refreshed detailed policy after XML change")
+                } catch {
+                    print("Failed to refresh detailed policy after XML change: \(error)")
                 }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
-            .padding(.top, 6)
-            Spacer()
         }
-        .padding()
-        .textSelection(.enabled)
-}
+        
+        // Also attempt to refresh after potential network-based edits by observing the packagesAssignedToPolicy
+        // array which many package actions mutate; this covers some edit paths that don't go through XML.
+        .onChange(of: networkController.packagesAssignedToPolicy) { _ in
+            Task {
+                do {
+                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    print("Refreshed detailed policy after package assignments changed")
+                } catch {
+                    print("Failed to refresh detailed policy after package assignment change: \(error)")
+                }
+            }
+        }
+
+        // Listen for child tabs signalling that they modified the policy and request a refresh.
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("policyDidChange"))) { _ in
+            Task {
+                do {
+                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    print("Refreshed detailed policy in response to policyDidChange notification")
+                } catch {
+                    print("Failed to refresh detailed policy after policyDidChange notification: \(error)")
+                }
+            }
+        }
+    }
     
     func fetchData() {
         
@@ -710,8 +726,8 @@ struct PolicyDetailView: View {
             print("package data is available")
         }
     }
+    
 }
-
 
 //struct PolicyDetailView_Previews: PreviewProvider {
 //    static var previews: some View {
