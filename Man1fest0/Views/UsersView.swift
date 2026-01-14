@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct UsersView: View {
+    
     @EnvironmentObject var networkController: NetBrain
 
     @State private var searchText: String = ""
