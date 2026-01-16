@@ -5365,6 +5365,45 @@ xml = """
         }
     }
     
+    
+    
+    func getAllDetailedUsers(server: String, authToken: String, users: [UserSimple]) async throws {
+        
+        self.separationLine()
+        print("Running func: getAllPoliciesDetailed")
+        
+        //        ########################################################
+        //        Rate limiting
+        //        ########################################################
+
+        let now = Date()
+        if let last = lastRequestDate {
+            print("Last request ran at:\(String(describing: last))")
+            let elapsed = now.timeIntervalSince(last)
+            if elapsed < minInterval {
+                let delay = minInterval - elapsed
+                print("Waiting:\(String(describing: delay))")
+                Task {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                }
+            }
+        }
+        lastRequestDate = Date()
+        
+        for user in users {
+            Task {
+                try await getDetailUser(userID: String(describing: user.jamfId))
+                
+                if policyDetailed != nil {
+                    print("Users is:\(String(describing: user.name)) - ID is:\(String(describing: user.jamfId ?? 0))")
+                }
+            }
+        }
+    }
+    
+    
+    
+    
 }
 
     
