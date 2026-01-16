@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class Progress: ObservableObject {
     
     @Published var showProgressView: Bool = false
@@ -44,29 +45,24 @@ class Progress: ObservableObject {
         self.showExtendedProgressView = false
         separationLine()
         print("Setting endExtendedProgress to false")
-        print(self.endExtendedProgress)
+        print(self.showExtendedProgressView)
     }
     
     func waitForABit() {
-        DispatchQueue.main.async {
-            Task {
-                try await Task.sleep(nanoseconds: 4000000000)
-                self.showProgressView = false
-                print(self.showProgressView)
-                print("Finished awaiting")
-            }
+        Task {
+            try await Task.sleep(nanoseconds: 4_000_000_000)
+            self.showProgressView = false
+            print(self.showProgressView)
+            print("Finished awaiting")
         }
     }
     
     func waitForNotVeryLong() {
-        
-        DispatchQueue.main.async {
-            Task {
-                try await Task.sleep(nanoseconds: 1000000000)
-                self.showProgressView = false
-                print(self.showProgressView)
-                print("Finished awaiting")
-            }
+        Task {
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+            self.showProgressView = false
+            print(self.showProgressView)
+            print("Finished awaiting")
         }
     }
     
