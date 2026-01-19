@@ -172,13 +172,13 @@ struct PolicyScopeTabView: View {
                         //  ################################################################################
                         
                         if networkController.policyDetailed?.scope?.allComputers == true {
-                            Text("Scoped To All Computers").font(.subheadline)
+                            Text("Scoped To All Computers").font(.subheadline).bold()
                         } else {
                             Text("All Computers is not enabled").font(.subheadline)
                         }
                           
                         if networkController.policyDetailed?.scope?.all_jss_users == true {
-                            Text("Scoped To All Users").font(.subheadline)
+                            Text("Scoped To All Users").font(.subheadline).bold()
                         } else {
                             Text("All Users is not enabled").font(.subheadline)
                         }
