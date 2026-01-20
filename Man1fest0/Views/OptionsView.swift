@@ -116,12 +116,10 @@ struct OptionsView: View {
                                 }
                             }
                             
-                            Divider()
+//                            Divider()
 #endif
                             
-                            NavigationLink(destination: UsersView(server: server )) {
-                                Text("Users")
-                            }
+                            
                         }
                         
                         Group {
@@ -249,6 +247,14 @@ struct OptionsView: View {
                                 //  ###########################################################################
                                 NavigationLink(destination: IconsView( server: server )) {
                                     Text("Icons")
+                                }
+                                
+                                //  ###########################################################################
+                                //  Users
+                                //  ###########################################################################
+                                
+                                NavigationLink(destination: UsersView(server: server )) {
+                                    Text("Users")
                                 }
                             }
                         }

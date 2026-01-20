@@ -4845,6 +4845,9 @@ xml = """
         if let decodedData = try? decoder.decode(Icon.self, from: data) {
             self.iconDetailed = decodedData
 //            separationLine()
+            print("Raw data is:")
+            print(String(data: data, encoding: .utf8)!)
+
         print("Decoding getDetailedIcon - iconID is:\(iconID)")
         print("Response is:\(String(describing: responseCode ?? 0))")
         print("Add to:allIconsDetailed: Icon id is:\(iconID)")
@@ -4859,32 +4862,6 @@ xml = """
         }
     }
     
-//<<<<<<< HEAD
-//=======
-//    func getAllIcons(server: String) async throws {
-//        let jamfURLQuery = server + "/JSSResource/packages"
-//        let url = URL(string: jamfURLQuery)!
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "GET"
-//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//
-//        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        separationLine()
-//        print("Running func: getAllPackages")
-//
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200")
-//            throw JamfAPIError.badResponseCode
-//        }
-//        let decoder = JSONDecoder()
-//        self.allPackages = try decoder.decode(Packages.self, from: data).packages
-//        allPackagesComplete = true
-//        print("allPackagesComplete status is set to:\(allPackagesComplete)")
-//
-//    }
-//>>>>>>> main
     
     
     

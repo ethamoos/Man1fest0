@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct  IconsView: View {
     
@@ -24,6 +25,8 @@ struct  IconsView: View {
     @State private var selectedImageURL: URL?
     @State var selectedIcon: Icon = Icon(id: 0, url: "", name: "")
     @State private var selectedItem = ""
+    // Sort direction: true = ascending (A → Z), false = descending (Z → A)
+    @State private var sortAscending: Bool = true
 
     @State var path = ""
     @State private var showList = false
@@ -41,6 +44,16 @@ struct  IconsView: View {
                 
                 if networkController.allIconsDetailed.count > 0 {
                     Text("Icons")
+                    // Sort controls: choose A→Z or Z→A
+                    HStack {
+                        Picker("Sort", selection: $sortAscending) {
+                            Text("A \u{2192} Z").tag(true)
+                            Text("Z \u{2192} A").tag(false)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 160)
+                        Spacer()
+                    }
                     NavigationView {
                         List(searchResults, id: \.self, selection: $selectedIcon) { icon in
                             NavigationLink(destination: IconDetailedView( server: server, selectedIcon: selectedIcon )) {
@@ -158,20 +171,32 @@ struct  IconsView: View {
     func selectPhoto() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
-        panel.allowedFileTypes = ["png", "jpg", "jpeg", "heic"]
+        // Use UTType-based API for macOS 12+
+        panel.allowedContentTypes = [UTType.png, UTType.jpeg, UTType.heic]
         panel.directoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
-        
-        if panel.runModal() == .OK {
-            selectedImageURL = panel.url
-            importExportController.uploadStatus = ""
-        }
-    }
+ 
+         if panel.runModal() == .OK {
+             selectedImageURL = panel.url
+             importExportController.uploadStatus = ""
+         }
+     }
     
     var searchResults: [Icon] {
+        // Filter first
+        let filtered: [Icon]
         if searchText.isEmpty {
-            return networkController.allIconsDetailed
+            filtered = networkController.allIconsDetailed
         } else {
-            return networkController.allIconsDetailed.filter { $0.name.lowercased().contains(searchText.lowercased())}
+            filtered = networkController.allIconsDetailed.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+        }
+
+        // Sort by name according to selected direction
+        return filtered.sorted { a, b in
+            if sortAscending {
+                return a.name.lowercased() < b.name.lowercased()
+            } else {
+                return a.name.lowercased() > b.name.lowercased()
+            }
         }
     }
-}
+ }
