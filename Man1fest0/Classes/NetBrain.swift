@@ -4848,7 +4848,12 @@ xml = """
         print("Decoding getDetailedIcon - iconID is:\(iconID)")
         print("Response is:\(String(describing: responseCode ?? 0))")
         print("Add to:allIconsDetailed: Icon id is:\(iconID)")
-            self.allIconsDetailed.insert(self.iconDetailed, at: 0)
+            // Only insert if this icon (by id) is not already present to avoid duplicates
+            if !self.allIconsDetailed.contains(where: { $0.id == self.iconDetailed.id }) {
+                self.allIconsDetailed.insert(self.iconDetailed, at: 0)
+            } else {
+                print("Icon with id \(self.iconDetailed.id) already exists in allIconsDetailed; skipping insert")
+            }
         } else {
             print("Decoding failed")
         }
