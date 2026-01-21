@@ -305,8 +305,8 @@
 				E45E132C2C53B5FB007C175F /* ReportsView.swift */,
 				A88A6A222DB79374009A64B8 /* Scripts */,
 				A8A46D0C2C47C91F00EF5987 /* PrestageViews */,
-				A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */,
 				A87E851B2F16686E00CF42D0 /* UsersView.swift */,
+				A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";

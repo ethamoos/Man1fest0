@@ -6,11 +6,24 @@
 
 import SwiftUI
 
+// Define ContentSelection here so it's available to the module at compile time
+enum ContentSelection: Hashable {
+    case options
+    case users
+    case icons
+    case policies
+    case scripts
+    case packages
+}
+
 struct ContentView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
 
+    // selection used to control the middle content pane
+    @State private var contentSelection: ContentSelection? = .options
+    
     //  #######################################################################
     //  Login
     //  #######################################################################
@@ -29,7 +42,7 @@ struct ContentView: View {
                 }
             } else {
                 if #available(macOS 13.3, *) {
-                    OptionsView()
+                    OptionsView(server: server, contentSelection: $contentSelection)
                 } else {
                     // Fallback on earlier versions
                 }

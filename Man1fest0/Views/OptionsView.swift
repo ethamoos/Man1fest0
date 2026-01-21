@@ -3,7 +3,11 @@ import SwiftUI
 @available(macOS 13.3, *)
 @available(iOS 17.0, *)
 struct OptionsView: View {
-    
+    // server passed from ContentView
+    var server: String
+    // binding to control which middle content is displayed; provided by ContentView
+    @Binding var contentSelection: ContentSelection?
+
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var prestageController: PrestageBrain
     @EnvironmentObject var progress: Progress
@@ -16,7 +20,6 @@ struct OptionsView: View {
     //  Login
     //  #######################################################################
     
-    var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
     var auth: JamfAuthToken?
     
@@ -250,10 +253,12 @@ struct OptionsView: View {
                                 }
                                 
                                 //  ###########################################################################
-                                //  Users
+                                //  Icons
                                 //  ###########################################################################
                                 
-                                NavigationLink(destination: UsersView(server: server )) {
+                                Button(action: {
+                                    contentSelection = .users
+                                }) {
                                     Text("Users")
                                 }
                             }

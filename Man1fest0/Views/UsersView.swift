@@ -13,12 +13,15 @@ struct UsersView: View {
 
     @State private var searchText: String = ""
     @State var server: String
+    @Binding var selectedUserID: String?
 
     var body: some View {
         Group {
             if networkController.allUsers.count > 0 {
                 List(searchResults, id: \.id) { (user: UserSimple) in
-                    NavigationLink(destination: UserDetailedView(userID: String(describing: user.jamfId ?? 0), server: server)) {
+                    Button(action: {
+                        selectedUserID = String(describing: user.jamfId ?? 0)
+                    }) {
                         HStack {
                             Image(systemName: "person")
                             Text(user.name ?? "(no name)")
