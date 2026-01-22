@@ -272,16 +272,20 @@ struct PolicyScriptsTabView: View {
                 //  ################################################################################
                 
                 LazyVGrid(columns: layout.threeColumns, spacing: 10) {
+                    // Mirror the filtered picker below: allow filtering by name and guard optional names
                     Picker(selection: $selectedScript, label: Text("Scripts")) {
-                        ForEach(networkController.scripts, id: \.self) { script in
-                            Text(String(describing: script.name))
-                                .tag(script as ScriptClassic?)
-                                .tag(selectedScript as ScriptClassic?)
+                        ForEach(networkController.scripts.filter { script in
+                            guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
+                            return script.name.localizedCaseInsensitiveContains(searchText)
+                        }, id: \.self) { script in
+                            Text(script.name)
+                                .tag(script)
                         }
-                        .onAppear {
-                            if networkController.scripts.isEmpty != true {
-                                print("Setting package picker default")
-                                selectedScript = networkController.scripts[0] }
+                    }
+                    .onAppear {
+                        if networkController.scripts.isEmpty != true {
+                            print("Setting package picker default")
+                            selectedScript = networkController.scripts[0]
                         }
                     }
                 }

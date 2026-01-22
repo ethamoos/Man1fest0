@@ -287,16 +287,16 @@ struct PolicySelfServiceTabView: View {
                 print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
             }
         }
-        .onChange(of: networkController.allIconsDetailed) { newIcons in
-            // If no icon is currently selected, pick the first available icon so Picker has a valid selection
-            if selectedIcon == nil, let first = newIcons.first {
-                selectedIcon = first
-            }
-        }
-        .onChange(of: selectedIcon) { newSelection in
-            // Keep the string in sync for row highlighting and other uses
-            selectedIconString = newSelection?.name ?? ""
-        }
+//        .onChange(of: networkController.allIconsDetailed) { newIcons in
+//            // If no icon is currently selected, pick the first available icon so Picker has a valid selection
+//            if selectedIcon == nil, let first = newIcons.first {
+//                selectedIcon = first
+//            }
+//        }
+//        .onChange(of: selectedIcon) { newSelection in
+//            // Keep the string in sync for row highlighting and other uses
+//            selectedIconString = newSelection?.name ?? ""
+//        }
     }
 }
     

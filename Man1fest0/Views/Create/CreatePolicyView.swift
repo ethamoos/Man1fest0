@@ -188,6 +188,7 @@ struct CreatePolicyView: View {
         List(Array(packageMultiSelection), id: \.self) { package in
             
             Text(package.name )
+                .textSelection(.enabled)
         }
         
         .frame(height: 100)
@@ -348,11 +349,11 @@ struct CreatePolicyView: View {
                         .tag(icon.id)
                     }
                 }
-                .onChange(of: networkController.allIconsDetailed) { newIcons in
-                    if selectedIconId == nil {
-                        selectedIconId = newIcons.first?.id
-                    }
-                }
+//                .onChange(of: networkController.allIconsDetailed) { newIcons in
+//                    if selectedIconId == nil {
+//                        selectedIconId = newIcons.first?.id
+//                    }
+//                }
             }
             
             // ##########################################################################################
@@ -388,11 +389,11 @@ struct CreatePolicyView: View {
                             Text(department.name).tag(department.jamfId)
                         }
                     }
-                    .onChange(of: networkController.departments) { newDepartments in
-                        if selectedDepartmentId == nil {
-                            selectedDepartmentId = newDepartments.first?.jamfId
-                        }
-                    }
+//                    .onChange(of: networkController.departments) { newDepartments in
+//                        if selectedDepartmentId == nil {
+//                            selectedDepartmentId = newDepartments.first?.jamfId
+//                        }
+//                    }
                 }
             }
             Divider()

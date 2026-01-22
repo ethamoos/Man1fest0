@@ -565,19 +565,20 @@ struct PolicyDetailView: View {
                         Label("Scripts", systemImage: "square.and.pencil")
                     }
                 
-                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
-                    .tabItem {
-                        Label("Triggers", systemImage: "square.and.pencil")
-                    }
                 
                 PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
                     .tabItem {
                         Label("Self Service", systemImage: "square.and.pencil")
                     }
                 
+                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
+                    .tabItem {
+                        Label("Triggers", systemImage: "square.and.pencil")
+                    }
+                
                 PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
                     .tabItem {
-                        Label("Clear", systemImage: "square.and.pencil")
+                        Label("Various Clear", systemImage: "square.and.pencil")
                     }
             }
             
