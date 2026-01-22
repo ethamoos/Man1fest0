@@ -580,6 +580,28 @@ struct PolicyDetailView: View {
                         Label("Clear", systemImage: "square.and.pencil")
                     }
             }
+            
+            // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
+            HStack {
+                Spacer()
+                Button(action: {
+                    // Use the current URL provided by the network controller
+                    let urlToOpen = networkController.currentURL
+                    print("Opening URL: \(urlToOpen)")
+                    layout.openURL(urlString: urlToOpen)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari")
+                        Text("Open in Browser")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .padding(.top, 6)
+                Spacer()
+            }
+            .padding()
+            .textSelection(.enabled)
 
 #endif
             
