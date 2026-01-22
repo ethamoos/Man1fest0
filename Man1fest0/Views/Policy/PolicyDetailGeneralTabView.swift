@@ -219,29 +219,26 @@ struct PolicyDetailGeneralTabView: View {
                             .tag(icon as Icon?)
                         }
                     }
-                    .onAppear {
-                        if !networkController.allIconsDetailed.isEmpty {
-                            // Only set selectedIcon if the first icon exists
-                            selectedIcon = networkController.allIconsDetailed.first
-                        } else {
-                            selectedIcon = nil
-                        }
-                    }
-                    .onChange(of: networkController.allIconsDetailed) { newIcons in
-                        if !newIcons.isEmpty {
-                            selectedIcon = newIcons.first
-                        } else {
-                            selectedIcon = nil
-                        }
-                    }
+//                    .onAppear {
+//                        if !networkController.allIconsDetailed.isEmpty {
+//                            // Only set selectedIcon if the first icon exists
+//                            selectedIcon = networkController.allIconsDetailed.first
+//                        } else {
+//                            selectedIcon = nil
+//                        }
+//                    }
+//                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+//                        if !newIcons.isEmpty {
+//                            selectedIcon = newIcons.first
+//                        } else {
+//                            selectedIcon = nil
+//                        }
+//                    }
                 }
                 //
                 //                ############################################################
                 //                Update Icon Button
                 //                ############################################################
-                
-                
-                
                 
                 
                 

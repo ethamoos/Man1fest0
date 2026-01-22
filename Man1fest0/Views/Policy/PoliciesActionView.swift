@@ -679,8 +679,8 @@ struct PoliciesActionScopeTab: View {
                     }) {
                         Label("Clear Scope", systemImage: "eraser")
                     }
-                    .buttonStyle(.bordered)
-                    .tint(.orange)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
                 }
 
                 Divider()

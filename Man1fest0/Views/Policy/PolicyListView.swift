@@ -1,5 +1,5 @@
 //
-//  PolicyListView.swift
+//  PolicySearchView.swift
 //  Man1fest0
 //
 //  (Updated to add scoped text search + selected-field empty toggle)
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PolicyListView: View {
+struct PolicySearchView: View {
     
     var server: String
     
@@ -427,13 +427,13 @@ struct PolicyListView: View {
          .onAppear() {
             // If basic policies are missing, try fetching them so the list can show something
             if networkController.allPoliciesConverted.isEmpty {
-                print("PolicyListView: allPoliciesConverted empty onAppear — fetching basic policies")
+                print("PolicySearchView: allPoliciesConverted empty onAppear — fetching basic policies")
                 Task {
                     do {
                         try await networkController.getAllPolicies(server: server)
                         updateMatchingIDs()
                     } catch {
-                        print("PolicyListView: failed to fetch basic policies: \(error)")
+                        print("PolicySearchView: failed to fetch basic policies: \(error)")
                     }
                 }
             }
@@ -583,7 +583,7 @@ enum SearchField: String, CaseIterable {
         }
     }
 
-    func isMatch(in policy: PolicyDetailed, search: String, matchMode: PolicyListView.MatchMode = .contains, caseSensitive: Bool = false) -> Bool {
+    func isMatch(in policy: PolicyDetailed, search: String, matchMode: PolicySearchView.MatchMode = .contains, caseSensitive: Bool = false) -> Bool {
         // Normalize inputs depending on case sensitivity
         let targetSearch = caseSensitive ? search : search.lowercased()
         func match(_ value: String?) -> Bool {
