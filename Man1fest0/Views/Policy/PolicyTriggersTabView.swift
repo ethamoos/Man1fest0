@@ -72,6 +72,15 @@ struct PolicyTriggersTabView: View {
                     
                     networkController.separationLine()
                     print("Setting Triggers")
+
+                    // Refresh detailed policy after setting triggers
+                    Task {
+                        do {
+                            try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                        } catch {
+                            print("Failed to refresh detailed policy after setting triggers: \(error)")
+                        }
+                    }
                     
                 }) {
                     Text("Set Triggers")

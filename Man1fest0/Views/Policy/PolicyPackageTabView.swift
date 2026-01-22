@@ -174,7 +174,16 @@ struct PolicyPackageTabView: View {
                                                          action: "Install",
                                                          fut: String(fut),
                                                          feu: String(feu))
-                        
+
+                        // Refresh detailed policy to reflect changes
+                        Task {
+                            do {
+                                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                            } catch {
+                                print("Failed to refresh detailed policy after adding package: \(error)")
+                            }
+                        }
+
                     }) {
                         HStack(spacing: 10) {
 //                            Image(systemName: "plus.square.fill.on.square.fill")

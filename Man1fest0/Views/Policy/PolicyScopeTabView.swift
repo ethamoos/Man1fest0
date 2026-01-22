@@ -503,6 +503,15 @@ struct PolicyScopeTabView: View {
                                                     print("Run getPolicyAsXML to ensure we have the latest version of the policy")
                                                     xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                                                     xmlController.addComputerToPolicyScope( xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
+
+                                                    // Refresh detailed policy after modifying scope
+                                                    Task {
+                                                        do {
+                                                            try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                                        } catch {
+                                                            print("Failed to refresh detailed policy after adding computer to scope: \(error)")
+                                                        }
+                                                    }
                                                 }) {
                                                     HStack(spacing: 10) {
                                                         Image(systemName: "plus.square.fill.on.square.fill")
@@ -588,7 +597,7 @@ struct PolicyScopeTabView: View {
 //                                            }
 //                                            .onAppear { selectionDepartment = networkController.departments[0] }
 //                                        }
-//                                        
+//
                                        
                                         TextField("Filter departments...", text: $departmentFilter)
                                             .textFieldStyle(RoundedBorderTextFieldStyle())

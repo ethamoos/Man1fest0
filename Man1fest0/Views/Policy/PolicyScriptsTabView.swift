@@ -183,13 +183,22 @@ struct PolicyScriptsTabView: View {
                 
                 HStack {
                     Button(action: {
-                        print("-----------------------------")
-                        print("replaceScriptParameter button was tapped")
-                        
-                            progress.showProgress()
-                            progress.waitForABit()
-                        
+                    print("-----------------------------")
+                    print("replaceScriptParameter button was tapped")
+                    
+                        progress.showProgress()
+                        progress.waitForABit()
+                    
                         xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: replacementParameter4, parameter5: replacementParameter5, parameter6: replacementParameter6, parameter7: replacementParameter7, parameter8: replacementParameter8, parameter9: replacementParameter9, parameter10: replacementParameter10, priority: priority )
+
+                        // Refresh detailed policy to reflect script parameter changes
+                        Task {
+                            do {
+                                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                            } catch {
+                                print("Failed to refresh detailed policy after replacing script parameter: \(error)")
+                            }
+                        }
                     }) {
                         Text("Update Parameter")
                     }
@@ -364,7 +373,7 @@ struct PolicyScriptsTabView: View {
                             TextField("Before/After?", text: $priority)
                         }
                     }
-                }   
+                }
             }
             
             Text("Run Command").fontWeight(.bold)
@@ -433,5 +442,3 @@ struct PolicyScriptsTabView: View {
 //#Preview {
 //    PolicyEditTabView()
 //}
-
-
