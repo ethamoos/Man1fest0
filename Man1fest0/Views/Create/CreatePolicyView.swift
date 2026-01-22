@@ -188,7 +188,6 @@ struct CreatePolicyView: View {
         List(Array(packageMultiSelection), id: \.self) { package in
             
             Text(package.name )
-            
         }
         
         .frame(height: 100)
@@ -202,46 +201,6 @@ struct CreatePolicyView: View {
             // ######################################################################################
                 
                 LazyVGrid(columns: columns, spacing: 5) {
-                    
-//                    HStack {
-//                        Image(systemName:"hammer")
-//                        TextField("Policy Name", text: $newPolicyName)
-//
-//                        Button(action: {
-//
-//                            progress.showProgress()
-//                            progress.waitForABit()
-//
-//                            xmlController.createNewPolicyXML(server: server, authToken: networkController.authToken, policyName: newPolicyName, customTrigger: newPolicyName, departmentID: String(describing: selectedDepartment.jamfId), notificationName: newPolicyName, notificationStatus: "true", iconId: String(describing: selectedIcon?.id ?? 0),iconName: String(describing: selectedIcon?.name ?? ""),iconUrl: String(describing: selectedIcon?.url ?? ""), selfServiceEnable: String(describing: selfServiceEnable))
-//
-//
-//                            //
-//                            xmlController.addCategoryToPolicy(xmlContent: xmlController.aexmlDoc.xml, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: newPolicyId, categoryName: selectedCategory.name, categoryId: String(describing: selectedCategory.jamfId), newPolicyFlag: true)
-//
-//                            xmlController.addSelectedPackagesToPolicy(selection: packageMultiSelection, authToken: networkController.authToken, server: server, xmlContent: xmlController.aexmlDoc, policyId: "0")
-//
-//                            if createDepartmentIsChecked == true {
-//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-//                                networkController.createDepartment(name: newPolicyName, server: server, authToken: networkController.authToken )
-//                            }
-//
-//                            layout.separationLine()
-//                            print("Creating New Policy:\(newPolicyName)")
-//                            print("Category:\(selectedCategory.name)")
-//                            print("Department:\(selectedDepartment.name)")
-//                            //                            print("xml is:\(policyController.newPolicyAsXML)")
-//                            //                            print("authToken is:\(networkController.authToken)")
-//                        }) {
-//                            Text("Create Policy")
-//                        }
-//                        .buttonStyle(.borderedProminent)
-//                        .tint(.blue)
-//
-//                        Toggle(isOn: $createDepartmentIsChecked) {
-//                            Text("New Department")
-//                        }
-//                        .toggleStyle(.checkbox)
-//                    }
                     
                     HStack {
                         Image(systemName:"hammer")
@@ -297,13 +256,6 @@ struct CreatePolicyView: View {
                         .toggleStyle(.checkbox)
                     }
                 }
-
-//                LazyVGrid(columns: layout.columnsFixed, spacing: 5) {
-//
-//                    VStack(alignment: .leading) {
-//                        Text("Note: All Fields Must Be Filled")
-//                    }
-//                }
 
                 
                 VStack(alignment: .leading) {

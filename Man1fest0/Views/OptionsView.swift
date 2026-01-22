@@ -115,7 +115,11 @@ struct OptionsView: View {
                                     Text("Package Usage")
                                 }
                             }
+                            
+//                            Divider()
 #endif
+                            
+                            
                         }
                         
                         Group {
@@ -243,6 +247,14 @@ struct OptionsView: View {
                                 //  ###########################################################################
                                 NavigationLink(destination: IconsView( server: server )) {
                                     Text("Icons")
+                                }
+                                
+                                //  ###########################################################################
+                                //  Users
+                                //  ###########################################################################
+                                
+                                NavigationLink(destination: UsersView(server: server )) {
+                                    Text("Users")
                                 }
                             }
                         }

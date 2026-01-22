@@ -333,7 +333,8 @@ struct PolicyDetailView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .tint(.green)
+                .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 
                 
                 HStack {
@@ -341,8 +342,7 @@ struct PolicyDetailView: View {
                 //              CLONE
                 //              ##########################################################################
                 
-                TextField(policyNameClone, text: $policyName)
-                    .textSelection(.enabled)
+               
                 
                 Button(action: {
                     print("Cloning policy:\(policyName)")
@@ -365,6 +365,9 @@ struct PolicyDetailView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
+                    TextField(policyNameClone, text: $policyName)
+                        .textSelection(.enabled)
+                    Spacer()
             }
 #endif
             }
@@ -383,7 +386,7 @@ struct PolicyDetailView: View {
                     
                     Text("Edit Names:").fontWeight(.bold)
                     
-                    LazyVGrid(columns: layout.columns, spacing: 20) {
+                    LazyVGrid(columns: layout.columnsFlexAdaptive, spacing: 20) {
                         
                         HStack {
                             
@@ -428,18 +431,18 @@ struct PolicyDetailView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
-                        }
-                    }
+//                        }
+//                    }
                     
                     //  ##########################################################################
                     //              UPDATE Self-Service
                     //  ##########################################################################
                     
-                    LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
+//                    LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
-                        HStack {
-                            TextField(policyName, text: $policyName)
-                                .textSelection(.enabled)
+//                        HStack {
+//                            TextField(policyName, text: $policyName)
+//                                .textSelection(.enabled)
                             Button(action: {
                                 
                                 progress.showProgress()

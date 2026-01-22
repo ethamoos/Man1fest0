@@ -54,11 +54,7 @@ struct ContentView: View {
                 
                 try await networkController.getAllPackages(server: server)
                 
-//<<<<<<< HEAD
                 try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
-//=======
-//                try await networkController.getAllPolicies(server: server)
-//>>>>>>> main
                 
             }
         }

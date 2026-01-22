@@ -132,9 +132,8 @@ struct ComputersBasicDetailedView: View {
 
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                    .tint(.green)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
-//                }
                 
                 Spacer()
                 
@@ -144,10 +143,8 @@ struct ComputersBasicDetailedView: View {
             .padding()
             Spacer()
 
-            .onAppear {
-                
+            .onAppear {                
                     networkController.refreshDepartments()
-
             }
         }
     }
