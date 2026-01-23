@@ -59,8 +59,6 @@
 		A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84732F10F34000CF42D0 /* HTTPMethod.swift */; };
 		A87E851C2F16686E00CF42D0 /* UserDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */; };
 		A87E851D2F16686E00CF42D0 /* UsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E851B2F16686E00CF42D0 /* UsersView.swift */; };
-		A88491912C8A1D8600C37DB7 /* IconsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491902C8A1D8600C37DB7 /* IconsView.swift */; };
-		A88491952C8AE45900C37DB7 /* IconDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88491942C8AE45900C37DB7 /* IconDetailedView.swift */; };
 		A886701D2AA8E5C0009DA6AA /* PackagesActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A886701C2AA8E5C0009DA6AA /* PackagesActionView.swift */; };
 		A88768992EE2DD3E009D97B9 /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88768982EE2DD3E009D97B9 /* Helper.swift */; };
 		A88A6A242DB793AE009A64B8 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = A88A6A232DB793A8009A64B8 /* LICENSE.txt */; };
@@ -169,8 +167,6 @@
 		A87E84732F10F34000CF42D0 /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
 		A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDetailedView.swift; sourceTree = "<group>"; };
 		A87E851B2F16686E00CF42D0 /* UsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersView.swift; sourceTree = "<group>"; };
-		A88491902C8A1D8600C37DB7 /* IconsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconsView.swift; sourceTree = "<group>"; };
-		A88491942C8AE45900C37DB7 /* IconDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconDetailedView.swift; sourceTree = "<group>"; };
 		A886701C2AA8E5C0009DA6AA /* PackagesActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesActionView.swift; sourceTree = "<group>"; };
 		A88768982EE2DD3E009D97B9 /* Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
 		A88A6A232DB793A8009A64B8 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
@@ -288,10 +284,7 @@
 				E45E13262C53B22F007C175F /* ContentView.swift */,
 				E45E13282C53B27F007C175F /* ConnectSheet.swift */,
 				E45E132A2C53B2CA007C175F /* OptionsView.swift */,
-				A83C945F2D7B5DC800F639A1 /* File.swift */,
 				A840186C2D4BCA6700C09FD3 /* ImportView.swift */,
-				A88491902C8A1D8600C37DB7 /* IconsView.swift */,
-				A88491942C8AE45900C37DB7 /* IconDetailedView.swift */,
 				A857A3E82E1FFA0B00A96F3A /* Structures */,
 				A857A3E72E1FF9A000A96F3A /* ConfigProfiles */,
 				E48D59D92C5A452D00E1E35B /* Create */,
@@ -407,6 +400,7 @@
 				A8B276802AD733700016CEE2 /* DownloadsView.swift */,
 				A86CB89D2D3E711100D8F22F /* ReportsExportCSV.swift */,
 				A86CB8642D3E617A00D8F22F /* ReportsExport.swift */,
+				A83C945F2D7B5DC800F639A1 /* File.swift */,
 			);
 			path = Development;
 			sourceTree = "<group>";
@@ -640,7 +634,6 @@
 				A89876642D53D4FC002CC9CF /* ComputerExtAttDetailView.swift in Sources */,
 				E4CE369229D3372400533707 /* PolicyDetailView.swift in Sources */,
 				E49319892B6797D800B58519 /* PrestagesEditView.swift in Sources */,
-				A88491952C8AE45900C37DB7 /* IconDetailedView.swift in Sources */,
 				A83C94602D7B5DC800F639A1 /* File.swift in Sources */,
 				A8C4EAC92D53BDDA0022E0ED /* EaBrain.swift in Sources */,
 				A8533C3E2CA42EA900E6678F /* KeychainWrapper.swift in Sources */,
@@ -703,7 +696,6 @@
 				E4CE368529D336C100533707 /* NetBrain.swift in Sources */,
 				A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */,
 				A8BC96A62E6822520078AF53 /* PhotoViewModel.swift in Sources */,
-				A88491912C8A1D8600C37DB7 /* IconsView.swift in Sources */,
 				A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */,
 				E41BA0DE2C4C0E790060673C /* Keychain.swift in Sources */,
 				E49319852B67976C00B58519 /* PrestagesView.swift in Sources */,
