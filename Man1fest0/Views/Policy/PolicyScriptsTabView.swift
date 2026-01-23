@@ -204,6 +204,7 @@ struct PolicyScriptsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .help("Update the selected script parameter(s) in the policy and refresh details.")
                     
                     LazyVGrid(columns: layout.threeColumns) {
 //
@@ -314,6 +315,7 @@ struct PolicyScriptsTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                .help("Add the selected script to this policy with the provided parameters.")
                 
                 Button(action: {
                     
@@ -334,6 +336,7 @@ struct PolicyScriptsTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                .help("Remove the selected script from this policy.")
                 
                 //  ################################################################################
                 //              Remove scripts in policy
@@ -357,6 +360,7 @@ struct PolicyScriptsTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
+                .help("Remove all scripts assigned to this policy.")
             }
             
             Group {
@@ -399,16 +403,12 @@ struct PolicyScriptsTabView: View {
                 policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
                 
             }) {
-                HStack(spacing: 10) {
-                    Image(systemName: "minus.square.fill.on.square.fill")
-                    Text("Add Command")
-                }
+                Text("Add Command")
             }
             .buttonStyle(.borderedProminent)
-            .tint(.red)
-            
-            
-            
+            .tint(.blue)
+            .help("Add a custom command to this policy to be run during execution.")
+
             Spacer()
         }
         .frame(minWidth: 400, alignment: .leading)

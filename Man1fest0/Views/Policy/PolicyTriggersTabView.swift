@@ -87,6 +87,7 @@ struct PolicyTriggersTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                .help("Set the selected trigger options for this policy and refresh its details.")
                 
                 Toggle(isOn: $trigger_checkin) {
                     HStack {

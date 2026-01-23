@@ -208,16 +208,17 @@ struct PolicySelfServiceTabView: View {
 //                    }
                     HStack {
                         Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            xmlController.updateIcon(server: server,authToken: networkController.authToken, policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
-                        }) {
-                            Text("Update Icon")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        xmlController.updateIcon(server: server,authToken: networkController.authToken, policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
+                    }) {
+                        Text("Update Icon")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .help("Set the selected icon as the policy's Self Service icon.")
 //                    }
 //                    HStack {
                         Button(action: {
@@ -238,6 +239,7 @@ struct PolicySelfServiceTabView: View {
                         } message: {
                             Text("please note downloading all the icons can take some time")
                         }
+                        .help("Download the latest icon set from the server (can take a long time).")
                      }
                 }
                 HStack {
@@ -252,6 +254,7 @@ struct PolicySelfServiceTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .help("Enable Self Service for this policy so it appears to users.")
 //                    HStack {
                         TextField(networkController.currentDetailedPolicy?.policy.general?.name ?? policyName, text: $newSelfServiceName)
                             .textSelection(.enabled)
@@ -268,6 +271,7 @@ struct PolicySelfServiceTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        .help("Set the Self Service display name for this policy.")
                 }
             }
             .frame(minHeight: 1)

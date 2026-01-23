@@ -193,6 +193,7 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .help("Add the selected package to this policy's package configuration.")
                     
                     //  ################################################################################
                     //              Replace package in policy
@@ -218,6 +219,7 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .help("Replace all packages in this policy with the selected package and options.")
                     
                     TextField("Action", text: $action)
                         .textFieldStyle(.roundedBorder)
@@ -250,6 +252,7 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .help("Remove all packages assigned to this policy.")
                     
                     
                      Button(action: {
@@ -270,6 +273,7 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .help("Refresh package list from the server.")
                     
                     
                     
@@ -306,3 +310,5 @@ struct PolicyPackageTabView: View {
     //#Preview {
     //    PolicyPackageTabView()
     //}
+
+
