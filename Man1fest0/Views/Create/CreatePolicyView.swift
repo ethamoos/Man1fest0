@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 13.0, *)
 
 struct CreatePolicyView: View {
     
@@ -101,7 +101,8 @@ struct CreatePolicyView: View {
     @State var iconMultiSelection = Set<String>()
     
     @State var selectedIconString = ""
-    
+    @State var iconFilter: String = ""
+
     // Use optional ID selection for icon picker
     @State var selectedIconId: Int? = nil
     
@@ -170,8 +171,42 @@ struct CreatePolicyView: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
             }
+            
+            // Icon filter in toolbar so it's always visible on macOS
+            ToolbarItem(placement: .automatic) {
+                HStack(spacing: 6) {
+                    TextField("Filter icons", text: $iconFilter)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 220)
+                    if !iconFilter.isEmpty {
+                        Button(action: { iconFilter = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
         }
-        
+#else
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    print("Refresh")
+                    print("Icon selection id is:\(String(describing: selectedIconId))")
+                    Task {
+                        networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                        networkController.connect(server: ResourceType.department, authToken: networkController.authToken)
+                        networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                        networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                    }
+                }) {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+            }
+        }
 #endif
         
         //  ################################################################################
@@ -188,7 +223,6 @@ struct CreatePolicyView: View {
         List(Array(packageMultiSelection), id: \.self) { package in
             
             Text(package.name )
-                .textSelection(.enabled)
         }
         
         .frame(height: 100)
@@ -286,75 +320,84 @@ struct CreatePolicyView: View {
     // ##########################################################################################
             
             Divider()
+
+            // Prominent Icons filter header so it's always visible
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Icons").bold().padding(.bottom, 4)
+                HStack {
+                    TextField("Filter icons", text: $iconFilter)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: .infinity)
+                    if !iconFilter.isEmpty {
+                        Button(action: { iconFilter = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(6)
+                .background(Color.gray.opacity(0.06))
+                .cornerRadius(6)
+            }
             
-//            LazyVGrid(columns: column, spacing: 30) {
-//
-//                VStack(alignment: .leading) {
-//
-//                    Text("Icons").bold()
-                    //#if os(macOS)
-                    //                List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-                    //                    HStack {
-                    //                        Image(systemName: "photo.circle")
-                    //                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                    //                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-                    //                            image.resizable().frame(width: 15, height: 15)
-                    //                        } placeholder: {
-                    //                        }
-                    //                    }
-                    //                    .foregroundColor(.gray)
-                    //                    .listRowBackground(selectedIconString == icon?.name
-                    //                                       ? Color.green.opacity(0.3)
-                    //                                       : Color.clear)
-                    //                    .tag(icon)
-                    //                }
-                    //                .cornerRadius(8)
-                    //                .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-                    //#else
-                    //
-                    //                List(networkController.allIconsDetailed, id: \.self) { icon in
-                    //                    HStack {
-                    //                        Image(systemName: "photo.circle")
-                    //                        Text(String(describing: icon?.name ?? "")).font(.system(size: 12.0)).foregroundColor(.black)
-                    //                        AsyncImage(url: URL(string: icon?.url ?? "" )) { image in
-                    //                            image.resizable().frame(width: 15, height: 15)
-                    //                        } placeholder: {
-                    //                        }
-                    //                    }
-                    //                }
-                    //#endif
-                    //                                    .background(.gray)
-//                }
-//            }
-        
-    // ##########################################################################################
-    //                        Selections
-    // ##########################################################################################
-        
+        //  ################################################################################
+        //              selections
+        //  ################################################################################
         
         // ##########################################################################################
         //                        Icons - picker
         // ##########################################################################################
         
             LazyVGrid(columns: columns, spacing: 30) {
-                Picker(selection: $selectedIconId, label: Text("Icon:")) {
-                    ForEach(networkController.allIconsDetailed, id: \.id) { icon in
-                        HStack {
-                            Text(icon.name)
-                            AsyncImage(url: URL(string: icon.url )) { image in
-                                image.resizable().clipShape(Circle()).aspectRatio(contentMode: .fill)
-                            } placeholder: {
+                 VStack(alignment: .leading, spacing: 6) {
+                     // Prominent filter field for icons placed above the picker and stretched to full width
+                     //                    HStack(spacing: 8) {
+ //                        TextField("Filter icons", text: $iconFilter)
+ //                            .textFieldStyle(.roundedBorder)
+ //                            .frame(maxWidth: .infinity)
+ //
+ //                        // Clear button for convenience
+ //                        if !iconFilter.isEmpty {
+ //                            Button(action: { iconFilter = "" }) {
+ //                                Image(systemName: "xmark.circle.fill")
+ //                                    .foregroundColor(.secondary)
+ //                            }
+ //                            .buttonStyle(.plain)
+ //                        }
+ //                    }
+                     
+                    Picker(selection: $selectedIconId, label: Text("Icon:")) {
+                        // Filter icons by name when iconFilter is non-empty
+                        ForEach(networkController.allIconsDetailed.filter { icon in
+                            guard !iconFilter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
+                            return icon.name.localizedCaseInsensitiveContains(iconFilter)
+                        }, id: \.id) { icon in
+                            HStack(spacing: 8) {
+                                // Fixed-size thumbnail to avoid variable icon sizes
+                                AsyncImage(url: URL(string: icon.url)) { image in
+                                    image.resizable().scaledToFit()
+                                } placeholder: {
+                                    Image(systemName: "photo")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(width: 24, height: 24)
+                                .clipShape(Circle())
+                                
+                                Text(icon.name)
                             }
+                            .tag(icon.id)
                         }
-                        .tag(icon.id)
                     }
-                }
-//                .onChange(of: networkController.allIconsDetailed) { newIcons in
-//                    if selectedIconId == nil {
-//                        selectedIconId = newIcons.first?.id
+//                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+//                        if selectedIconId == nil {
+//                            selectedIconId = newIcons.first?.id
+//                        }
 //                    }
-//                }
-            }
+                }
+             }
             
             // ##########################################################################################
             //                        Category
