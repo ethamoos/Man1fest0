@@ -102,6 +102,9 @@ struct CreatePolicyView: View {
     
     @State var selectedIconString = ""
     @State var iconFilter: String = ""
+    @State var categoryFilter: String = ""
+    @State var departmentFilter: String = ""
+    @State var scriptFilter: String = ""
 
     // Use optional ID selection for icon picker
     @State var selectedIconId: Int? = nil
@@ -171,42 +174,8 @@ struct CreatePolicyView: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
             }
-            
-            // Icon filter in toolbar so it's always visible on macOS
-            ToolbarItem(placement: .automatic) {
-                HStack(spacing: 6) {
-                    TextField("Filter icons", text: $iconFilter)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 220)
-                    if !iconFilter.isEmpty {
-                        Button(action: { iconFilter = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
         }
-#else
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    print("Refresh")
-                    print("Icon selection id is:\(String(describing: selectedIconId))")
-                    Task {
-                        networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                        networkController.connect(server: ResourceType.department, authToken: networkController.authToken)
-                        networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                        networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
-                    }
-                }) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-            }
-        }
+        
 #endif
         
         //  ################################################################################
@@ -406,58 +375,74 @@ struct CreatePolicyView: View {
 
             Group {
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedCategoryId, label: Text("Category")) {
-                        // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
-                        ForEach(networkController.categories, id: \.jamfId) { category in
-                            Text(category.name).tag(category.jamfId)
+                    VStack(alignment: .leading, spacing: 6) {
+                        TextField("Filter categories", text: $categoryFilter)
+                            .textFieldStyle(.roundedBorder)
+                        
+                        Picker(selection: $selectedCategoryId, label: Text("Category")) {
+                            // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
+                            ForEach(networkController.categories.filter { cat in
+                                categoryFilter.isEmpty ? true : cat.name.localizedCaseInsensitiveContains(categoryFilter)
+                            }, id: \.jamfId) { category in
+                                Text(category.name).tag(category.jamfId)
+                            }
                         }
-                    }
-                    .onChange(of: networkController.categories) { newCategories in
-                        if selectedCategoryId == nil {
-                            selectedCategoryId = newCategories.first?.jamfId
-                        }
-                    }
-                }
-            }
-            
-            // ##########################################################################################
-            //                        Department
-            // ##########################################################################################
-            Divider()
-
-            Group {
-                LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
-                        ForEach(networkController.departments, id: \.jamfId) { department in
-                            Text(department.name).tag(department.jamfId)
-                        }
-                    }
-//                    .onChange(of: networkController.departments) { newDepartments in
-//                        if selectedDepartmentId == nil {
-//                            selectedDepartmentId = newDepartments.first?.jamfId
-//                        }
-//                    }
-                }
-            }
-            Divider()
-
-            Group {
-                 
-                 LazyVGrid(columns: columns, spacing: 20) {
-                    Picker(selection: $selectedScriptId, label: Text("Scripts")) {
-                        ForEach(networkController.scripts, id: \.jamfId) { script in
-                            Text(script.name).tag(script.jamfId)
-                        }
-                    }
-                    .onChange(of: networkController.scripts) { newScripts in
-                        if selectedScriptId == nil {
-                            selectedScriptId = newScripts.first?.jamfId
+                        .onChange(of: networkController.categories) { newCategories in
+                            if selectedCategoryId == nil {
+                                selectedCategoryId = newCategories.first?.jamfId
+                            }
                         }
                     }
                  }
-                 
-                 // ######################################################################################
-            }
+             }
+             
+             // ##########################################################################################
+             //                        Department
+             // ##########################################################################################
+             Divider()
+
+             Group {
+                 LazyVGrid(columns: columns, spacing: 30) {
+                     VStack(alignment: .leading, spacing: 6) {
+                         TextField("Filter departments", text: $departmentFilter)
+                             .textFieldStyle(.roundedBorder)
+                         
+                         Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
+                             ForEach(networkController.departments.filter { dept in
+                                departmentFilter.isEmpty ? true : dept.name.localizedCaseInsensitiveContains(departmentFilter)
+                             }, id: \.jamfId) { department in
+                                 Text(department.name).tag(department.jamfId)
+                             }
+                         }
+                     }
+                 }
+             }
+             Divider()
+
+             Group {
+                  
+                  LazyVGrid(columns: columns, spacing: 20) {
+                      VStack(alignment: .leading, spacing: 6) {
+                          TextField("Filter scripts", text: $scriptFilter)
+                              .textFieldStyle(.roundedBorder)
+                          
+                          Picker(selection: $selectedScriptId, label: Text("Scripts")) {
+                              ForEach(networkController.scripts.filter { s in
+                                scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
+                              }, id: \.jamfId) { script in
+                                  Text(script.name).tag(script.jamfId)
+                              }
+                          }
+                          .onChange(of: networkController.scripts) { newScripts in
+                              if selectedScriptId == nil {
+                                  selectedScriptId = newScripts.first?.jamfId
+                              }
+                          }
+                      }
+                  }
+                  
+                  // ######################################################################################
+             }
         }
 
         // ######################################################################################
