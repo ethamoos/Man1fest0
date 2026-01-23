@@ -257,6 +257,7 @@ struct PolicyDetailView: View {
                         Text("Delete")
                     }
                 }
+                .help("Delete this policy from the Jamf server. This action is destructive and cannot be undone.")
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
@@ -288,10 +289,11 @@ struct PolicyDetailView: View {
                     networkController.separationLine()
                     print("Printing text to export:\(text)")
                 }
+                .help("Export the current policy XML to a file for saving or sharing.")
                 .buttonStyle(.borderedProminent)
                 .tint(.yellow)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                
+
                 .fileExporter(
                     isPresented: $exporting,
                     document: document,
@@ -332,6 +334,7 @@ struct PolicyDetailView: View {
                         Text("Refresh Detail")
                     }
                 }
+                .help("Reload policy details and XML from the server to reflect current state.")
                 .buttonStyle(.borderedProminent)
                 .tint(.green)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
@@ -363,6 +366,7 @@ struct PolicyDetailView: View {
                         Text("Clone")
                     }
                 }
+                .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
                     TextField(policyNameClone, text: $policyName)
@@ -403,6 +407,7 @@ struct PolicyDetailView: View {
                             }) {
                                 Text("Rename")
                             }
+                            .help("Rename the policy on the server to the provided name.")
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
                         }
@@ -429,6 +434,7 @@ struct PolicyDetailView: View {
                             }) {
                                 Text("Trigger")
                             }
+                            .help("Update the custom trigger value for this policy on the server.")
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
 //                        }
@@ -454,6 +460,7 @@ struct PolicyDetailView: View {
                             }) {
                                 Text("Self-Service")
                             }
+                            .help("Set the Self Service display name for this policy.")
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
                             Toggle("", isOn: $enableDisableSelfService)
@@ -478,6 +485,7 @@ struct PolicyDetailView: View {
                             }) {
                                 Text("Enable")
                             }
+                            .help("Enable Self Service for this policy.")
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
 #endif
@@ -485,7 +493,6 @@ struct PolicyDetailView: View {
                     }
                 }
 
-                
                 //  ##########################################################################
                 //              CATEGORY
                 //  ##########################################################################
@@ -527,6 +534,7 @@ struct PolicyDetailView: View {
                                 Text("Update")
                             }
                         }
+                        .help("Set the selected category for this policy.")
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                         .disabled(networkController.categories.isEmpty)
@@ -596,6 +604,7 @@ struct PolicyDetailView: View {
                         Text("Open in Browser")
                     }
                 }
+                .help("Open this policy in the Jamf web interface in your default browser.")
                 .buttonStyle(.borderedProminent)
                 .tint(.green)
                 .padding(.top, 6)
