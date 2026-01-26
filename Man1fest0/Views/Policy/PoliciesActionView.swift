@@ -120,6 +120,34 @@ struct PoliciesActionView: View {
     
     @State var xmlData = ""
     
+    // Helper handlers to wrap async/Task calls used as closure arguments in the TabView
+    private func handleUpdateScopeCompGroupSet(_ group: ComputerGroup, _ smartStatus: String, _ allComp: Bool) {
+        Task {
+            await updateScopeCompGroupSet(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: smartStatus, all_computersStatus: allComp)
+        }
+    }
+
+    private func handleUpdatePolicyScopeLimitationsAuto(_ group: LDAPCustomGroup, _ policyID: String) {
+        Task {
+            await updatePolicyScopeLimitationsAuto(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID)
+        }
+    }
+
+    private func handleClearLimitations(_ policyID: String) {
+        Task {
+            do {
+                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkController.authToken)
+                xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
+            } catch {
+                print("Error clearing limitations: \(error)")
+            }
+        }
+    }
+
+    private func handleClearExclusions() {
+        xmlController.clearExclusionsBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
+    }
+
     var body: some View {
         
         //              ################################################################################
@@ -404,27 +432,16 @@ struct PoliciesActionView: View {
                         ldapServerSelection: $ldapServerSelection,
                         ldapSearch: $ldapSearch,
                         onUpdateScopeCompGroupSet: { group, smartStatus, allComp in
-                            Task {
-                                await updateScopeCompGroupSet(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: policiesSelection, smartStatus: smartStatus, all_computersStatus: allComp)
-                            }
+                            handleUpdateScopeCompGroupSet(group, smartStatus, allComp)
                         },
                         onUpdatePolicyScopeLimitationsAuto: { group, policyID in
-                            Task {
-                                await updatePolicyScopeLimitationsAuto(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID)
-                            }
+                            handleUpdatePolicyScopeLimitationsAuto(group, policyID)
                         },
                         onClearLimitations: { policyID in
-                            Task {
-                                do {
-                                    let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkController.authToken)
-                                    xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
-                                } catch {
-                                    print("Error clearing limitations: \(error)")
-                                }
-                            }
+                            handleClearLimitations(policyID)
                         },
                         onClearExclusions: {
-                            xmlController.clearExclusionsBatch(selectedPolicies: policiesSelection, server: server, authToken: networkController.authToken)
+                            handleClearExclusions()
                         }
                     )
                     .tabItem {

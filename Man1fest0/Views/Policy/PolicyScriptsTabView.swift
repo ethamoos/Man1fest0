@@ -204,7 +204,7 @@ struct PolicyScriptsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    .help("Update the selected script parameter(s) in the policy and refresh details.")
+                    .help("Update the chosen script parameter(s) for this policy and refresh details.")
                     
                     LazyVGrid(columns: layout.threeColumns) {
 //
@@ -315,7 +315,7 @@ struct PolicyScriptsTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
-                .help("Add the selected script to this policy with the provided parameters.")
+                .help("Add the selected script to this policy with provided parameters.")
                 
                 Button(action: {
                     
@@ -360,7 +360,7 @@ struct PolicyScriptsTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
-                .help("Remove all scripts assigned to this policy.")
+                .help("Remove all scripts currently assigned to this policy.")
             }
             
             Group {
@@ -403,12 +403,17 @@ struct PolicyScriptsTabView: View {
                 policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
                 
             }) {
-                Text("Add Command")
+                HStack {
+                    Image(systemName: "keyboard")
+                    Text("Add Command")
+                }
             }
             .buttonStyle(.borderedProminent)
             .tint(.blue)
-            .help("Add a custom command to this policy to be run during execution.")
-
+            .help("Add a custom shell command to be run by this policy.")
+            
+            
+            
             Spacer()
         }
         .frame(minWidth: 400, alignment: .leading)

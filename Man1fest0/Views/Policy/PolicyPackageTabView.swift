@@ -193,12 +193,12 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    .help("Add the selected package to this policy's package configuration.")
+                    .help("Add the selected package to this policy with the chosen options.")
                     
                     //  ################################################################################
                     //              Replace package in policy
                     //  ################################################################################
-                    
+
                     Button(action: {
                         
                         progress.showProgress()
@@ -225,8 +225,10 @@ struct PolicyPackageTabView: View {
                         .textFieldStyle(.roundedBorder)
                     Toggle("FUT", isOn: $fut)
                         .toggleStyle(CheckboxToggleStyle())
+                        .help("If checked, use FUT (Fill Up To) behavior when assigning the package.")
                     Toggle("FEU", isOn: $feu)
                         .toggleStyle(CheckboxToggleStyle())
+                        .help("If checked, use FEU (Fill Existing Up) behavior when assigning the package.")
                     
                     //  ################################################################################
                     //              Replace package in policy
@@ -252,8 +254,7 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
-                    .help("Remove all packages assigned to this policy.")
-                    
+                    .help("Remove all packages currently assigned to this policy.")
                     
                      Button(action: {
                         
@@ -273,7 +274,7 @@ struct PolicyPackageTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    .help("Refresh package list from the server.")
+                    .help("Refresh the package list from the Jamf server.")
                     
                     
                     
@@ -310,5 +311,3 @@ struct PolicyPackageTabView: View {
     //#Preview {
     //    PolicyPackageTabView()
     //}
-
-

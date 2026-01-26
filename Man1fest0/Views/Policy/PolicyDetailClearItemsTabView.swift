@@ -64,6 +64,7 @@ struct PolicyDetailClearItemsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .help("Clear limitations from the selected policies' scope (requires re-adding if needed).")
                     .alert(isPresented: $showingWarningClearScope) {
                         Alert(title: Text("Caution!"), message: Text("This action will clear any limitations from the policy scoping.\n You will need to re-add these if you still require them"), dismissButton: .default(Text("I understand!")))
                     }
@@ -96,6 +97,7 @@ struct PolicyDetailClearItemsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .help("Clear scoped devices/users from the selected policies (you'll need to rescope to deploy).")
                     .alert(isPresented: $showingWarningClearScope) {
                         Alert(title: Text("Caution!"), message: Text("This action will clear devices from the policy scoping.\n You will need to rescope in order to deploy"), dismissButton: .default(Text("I understand!")))
                     }
@@ -120,9 +122,11 @@ struct PolicyDetailClearItemsTabView: View {
                         progress.waitForABit()
                         print("Check processingComplete")
                         print(String(describing: networkController.processingComplete))
+                        
                     }) {
                         Text("Delete")
                     }
+                    .help("Delete the selected policies. This action is destructive and will remove policies from the server.")
                     .alert(isPresented: $showingWarningDelete) {
                         Alert(
                             title: Text("Caution!"),
@@ -159,6 +163,7 @@ struct PolicyDetailClearItemsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .help("Remove all packages from the selected policies.")
                     .alert(isPresented: $showingWarningClearPackages) {
                         Alert(
                             title: Text("Caution!"),
@@ -198,6 +203,7 @@ struct PolicyDetailClearItemsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .help("Remove all scripts from the selected policies.")
                     .alert(isPresented: $showingWarningClearScripts) {
                         Alert(
                             title: Text("Caution!"),
@@ -240,6 +246,7 @@ struct PolicyDetailClearItemsTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                    .help("Clear maintenance settings from the selected policies.")
                     .alert(isPresented: $showingWarningClearMaintenance) {
                         Alert(
                             title: Text("Caution!"),

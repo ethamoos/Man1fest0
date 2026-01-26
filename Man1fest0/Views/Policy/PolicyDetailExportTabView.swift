@@ -75,6 +75,7 @@ struct PolicyDetailExportTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.yellow)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    .help("Download the selected policies as XML files from the server.")
                     
                     //                    VStack {
                     
@@ -84,6 +85,7 @@ struct PolicyDetailExportTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.yellow)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    .help("Export policy summary data to a CSV file for reporting or analysis.")
                     
                 }
             }

@@ -121,6 +121,7 @@ struct PolicyDetailGeneralTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .help("Update the category for the selected policies on the server.")
                     Spacer()
                 }
                 //                .background(Color.green.opacity(0.5))
@@ -147,7 +148,7 @@ struct PolicyDetailGeneralTabView: View {
                         print("Policy enable/disable status is set as:\(String(describing: enableDisable))")
                     }) {
                         Text("Update Category/Enable")
-                            .help("This updates the category and also applies the enable/disable settings")
+                            .help("Update category and enable/disable the selected policies.")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
@@ -257,6 +258,7 @@ struct PolicyDetailGeneralTabView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .help("Apply the selected icon to the selected policies in bulk.")
                 }
                 HStack {
                     Button(action: {
@@ -267,6 +269,7 @@ struct PolicyDetailGeneralTabView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        .help("Refresh the icon list from the server (may take time).")
                 }
             }
             Spacer()
