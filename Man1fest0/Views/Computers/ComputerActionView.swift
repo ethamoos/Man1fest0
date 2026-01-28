@@ -70,6 +70,7 @@ struct ComputerActionView: View {
                                         .foregroundColor(.blue)
                                     }
                                 }
+                                .searchable(text: $searchText)
                                 .toolbar {
                                     
                                     Button(action: {
@@ -104,6 +105,7 @@ struct ComputerActionView: View {
                                     .foregroundColor(.blue)
                                 }
                             }
+                            .searchable(text: $searchText)
 #endif
                                 
                         }
