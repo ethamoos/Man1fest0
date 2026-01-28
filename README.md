@@ -2,11 +2,11 @@ Manifesto is an all-purpose "toolbox" app for working with Jamf.
 ------------------------------------------------------------------------------------------------------------------------
 * It is a collection of features that I felt would be useful for a Jamf admin to have in an app form.
 
-* It is not designed to access every feature of Jamf but has grown organically based on my own needs as a Jamf admin. 
+* It has grown organically based on my own needs as a Jamf admin. 
 
-* It can particularly help with repetitive tasks in Jamf and brings together features that are spread over multiple pages.
+* It is particularly helpful for working with Jamf whilst travelling or with an unstable network connection.
 
-* It can be used for some tasks when you either don't have access to a computer, or have a stable browser connection such as whilst on the move.
+* It can really help with repetitive tasks in Jamf and brings together features that are spread over multiple pages in the website.
 
 
 For a full list of the features and the introductory movie see the man1festo Wiki here: https://ethamoos.co.uk/manifesto-wiki/
