@@ -1269,30 +1269,49 @@ class XmlBrain: ObservableObject {
     // ######################################################################################
     
     
-    func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server: String, policyId: String, selectedScriptNumber: Int) {
-        
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
-        self.separationLine()
-        print("Running removeAllScriptsFromPolicy - XML brain")
-        print("Initial xmlContent is:")
-        self.atSeparationLine()
-        print(xmlContent.xml)
-        self.atSeparationLine()
-        print("url is:\(url)")
-        self.atSeparationLine()
-        let scripts = xmlContent.root["scripts"]["script"]
-        let scriptsRoot = xmlContent.root["scripts"]
-        print("Current scripts are:\(scripts.xml)")
-        let currentScript = self.aexmlDoc.root
-        let selectedScript = self.aexmlDoc.root["scripts"].children[selectedScriptNumber]
-        self.separationLine()
-        print("Parameter4 is set - Remove selectedScriptParameter4")
-        let removeSelectedScript: () = selectedScript.removeFromParent()
-        self.separationLine()
-        print("currentScript is set as:\(currentScript.xml)")
+func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server: String, policyId: String, selectedScriptName: String, selectedScriptId: String) {
 
+    let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
+    let url = URL(string: jamfURLQuery)!
+    self.separationLine()
+    print("Running removeScriptFromPolicy - XML brain")
+    //        print("Initial xmlContent is:")
+    //        self.atSeparationLine()
+    //        print(xmlContent.xml)
+    self.atSeparationLine()
+    print("url is:\(url)")
+    self.atSeparationLine()
+    // Find the target script element by id (preferred) or by name
+    let scripts = self.aexmlDoc.root["scripts"].children
+    for eachScript in scripts {
+        print("Script found: id=\(eachScript["id"].string), name=\(eachScript["name"].string)")
     }
+
+    let targetScript = scripts.first { elem in
+        if !selectedScriptId.isEmpty {
+            return elem["id"].string == selectedScriptId
+        } else {
+            return elem["name"].string == selectedScriptName
+        }
+    }
+    guard let targetScript = targetScript else {
+        print("Could not find script with id '\(selectedScriptId)' or name '\(selectedScriptName)'")
+        return
+    }
+//    let scriptsRoot = xmlContent.root["scripts"]
+    print("targetScript is:\(targetScript.xml)")
+    let allScripts = self.aexmlDoc.root["scripts"].children
+    print("allScripts are:\(allScripts)")
+    self.separationLine()
+    print("Remove selectedScript")
+    // Remove the found script element from its parent
+    let _ = targetScript.removeFromParent()
+    self.separationLine()
+    //        print("Final xmlContent is:")
+    //        self.atSeparationLine()
+    //        print(xmlContent.xml)
+
+}
     
     
     
@@ -2073,14 +2092,13 @@ class XmlBrain: ObservableObject {
         let (data, response) = try await URLSession.shared.data(for: request)
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200 - Response is:\(String(describing: responseCode))")
+            print("Code not 200 - Response is:\(String(describing: responseCode))")
             throw JamfAPIError.badResponseCode
         }
         self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
-//        return self.currentPolicyAsXML
 //        DEBUG
-        separationLine()
-                    print("Policy as XML is:\(self.currentPolicyAsXML ?? ""))")
+//        separationLine()
+//                    print("Policy as XML is:\(self.currentPolicyAsXML ?? ""))")
 
         return (String(data: data, encoding: .utf8)!)
 

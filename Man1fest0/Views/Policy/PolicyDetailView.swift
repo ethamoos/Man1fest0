@@ -388,7 +388,7 @@ struct PolicyDetailView: View {
                 
                 VStack(alignment: .leading) {
                     
-                    Text("Edit Names:").fontWeight(.bold)
+//                    Text("Edit Names:").fontWeight(.bold)
                     
                     LazyVGrid(columns: layout.columnsFlexAdaptive, spacing: 20) {
                         
@@ -717,13 +717,23 @@ struct PolicyDetailView: View {
         .onChange(of: xmlController.currentPolicyAsXML) { _ in
             Task {
                 do {
-                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+          
                     print("Refreshed detailed policy after XML change")
                 } catch {
                     print("Failed to refresh detailed policy after XML change: \(error)")
                 }
+                print("Refreshing AEXML to reflect currentPolicyAsXML changes")
+                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                
             }
         }
+        // Whenever the aexmlDoc representation of the current policy changes (children often edit XML),
+        // refresh the detailed policy from the server so the UI reflects server-side state.
+//        .onChange(of: xmlController.aexmlDoc) { _ in
+//                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+//                    print("Refreshed aexmlDoc policy after XML change")
+//        }
         
         // Also attempt to refresh after potential network-based edits by observing the packagesAssignedToPolicy
         // array which many package actions mutate; this covers some edit paths that don't go through XML.
