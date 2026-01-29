@@ -89,146 +89,148 @@ struct PolicyScriptsTabView: View {
     
     var body: some View {
         
-        VStack(alignment: .leading) {
+        ScrollView {
+            
+            VStack(alignment: .leading) {
+                
+                Group {
+                    
+                    // ################################################################################
+                    //              SCRIPTS
+                    // ################################################################################
+                    
+                    // ################################################################################
+                    //              List scripts
+                    // ################################################################################
+                    
+                    if networkController.policyDetailed?.scripts?.count ?? 0 > 0 {
                         
-            Group {
-
-// ################################################################################
-//              SCRIPTS
-// ################################################################################
-
-// ################################################################################
-//              List scripts
-// ################################################################################
-
-                if networkController.policyDetailed?.scripts?.count ?? 0 > 0 {
-                    
-                    Text("Assigned Scripts").bold()
+                        Text("Assigned Scripts").bold()
 #if os(macOS)
-                    List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
-                        //                        if script != nil {
-//                        var currentScript = script
-                        //                    }
-                        HStack {
-                            
-                            Text(script.name ?? "")
-                            if script.parameter4 != "" {
-//                                Text("\t\tParams:").bold()
-
-                                Image(systemName: "4.circle").bold()
-                                    .foregroundColor(.red)
-                                Text(script.parameter4 ?? "" )
-                            }
-                            if script.parameter5 != "" {
-                                Image(systemName: "5.circle").bold()
-                                    .foregroundColor(.red)
-                                Text(script.parameter5 ?? "" )
-                            }
-                            if script.parameter6 != "" {
-                                Image(systemName: "6.circle").bold()
-                                    .foregroundColor(.red)
-                                Text(script.parameter6 ?? "" )
-                            }
-                            if script.parameter7 != "" {
-                                Image(systemName: "7.circle").bold()
-                                    .foregroundColor(.red)
-                                Text(script.parameter7 ?? "" )
-                            }
-                            if script.parameter8 != "" {
-                                Image(systemName: "8.circle").bold()
-                                    .foregroundColor(.red)
-                                Text(script.parameter8 ?? "" )
-                            }
-                            if script.parameter9 != "" {
-                                Image(systemName: "9.circle").bold()
-                                    .foregroundColor(.red)
-                                Text(script.parameter9 ?? "" )
-                            }
-                            if script.parameter10 != "" {
-                                Image(systemName: "10.circle").bold()
-                                    .foregroundColor(.red)
-                                Text(script.parameter10 ?? "" )
-                            }
-                            if script.priority != "" {
-//                                Image(systemName: "10.circle").bold()
-//                                    .foregroundColor(.red)
-                                Text(script.priority ?? "" )
+                        List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
+                            //                        if script != nil {
+                            //                        var currentScript = script
+                            //                    }
+                            HStack {
+                                
+                                Text(script.name ?? "")
+                                if script.parameter4 != "" {
+                                    //                                Text("\t\tParams:").bold()
+                                    
+                                    Image(systemName: "4.circle").bold()
+                                        .foregroundColor(.red)
+                                    Text(script.parameter4 ?? "" )
+                                }
+                                if script.parameter5 != "" {
+                                    Image(systemName: "5.circle").bold()
+                                        .foregroundColor(.red)
+                                    Text(script.parameter5 ?? "" )
+                                }
+                                if script.parameter6 != "" {
+                                    Image(systemName: "6.circle").bold()
+                                        .foregroundColor(.red)
+                                    Text(script.parameter6 ?? "" )
+                                }
+                                if script.parameter7 != "" {
+                                    Image(systemName: "7.circle").bold()
+                                        .foregroundColor(.red)
+                                    Text(script.parameter7 ?? "" )
+                                }
+                                if script.parameter8 != "" {
+                                    Image(systemName: "8.circle").bold()
+                                        .foregroundColor(.red)
+                                    Text(script.parameter8 ?? "" )
+                                }
+                                if script.parameter9 != "" {
+                                    Image(systemName: "9.circle").bold()
+                                        .foregroundColor(.red)
+                                    Text(script.parameter9 ?? "" )
+                                }
+                                if script.parameter10 != "" {
+                                    Image(systemName: "10.circle").bold()
+                                        .foregroundColor(.red)
+                                    Text(script.parameter10 ?? "" )
+                                }
+                                if script.priority != "" {
+                                    //                                Image(systemName: "10.circle").bold()
+                                    //                                    .foregroundColor(.red)
+                                    Text(script.priority ?? "" )
+                                }
                             }
                         }
-                    }
-                    .frame(minHeight: 100)
-                    .frame(minWidth: 120, maxWidth: .infinity)
+                        .frame(minHeight: 100)
+                        .frame(minWidth: 120, maxWidth: .infinity)
 #else
-                    List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self) { script in
-                        HStack {
-                            Image(systemName: "applescript")
-                            Text(script.name ?? "" )
+                        List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self) { script in
+                            HStack {
+                                Image(systemName: "applescript")
+                                Text(script.name ?? "" )
+                            }
                         }
-                    }
-                    .frame(minHeight: 0)
+                        .frame(minHeight: 0)
 #endif
-                }
-                
-                //  ################################################################################
-                //  Edit scripts parameters
-                //  ################################################################################
-                
-                //    ##################################################
-                //    replaceScriptParameter
-                //    ##################################################
-                
-                //            LazyVGrid(columns: columns4) {
-                
-                //                if currentScript.parameter4 != "" {
-                
-                HStack {
-                    Button(action: {
-                    print("-----------------------------")
-                    print("replaceScriptParameter button was tapped")
-                    
-                        progress.showProgress()
-                        progress.waitForABit()
-                    
-                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: scriptParameter4, parameter5: scriptParameter5, parameter6: scriptParameter6, parameter7: scriptParameter7, parameter8: scriptParameter8, parameter9: scriptParameter9, parameter10: scriptParameter10, priority: priority )
-
-                        // Refresh detailed policy to reflect script parameter changes
-                        Task {
-                            do {
-                                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                            } catch {
-                                print("Failed to refresh detailed policy after replacing script parameter: \(error)")
-                            }
-                        }
-                    }) {
-                        Text("Update Parameter")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .help("Update the chosen script parameter(s) for this policy and refresh details.")
                     
-                    LazyVGrid(columns: layout.threeColumns) {
-//
-                        Picker("Script", selection: $pickerSelectedScript) {
-                            ForEach(0..<10) {
-                                Text("\($0)")
+                    //  ################################################################################
+                    //  Edit scripts parameters
+                    //  ################################################################################
+                    
+                    //    ##################################################
+                    //    replaceScriptParameter
+                    //    ##################################################
+                    
+                    //            LazyVGrid(columns: columns4) {
+                    
+                    //                if currentScript.parameter4 != "" {
+                    
+                    HStack {
+                        Button(action: {
+                            print("-----------------------------")
+                            print("replaceScriptParameter button was tapped")
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+                            xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: scriptParameter4, parameter5: scriptParameter5, parameter6: scriptParameter6, parameter7: scriptParameter7, parameter8: scriptParameter8, parameter9: scriptParameter9, parameter10: scriptParameter10, priority: priority )
+                            
+                            // Refresh detailed policy to reflect script parameter changes
+                            Task {
+                                do {
+                                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                } catch {
+                                    print("Failed to refresh detailed policy after replacing script parameter: \(error)")
+                                }
                             }
-                            Text("You selected: \(pickerSelectedScript)")
-
+                        }) {
+                            Text("Update Parameter")
                         }
-
-                        .onChange(of: pickerSelectedScript) { newValue in
-                                       print("pickerSelectedScript changed to \(pickerSelectedScript)")
-                                   }
-                        .onAppear {
-                            print("pickerSelectedScript is currently:\(pickerSelectedScript)")
-//                            if pickerSelectedScript.isEmpty != true {
-//                                print("Setting numbers picker default")
-//                                pickerSelectedScript = 0 }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .help("Update the chosen script parameter(s) for this policy and refresh details.")
+                        
+                        LazyVGrid(columns: layout.threeColumns) {
+                            //
+                            Picker("Script", selection: $pickerSelectedScript) {
+                                ForEach(0..<10) {
+                                    Text("\($0)")
+                                }
+                                Text("You selected: \(pickerSelectedScript)")
+                                
+                            }
+                            
+                            .onChange(of: pickerSelectedScript) { newValue in
+                                print("pickerSelectedScript changed to \(pickerSelectedScript)")
+                            }
+                            .onAppear {
+                                print("pickerSelectedScript is currently:\(pickerSelectedScript)")
+                                //                            if pickerSelectedScript.isEmpty != true {
+                                //                                print("Setting numbers picker default")
+                                //                                pickerSelectedScript = 0 }
+                            }
+                            TextField("parameter4", text: $scriptParameter4)
                         }
-                        TextField("parameter4", text: $scriptParameter4)
                     }
-                }
-                
+                    
                     DisclosureGroup("More Parameters") {
                         
                         HStack {
@@ -258,188 +260,191 @@ struct PolicyScriptsTabView: View {
                             }
                         }
                     }
-              
+                    
                     DisclosureGroup("Notes") {
                         VStack() {
-                        NotesView()
-                    }
+                            NotesView()
+                        }
                         .frame(minHeight: 60, alignment: .leading)
+                    }
+                    
+                    Divider()
+                    
                 }
                 
-                Divider()
                 
-            }
-            
-     
-            Group {
-                
-                //  ################################################################################
-                //              Scripts picker
-                //  ################################################################################
-                
-                HStack {
+                Group {
                     
-                    LazyVGrid(columns: layout.threeColumns, spacing: 10) {
-                        // Mirror the filtered picker below: allow filtering by name and guard optional names
-                        Picker(selection: $selectedScript, label: Text("Scripts")) {
-                            ForEach(networkController.scripts.filter { script in
-                                guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
-                                return script.name.localizedCaseInsensitiveContains(searchText)
-                            }, id: \.self) { script in
-                                Text(script.name)
-                                    .tag(script)
+                    //  ################################################################################
+                    //              Scripts picker
+                    //  ################################################################################
+                    
+                    HStack {
+                        
+                        LazyVGrid(columns: layout.threeColumns, spacing: 10) {
+                            // Mirror the filtered picker below: allow filtering by name and guard optional names
+                            Picker(selection: $selectedScript, label: Text("Scripts")) {
+                                ForEach(networkController.scripts.filter { script in
+                                    guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
+                                    return script.name.localizedCaseInsensitiveContains(searchText)
+                                }, id: \.self) { script in
+                                    Text(script.name)
+                                        .tag(script)
+                                }
+                            }
+                            .onAppear {
+                                if networkController.scripts.isEmpty != true {
+                                    print("Setting package picker default")
+                                    selectedScript = networkController.scripts[0]
+                                }
                             }
                         }
-                        .onAppear {
-                            if networkController.scripts.isEmpty != true {
-                                print("Setting package picker default")
-                                selectedScript = networkController.scripts[0]
+                        
+                        //  ################################################################################
+                        //              Add script
+                        //  ################################################################################
+                        
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+                            xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                            
+                            print("Adding script:\(selectedScript.name)")
+                            print("parameter 4 is :\(scriptParameter4)")
+                            
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "plus.app.fill")
+                                Text("Add")
                             }
                         }
-                    }
-                    
-                    //  ################################################################################
-                    //              Add script
-                    //  ################################################################################
-                    
-                    Button(action: {
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .help("Add the selected script to this policy with provided parameters.")
                         
-                        progress.showProgress()
-                        progress.waitForABit()
                         
-                        xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                        //  ################################################################################
+                        //              Remove script
+                        //  ################################################################################
                         
-                        print("Adding script:\(selectedScript.name)")
-                        print("parameter 4 is :\(scriptParameter4)")
                         
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "plus.app.fill")
-                            Text("Add")
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+                            // Pass listSelection.jamfId as optional Int? (nil if 0)
+                            let selId: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
+                            xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
+                            
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "plus.app.fill")
+                                Text("Remove Selected Script")
+                            }
                         }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .help("Add the selected script to this policy with provided parameters.")
-                    
-                    
-                    //  ################################################################################
-                    //              Remove script
-                    //  ################################################################################
-                    
-                    
-                    Button(action: {
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .help("Remove the selected script from this policy.")
+                        //                    .disabled(listedScript.jamfId == 0 && listedScript.name == "")
                         
-                        progress.showProgress()
-                        progress.waitForABit()
+                        //  ################################################################################
+                        //              Remove all scripts in policy
+                        //  ################################################################################
                         
-                        // Pass listSelection.jamfId as optional Int? (nil if 0)
-                        let selId: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
-                        xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
-                       
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "plus.app.fill")
-                            Text("Remove Selected Script")
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            
+                            networkController.separationLine()
+                            print("Removing all scripts in policy:\(String(describing: policyID))")
+                            
+                            xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                            
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "minus.square.fill.on.square.fill")
+                                Text("Remove All Scripts")
+                            }
                         }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .help("Remove all scripts currently assigned to this policy.")
+                        
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .help("Remove the selected script from this policy.")
-                    .disabled(selectedScript.jamfId == 0 && selectedScript.name == "")
-                    
-                    //  ################################################################################
-                    //              Remove all scripts in policy
-                    //  ################################################################################
-                    
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        networkController.separationLine()
-                        print("Removing all scripts in policy:\(String(describing: policyID))")
-                        
-                        xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
-                        
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "minus.square.fill.on.square.fill")
-                            Text("Remove All Scripts")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .help("Remove all scripts currently assigned to this policy.")
-                    
                 }
-            }
-            
-//            Group {
-//                Divider()
-//                LazyVGrid(columns: columns, spacing: 10) {
-//                    VStack(alignment: .leading) {
-//                        DisclosureGroup("Parameters") {
-//
-//                            TextField("Parameter 4", text: $scriptParameter4)
-//                            TextField("Parameter 5", text: $scriptParameter5)
-//                            TextField("Parameter 6", text: $scriptParameter6)
-//                            TextField("Parameter 7", text: $scriptParameter7)
-//                            TextField("Parameter 8", text: $scriptParameter8)
-//                            TextField("Parameter 9", text: $scriptParameter9)
-//                            TextField("Parameter 10", text: $scriptParameter10)
-//                            TextField("Parameter 11", text: $scriptParameter11)
-//                            Text("Priority:")
-//                            TextField("Before/After?", text: $priority)
-//                        }
-//                    }
-//                }
-//            }
-            
-//            Text("Add Individual Command/s To Run In Policy").fontWeight(.bold)
-                               TextEditor(text: $command)
-                                   .frame(minHeight: 20)
-                                   .border(Color.gray)
-            
-            //  ################################################################################
-            //  Add custom command in policy
-            //  ################################################################################
-            
-            Button(action: {
                 
-                progress.showProgress()
-                progress.waitForABit()
+                //            Group {
+                //                Divider()
+                //                LazyVGrid(columns: columns, spacing: 10) {
+                //                    VStack(alignment: .leading) {
+                //                        DisclosureGroup("Parameters") {
+                //
+                //                            TextField("Parameter 4", text: $scriptParameter4)
+                //                            TextField("Parameter 5", text: $scriptParameter5)
+                //                            TextField("Parameter 6", text: $scriptParameter6)
+                //                            TextField("Parameter 7", text: $scriptParameter7)
+                //                            TextField("Parameter 8", text: $scriptParameter8)
+                //                            TextField("Parameter 9", text: $scriptParameter9)
+                //                            TextField("Parameter 10", text: $scriptParameter10)
+                //                            TextField("Parameter 11", text: $scriptParameter11)
+                //                            Text("Priority:")
+                //                            TextField("Before/After?", text: $priority)
+                //                        }
+                //                    }
+                //                }
+                //            }
                 
-                networkController.separationLine()
-                print("Add custom command to policy:\(String(describing: policyID))")
-                policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
+                //            Text("Add Individual Command/s To Run In Policy").fontWeight(.bold)
+                TextEditor(text: $command)
+                    .frame(minHeight: 20)
+                    .frame(maxHeight: 40)
                 
-            }) {
-                HStack {
-                    Image(systemName: "keyboard")
-                    Text("Add Individual Command To Policy")
+                    .border(Color.gray)
+                
+                //  ################################################################################
+                //  Add custom command in policy
+                //  ################################################################################
+                
+                Button(action: {
+                    
+                    progress.showProgress()
+                    progress.waitForABit()
+                    
+                    networkController.separationLine()
+                    print("Add custom command to policy:\(String(describing: policyID))")
+                    policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
+                    
+                }) {
+                    HStack {
+                        Image(systemName: "keyboard")
+                        Text("Add Individual Command To Policy")
+                    }
                 }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.blue)
-            .help("Add a custom shell command to be run by this policy.")
-            
-            
-            
-            Spacer()
-        }
-        .frame(minWidth: 400, alignment: .leading)
-        .padding()
-        .onAppear() {
-            
-            if  networkController.scripts.count <= 1 {
-                print("Fetching scripts")
-                print("Script count is:\(networkController.scripts.count))")
-                networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
-
-            } else {
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .help("Add a custom shell command to be run by this policy.")
                 
-                print("script data is available")
+                
+                
+                Spacer()
+            }
+            .frame(minWidth: 400, alignment: .leading)
+            .padding()
+            .onAppear() {
+                
+                if  networkController.scripts.count <= 1 {
+                    print("Fetching scripts")
+                    print("Script count is:\(networkController.scripts.count))")
+                    networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                    
+                } else {
+                    
+                    print("script data is available")
+                }
             }
         }
     }
