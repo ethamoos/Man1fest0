@@ -1264,58 +1264,74 @@ class XmlBrain: ObservableObject {
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: xmlContent.xml, httpMethod: "PUT")
         
     }
-    // ######################################################################################
-    // removeScriptFromPolicy
-    // ######################################################################################
-    
-    
-func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server: String, policyId: String, selectedScriptName: String, selectedScriptId: String) {
+// ######################################################################################
+// removeScriptFromPolicy
+// ######################################################################################
+
+
+func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server: String, policyId: String, selectedScriptName: String, selectedScriptId: Int?) {
 
     let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
     let url = URL(string: jamfURLQuery)!
-    
-    
+
     self.separationLine()
     print("Running removeScriptFromPolicy - XML brain")
     print("selectedScriptName is:\(selectedScriptName)")
-    print("selectedScriptId is:\(selectedScriptId)")
+    print("selectedScriptId is:\(selectedScriptId.map { String($0) } ?? "nil")")
 
-    //        print("Initial xmlContent is:")
-    //        self.atSeparationLine()
-    //        print(xmlContent.xml)
+//    print("Initial xmlContent is:")
+//    self.atSeparationLine()
+//    print(xmlContent.xml)
     self.atSeparationLine()
     print("url is:\(url)")
     // Find the target script element by id (preferred) or by name
-    let scripts = self.aexmlDoc.root["scripts"].children
-    
+    // Use the provided xmlContent rather than `self.aexmlDoc` so callers can pass a document to test
+    let scripts = xmlContent.root["scripts"].children
+
     for eachScript in scripts {
         print("Script found: id=\(eachScript["id"].string), name=\(eachScript["name"].string)")
     }
 
+    // .first means first match
+    // Normalize comparisons: use valid positive id if provided, else fallback to trimmed, case-insensitive name compare
     let targetScript = scripts.first { elem in
-        if !selectedScriptId.isEmpty {
-            return elem["id"].string == selectedScriptId
+        let xmlIdRaw = elem["id"].string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let selId = selectedScriptId, selId > 0 {
+            if let xmlId = Int(xmlIdRaw) {
+                return xmlId == selId
+            } else {
+                return false
+            }
         } else {
-            return elem["name"].string == selectedScriptName
+            let xmlName = elem["name"].string.trimmingCharacters(in: .whitespacesAndNewlines)
+            let selName = selectedScriptName.trimmingCharacters(in: .whitespacesAndNewlines)
+            return xmlName.caseInsensitiveCompare(selName) == .orderedSame
         }
     }
-    guard let targetScript = targetScript else {
-        print("Could not find script with id '\(selectedScriptId)' or name '\(selectedScriptName)'")
-        return
-    }
+//    guard let targetScript = targetScript else {
+//        print("Could not find script with id '\(selectedScriptId.map { String($0) } ?? "nil")' or name '\(selectedScriptName)'")
+//        return
+//    }
 //    let scriptsRoot = xmlContent.root["scripts"]
     self.atSeparationLine()
-    print("targetScript is:\(targetScript.xml)")
-    let allScripts = self.aexmlDoc.root["scripts"].children
+    print("targetScript is:\(String(describing: targetScript?.xml ?? "nil"))")
+    let allScripts = xmlContent.root["scripts"].children
     print("allScripts are:\(allScripts)")
+    self.separationLine()
+    //    print("Initial xmlContent is:")
+    //    self.atSeparationLine()
+    //    print(xmlContent.xml)
     self.separationLine()
     print("Remove selectedScript")
     // Remove the found script element from its parent
-    let _ = targetScript.removeFromParent()
+    let _ = targetScript?.removeFromParent()
     self.separationLine()
-    //        print("Final xmlContent is:")
-    //        self.atSeparationLine()
-    //        print(xmlContent.xml)
+    // Optionally: caller can send updated xml back to server using sendRequestAsXML if desired
+    self.atSeparationLine()
+    let scriptsCount = scripts.count
+    print("scriptsCount is:\(scriptsCount)")
+    
+    self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: xmlContent.xml, httpMethod: "PUT")
 
 }
     
@@ -1569,7 +1585,7 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         let computers = aexmlDoc.root["scope"]["computers"]
         computers.removeFromParent()
         self.readBackUpdatedXML()
-    }  
+    }
     func clearComputerGroups() {
         self.separationLine()
         print("Removing computer groups")

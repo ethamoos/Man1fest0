@@ -103,11 +103,11 @@ struct PolicyScriptsTabView: View {
 
                 if networkController.policyDetailed?.scripts?.count ?? 0 > 0 {
                     
-                    Text("Scripts").bold()
+                    Text("Assigned Scripts").bold()
 #if os(macOS)
                     List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
                         //                        if script != nil {
-                        var currentScript = script
+//                        var currentScript = script
                         //                    }
                         HStack {
                             
@@ -333,12 +333,9 @@ struct PolicyScriptsTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc,
-                                                            authToken: networkController.authToken,
-                                                            server: server,
-                                                            policyId: String(describing: policyID),
-                                                            selectedScriptName: selectedScript.name ?? "",
-                                                            selectedScriptId: String(describing: selectedScript.jamfId))
+                        // Pass listSelection.jamfId as optional Int? (nil if 0)
+                        let selId: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
+                        xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
                        
                     }) {
                         HStack(spacing: 10) {
@@ -349,6 +346,7 @@ struct PolicyScriptsTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .help("Remove the selected script from this policy.")
+                    .disabled(selectedScript.jamfId == 0 && selectedScript.name == "")
                     
                     //  ################################################################################
                     //              Remove all scripts in policy
