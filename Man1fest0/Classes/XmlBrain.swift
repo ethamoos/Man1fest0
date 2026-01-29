@@ -1273,16 +1273,21 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
 
     let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
     let url = URL(string: jamfURLQuery)!
+    
+    
     self.separationLine()
     print("Running removeScriptFromPolicy - XML brain")
+    print("selectedScriptName is:\(selectedScriptName)")
+    print("selectedScriptId is:\(selectedScriptId)")
+
     //        print("Initial xmlContent is:")
     //        self.atSeparationLine()
     //        print(xmlContent.xml)
     self.atSeparationLine()
     print("url is:\(url)")
-    self.atSeparationLine()
     // Find the target script element by id (preferred) or by name
     let scripts = self.aexmlDoc.root["scripts"].children
+    
     for eachScript in scripts {
         print("Script found: id=\(eachScript["id"].string), name=\(eachScript["name"].string)")
     }
@@ -1299,6 +1304,7 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         return
     }
 //    let scriptsRoot = xmlContent.root["scripts"]
+    self.atSeparationLine()
     print("targetScript is:\(targetScript.xml)")
     let allScripts = self.aexmlDoc.root["scripts"].children
     print("allScripts are:\(allScripts)")

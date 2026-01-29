@@ -333,7 +333,12 @@ struct PolicyScriptsTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken,  server: server, policyId: String(describing: policyID), selectedScriptName: String(describing:selectedScript.jamfId), selectedScriptId: selectedScript.name)
+                        xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc,
+                                                            authToken: networkController.authToken,
+                                                            server: server,
+                                                            policyId: String(describing: policyID),
+                                                            selectedScriptName: selectedScript.name ?? "",
+                                                            selectedScriptId: String(describing: selectedScript.jamfId))
                        
                     }) {
                         HStack(spacing: 10) {
