@@ -4446,68 +4446,56 @@ xml = """
     
     
     func request(url: URL, resourceType: ResourceType, authToken: String) {
-        
+
         let headers = [
             "Accept": "application/json",
             "Authorization": "Bearer \(self.authToken)"
         ]
-        
+
         atSeparationLine()
         print("Running request function - resourceType is set as:\(resourceType)")
-        
+
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.allHTTPHeaderFields = headers
-        
+
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data, let response = response {
-                
-                self.resourceAccess = true
-                
-                //                self.doubleSeparationLine()
-                print("Doing processing of request:request")
-                
-                if resourceType == ResourceType.computer {
-                    print("Resource type is set in request to computer")
-                    
-                    self.processComputer(data: data, response: response, resourceType: "computer")
-                    
-                } else if resourceType == ResourceType.computerBasic {
-                    print("Resource type is set in request to computerBasic")
-                    
-                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-                    
-                } else if resourceType == ResourceType.category {
-                    print("Assigning to process - Resource type is set in request to categories")
-                    self.processCategory(data: data, response: response, resourceType: "category")
-                    
-                } else if resourceType == ResourceType.department {
-                    print("Assigning to process - Resource type is set in request to departments")
-                    self.processDepartment(data: data, response: response, resourceType: "department")
-                    
-                } else if resourceType == ResourceType.packages {
-                    print("Assigning to process - Resource type is set in request to packages")
-                    self.processPackages(data: data, response: response, resourceType: "packages")
-                    
-                } else if resourceType == ResourceType.scripts {
-                    print("Assigning to process - Resource type is set in request to scripts")
-                    self.processScripts(data: data, response: response, resourceType: "scripts")
-                    
-                } else {
-                    print("Assigning to process - Resource type is set in request to default - policy ")
-                    DispatchQueue.main.async {
+                // Ensure actor-isolated state changes and method calls happen on main actor
+                DispatchQueue.main.async {
+                    self.resourceAccess = true
+
+                    print("Doing processing of request:request")
+
+                    if resourceType == ResourceType.computer {
+                        print("Resource type is set in request to computer")
+                        self.processComputer(data: data, response: response, resourceType: "computer")
+                    } else if resourceType == ResourceType.computerBasic {
+                        print("Resource type is set in request to computerBasic")
+                        self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
+                    } else if resourceType == ResourceType.category {
+                        print("Assigning to process - Resource type is set in request to categories")
+                        self.processCategory(data: data, response: response, resourceType: "category")
+                    } else if resourceType == ResourceType.department {
+                        print("Assigning to process - Resource type is set in request to departments")
+                        self.processDepartment(data: data, response: response, resourceType: "department")
+                    } else if resourceType == ResourceType.packages {
+                        print("Assigning to process - Resource type is set in request to packages")
+                        self.processPackages(data: data, response: response, resourceType: "packages")
+                    } else if resourceType == ResourceType.scripts {
+                        print("Assigning to process - Resource type is set in request to scripts")
+                        self.processScripts(data: data, response: response, resourceType: "scripts")
+                    } else {
+                        print("Assigning to process - Resource type is set in request to default - policy ")
                         self.processPolicies(data: data, response: response, resourceType: resourceType)
                     }
                 }
-                
             } else {
                 DispatchQueue.main.async {
                     self.resourceAccess = false
-                }
-                var text = "\n\nFailed."
-                if let error = error {
-                    text += " \(error)."
-                }
-                DispatchQueue.main.async {
+                    var text = "\n\nFailed."
+                    if let error = error {
+                        text += " \(error)."
+                    }
                     self.appendStatus(text)
                 }
             }
@@ -4516,56 +4504,49 @@ xml = """
     }
     
     func requestDelete(url: URL, authToken: String, resourceType: ResourceType) {
-        
+
         let headers = [
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer \(authToken)"
         ]
-        
+
         atSeparationLine()
         print("Running requestDelete function - resourceType is set as:\(resourceType)")
-        
+
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.allHTTPHeaderFields = headers
         request.httpMethod = "DELETE"
-        
+
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-            
             if let data = data, let response = response {
-                
-                print("Doing processing of requestDelete")
-                
-                if resourceType == ResourceType.computer {
-                    print("Assigning to processComputer - Resource type is set in request to computer")
-                    self.processComputer(data: data, response: response, resourceType: "computer")
-                    
-                } else if resourceType == ResourceType.computerBasic {
-                    print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
-                    print("################################################")
-                    print(String(data: data, encoding: .utf8)!)
-                    print((response))
-                    print("Error is:\(String(describing: error))")
-                    //                    print(String(error: error, encoding: .utf8)!)
-                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-                    
-                } else if resourceType == ResourceType.scripts {
-                    print("Assigning to processScripts - Resource type is set in request to scripts")
-                    self.processScripts(data: data, response: response, resourceType: "scripts")
-                    
-                } else if resourceType == ResourceType.department {
-                    print("Assigning to processDepartment - Resource type is set in request to departments")
-                    self.processDepartment(data: data, response: response, resourceType: "department")
-                    
-                } else if resourceType == ResourceType.package {
-                    print("Assigning to processPackage - Resource type is set in request to package")
-                    
-                } else {
-                    print("Assigning to processPolicies - Resource type is set in request to policies")
-                    
-                    self.processPolicies(data: data, response: response, resourceType: resourceType)
+                // Ensure UI/actor updates happen on main actor
+                DispatchQueue.main.async {
+                    print("Doing processing of requestDelete")
+
+                    if resourceType == ResourceType.computer {
+                        print("Assigning to processComputer - Resource type is set in request to computer")
+                        self.processComputer(data: data, response: response, resourceType: "computer")
+                    } else if resourceType == ResourceType.computerBasic {
+                        print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
+                        print("################################################")
+                        print(String(data: data, encoding: .utf8)!)
+                        print((response))
+                        print("Error is:\(String(describing: error))")
+                        self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
+                    } else if resourceType == ResourceType.scripts {
+                        print("Assigning to processScripts - Resource type is set in request to scripts")
+                        self.processScripts(data: data, response: response, resourceType: "scripts")
+                    } else if resourceType == ResourceType.department {
+                        print("Assigning to processDepartment - Resource type is set in request to departments")
+                        self.processDepartment(data: data, response: response, resourceType: "department")
+                    } else if resourceType == ResourceType.package {
+                        print("Assigning to processPackage - Resource type is set in request to package")
+                    } else {
+                        print("Assigning to processPolicies - Resource type is set in request to policies")
+                        self.processPolicies(data: data, response: response, resourceType: resourceType)
+                    }
                 }
-                
             } else {
                 var text = "\n\nFailed."
                 if let error = error {

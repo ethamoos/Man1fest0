@@ -279,6 +279,42 @@ struct PolicyActionsDetailTableView: View {
     
     func fetchData() {
         
+        
+        if  networkController.policies.isEmpty {
+            print("No policies data - fetching")
+            networkController.connect(server: server,resourceType: ResourceType.policies, authToken: networkController.authToken)
+            
+        } else {
+            print("policies data is available")
+        }
+        
+        if networkController.fetchedDetailedPolicies == false {
+            
+            print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
+            
+            if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
+                
+                print("fetching detailed policies")
+                
+                progress.showProgress()
+                
+                Task {
+                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                }
+                
+                convertToallPoliciesDetailedGeneral()
+                
+                progress.waitForABit()
+                
+                networkController.fetchedDetailedPolicies = true
+                
+            } else {
+                print("Download complete")
+            }
+        } else {
+            print("fetchedDetailedPolicies has run")
+        }
+        
         if  networkController.categories.isEmpty {
             print("No category data - fetching")
             networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
@@ -312,14 +348,7 @@ struct PolicyActionsDetailTableView: View {
         } else {
             print("package data is available")
         }
-        
-        if  networkController.policies.isEmpty {
-            print("No policies data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.policies, authToken: networkController.authToken)
-            
-        } else {
-            print("policies data is available")
-        }
+    
         
         if  networkController.allComputerGroups.isEmpty {
             print("No groups data - fetching")
@@ -330,32 +359,7 @@ struct PolicyActionsDetailTableView: View {
             print("groups data is available")
         }
         
-        if networkController.fetchedDetailedPolicies == false {
-            
-            print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-            
-            if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
-                
-                print("fetching detailed policies")
-                
-                progress.showProgress()
-                
-                Task {
-                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                }
-                
-                convertToallPoliciesDetailedGeneral()
-                
-                progress.waitForABit()
-                
-                networkController.fetchedDetailedPolicies = true
-                
-            } else {
-                print("Download complete")
-            }
-        } else {
-            print("fetchedDetailedPolicies has run")
-        }
+        
     }
     
     
