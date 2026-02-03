@@ -28,6 +28,9 @@ import AEXML
     //  #############################################################################
 
     @Published var status: String = ""
+    // Published separate status for policy delay messages so UI can show it without
+    // being clobbered by other status updates.
+    @Published var policyDelayStatus: String = ""
     var tokenComplete: Bool = false
     var tokenStatusCode: Int = 0
     var authToken = ""
@@ -286,10 +289,21 @@ import AEXML
         self.policyRequestDelay = seconds
         UserDefaults.standard.set(seconds, forKey: "policyRequestDelay")
         separationLine()
-        print("Policy request delay updated to \(seconds) seconds (\(formatDuration(seconds))). Persisted to UserDefaults key 'policyRequestDelay'.")
+        let human = formatDuration(seconds)
+        print("Policy request delay updated to \(seconds) seconds (\(human)). Persisted to UserDefaults key 'policyRequestDelay'.")
+        // update the separate policyDelayStatus so UI components can display the delay without
+        // having their general status overwritten elsewhere.
+        DispatchQueue.main.async {
+            self.policyDelayStatus = "Policy request delay: \(human)"
+        }
     }
 
     func getPolicyRequestDelay() -> TimeInterval { self.policyRequestDelay }
+
+    // Public helper so views can display a duration consistently.
+    func humanReadableDuration(_ seconds: TimeInterval) -> String {
+        return formatDuration(seconds)
+    }
 
     // Helper to render a TimeInterval in a human readable form
     private func formatDuration(_ seconds: TimeInterval) -> String {
@@ -779,9 +793,9 @@ import AEXML
                 let human = formatDuration(delay)
                 let nextRunAt = Date().addingTimeInterval(delay)
                 print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
-                // surface a brief status to the UI
+                // surface a brief delay-specific status to the UI
                 DispatchQueue.main.async {
-                    self.status = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
+                    self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
                 }
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
@@ -847,6 +861,9 @@ import AEXML
                         let human = formatDuration(delay)
                         let nextRunAt = Date().addingTimeInterval(delay)
                         print("Throttling: sleeping for \(delay) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
+                        DispatchQueue.main.async {
+                            self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
+                        }
                         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     }
                 }
@@ -5458,7 +5475,7 @@ xml = """
                 let nextRunAt = Date().addingTimeInterval(delay)
                 print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
                 DispatchQueue.main.async {
-                    self.status = "Delaying detailed user fetch: \(human) (next at \(nextRunAt))"
+                    self.policyDelayStatus = "Delaying detailed user fetch: \(human) (next at \(nextRunAt))"
                 }
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
