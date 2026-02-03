@@ -782,35 +782,61 @@ import AEXML
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
-        
         self.separationLine()
-        print("Running func: getAllPoliciesDetailed")
-        
-        //        ########################################################
-        //        Rate limiting
-        //        ########################################################
+        print("Running func: getAllPoliciesDetailed (sequential)")
 
-        let now = Date()
-        if let last = lastRequestDate {
-            print("Last request ran at:\(String(describing: last))")
-            let elapsed = now.timeIntervalSince(last)
-            if elapsed < minInterval {
-                let delay = minInterval - elapsed
-                print("Waiting:\(String(describing: delay))")
-                Task {
-                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        // Filter out policies without a valid jamfId
+        let validPolicies = policies.filter { ($0.jamfId ?? 0) > 0 }
+        print("Total policies provided: \(policies.count) -> valid policies with jamfId>0: \(validPolicies.count)")
+
+        // Track failed calls for retries or diagnostics
+        var failedCalls: [String] = []
+
+        for policy in validPolicies {
+            let jamfIdVal = policy.jamfId ?? 0
+            let policyID = String(describing: jamfIdVal)
+            do {
+                // Respect minimum interval between requests
+                let now = Date()
+                if let last = lastRequestDate {
+                    let elapsed = now.timeIntervalSince(last)
+                    if elapsed < minInterval {
+                        let delay = minInterval - elapsed
+                        print("Throttling: sleeping for \(delay) seconds before requesting policy \(policyID)")
+                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    }
                 }
+
+                lastRequestDate = Date()
+
+                try await getDetailedPolicy(server: server, authToken: authToken, policyID: policyID)
+
+                // policy.name is a non-optional String, so don't use `if let` on it
+                let name = policy.name
+                if !name.isEmpty {
+                    print("Fetched policy detail for: \(name) (ID: \(policyID))")
+                } else {
+                    print("Fetched policy detail for ID: \(policyID)")
+                }
+
+            } catch {
+                print("Error fetching detailed policy ID \(policyID): \(error)")
+                failedCalls.append(policyID)
+                // continue to next policy
             }
         }
-        lastRequestDate = Date()
-        
-        for policy in policies {
-            Task {
-                try await getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: policy.jamfId ?? 1))
-                
-                if policyDetailed != nil {
-                    print("Policy is:\(policy.name) - ID is:\(String(describing: policy.jamfId ?? 0))")
-                }
+
+        if !failedCalls.isEmpty {
+            print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
+            // Optionally keep failedCalls in a published property for UI retry handling
+            // self.retryFailedDetailedPolicyCalls = failedCalls
+            await MainActor.run {
+                self.fetchedDetailedPolicies = false
+            }
+        } else {
+            print("getAllPoliciesDetailed completed successfully for all policies")
+            await MainActor.run {
+                self.fetchedDetailedPolicies = true
             }
         }
     }
@@ -1969,7 +1995,7 @@ import AEXML
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-        
+
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
         print("Running func: getAllPolicies")
@@ -1984,7 +2010,9 @@ import AEXML
 //        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
 //        self.allPoliciesConverted = decodedData
+        // Populate both the legacy `policies` array and the `allPoliciesConverted` used by views
         self.policies = decodedData
+        self.allPoliciesConverted = decodedData
         allPoliciesComplete = true
         separationLine()
         //        atSeparationLine()
@@ -2095,20 +2123,7 @@ import AEXML
 //        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
 //    }
     
-    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]){
-        
-        self.separationLine()
-        print("Running func: getAllPoliciesDetailed")
-        for policy in policies {
-            Task {
-                try await getDetailedPolicy(server: server, authToken: authToken, policyID: String(describing: policy.jamfId ?? 1))
-                
-                if policyDetailed != nil {
-                    print("Policy is:\(policy.name) - ID is:\(String(describing: policy.jamfId ?? 0))")
-                }
-            }
-        }
-    }
+    // Removed duplicate getAllPoliciesDetailed implementation; see above for the unified async/throws version.
     
     
 //=======
@@ -5210,6 +5225,56 @@ xml = """
     // Published state for users list and detailed user (matches Models/UsersModels.swift)
     @Published var allUsers: [UserSimple] = []
     @Published var userDetail: UserDetail? = nil
+
+    // Ensure policies are loaded; try the JSON API first, fall back to request pipeline if it fails
+    @MainActor
+    func ensurePoliciesLoaded(server: String, authToken: String) async {
+        separationLine()
+        print("ensurePoliciesLoaded: server=\(server), auth present=\(!authToken.isEmpty)")
+
+        // If we already have policies, nothing to do
+        if !self.allPoliciesConverted.isEmpty || !self.policies.isEmpty {
+            print("Policies already present: allPoliciesConverted=\(self.allPoliciesConverted.count), policies=\(self.policies.count)")
+            // Make sure legacy array is synced
+            if self.allPoliciesConverted.isEmpty, !self.policies.isEmpty {
+                self.allPoliciesConverted = self.policies
+            }
+            return
+        }
+
+        // Try the JSON API approach first
+        do {
+            print("ensurePoliciesLoaded: attempting JSON API getAllPolicies")
+            try await getAllPolicies(server: server, authToken: authToken)
+            print("ensurePoliciesLoaded: getAllPolicies succeeded - count=\(self.allPoliciesConverted.count)")
+            return
+        } catch {
+            print("ensurePoliciesLoaded: getAllPolicies failed: \(error). Falling back to request pipeline.")
+        }
+
+        // Fallback: use the legacy request pipeline which will call processPolicies -> receivedPolicies
+        if let serverURL = URL(string: server) {
+            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("policies")
+            print("ensurePoliciesLoaded: issuing legacy request to \(url)")
+            request(url: url, resourceType: ResourceType.policies, authToken: authToken)
+
+            // Give the async pipeline a small window to populate published arrays
+            // (This is best-effort; callers should await a subsequent check or re-render.)
+            do {
+                try await Task.sleep(nanoseconds: 600_000_000) // 0.6s
+            } catch {
+                // ignore
+            }
+
+            // If receivedPolicies populated `policies`, sync to allPoliciesConverted
+            if self.allPoliciesConverted.isEmpty && !self.policies.isEmpty {
+                print("ensurePoliciesLoaded: syncing policies -> allPoliciesConverted (count=\(self.policies.count))")
+                self.allPoliciesConverted = self.policies
+            }
+        } else {
+            print("ensurePoliciesLoaded: invalid server URL, cannot fallback")
+        }
+    }
 
     // Centralized error state (UI observes these to show alerts)
     @Published var lastErrorTitle: String? = nil
