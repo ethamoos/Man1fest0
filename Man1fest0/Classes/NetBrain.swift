@@ -263,11 +263,45 @@ import AEXML
 //    Initialisers
 //    #################################################################################
 
-    private let minInterval: TimeInterval
+    // Configurable minimum interval between detailed policy requests (seconds).
+    // This value is persisted to UserDefaults under the key "policyRequestDelay" so it can be
+    // adjusted by the user via preferences (or programmatically by the UI).
+    @Published var policyRequestDelay: TimeInterval
     private var lastRequestDate: Date?
-    
-    init(minInterval: TimeInterval = 3.0) { // 2 seconds between requests
-        self.minInterval = minInterval
+
+    init(minInterval: TimeInterval = 3.0) {
+        // look for a persisted setting first
+        let persisted = UserDefaults.standard.double(forKey: "policyRequestDelay")
+        if persisted > 0 {
+            self.policyRequestDelay = persisted
+        } else {
+            self.policyRequestDelay = minInterval
+        }
+        print("NetBrain initialized: policyRequestDelay = \(self.policyRequestDelay) seconds (\(formatDuration(self.policyRequestDelay)))")
+    }
+
+    // Public setter to update and persist the delay. Call from a preferences view or programmatically.
+    func setPolicyRequestDelay(_ seconds: TimeInterval) {
+        guard seconds >= 0 else { return }
+        self.policyRequestDelay = seconds
+        UserDefaults.standard.set(seconds, forKey: "policyRequestDelay")
+        separationLine()
+        print("Policy request delay updated to \(seconds) seconds (\(formatDuration(seconds))). Persisted to UserDefaults key 'policyRequestDelay'.")
+    }
+
+    func getPolicyRequestDelay() -> TimeInterval { self.policyRequestDelay }
+
+    // Helper to render a TimeInterval in a human readable form
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        if seconds < 0.001 { return "0s" }
+        if seconds < 1 { return String(format: "%.0f ms", seconds * 1000) }
+        if seconds < 60 { return String(format: "%.2f s", seconds) }
+        let total = Int(seconds)
+        let hours = total / 3600
+        let mins = (total % 3600) / 60
+        let secs = total % 60
+        if hours > 0 { return String(format: "%dh %02dm %02ds", hours, mins, secs) }
+        return String(format: "%dm %02ds", mins, secs)
     }
     
     //    #################################################################################
@@ -731,23 +765,31 @@ import AEXML
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
+
         //        ########################################################
         //        Rate limiting
         //        ########################################################
 
         let now = Date()
         if let last = lastRequestDate {
-            print("Last request ran at:\(String(describing: last))")
             let elapsed = now.timeIntervalSince(last)
-            if elapsed < minInterval {
-                let delay = minInterval - elapsed
-                print("Waiting:\(String(describing: delay))")
+            print("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
+            if elapsed < policyRequestDelay {
+                let delay = policyRequestDelay - elapsed
+                let human = formatDuration(delay)
+                let nextRunAt = Date().addingTimeInterval(delay)
+                print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
+                // surface a brief status to the UI
+                DispatchQueue.main.async {
+                    self.status = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
+                }
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
+        } else {
+            print("No previous request timestamp found; proceeding immediately")
         }
         lastRequestDate = Date()
-                
+
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -800,9 +842,11 @@ import AEXML
                 let now = Date()
                 if let last = lastRequestDate {
                     let elapsed = now.timeIntervalSince(last)
-                    if elapsed < minInterval {
-                        let delay = minInterval - elapsed
-                        print("Throttling: sleeping for \(delay) seconds before requesting policy \(policyID)")
+                    if elapsed < policyRequestDelay {
+                        let delay = policyRequestDelay - elapsed
+                        let human = formatDuration(delay)
+                        let nextRunAt = Date().addingTimeInterval(delay)
+                        print("Throttling: sleeping for \(delay) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
                         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     }
                 }
@@ -5396,32 +5440,37 @@ xml = """
     
     
     func getAllDetailedUsers(server: String, authToken: String, users: [UserSimple]) async throws {
-        
+
         self.separationLine()
         print("Running func: getAllPoliciesDetailed")
-        
+
         //        ########################################################
         //        Rate limiting
         //        ########################################################
 
         let now = Date()
         if let last = lastRequestDate {
-            print("Last request ran at:\(String(describing: last))")
             let elapsed = now.timeIntervalSince(last)
-            if elapsed < minInterval {
-                let delay = minInterval - elapsed
-                print("Waiting:\(String(describing: delay))")
-                Task {
-                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            print("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
+            if elapsed < policyRequestDelay {
+                let delay = policyRequestDelay - elapsed
+                let human = formatDuration(delay)
+                let nextRunAt = Date().addingTimeInterval(delay)
+                print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
+                DispatchQueue.main.async {
+                    self.status = "Delaying detailed user fetch: \(human) (next at \(nextRunAt))"
                 }
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
+        } else {
+            print("No previous request timestamp found; proceeding immediately")
         }
         lastRequestDate = Date()
-        
+
         for user in users {
             Task {
                 try await getDetailUser(userID: String(describing: user.jamfId))
-                
+
                 if policyDetailed != nil {
                     print("Users is:\(String(describing: user.name)) - ID is:\(String(describing: user.jamfId ?? 0))")
                 }
