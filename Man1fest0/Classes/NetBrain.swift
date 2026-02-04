@@ -5,7 +5,7 @@ import AEXML
 
 
 @MainActor class NetBrain: ObservableObject {
-    
+ 
     // #########################################################################
     // Global Variables
     // #########################################################################
@@ -28,9 +28,6 @@ import AEXML
     //  #############################################################################
 
     @Published var status: String = ""
-    // Published separate status for policy delay messages so UI can show it without
-    // being clobbered by other status updates.
-    @Published var policyDelayStatus: String = ""
     var tokenComplete: Bool = false
     var tokenStatusCode: Int = 0
     var authToken = ""
@@ -170,7 +167,39 @@ import AEXML
     @Published var currentPolicyID: Int = 0
     @Published var currentPolicyName: String = ""
     @Published var currentPolicyIDIString: String = ""
-    
+
+    // Persisted policy request delay (seconds) used by UI to control pacing of detailed policy fetches
+    @Published var policyRequestDelay: Double = UserDefaults.standard.double(forKey: "policyRequestDelay") == 0 ? 3.0 : UserDefaults.standard.double(forKey: "policyRequestDelay")
+    @Published var policyDelayStatus: String = ""
+
+    func setPolicyRequestDelay(_ delay: Double) {
+        policyRequestDelay = delay
+        UserDefaults.standard.set(delay, forKey: "policyRequestDelay")
+        policyDelayStatus = "Saved"
+        // clear status after a short time
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            self.policyDelayStatus = ""
+        }
+    }
+
+    func getPolicyRequestDelay() -> Double {
+        let v = UserDefaults.standard.double(forKey: "policyRequestDelay")
+        return v == 0 ? policyRequestDelay : v
+    }
+
+    func humanReadableDuration(_ seconds: Double) -> String {
+        let sec = Int(round(seconds))
+        if sec < 60 {
+            return "\(sec) s"
+        }
+        let mins = sec / 60
+        let rem = sec % 60
+        if rem == 0 {
+            return "\(mins) min"
+        }
+        return "\(mins) min \(rem) s"
+    }
+
     @Published var allPolicies: PolicyBasic? = nil
     @Published var allPoliciesConverted: [Policy] = []
     @Published var currentDetailedPolicy: PoliciesDetailed? = nil
@@ -178,7 +207,11 @@ import AEXML
     @Published var policyDetailed: PolicyDetailed? = nil
     @Published var allPoliciesDetailed: [PolicyDetailed?] = []
     @Published var allPoliciesDetailedGeneral: [General] = []
-    
+    // Progress UI for fetching detailed policies (0.0 .. 1.0)
+    @Published var showProgressView: Bool = false
+    @Published var policyDetailedProgress: Double = 0.0
+    @Published var policyDetailedTotal: Int = 0
+
     var singlePolicyDetailedGeneral: General? = nil
     
     //    var imageA1: UIImage? = nil
@@ -266,56 +299,11 @@ import AEXML
 //    Initialisers
 //    #################################################################################
 
-    // Configurable minimum interval between detailed policy requests (seconds).
-    // This value is persisted to UserDefaults under the key "policyRequestDelay" so it can be
-    // adjusted by the user via preferences (or programmatically by the UI).
-    @Published var policyRequestDelay: TimeInterval
+    private let minInterval: TimeInterval
     private var lastRequestDate: Date?
-
-    init(minInterval: TimeInterval = 3.0) {
-        // look for a persisted setting first
-        let persisted = UserDefaults.standard.double(forKey: "policyRequestDelay")
-        if persisted > 0 {
-            self.policyRequestDelay = persisted
-        } else {
-            self.policyRequestDelay = minInterval
-        }
-        print("NetBrain initialized: policyRequestDelay = \(self.policyRequestDelay) seconds (\(formatDuration(self.policyRequestDelay)))")
-    }
-
-    // Public setter to update and persist the delay. Call from a preferences view or programmatically.
-    func setPolicyRequestDelay(_ seconds: TimeInterval) {
-        guard seconds >= 0 else { return }
-        self.policyRequestDelay = seconds
-        UserDefaults.standard.set(seconds, forKey: "policyRequestDelay")
-        separationLine()
-        let human = formatDuration(seconds)
-        print("Policy request delay updated to \(seconds) seconds (\(human)). Persisted to UserDefaults key 'policyRequestDelay'.")
-        // update the separate policyDelayStatus so UI components can display the delay without
-        // having their general status overwritten elsewhere.
-        DispatchQueue.main.async {
-            self.policyDelayStatus = "Policy request delay: \(human)"
-        }
-    }
-
-    func getPolicyRequestDelay() -> TimeInterval { self.policyRequestDelay }
-
-    // Public helper so views can display a duration consistently.
-    func humanReadableDuration(_ seconds: TimeInterval) -> String {
-        return formatDuration(seconds)
-    }
-
-    // Helper to render a TimeInterval in a human readable form
-    private func formatDuration(_ seconds: TimeInterval) -> String {
-        if seconds < 0.001 { return "0s" }
-        if seconds < 1 { return String(format: "%.0f ms", seconds * 1000) }
-        if seconds < 60 { return String(format: "%.2f s", seconds) }
-        let total = Int(seconds)
-        let hours = total / 3600
-        let mins = (total % 3600) / 60
-        let secs = total % 60
-        if hours > 0 { return String(format: "%dh %02dm %02ds", hours, mins, secs) }
-        return String(format: "%dm %02ds", mins, secs)
+    
+    init(minInterval: TimeInterval = 3.0) { // 2 seconds between requests
+        self.minInterval = minInterval
     }
     
     //    #################################################################################
@@ -779,31 +767,23 @@ import AEXML
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-
+        
         //        ########################################################
         //        Rate limiting
         //        ########################################################
 
         let now = Date()
         if let last = lastRequestDate {
+            print("Last request ran at:\(String(describing: last))")
             let elapsed = now.timeIntervalSince(last)
-            print("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
-            if elapsed < policyRequestDelay {
-                let delay = policyRequestDelay - elapsed
-                let human = formatDuration(delay)
-                let nextRunAt = Date().addingTimeInterval(delay)
-                print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
-                // surface a brief delay-specific status to the UI
-                DispatchQueue.main.async {
-                    self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
-                }
+            if elapsed < minInterval {
+                let delay = minInterval - elapsed
+                print("Waiting:\(String(describing: delay))")
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
-        } else {
-            print("No previous request timestamp found; proceeding immediately")
         }
         lastRequestDate = Date()
-
+                
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -837,69 +817,79 @@ import AEXML
       
     }
     
-    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
-        self.separationLine()
-        print("Running func: getAllPoliciesDetailed (sequential)")
+    func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async {
+        separationLine()
+        print("Running func: getAllPoliciesDetailed (bounded concurrency)")
 
-        // Filter out policies without a valid jamfId
-        let validPolicies = policies.filter { ($0.jamfId ?? 0) > 0 }
-        print("Total policies provided: \(policies.count) -> valid policies with jamfId>0: \(validPolicies.count)")
+        let total = policies.count
+        // initialize UI state on main actor
+        self.policyDetailedTotal = total
+        self.policyDetailedProgress = 0.0
+        self.showProgressView = true
+        self.allPoliciesDetailed.removeAll()
 
-        // Track failed calls for retries or diagnostics
-        var failedCalls: [String] = []
+        // concurrency limit - adjust as needed
+        let concurrency = 6
+        var completed = 0
 
-        for policy in validPolicies {
-            let jamfIdVal = policy.jamfId ?? 0
-            let policyID = String(describing: jamfIdVal)
-            do {
-                // Respect minimum interval between requests
-                let now = Date()
-                if let last = lastRequestDate {
-                    let elapsed = now.timeIntervalSince(last)
-                    if elapsed < policyRequestDelay {
-                        let delay = policyRequestDelay - elapsed
-                        let human = formatDuration(delay)
-                        let nextRunAt = Date().addingTimeInterval(delay)
-                        print("Throttling: sleeping for \(delay) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
-                        DispatchQueue.main.async {
-                            self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
+        for start in stride(from: 0, to: total, by: concurrency) {
+            let end = Swift.min(start + concurrency, total)
+            let slice = policies[start..<end]
+
+            await withTaskGroup(of: PolicyDetailed?.self) { group in
+                for policy in slice {
+                    let id = String(describing: policy.jamfId ?? 0)
+                    group.addTask {
+                        do {
+                            let detailed = try await NetBrain.fetchPolicyDetailedRaw(server: server, authToken: authToken, policyID: id, productName: self.product_name, buildVersion: self.build_version)
+                            return detailed
+                        } catch {
+                            // Log and continue
+                            print("Failed to fetch policy id=\(id): \(error)")
+                            return nil
                         }
-                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     }
                 }
 
-                lastRequestDate = Date()
+                for await result in group {
+                    completed += 1
+                    if let detail = result {
+                        // safe to touch @MainActor state (this method is MainActor)
+                        self.allPoliciesDetailed.insert(detail, at: 0)
+                        print("Fetched policy: \(detail.general?.name ?? "<unknown>")")
+                    }
 
-                try await getDetailedPolicy(server: server, authToken: authToken, policyID: policyID)
-
-                // policy.name is a non-optional String, so don't use `if let` on it
-                let name = policy.name
-                if !name.isEmpty {
-                    print("Fetched policy detail for: \(name) (ID: \(policyID))")
-                } else {
-                    print("Fetched policy detail for ID: \(policyID)")
+                    // update progress
+                    self.policyDetailedProgress = total > 0 ? Double(completed) / Double(total) : 1.0
                 }
-
-            } catch {
-                print("Error fetching detailed policy ID \(policyID): \(error)")
-                failedCalls.append(policyID)
-                // continue to next policy
             }
+
+            // small delay between batches to be friendly to the server
+            try? await Task.sleep(nanoseconds: UInt64(self.getPolicyRequestDelay() * 1_000_000_000))
         }
 
-        if !failedCalls.isEmpty {
-            print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
-            // Optionally keep failedCalls in a published property for UI retry handling
-            // self.retryFailedDetailedPolicyCalls = failedCalls
-            await MainActor.run {
-                self.fetchedDetailedPolicies = false
-            }
-        } else {
-            print("getAllPoliciesDetailed completed successfully for all policies")
-            await MainActor.run {
-                self.fetchedDetailedPolicies = true
-            }
+        // Done
+        self.showProgressView = false
+        print("Completed fetching detailed policies: \(completed)/\(total)")
+    }
+
+    // Nonisolated static helper so TaskGroup children can perform network I/O concurrently
+    static nonisolated func fetchPolicyDetailedRaw(server: String, authToken: String, policyID: String, productName: String?, buildVersion: String?) async throws -> PolicyDetailed {
+        let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: productName ?? ""))/\(String(describing: buildVersion ?? ""))", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw JamfAPIError.http(statusCode)
         }
+        let decoded = try JSONDecoder().decode(PoliciesDetailed.self, from: data)
+        return decoded.policy
     }
     //    #################################################################################
     //    FUNCTIONS
@@ -2056,7 +2046,7 @@ import AEXML
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-
+        
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
         print("Running func: getAllPolicies")
@@ -2071,9 +2061,7 @@ import AEXML
 //        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
 //        self.allPoliciesConverted = decodedData
-        // Populate both the legacy `policies` array and the `allPoliciesConverted` used by views
         self.policies = decodedData
-        self.allPoliciesConverted = decodedData
         allPoliciesComplete = true
         separationLine()
         //        atSeparationLine()
@@ -2184,36 +2172,10 @@ import AEXML
 //        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
 //    }
     
-    // Removed duplicate getAllPoliciesDetailed implementation; see above for the unified async/throws version.
-    
-    
-//=======
-//>>>>>>> main
-    @Published var showProgressView: Bool = false
-    
-    func showProgress() {
-        
-        self.showProgressView = true
-        separationLine()
-        print("Setting showProgress to true")
-        print(self.showProgressView)
-        
-    }
-    
-    func endProgress() {
-        
-        self.showProgressView = false
-        separationLine()
-        print("Setting showProgress to false")
-        print(self.showProgressView)
-        
-    }
-    
-    //    #################################################################################
-    //    run operation - processPoliciesSelected - pass in function
-    //    #################################################################################
-    
-    
+// ...existing code...
+// (removed older duplicate getAllPoliciesDetailed + showProgressView block — using the newer TaskGroup-based implementation above)
+// ...existing code...
+
     func processPoliciesSelected(selectionConverted: [Policy], operation:(String)->Void) {
         
         //    #################################################################################
@@ -4522,56 +4484,68 @@ xml = """
     
     
     func request(url: URL, resourceType: ResourceType, authToken: String) {
-
+        
         let headers = [
             "Accept": "application/json",
             "Authorization": "Bearer \(self.authToken)"
         ]
-
+        
         atSeparationLine()
         print("Running request function - resourceType is set as:\(resourceType)")
-
+        
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.allHTTPHeaderFields = headers
-
+        
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data, let response = response {
-                // Ensure actor-isolated state changes and method calls happen on main actor
-                DispatchQueue.main.async {
-                    self.resourceAccess = true
-
-                    print("Doing processing of request:request")
-
-                    if resourceType == ResourceType.computer {
-                        print("Resource type is set in request to computer")
-                        self.processComputer(data: data, response: response, resourceType: "computer")
-                    } else if resourceType == ResourceType.computerBasic {
-                        print("Resource type is set in request to computerBasic")
-                        self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-                    } else if resourceType == ResourceType.category {
-                        print("Assigning to process - Resource type is set in request to categories")
-                        self.processCategory(data: data, response: response, resourceType: "category")
-                    } else if resourceType == ResourceType.department {
-                        print("Assigning to process - Resource type is set in request to departments")
-                        self.processDepartment(data: data, response: response, resourceType: "department")
-                    } else if resourceType == ResourceType.packages {
-                        print("Assigning to process - Resource type is set in request to packages")
-                        self.processPackages(data: data, response: response, resourceType: "packages")
-                    } else if resourceType == ResourceType.scripts {
-                        print("Assigning to process - Resource type is set in request to scripts")
-                        self.processScripts(data: data, response: response, resourceType: "scripts")
-                    } else {
-                        print("Assigning to process - Resource type is set in request to default - policy ")
+                
+                self.resourceAccess = true
+                
+                //                self.doubleSeparationLine()
+                print("Doing processing of request:request")
+                
+                if resourceType == ResourceType.computer {
+                    print("Resource type is set in request to computer")
+                    
+                    self.processComputer(data: data, response: response, resourceType: "computer")
+                    
+                } else if resourceType == ResourceType.computerBasic {
+                    print("Resource type is set in request to computerBasic")
+                    
+                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
+                    
+                } else if resourceType == ResourceType.category {
+                    print("Assigning to process - Resource type is set in request to categories")
+                    self.processCategory(data: data, response: response, resourceType: "category")
+                    
+                } else if resourceType == ResourceType.department {
+                    print("Assigning to process - Resource type is set in request to departments")
+                    self.processDepartment(data: data, response: response, resourceType: "department")
+                    
+                } else if resourceType == ResourceType.packages {
+                    print("Assigning to process - Resource type is set in request to packages")
+                    self.processPackages(data: data, response: response, resourceType: "packages")
+                    
+                } else if resourceType == ResourceType.scripts {
+                    print("Assigning to process - Resource type is set in request to scripts")
+                    self.processScripts(data: data, response: response, resourceType: "scripts")
+                    
+                } else {
+                    print("Assigning to process - Resource type is set in request to default - policy ")
+                    DispatchQueue.main.async {
                         self.processPolicies(data: data, response: response, resourceType: resourceType)
                     }
                 }
+                
             } else {
                 DispatchQueue.main.async {
                     self.resourceAccess = false
-                    var text = "\n\nFailed."
-                    if let error = error {
-                        text += " \(error)."
-                    }
+                }
+                var text = "\n\nFailed."
+                if let error = error {
+                    text += " \(error)."
+                }
+                DispatchQueue.main.async {
                     self.appendStatus(text)
                 }
             }
@@ -4580,49 +4554,56 @@ xml = """
     }
     
     func requestDelete(url: URL, authToken: String, resourceType: ResourceType) {
-
+        
         let headers = [
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Authorization": "Bearer \(authToken)"
         ]
-
+        
         atSeparationLine()
         print("Running requestDelete function - resourceType is set as:\(resourceType)")
-
+        
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.allHTTPHeaderFields = headers
         request.httpMethod = "DELETE"
-
+        
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
+            
             if let data = data, let response = response {
-                // Ensure UI/actor updates happen on main actor
-                DispatchQueue.main.async {
-                    print("Doing processing of requestDelete")
-
-                    if resourceType == ResourceType.computer {
-                        print("Assigning to processComputer - Resource type is set in request to computer")
-                        self.processComputer(data: data, response: response, resourceType: "computer")
-                    } else if resourceType == ResourceType.computerBasic {
-                        print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
-                        print("################################################")
-                        print(String(data: data, encoding: .utf8)!)
-                        print((response))
-                        print("Error is:\(String(describing: error))")
-                        self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-                    } else if resourceType == ResourceType.scripts {
-                        print("Assigning to processScripts - Resource type is set in request to scripts")
-                        self.processScripts(data: data, response: response, resourceType: "scripts")
-                    } else if resourceType == ResourceType.department {
-                        print("Assigning to processDepartment - Resource type is set in request to departments")
-                        self.processDepartment(data: data, response: response, resourceType: "department")
-                    } else if resourceType == ResourceType.package {
-                        print("Assigning to processPackage - Resource type is set in request to package")
-                    } else {
-                        print("Assigning to processPolicies - Resource type is set in request to policies")
-                        self.processPolicies(data: data, response: response, resourceType: resourceType)
-                    }
+                
+                print("Doing processing of requestDelete")
+                
+                if resourceType == ResourceType.computer {
+                    print("Assigning to processComputer - Resource type is set in request to computer")
+                    self.processComputer(data: data, response: response, resourceType: "computer")
+                    
+                } else if resourceType == ResourceType.computerBasic {
+                    print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
+                    print("################################################")
+                    print(String(data: data, encoding: .utf8)!)
+                    print((response))
+                    print("Error is:\(String(describing: error))")
+                    //                    print(String(error: error, encoding: .utf8)!)
+                    self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
+                    
+                } else if resourceType == ResourceType.scripts {
+                    print("Assigning to processScripts - Resource type is set in request to scripts")
+                    self.processScripts(data: data, response: response, resourceType: "scripts")
+                    
+                } else if resourceType == ResourceType.department {
+                    print("Assigning to processDepartment - Resource type is set in request to departments")
+                    self.processDepartment(data: data, response: response, resourceType: "department")
+                    
+                } else if resourceType == ResourceType.package {
+                    print("Assigning to processPackage - Resource type is set in request to package")
+                    
+                } else {
+                    print("Assigning to processPolicies - Resource type is set in request to policies")
+                    
+                    self.processPolicies(data: data, response: response, resourceType: resourceType)
                 }
+                
             } else {
                 var text = "\n\nFailed."
                 if let error = error {
@@ -5287,56 +5268,6 @@ xml = """
     @Published var allUsers: [UserSimple] = []
     @Published var userDetail: UserDetail? = nil
 
-    // Ensure policies are loaded; try the JSON API first, fall back to request pipeline if it fails
-    @MainActor
-    func ensurePoliciesLoaded(server: String, authToken: String) async {
-        separationLine()
-        print("ensurePoliciesLoaded: server=\(server), auth present=\(!authToken.isEmpty)")
-
-        // If we already have policies, nothing to do
-        if !self.allPoliciesConverted.isEmpty || !self.policies.isEmpty {
-            print("Policies already present: allPoliciesConverted=\(self.allPoliciesConverted.count), policies=\(self.policies.count)")
-            // Make sure legacy array is synced
-            if self.allPoliciesConverted.isEmpty, !self.policies.isEmpty {
-                self.allPoliciesConverted = self.policies
-            }
-            return
-        }
-
-        // Try the JSON API approach first
-        do {
-            print("ensurePoliciesLoaded: attempting JSON API getAllPolicies")
-            try await getAllPolicies(server: server, authToken: authToken)
-            print("ensurePoliciesLoaded: getAllPolicies succeeded - count=\(self.allPoliciesConverted.count)")
-            return
-        } catch {
-            print("ensurePoliciesLoaded: getAllPolicies failed: \(error). Falling back to request pipeline.")
-        }
-
-        // Fallback: use the legacy request pipeline which will call processPolicies -> receivedPolicies
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("policies")
-            print("ensurePoliciesLoaded: issuing legacy request to \(url)")
-            request(url: url, resourceType: ResourceType.policies, authToken: authToken)
-
-            // Give the async pipeline a small window to populate published arrays
-            // (This is best-effort; callers should await a subsequent check or re-render.)
-            do {
-                try await Task.sleep(nanoseconds: 600_000_000) // 0.6s
-            } catch {
-                // ignore
-            }
-
-            // If receivedPolicies populated `policies`, sync to allPoliciesConverted
-            if self.allPoliciesConverted.isEmpty && !self.policies.isEmpty {
-                print("ensurePoliciesLoaded: syncing policies -> allPoliciesConverted (count=\(self.policies.count))")
-                self.allPoliciesConverted = self.policies
-            }
-        } else {
-            print("ensurePoliciesLoaded: invalid server URL, cannot fallback")
-        }
-    }
-
     // Centralized error state (UI observes these to show alerts)
     @Published var lastErrorTitle: String? = nil
     @Published var lastErrorMessage: String? = nil
@@ -5457,37 +5388,32 @@ xml = """
     
     
     func getAllDetailedUsers(server: String, authToken: String, users: [UserSimple]) async throws {
-
+        
         self.separationLine()
         print("Running func: getAllPoliciesDetailed")
-
+        
         //        ########################################################
         //        Rate limiting
         //        ########################################################
 
         let now = Date()
         if let last = lastRequestDate {
+            print("Last request ran at:\(String(describing: last))")
             let elapsed = now.timeIntervalSince(last)
-            print("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
-            if elapsed < policyRequestDelay {
-                let delay = policyRequestDelay - elapsed
-                let human = formatDuration(delay)
-                let nextRunAt = Date().addingTimeInterval(delay)
-                print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
-                DispatchQueue.main.async {
-                    self.policyDelayStatus = "Delaying detailed user fetch: \(human) (next at \(nextRunAt))"
+            if elapsed < minInterval {
+                let delay = minInterval - elapsed
+                print("Waiting:\(String(describing: delay))")
+                Task {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 }
-                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
-        } else {
-            print("No previous request timestamp found; proceeding immediately")
         }
         lastRequestDate = Date()
-
+        
         for user in users {
             Task {
                 try await getDetailUser(userID: String(describing: user.jamfId))
-
+                
                 if policyDetailed != nil {
                     print("Users is:\(String(describing: user.name)) - ID is:\(String(describing: user.jamfId ?? 0))")
                 }
