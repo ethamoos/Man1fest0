@@ -1,5 +1,69 @@
-
 import SwiftUI
+
+// Lightweight inline preferences view to ensure it's always in-scope for the App
+#if os(macOS)
+fileprivate struct AppPolicyDelayPreferencesView: View {
+    @EnvironmentObject var networkController: NetBrain
+    @State private var delayValue: Double = 3.0
+    @State private var showSavedToast = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Policy fetch delay (seconds)")
+                .font(.headline)
+
+            HStack {
+                Slider(value: $delayValue, in: 0...60, step: 0.1)
+                Stepper(value: $delayValue, in: 0...600, step: 1) {
+                    Text("\(Int(delayValue)) s")
+                        .frame(minWidth: 60)
+                }
+            }
+
+            HStack(spacing: 12) {
+                Button(action: {
+                    networkController.setPolicyRequestDelay(delayValue)
+                    showSavedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showSavedToast = false
+                    }
+                }) {
+                    Text("Save")
+                }
+
+                Button(action: {
+                    delayValue = networkController.getPolicyRequestDelay()
+                }) {
+                    Text("Reset to current")
+                }
+
+                Spacer()
+
+                Text(networkController.policyDelayStatus)
+                    .foregroundColor(.secondary)
+            }
+
+            if showSavedToast {
+                Text("Saved")
+                    .foregroundColor(.green)
+            }
+
+            Divider()
+
+            Text("Human readable: \(networkController.humanReadableDuration(delayValue))")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Spacer()
+        }
+        .padding()
+        .onAppear {
+            delayValue = networkController.getPolicyRequestDelay()
+        }
+        .frame(minWidth: 420, minHeight: 180)
+    }
+}
+#endif
 
 
 @main
@@ -30,6 +94,8 @@ struct Man1fest0App: App {
     let scopingController: ScopingBrain
     let policyController: PolicyBrain
     let exportController: ImportExportBrain
+    // State to control presentation of the Preferences sheet (macOS only)
+    @State private var showingPreferences: Bool = false
     
     init() {
         self.photoController = PhotoViewModel()
@@ -67,13 +133,31 @@ struct Man1fest0App: App {
 
                 .environmentObject(layout)
                 .environmentObject(backgroundTasks)
-//                .environmentObject(jamfController)
+//                .environmentObject(jamfcontroller)
                 .environmentObject(scopingController)
                 .environmentObject(policyController)
                 .environmentObject(exportController)
+                // Present the preferences view as a sheet on macOS when requested from the menu
+                #if os(macOS)
+                .sheet(isPresented: $showingPreferences) {
+                    AppPolicyDelayPreferencesView()
+                        .environmentObject(networkController)
+                }
+                #endif
         }.commands {
             SidebarCommands() 
         }
+        // Add a macOS-only menu command to open Preferences directly from the app menu
+        #if os(macOS)
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Preferences…") {
+                    showingPreferences = true
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
+        }
+        #endif
         .onChange(of: scenePhase) { _ in
             coreDataStack.save()
         }

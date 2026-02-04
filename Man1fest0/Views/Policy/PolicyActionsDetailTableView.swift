@@ -278,85 +278,97 @@ struct PolicyActionsDetailTableView: View {
     
     
     func fetchData() {
-        
-        if  networkController.categories.isEmpty {
-            print("No category data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-            
-        } else {
-            print("category data is available")
-        }
-        
-        if networkController.allIconsDetailed.count <= 1 {
-            print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
-        } else {
-            print("getAllIconsDetailed has already run")
-            print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-        }
-        
-        if scopingController.allLdapServers.count <= 1 {
-            print("getLdapServers is:\(scopingController.allLdapServers.count) - running")
-            Task {
-                try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
+        print("Running fetchData")
+
+        Task {
+            // Ensure we are connected and have a valid auth token
+            print("Ensuring networkController is connected and has a token")
+            await networkController.connect()
+
+            let effectiveServer = server.isEmpty ? networkController.server : server
+            print("Effective server: \(effectiveServer)")
+            print("Controller server: \(networkController.server)")
+            print("Controller username: \(networkController.username)")
+            print("Controller authToken present: \( !networkController.authToken.isEmpty )")
+
+            guard !effectiveServer.isEmpty else {
+                print("No server configured. Skipping fetch.")
+                return
             }
-        } else {
-            print("getLdapServers has already run")
-            print("getLdapServers is:\(scopingController.allLdapServers.count) - running")
-        }
-        
-        if  networkController.packages.isEmpty {
-            print("No package data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-            
-        } else {
-            print("package data is available")
-        }
-        
-        if  networkController.policies.isEmpty {
-            print("No policies data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.policies, authToken: networkController.authToken)
-            
-        } else {
-            print("policies data is available")
-        }
-        
-        if  networkController.allComputerGroups.isEmpty {
-            print("No groups data - fetching")
-            Task {
-                try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-            }
-        } else {
-            print("groups data is available")
-        }
-        
-        if networkController.fetchedDetailedPolicies == false {
-            
-            print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-            
-            if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
-                
-                print("fetching detailed policies")
-                
-                progress.showProgress()
-                
-                Task {
-                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+
+            // 1) Ensure we have basic policies (use the central helper which will try JSON API then fallback)
+            print("Ensuring policies are loaded via ensurePoliciesLoaded")
+            await networkController.ensurePoliciesLoaded(server: effectiveServer, authToken: networkController.authToken)
+            print("After ensurePoliciesLoaded: allPoliciesConverted.count=\(networkController.allPoliciesConverted.count), policies.count=\(networkController.policies.count)")
+
+            // 2) Fetch detailed policies (wait for basic to complete first)
+            if networkController.fetchedDetailedPolicies == false {
+                print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
+                if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
+                    print("fetching detailed policies — will await completion")
+                    await MainActor.run { progress.showProgress() }
+                    do {
+                        try await networkController.getAllPoliciesDetailed(server: effectiveServer, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                        await MainActor.run {
+                            convertToallPoliciesDetailedGeneral()
+                            progress.waitForABit()
+                            networkController.fetchedDetailedPolicies = true
+                        }
+                        print("Completed getAllPoliciesDetailed: count=\(networkController.allPoliciesDetailed.count)")
+                    } catch {
+                        print("getAllPoliciesDetailed failed: \(error)")
+                        await MainActor.run { progress.endProgress(); networkController.fetchedDetailedPolicies = false }
+                    }
+                } else {
+                    print("Download complete")
                 }
-                
-                convertToallPoliciesDetailedGeneral()
-                
-                progress.waitForABit()
-                
-                networkController.fetchedDetailedPolicies = true
-                
             } else {
-                print("Download complete")
+                print("fetchedDetailedPolicies has run")
             }
-        } else {
-            print("fetchedDetailedPolicies has run")
+
+            // 3) Other data fetches
+            if networkController.categories.isEmpty {
+                print("No category data - fetching")
+                networkController.connect(server: effectiveServer,resourceType: ResourceType.category, authToken: networkController.authToken)
+            } else {
+                print("category data is available")
+            }
+
+            if networkController.allIconsDetailed.count <= 1 {
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                networkController.getAllIconsDetailed(server: effectiveServer, authToken: networkController.authToken, loopTotal: 1000)
+            } else {
+                print("getAllIconsDetailed has already run")
+                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+            }
+
+            if scopingController.allLdapServers.count <= 1 {
+                print("getLdapServers is:\(scopingController.allLdapServers.count) - running")
+                Task {
+                    try await scopingController.getLdapServers(server: effectiveServer, authToken: networkController.authToken)
+                }
+            } else {
+                print("getLdapServers has already run")
+                print("getLdapServers is:\(scopingController.allLdapServers.count) - running")
+            }
+
+            if networkController.packages.isEmpty {
+                print("No package data - fetching")
+                networkController.connect(server: effectiveServer,resourceType: ResourceType.packages, authToken: networkController.authToken)
+            } else {
+                print("package data is available")
+            }
+
+            if networkController.allComputerGroups.isEmpty {
+                print("No groups data - fetching")
+                Task {
+                    try await networkController.getAllGroups(server: effectiveServer, authToken: networkController.authToken)
+                }
+            } else {
+                print("groups data is available")
+            }
         }
-    }
+     }
     
     
     var searchResults: [General] {

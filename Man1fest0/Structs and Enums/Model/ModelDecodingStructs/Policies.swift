@@ -274,6 +274,16 @@ struct Reboot: Codable, Hashable, Identifiable  {
 }
 
 // MARK: - Scope
+
+// Ensure LimitToUsers is defined before Scope so synthesized Codable/Hashable conformances work
+struct LimitToUsers: Codable, Hashable, Identifiable  {
+    var id = UUID()
+    let users: [Users]?
+    enum CodingKeys:String, CodingKey {
+        case users = "users"
+    }
+}
+
 struct Scope: Codable, Hashable, Identifiable  {
     var id = UUID()
     let allComputers: Bool?
@@ -290,7 +300,7 @@ struct Scope: Codable, Hashable, Identifiable  {
             let limitToUsers: LimitToUsers?
             let limitations: Limitations?
             let exclusions: Exclusions?
-    
+
     enum CodingKeys: String, CodingKey {
         case allComputers = "all_computers"
         //            case all_mobile_devices = "all_mobile_devices"
@@ -361,14 +371,49 @@ struct Exclusions: Codable, Hashable, Identifiable  {
         case jss_users = "jss_users"
         case jss_user_groups = "jss_user_groups"
     }
-}
 
-// MARK: - LimitToUsers
-struct LimitToUsers: Codable, Hashable, Identifiable  {
-    var id = UUID()
-    let users: [Users]?
-    enum CodingKeys:String, CodingKey {
-        case users = "users"
+    // Custom decoder to accept either an array or a single object for keys
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        func decodeArrayOrSingle(_ key: CodingKeys) -> [GenericItem]? {
+            if let arr = try? container.decode([GenericItem].self, forKey: key) {
+                return arr
+            }
+            if let single = try? container.decode(GenericItem.self, forKey: key) {
+                return [single]
+            }
+            return nil
+        }
+
+        self.computers = decodeArrayOrSingle(.computers)
+        self.computerGroups = decodeArrayOrSingle(.computerGroups)
+        self.buildings = decodeArrayOrSingle(.buildings)
+        self.departments = decodeArrayOrSingle(.departments)
+        self.users = decodeArrayOrSingle(.users)
+        self.userGroups = decodeArrayOrSingle(.userGroups)
+        self.networkSegments = decodeArrayOrSingle(.networkSegments)
+        self.ibeacons = decodeArrayOrSingle(.ibeacons)
+        self.mobile_devices = decodeArrayOrSingle(.mobile_devices)
+        self.mobile_device_groups = decodeArrayOrSingle(.mobile_device_groups)
+        self.jss_users = decodeArrayOrSingle(.jss_users)
+        self.jss_user_groups = decodeArrayOrSingle(.jss_user_groups)
+    }
+
+    // encode straightforwardly as arrays (synthesized behavior)
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(computers, forKey: .computers)
+        try container.encodeIfPresent(computerGroups, forKey: .computerGroups)
+        try container.encodeIfPresent(buildings, forKey: .buildings)
+        try container.encodeIfPresent(departments, forKey: .departments)
+        try container.encodeIfPresent(users, forKey: .users)
+        try container.encodeIfPresent(userGroups, forKey: .userGroups)
+        try container.encodeIfPresent(networkSegments, forKey: .networkSegments)
+        try container.encodeIfPresent(ibeacons, forKey: .ibeacons)
+        try container.encodeIfPresent(mobile_devices, forKey: .mobile_devices)
+        try container.encodeIfPresent(mobile_device_groups, forKey: .mobile_device_groups)
+        try container.encodeIfPresent(jss_users, forKey: .jss_users)
+        try container.encodeIfPresent(jss_user_groups, forKey: .jss_user_groups)
     }
 }
 
@@ -381,7 +426,7 @@ struct Limitations: Codable, Hashable, Identifiable  {
     let ibeacons: [GenericItem]?
     let jss_users: [GenericItem]?
     let jss_user_groups: [GenericItem]?
-    
+
     enum CodingKeys:String, CodingKey {
         case userGroups = "user_groups"
         case users = "users"
@@ -389,6 +434,36 @@ struct Limitations: Codable, Hashable, Identifiable  {
         case ibeacons = "ibeacons"
         case jss_users = "jss_users"
         case jss_user_groups = "jss_user_groups"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        func decodeArrayOrSingle(_ key: CodingKeys) -> [GenericItem]? {
+            if let arr = try? container.decode([GenericItem].self, forKey: key) {
+                return arr
+            }
+            if let single = try? container.decode(GenericItem.self, forKey: key) {
+                return [single]
+            }
+            return nil
+        }
+
+        self.userGroups = try? container.decodeIfPresent([UserGroups].self, forKey: .userGroups)
+        self.users = decodeArrayOrSingle(.users)
+        self.network_segments = decodeArrayOrSingle(.network_segments)
+        self.ibeacons = decodeArrayOrSingle(.ibeacons)
+        self.jss_users = decodeArrayOrSingle(.jss_users)
+        self.jss_user_groups = decodeArrayOrSingle(.jss_user_groups)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(userGroups, forKey: .userGroups)
+        try container.encodeIfPresent(users, forKey: .users)
+        try container.encodeIfPresent(network_segments, forKey: .network_segments)
+        try container.encodeIfPresent(ibeacons, forKey: .ibeacons)
+        try container.encodeIfPresent(jss_users, forKey: .jss_users)
+        try container.encodeIfPresent(jss_user_groups, forKey: .jss_user_groups)
     }
 }
 
