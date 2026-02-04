@@ -216,14 +216,14 @@ struct OptionsView: View {
                         }
                         
                         // Preferences
-                        Group {
-                            Divider()
-                            DisclosureGroup("Preferences") {
-                                NavigationLink(destination: PolicyDelayInlineView()) {
-                                    Text("Policy fetch delay")
-                                }
-                            }
-                        }
+//                        Group {
+//                            Divider()
+//                            DisclosureGroup("Preferences") {
+//                                NavigationLink(destination: PolicyDelayInlineView()) {
+//                                    Text("Policy fetch delay")
+//                                }
+//                            }
+//                        }
                         
 //                            NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
 //                                Text("Prestages")
