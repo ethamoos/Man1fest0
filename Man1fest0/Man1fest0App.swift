@@ -68,23 +68,22 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func applySavedFrame() {
-        guard let frameString = UserDefaults.standard.string(forKey: defaultsKey) else { return }
-        print("[AppDelegate] Found saved frame: \(frameString)")
-        var rect = NSRectFromString(frameString)
-        // Ensure restored rect is visible on at least one connected screen. If not, center/clamp on main screen.
-        let screens = NSScreen.screens
-        if !screens.contains(where: { $0.visibleFrame.intersects(rect) }) {
-            // Use main screen (fallback to first) visible frame
-            let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
-            // Limit restored size to not exceed visible area
-            let clampedWidth = min(rect.size.width, mainVisible.width)
-            let clampedHeight = min(rect.size.height, mainVisible.height)
-            let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
-            let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
-            rect.origin.x = max(mainVisible.origin.x, centeredX)
-            rect.origin.y = max(mainVisible.origin.y, centeredY)
-            rect.size.width = clampedWidth
-            rect.size.height = clampedHeight
+        // If there is a saved frame, try to use it; otherwise compute a proportional default
+        let minWidth: CGFloat = 700
+        let minHeight: CGFloat = 420
+        var rect: NSRect
+        if let frameString = UserDefaults.standard.string(forKey: defaultsKey) {
+            print("[AppDelegate] Found saved frame: \(frameString)")
+            rect = NSRectFromString(frameString)
+            // If the saved rect is unreasonably small, fall back to a default proportional rect
+            if rect.size.width < minWidth || rect.size.height < minHeight {
+                print("[AppDelegate] Saved frame too small, using proportional default")
+                rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+            }
+        } else {
+            // No saved frame; use a default rect proportional to main screen
+            rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+            print("[AppDelegate] No saved frame found, using proportional default: \(rect)")
         }
 
         // Find a main/styled window to apply the saved frame to
@@ -95,24 +94,34 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func applySavedFrame(to window: NSWindow) {
-        guard let frameString = UserDefaults.standard.string(forKey: defaultsKey) else { return }
-        print("[AppDelegate] applySavedFrame(to:) found saved frame: \(frameString)")
-        var rect = NSRectFromString(frameString)
-        // Ensure rect is visible on current screens; if not, clamp/center on main visible frame
-        let screens = NSScreen.screens
-        if !screens.contains(where: { $0.visibleFrame.intersects(rect) }) {
-            let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
-            let clampedWidth = min(rect.size.width, mainVisible.width)
-            let clampedHeight = min(rect.size.height, mainVisible.height)
-            let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
-            let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
-            rect.origin.x = max(mainVisible.origin.x, centeredX)
-            rect.origin.y = max(mainVisible.origin.y, centeredY)
-            rect.size.width = clampedWidth
-            rect.size.height = clampedHeight
+        let minWidth: CGFloat = 700
+        let minHeight: CGFloat = 420
+        var rect: NSRect
+        if let frameString = UserDefaults.standard.string(forKey: defaultsKey) {
+            print("[AppDelegate] applySavedFrame(to:) found saved frame: \(frameString)")
+            rect = NSRectFromString(frameString)
+            if rect.size.width < minWidth || rect.size.height < minHeight {
+                print("[AppDelegate] Saved frame too small in applySavedFrame(to:), using proportional default")
+                rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+            }
+        } else {
+            rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+            print("[AppDelegate] No saved frame in applySavedFrame(to:), using proportional default: \(rect)")
         }
         window.setFrame(rect, display: true, animate: false)
         print("[AppDelegate] Applied saved frame to specific window: \(rect)")
+    }
+
+    private func proportionalDefaultRect(minWidth: CGFloat, minHeight: CGFloat) -> NSRect {
+        // Use the main screen visible frame as base, fall back to first screen or a sane default
+        let screens = NSScreen.screens
+        let baseVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
+        // Choose proportions of the available area
+        let width = max(minWidth, floor(baseVisible.width * 0.85))
+        let height = max(minHeight, floor(baseVisible.height * 0.75))
+        let originX = baseVisible.origin.x + (baseVisible.width - width) / 2.0
+        let originY = baseVisible.origin.y + (baseVisible.height - height) / 2.0
+        return NSRect(x: originX, y: originY, width: width, height: height)
     }
 }
 #endif
