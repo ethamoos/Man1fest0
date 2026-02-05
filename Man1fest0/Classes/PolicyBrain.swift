@@ -731,8 +731,8 @@ class PolicyBrain: ObservableObject {
     func readXMLDataFromString(xmlContent: String) {
         self.separationLine()
         separationLine()
-        print("Running readXMLDataFromString - NetBrain")
-        print("xmlContent is:\(xmlContent)")
+        print("Running readXMLDataFromString - PolicyBrain")
+//        print("xmlContent is:\(xmlContent)")
         
         guard let data = try? Data(xmlContent.utf8)
         else {
@@ -787,8 +787,8 @@ class PolicyBrain: ObservableObject {
             //    #################################################################################
             //    Confirm
             //    #################################################################################
-            separationLine()
-            print("policyGeneral IS:\(policyGeneral.xml)")
+//            separationLine()
+//            print("policyGeneral IS:\(policyGeneral.xml)")
             let updatedPolicy = wholeDoc.xml
             separationLine()
             

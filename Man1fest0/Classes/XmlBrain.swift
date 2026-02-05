@@ -349,8 +349,8 @@ class XmlBrain: ObservableObject {
             //    #################################################################################
             //    Confirm
             //    #################################################################################
-            separationLine()
-            print("policyGeneral IS:\(policyGeneral.xml)")
+//            separationLine()
+//            print("policyGeneral IS:\(policyGeneral.xml)")
             let updatedPolicy = wholeDoc.xml
             separationLine()
 //DEBUG
@@ -908,7 +908,7 @@ class XmlBrain: ObservableObject {
     
     func readXMLDataFromString(xmlContent: String) {
         //        self.separationLine()
-//        print("Running readXMLDataFromString - NetBrain")
+        print("Running readXMLDataFromString - XmlBrain")
         //        print("xmlContent is:\(xmlContent)")
         guard let data = try? Data(xmlContent.utf8)
                 

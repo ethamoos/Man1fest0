@@ -369,9 +369,10 @@ struct PolicyDetailView: View {
                 .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
-                    TextField(policyNameClone, text: $policyName)
+                    TextField(policyName, text: $policyNameClone)
                         .textSelection(.enabled)
                     Spacer()
+                    
             }
 #endif
             }
