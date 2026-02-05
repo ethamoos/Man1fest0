@@ -351,13 +351,13 @@ struct PolicyDetailView: View {
                     print("Cloning policy:\(policyName)")
                     progress.showProgress()
                     progress.waitForABit()
-                    if policyNameClone.isEmpty == true {
+                    if policyNameClone == policyName {
                         policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
                         let newPolicyName = "\(policyNameInitial)-1"
                         print("No name provided - policy is:\(newPolicyName)")
                         policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
                     } else {
-                        print("Policy name is set as:\(policyName)")
+                        print("Cloning name is being used and is set as:\(policyNameClone)")
                         policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
                     }
                 }) {

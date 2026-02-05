@@ -282,11 +282,14 @@ struct PolicyScriptsTabView: View {
                     HStack {
                         
                         LazyVGrid(columns: layout.threeColumns, spacing: 10) {
+
+                            
                             // Mirror the filtered picker below: allow filtering by name and guard optional names
-                            Picker(selection: $selectedScript, label: Text("Scripts")) {
+                            Picker(selection: $selectedScript, label: Text("Scripts").bold()) {
                                 ForEach(networkController.scripts.filter { script in
-                                    guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
-                                    return script.name.localizedCaseInsensitiveContains(searchText)
+                                    let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    guard !query.isEmpty else { return true }
+                                    return script.name.localizedCaseInsensitiveContains(query)
                                 }, id: \.self) { script in
                                     Text(script.name)
                                         .tag(script)
@@ -298,6 +301,16 @@ struct PolicyScriptsTabView: View {
                                     selectedScript = networkController.scripts[0]
                                 }
                             }
+                            
+                            // Filter field for the Scripts picker
+                            TextField("Filter scripts", text: $searchText)
+#if os(macOS)
+                                .textFieldStyle(.plain)
+#else
+                                .textFieldStyle(.roundedBorder)
+#endif
+                                .frame(minWidth: 160)
+                                .padding(.bottom, 6)
                         }
                         
                         //  ################################################################################
@@ -342,7 +355,7 @@ struct PolicyScriptsTabView: View {
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "plus.app.fill")
-                                Text("Remove Selected Script")
+                                Text("Remove")
                             }
                         }
                         .buttonStyle(.borderedProminent)
@@ -367,7 +380,7 @@ struct PolicyScriptsTabView: View {
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "minus.square.fill.on.square.fill")
-                                Text("Remove All Scripts")
+                                Text("Remove All")
                             }
                         }
                         .buttonStyle(.borderedProminent)
