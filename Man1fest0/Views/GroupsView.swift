@@ -41,6 +41,20 @@ struct GroupsView: View {
             
             Section(header: Text("Static Groups:").bold().padding()) {
                 
+                // Filter/search field for Static Groups
+                HStack {
+                    TextField("Filter groups", text: $searchText)
+#if os(macOS)
+                        .textFieldStyle(.plain)
+#else
+                        .textFieldStyle(.roundedBorder)
+#endif
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding([.leading, .trailing])
+                    
+                    Spacer()
+                }
+                
                 NavigationView {
                     
                     if searchResults.count > 0 {
