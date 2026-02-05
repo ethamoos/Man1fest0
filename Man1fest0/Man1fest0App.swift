@@ -1,4 +1,121 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+
+/// App delegate to persist and restore the main window frame (macOS only).
+fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
+    private let defaultsKey = "MainWindowFrame"
+    private var didRestore = false
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Print bundle id for debugging
+        if let bundleId = Bundle.main.bundleIdentifier {
+            print("[AppDelegate] bundle identifier: \(bundleId)")
+        } else {
+            print("[AppDelegate] bundle identifier: nil")
+        }
+
+        // Apply saved frame after a short delay to allow SwiftUI to finish creating windows
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.applySavedFrame()
+        }
+
+        // Observe window move/resize notifications so we can persist changes
+        NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: NSWindow.didResizeNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)), name: NSWindow.didMoveNotification, object: nil)
+        // Observe when windows close so we can save the frame
+        NotificationCenter.default.addObserver(self, selector: #selector(windowWillClose(_:)), name: NSWindow.willCloseNotification, object: nil)
+        // Observe when a window becomes key to restore the saved frame once a titled window appears
+        NotificationCenter.default.addObserver(self, selector: #selector(windowDidBecomeKey(_:)), name: NSWindow.didBecomeKeyNotification, object: nil)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Save current frame at termination as a final snapshot
+        saveCurrentWindowFrame()
+    }
+
+    @objc private func windowDidChange(_ note: Notification) {
+        guard let window = note.object as? NSWindow else { return }
+        saveFrame(for: window)
+    }
+
+    @objc private func windowWillClose(_ note: Notification) {
+        guard let window = note.object as? NSWindow else { return }
+        saveFrame(for: window)
+    }
+
+    @objc private func windowDidBecomeKey(_ note: Notification) {
+        guard !didRestore, let window = note.object as? NSWindow else { return }
+        // Only restore for standard titled windows (avoid sheets, panels)
+        guard window.styleMask.contains(.titled) else { return }
+        applySavedFrame(to: window)
+        didRestore = true
+    }
+
+    // Exposed so the App can request a frame save (e.g., on scenePhase changes)
+    func saveCurrentWindowFrame() {
+        if let window = NSApp.keyWindow ?? NSApp.windows.first {
+            saveFrame(for: window)
+        }
+    }
+
+    private func saveFrame(for window: NSWindow) {
+        // Only persistent frames for standard windows (avoid panels, popovers)
+        guard window.styleMask.contains(.titled) else { return }
+        let frameString = NSStringFromRect(window.frame)
+        UserDefaults.standard.set(frameString, forKey: defaultsKey)
+        print("[AppDelegate] Saved window frame: \(frameString)")
+    }
+
+    private func applySavedFrame() {
+        guard let frameString = UserDefaults.standard.string(forKey: defaultsKey) else { return }
+        print("[AppDelegate] Found saved frame: \(frameString)")
+        var rect = NSRectFromString(frameString)
+        // Ensure restored rect is visible on at least one connected screen. If not, center/clamp on main screen.
+        let screens = NSScreen.screens
+        if !screens.contains(where: { $0.visibleFrame.intersects(rect) }) {
+            // Use main screen (fallback to first) visible frame
+            let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
+            // Limit restored size to not exceed visible area
+            let clampedWidth = min(rect.size.width, mainVisible.width)
+            let clampedHeight = min(rect.size.height, mainVisible.height)
+            let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
+            let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
+            rect.origin.x = max(mainVisible.origin.x, centeredX)
+            rect.origin.y = max(mainVisible.origin.y, centeredY)
+            rect.size.width = clampedWidth
+            rect.size.height = clampedHeight
+        }
+
+        // Find a main/styled window to apply the saved frame to
+        if let window = NSApp.windows.first(where: { $0.styleMask.contains(.titled) }) {
+            window.setFrame(rect, display: true, animate: false)
+            print("[AppDelegate] Applied saved frame to window: \(rect)")
+        }
+    }
+
+    private func applySavedFrame(to window: NSWindow) {
+        guard let frameString = UserDefaults.standard.string(forKey: defaultsKey) else { return }
+        print("[AppDelegate] applySavedFrame(to:) found saved frame: \(frameString)")
+        var rect = NSRectFromString(frameString)
+        // Ensure rect is visible on current screens; if not, clamp/center on main visible frame
+        let screens = NSScreen.screens
+        if !screens.contains(where: { $0.visibleFrame.intersects(rect) }) {
+            let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
+            let clampedWidth = min(rect.size.width, mainVisible.width)
+            let clampedHeight = min(rect.size.height, mainVisible.height)
+            let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
+            let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
+            rect.origin.x = max(mainVisible.origin.x, centeredX)
+            rect.origin.y = max(mainVisible.origin.y, centeredY)
+            rect.size.width = clampedWidth
+            rect.size.height = clampedHeight
+        }
+        window.setFrame(rect, display: true, animate: false)
+        print("[AppDelegate] Applied saved frame to specific window: \(rect)")
+    }
+}
+#endif
 
 // Lightweight inline preferences view to ensure it's always in-scope for the App
 #if os(macOS)
@@ -96,6 +213,10 @@ struct Man1fest0App: App {
     let exportController: ImportExportBrain
     // State to control presentation of the Preferences sheet (macOS only)
     @State private var showingPreferences: Bool = false
+    #if os(macOS)
+    // Hook our AppDelegate to handle window frame persistence
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
     
     init() {
         self.photoController = PhotoViewModel()
@@ -145,7 +266,7 @@ struct Man1fest0App: App {
                 }
                 #endif
         }.commands {
-            SidebarCommands() 
+            SidebarCommands()
         }
         // Add a macOS-only menu command to open Preferences directly from the app menu
         #if os(macOS)
@@ -158,8 +279,14 @@ struct Man1fest0App: App {
             }
         }
         #endif
-        .onChange(of: scenePhase) { _ in
+        .onChange(of: scenePhase) { newPhase in
             coreDataStack.save()
+#if os(macOS)
+            // Explicitly save the window frame on scene phase changes (e.g., backgrounding)
+            if newPhase == .background || newPhase == .inactive {
+                appDelegate.saveCurrentWindowFrame()
+            }
+#endif
         }
     }
 }

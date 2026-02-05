@@ -445,9 +445,9 @@ import AEXML
             print("Code not 200")
             throw JamfAPIError.badResponseCode
         }
-        separationLine()
-        print("getDepartmentScope - processDetail Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+//        separationLine()
+//        print("getDepartmentScope - processDetail Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
         self.departments = try decoder.decode([Department].self, from: data)
         //        print("Decoded departments are:\(allDepartments)")
@@ -487,9 +487,9 @@ import AEXML
             print("Code not 200")
             throw JamfAPIError.badResponseCode
         }
-        separationLine()
-        print("processDetail Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+//        separationLine()
+//        print("processDetail Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
         self.categories = try decoder.decode([Category].self, from: data)
     }
@@ -513,9 +513,9 @@ import AEXML
             print("Code not 200")
             throw JamfAPIError.badResponseCode
         }
-        separationLine()
-        print("processDetail Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+//        separationLine()
+//        print("processDetail Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
             
            do {
@@ -551,9 +551,9 @@ import AEXML
             print("Code not 200")
             throw JamfAPIError.badResponseCode
         }
-        separationLine()
-        print("processDetail Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+//        separationLine()
+//        print("processDetail Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
         self.departments = try decoder.decode([Department].self, from: data)
         

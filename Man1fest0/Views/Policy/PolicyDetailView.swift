@@ -587,7 +587,7 @@ struct PolicyDetailView: View {
                 
                 PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
                     .tabItem {
-                        Label("Various Clear", systemImage: "square.and.pencil")
+                        Label("Clear Items", systemImage: "square.and.pencil")
                     }
             }
             
