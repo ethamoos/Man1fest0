@@ -1986,7 +1986,7 @@ import AEXML
         print("scriptID is set to:\(scriptID)")
         
         let jamfURLQuery = server + "/api/v1/scripts/" + String(describing: scriptID)
-        
+        self.currentURL = jamfURLQuery
         let url = URL(string: jamfURLQuery)!
         print("url is set to:\(url)")
         

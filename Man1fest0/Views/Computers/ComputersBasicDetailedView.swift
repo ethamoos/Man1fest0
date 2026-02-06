@@ -124,7 +124,7 @@ struct ComputersBasicDetailedView: View {
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 
                 
-                Button("Open Web Page") {
+                Button("Open In Browser") {
                         
                         progress.showProgress()
                         progress.waitForABit()

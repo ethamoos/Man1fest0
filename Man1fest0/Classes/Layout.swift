@@ -242,13 +242,15 @@ class Layout: ObservableObject {
     }
     
     private func translateJamfAPIURL(_ url: URL) -> URL? {
+        
+        print("Running: translateJamfAPIURL with URL: \(url.absoluteString)")
         // We're only interested in paths that contain `/JSSResource/{resource}/id/{id}`
         let components = url.pathComponents.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) }.filter { !$0.isEmpty }
         // components would be ["JSSResource","policies","id","1111"] for the example
         guard components.count >= 4 else { return nil }
         guard components[0].lowercased() == "jssresource" else { return nil }
 
-        let resource = components[1]
+        let resource = components[1].lowercased()
 
         // find the "id" segment and the following value
         if let idIndex = components.firstIndex(where: { $0.lowercased() == "id" }), components.indices.contains(idIndex + 1) {
@@ -262,11 +264,18 @@ class Layout: ObservableObject {
             if let user = url.user, !user.isEmpty { newComponents.user = user }
             if let password = url.password, !password.isEmpty { newComponents.password = password }
 
-            newComponents.path = "/\(resource).html"
-            newComponents.queryItems = [
-                URLQueryItem(name: "id", value: idValue),
-                URLQueryItem(name: "o", value: "r")
-            ]
+            // Special-case scripts: Jamf Pro uses a different web UI path for script detail pages
+            if resource == "scripts" {
+                // Example: https://server/view/settings/computer-management/scripts/15?tab=general
+                newComponents.path = "/view/settings/computer-management/scripts/\(idValue)"
+                newComponents.queryItems = [ URLQueryItem(name: "tab", value: "general") ]
+            } else {
+                newComponents.path = "/\(resource).html"
+                newComponents.queryItems = [
+                    URLQueryItem(name: "id", value: idValue),
+                    URLQueryItem(name: "o", value: "r")
+                ]
+            }
 
             return newComponents.url
         }
@@ -279,6 +288,8 @@ class Layout: ObservableObject {
     //  input:  https://server/JSSResource/computers/id/18562, requestType: "computers"
     //  output: https://server/JSSResource/computers?id=18562&o=r
     func translateJamfURL(_ url: URL, requestType: String) -> URL? {
+        
+        
         // Normalize path components and remove empty segments caused by double slashes
         let components = url.pathComponents.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) }.filter { !$0.isEmpty }
         guard !components.isEmpty else { return nil }
@@ -319,7 +330,12 @@ class Layout: ObservableObject {
     /// Open a URL in the default browser. If `requestType` is provided, prefer translating
     /// the URL using `translateJamfURL(_:requestType:)`. Otherwise fall back to the
     /// automatic `translateJamfAPIURL(_:)` translation (if any).
+    ///
+    ///
+    ///
     func openURL(urlString: String, requestType: String? = nil) {
+        
+        print("Running openURL")
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             alertMessage = "Please enter a URL."
