@@ -256,6 +256,36 @@ struct PolicyScopeTabView: View {
                         HStack {
                             
                             //  ################################################################################
+                            //              scopeAllComputers
+                            //  ################################################################################
+                            
+                            Button(action: {
+                                showingWarningAllComputers = true
+                                progress.showProgress()
+                                progress.waitForABit()
+                            }) {
+                                HStack(spacing: 10) {
+                                    //                                    Image(systemName: "eraser")
+                                    Text("Enable All Computers")
+                                }
+                                .alert(isPresented: $showingWarningAllComputers) {
+                                    Alert(
+                                        title: Text("Caution!"),
+                                        message: Text("This action will enable the policy scoping for all computers.\n This might cause the policy to run immediately to many devices"),
+                                        primaryButton: .destructive(Text("I understand!")) {
+                                            // Code to execute when "Yes" is tapped
+                                            networkController.scopeAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                            print("Yes tapped")
+                                        },
+                                        secondaryButton: .cancel()
+                                    )
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            
+                            
+                            //  ################################################################################
                             //              scopeAllUsers
                             //  ################################################################################
                             
@@ -285,35 +315,7 @@ struct PolicyScopeTabView: View {
                             .tint(.red)
                             
                             
-                            //  ################################################################################
-                            //              scopeAllComputers
-                            //  ################################################################################
-                            
-                            Button(action: {
-                                showingWarningAllComputers = true
-                                progress.showProgress()
-                                progress.waitForABit()
-                            }) {
-                                HStack(spacing: 10) {
-                                    //                                    Image(systemName: "eraser")
-                                    Text("Enable All Computers")
-                                }
-                                .alert(isPresented: $showingWarningAllComputers) {
-                                    Alert(
-                                        title: Text("Caution!"),
-                                        message: Text("This action will enable the policy scoping for all computers.\n This might cause the policy to run immediately to many devices"),
-                                        primaryButton: .destructive(Text("I understand!")) {
-                                            // Code to execute when "Yes" is tapped
-                                            networkController.scopeAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                                            print("Yes tapped")
-                                        },
-                                        secondaryButton: .cancel()
-                                    )
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
-                            
+                           
                             
                             //  ################################################################################
                             //              scopeAllComputersAndUsers
