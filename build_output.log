@@ -1,0 +1,3 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace Man1fest0.xcworkspace -scheme Man1fest0 -configuration Debug clean build
+

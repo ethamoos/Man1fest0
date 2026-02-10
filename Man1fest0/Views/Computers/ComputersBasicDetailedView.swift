@@ -84,7 +84,7 @@ struct ComputersBasicDetailedView: View {
                         progress.waitForABit()
                         networkController.updateComputerName(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerName: computerName, computerID: String(describing:computer.id))
                         
-                        networkController.separationLine()
+                        layout.separationLine()
                         print("Renaming computerName:\(computerName)")
                         print("computerID is:\(String(describing:computer.id))")
                     }) {
@@ -124,7 +124,7 @@ struct ComputersBasicDetailedView: View {
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 
                 
-                Button("Open Web Page") {
+                Button("Open In Browser") {
                         
                         progress.showProgress()
                         progress.waitForABit()
@@ -143,7 +143,7 @@ struct ComputersBasicDetailedView: View {
             .padding()
             Spacer()
 
-            .onAppear {                
+            .onAppear {
                     networkController.refreshDepartments()
             }
         }

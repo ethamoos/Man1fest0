@@ -175,47 +175,7 @@ struct PolicyDetailView: View {
             //  ################################################################################
             
             if networkController.policyDetailed != nil {
-                
-#if os(macOS)
-                VStack(alignment: .leading) {
-                    Text("Jamf Name:\t\t\t\t\(networkController.policyDetailed?.general?.name ?? "Blank")\n")
-                    Text("Enabled Status:\t\t\t\(String(describing: networkController.policyDetailed?.general?.enabled ?? true))\n")
-                    Text("Self Service Name:\t\t\(String(describing: networkController.policyDetailed?.self_service?.selfServiceDisplayName ?? ""))\n")
-                    Text("Self Service Status:\t\t\(String(describing: networkController.policyDetailed?.self_service?.useForSelfService ?? true))\n")
-                    Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
-                    Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\t\t\t\t\(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")\n")
-                    AsyncImage(url: URL(string: networkController.policyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
-                        image.resizable()
-                    } placeholder: {
-                        Color.red.opacity(0.1)
-                    }
-                    .frame(width: 50, height: 50)
-                    .clipShape(.rect(cornerRadius: 25))
-                    
-                    if networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
-                        
-                        Text("Distribution Point :\t\t\t\(networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
-                    }
-                    
-                    if pushTriggerActiveWarning == true {
-                        Text("⚠️ Push Trigger Active! ⚠️\n").foregroundColor(.red)
-                    }
-                    
-                    
-                }
-                .textSelection(.enabled)
-                .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
-                
-                //              ################################################################################
-                //              Toolbar
-                //              ################################################################################
-                
-                .toolbar {
-                    
-                }
-#endif
+                PolicyHeaderView(policyDetailed: networkController.policyDetailed, pushTriggerActiveWarning: pushTriggerActiveWarning)
             }
             
             // ################################################################################
@@ -773,6 +733,54 @@ struct PolicyDetailView: View {
         }
     }
     
+}
+
+struct PolicyHeaderView: View {
+    var policyDetailed: PolicyDetailed?
+    var pushTriggerActiveWarning: Bool
+    
+    var body: some View {
+        #if os(macOS)
+        VStack(alignment: .leading) {
+            Text("Jamf Name:\t\t\t\t\(policyDetailed?.general?.name ?? "Blank")\n")
+            Text("Enabled Status:\t\t\t\(String(describing: policyDetailed?.general?.enabled ?? true))\n")
+            Text("Self Service Name:\t\t\(String(describing: policyDetailed?.self_service?.selfServiceDisplayName ?? ""))\n")
+            Text("Self Service Status:\t\t\(String(describing: policyDetailed?.self_service?.useForSelfService ?? true))\n")
+            Text("Policy Trigger:\t\t\t\(policyDetailed?.general?.triggerOther ?? "")\n")
+            Text("Category:\t\t\t\t\(policyDetailed?.general?.category?.name ?? "")\n")
+            Text("Jamf ID:\t\t\t\t\t\(String(describing: policyDetailed?.general?.jamfId ?? 0))\n" )
+            Text("Current Icon:\t\t\t\t\(policyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")\n")
+            AsyncImage(url: URL(string: policyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
+                image.resizable()
+            } placeholder: {
+                Color.red.opacity(0.1)
+            }
+            .frame(width: 50, height: 50)
+            .clipShape(.rect(cornerRadius: 25))
+            
+            if policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
+                
+                Text("Distribution Point :\t\t\t\(policyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
+            }
+            
+            if pushTriggerActiveWarning == true {
+                Text("⚠️ Push Trigger Active! ⚠️\n").foregroundColor(.red)
+            }
+            
+            
+        }
+        .textSelection(.enabled)
+        .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
+        
+        //              ################################################################################
+        //              Toolbar
+        //              ################################################################################
+        
+        .toolbar {
+            
+        }
+#endif
+    }
 }
 
 //struct PolicyDetailView_Previews: PreviewProvider {
