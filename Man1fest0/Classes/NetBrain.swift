@@ -3,6 +3,35 @@ import Foundation
 import SwiftUI
 import AEXML
 
+// AsyncSemaphore for rate limiting in concurrent environments
+actor AsyncSemaphore {
+    private var value: Int
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    
+    init(value: Int) {
+        self.value = value
+    }
+    
+    func wait() async {
+        if value > 0 {
+            value -= 1
+            return
+        }
+        
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+    
+    func signal() {
+        if let waiter = waiters.first {
+            waiters.removeFirst()
+            waiter.resume()
+        } else {
+            value += 1
+        }
+    }
+}
 
 @MainActor class NetBrain: ObservableObject {
     
@@ -839,52 +868,81 @@ import AEXML
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
         self.separationLine()
-        print("Running func: getAllPoliciesDetailed (sequential)")
+        print("Running func: getAllPoliciesDetailed (bounded concurrency)")
 
         // Filter out policies without a valid jamfId
         let validPolicies = policies.filter { ($0.jamfId ?? 0) > 0 }
         print("Total policies provided: \(policies.count) -> valid policies with jamfId>0: \(validPolicies.count)")
 
-        // Track failed calls for retries or diagnostics
+        // Configuration for bounded concurrency
+        let maxConcurrentTasks = 4
         var failedCalls: [String] = []
-
-        for policy in validPolicies {
-            let jamfIdVal = policy.jamfId ?? 0
-            let policyID = String(describing: jamfIdVal)
-            do {
-                // Respect minimum interval between requests
-                let now = Date()
-                if let last = lastRequestDate {
-                    let elapsed = now.timeIntervalSince(last)
-                    if elapsed < policyRequestDelay {
-                        let delay = policyRequestDelay - elapsed
-                        let human = formatDuration(delay)
-                        let nextRunAt = Date().addingTimeInterval(delay)
-                        print("Throttling: sleeping for \(delay) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
-                        DispatchQueue.main.async {
-                            self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
+        
+        // Use TaskGroup for bounded concurrency with semaphore pattern
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            // Create a semaphore to limit concurrent tasks
+            let concurrencySemaphore = AsyncSemaphore(value: maxConcurrentTasks)
+            // Add a semaphore to control rate limiting across concurrent tasks
+            let requestSemaphore = AsyncSemaphore(value: 1)
+            
+            for policy in validPolicies {
+                group.addTask {
+                    // Wait for concurrency slot
+                    await concurrencySemaphore.wait()
+                    defer { Task { await concurrencySemaphore.signal() } }
+                    
+                    let jamfIdVal = policy.jamfId ?? 0
+                    let policyID = String(describing: jamfIdVal)
+                    
+                    do {
+                        // Use semaphore to enforce rate limiting across concurrent tasks
+                        await requestSemaphore.wait()
+                        defer { Task { await requestSemaphore.signal() } }
+                        
+                        // Respect minimum interval between requests
+                        let now = Date()
+                        let lastRequestDate = await MainActor.run { self.lastRequestDate }
+                        let policyRequestDelay = await MainActor.run { self.policyRequestDelay }
+                        
+                        if let last = lastRequestDate {
+                            let elapsed = now.timeIntervalSince(last)
+                            if elapsed < policyRequestDelay {
+                                let delay = policyRequestDelay - elapsed
+                                let human = await MainActor.run { self.formatDuration(delay) }
+                                let nextRunAt = Date().addingTimeInterval(delay)
+                                print("Throttling: sleeping for \(delay) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
+                                await MainActor.run {
+                                    self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
+                                }
+                                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                            }
                         }
-                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                        
+                        await MainActor.run {
+                            self.lastRequestDate = Date()
+                        }
+                        
+                        try await self.getDetailedPolicy(server: server, authToken: authToken, policyID: policyID)
+                        
+                        // policy.name is a non-optional String, so don't use `if let` on it
+                        let name = policy.name
+                        if !name.isEmpty {
+                            print("Fetched policy detail for: \(name) (ID: \(policyID))")
+                        } else {
+                            print("Fetched policy detail for ID: \(policyID)")
+                        }
+                        
+                    } catch {
+                        print("Error fetching detailed policy ID \(policyID): \(error)")
+                        await MainActor.run {
+                            failedCalls.append(policyID)
+                        }
                     }
                 }
-
-                lastRequestDate = Date()
-
-                try await getDetailedPolicy(server: server, authToken: authToken, policyID: policyID)
-
-                // policy.name is a non-optional String, so don't use `if let` on it
-                let name = policy.name
-                if !name.isEmpty {
-                    print("Fetched policy detail for: \(name) (ID: \(policyID))")
-                } else {
-                    print("Fetched policy detail for ID: \(policyID)")
-                }
-
-            } catch {
-                print("Error fetching detailed policy ID \(policyID): \(error)")
-                failedCalls.append(policyID)
-                // continue to next policy
             }
+            
+            // Wait for all remaining tasks to complete
+            try await group.waitForAll()
         }
 
         if !failedCalls.isEmpty {
