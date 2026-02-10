@@ -63,6 +63,12 @@ actor AsyncSemaphore {
     var tokenComplete: Bool = false
     var tokenStatusCode: Int = 0
     var authToken = ""
+    
+    // Track token expiration for automatic refresh
+    var tokenExpirationTime: Date?
+    private var refreshUsername: String = ""
+    private var refreshPassword: String = ""
+    var password: String = ""
     var encoded = ""
     var initialDataLoaded = false
     
@@ -867,6 +873,8 @@ actor AsyncSemaphore {
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
+        // Ignore passed authToken and use managed token instead
+        let validToken = try await getValidToken(server: server)
         // Print visual separator for debugging logs
         self.separationLine()
         // Log that we're running the concurrent version of this function
@@ -948,7 +956,7 @@ actor AsyncSemaphore {
                         }
                         
                         // Make the actual network request to fetch policy details
-                        try await self.getDetailedPolicy(server: server, authToken: authToken, policyID: policyID)
+                        try await self.getDetailedPolicy(server: server, authToken: validToken, policyID: policyID)
                         
                         // Extract the policy name for logging (policy.name is non-optional)
                         let name = policy.name
@@ -1808,7 +1816,48 @@ actor AsyncSemaphore {
         print("We have a token")
         self.status = "Connected"
         self.authToken = auth.token
+        // Store expiration time and credentials for refresh
+        self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
+        self.refreshUsername = username
+        self.refreshPassword = password
         return auth
+    }
+    
+    // MARK: - Token Management
+    
+    /// Check if current token is valid or needs refresh
+    func isTokenValid() -> Bool {
+        guard let expirationTime = tokenExpirationTime else { return false }
+        // Add 2-minute buffer before expiration
+        return Date() < expirationTime.addingTimeInterval(-120)
+    }
+    
+    /// Refresh token if needed, otherwise return current valid token
+    func getValidToken(server: String) async throws -> String {
+        if !isTokenValid() {
+            print("Token expired or invalid, refreshing...")
+            try await refreshToken(server: server)
+        }
+        return authToken
+    }
+    
+    /// Refresh the authentication token
+    private func refreshToken(server: String) async throws {
+        guard !refreshUsername.isEmpty && !refreshPassword.isEmpty else {
+            print("Cannot refresh token: missing credentials")
+            throw JamfAPIError.requestFailed
+        }
+        
+        let newAuth = try await getToken(server: server, username: refreshUsername, password: refreshPassword)
+        self.authToken = newAuth.token
+        self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
+        print("Token refreshed successfully")
+    }
+    
+    /// Wrapper for API calls that ensures valid token
+    func withValidToken<T>(server: String, operation: (String) async throws -> T) async throws -> T {
+        let validToken = try await getValidToken(server: server)
+        return try await operation(validToken)
     }
     
     // This function generates the base64 from a username name and password
@@ -5238,7 +5287,7 @@ xml = """
     //        var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     //        var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
     
-    var password = ""
+//    var password = ""
     
     var auth: JamfAuthToken?
     
