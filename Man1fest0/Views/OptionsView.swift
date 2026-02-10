@@ -1,4 +1,94 @@
 import SwiftUI
+import Foundation
+
+// MARK: - Simple Security Settings
+struct SimpleSecuritySettingsView: View {
+    @EnvironmentObject var networkController: NetBrain
+    
+    @State private var inactivityTimeoutMinutes: Int = 5
+    @State private var requirePasswordOnWake: Bool = true
+    @State private var useKeychain: Bool = false
+    
+    private let timeoutOptions = [0, 1, 5, 15, 30, 60, 120]
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Inactivity Lock") {
+                    Picker("Lock after", selection: $inactivityTimeoutMinutes) {
+                        ForEach(timeoutOptions, id: \.self) { minutes in
+                            Text(timeoutDisplayName(minutes: minutes)).tag(minutes)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    
+                    if inactivityTimeoutMinutes > 0 {
+                        Text("App will lock after \(timeoutDisplayName(minutes: inactivityTimeoutMinutes)) of inactivity")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Section("Security Options") {
+                    Toggle("Require password to unlock", isOn: $requirePasswordOnWake)
+                    Toggle("Save password in keychain", isOn: $useKeychain)
+                }
+                
+                Section("Status") {
+                    HStack {
+                        Text("Current Setting")
+                        Spacer()
+                        Text(timeoutDisplayName(minutes: inactivityTimeoutMinutes))
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
+            .navigationTitle("Security Settings")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        saveSettings()
+                    }
+                }
+            }
+            #endif
+        }
+        .onAppear {
+            loadSettings()
+        }
+    }
+    
+    private func timeoutDisplayName(minutes: Int) -> String {
+        switch minutes {
+        case 0: return "Never"
+        case 1: return "1 Minute"
+        case 5: return "5 Minutes"
+        case 15: return "15 Minutes"
+        case 30: return "30 Minutes"
+        case 60: return "1 Hour"
+        case 120: return "2 Hours"
+        default: return "\(minutes) Minutes"
+        }
+    }
+    
+    private func loadSettings() {
+        inactivityTimeoutMinutes = UserDefaults.standard.integer(forKey: "SecurityInactivityTimeout")
+        if inactivityTimeoutMinutes == 0 && !UserDefaults.standard.bool(forKey: "SecurityInactivityTimeoutSet") {
+            inactivityTimeoutMinutes = 5 // Default to 5 minutes
+        }
+        requirePasswordOnWake = UserDefaults.standard.bool(forKey: "SecurityRequirePasswordOnWake")
+        useKeychain = UserDefaults.standard.bool(forKey: "SecurityUseKeychain")
+    }
+    
+    private func saveSettings() {
+        UserDefaults.standard.set(inactivityTimeoutMinutes, forKey: "SecurityInactivityTimeout")
+        UserDefaults.standard.set(true, forKey: "SecurityInactivityTimeoutSet")
+        UserDefaults.standard.set(requirePasswordOnWake, forKey: "SecurityRequirePasswordOnWake")
+        UserDefaults.standard.set(useKeychain, forKey: "SecurityUseKeychain")
+    }
+}
 
 @available(macOS 13.3, *)
 @available(iOS 17.0, *)
@@ -216,14 +306,21 @@ struct OptionsView: View {
                         }
                         
                         // Preferences
-//                        Group {
-//                            Divider()
-//                            DisclosureGroup("Preferences") {
-//                                NavigationLink(destination: PolicyDelayInlineView()) {
-//                                    Text("Policy fetch delay")
-//                                }
-//                            }
-//                        }
+                        Group {
+                            Divider()
+                            DisclosureGroup("Preferences") {
+                                NavigationLink(destination: PolicyDelayInlineView()) {
+                                    Text("Policy fetch delay")
+                                }
+                                
+                                NavigationLink(destination: SimpleSecuritySettingsView()) {
+                                    HStack {
+                                        Image(systemName: "lock.shield")
+                                        Text("Security Settings")
+                                    }
+                                }
+                            }
+                        }
                         
 //                            NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
 //                                Text("Prestages")
