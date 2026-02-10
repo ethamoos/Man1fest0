@@ -867,73 +867,103 @@ actor AsyncSemaphore {
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
+        // Print visual separator for debugging logs
         self.separationLine()
+        // Log that we're running the concurrent version of this function
         print("Running func: getAllPoliciesDetailed (bounded concurrency)")
 
-        // Filter out policies without a valid jamfId
+        // Filter out policies without a valid jamfId (must be > 0 to be fetchable)
         let validPolicies = policies.filter { ($0.jamfId ?? 0) > 0 }
+        // Log the filtering results for debugging
         print("Total policies provided: \(policies.count) -> valid policies with jamfId>0: \(validPolicies.count)")
 
-        // Configuration for bounded concurrency
+        // Set maximum number of tasks that can run simultaneously
         let maxConcurrentTasks = 4
+        // Initialize array to track which policy fetches failed
         var failedCalls: [String] = []
         
-        // Use TaskGroup for bounded concurrency with semaphore pattern
+        // Create a TaskGroup for structured concurrency with error handling
+        // Void.self means tasks don't return values (they just perform side effects)
         try await withThrowingTaskGroup(of: Void.self) { group in
-            // Create a semaphore to limit concurrent tasks
+            // Create semaphore to limit number of concurrent tasks to maxConcurrentTasks
+            // This prevents overwhelming the system with too many parallel operations
             let concurrencySemaphore = AsyncSemaphore(value: maxConcurrentTasks)
-            // Add a semaphore to control rate limiting across concurrent tasks
+            // Create semaphore to enforce rate limiting (only 1 network request at a time)
+            // This ensures we don't violate API rate limits even with concurrent processing
             let requestSemaphore = AsyncSemaphore(value: 1)
             
+            // Loop through each valid policy and create a concurrent task for it
             for policy in validPolicies {
+                // Add a new task to the group that will fetch this policy's details
                 group.addTask {
-                    // Wait for concurrency slot
+                    // Wait for an available concurrency slot (blocks if all 4 slots are busy)
                     await concurrencySemaphore.wait()
+                    // Ensure we release the concurrency slot when this task exits (even if it crashes)
                     defer { Task { await concurrencySemaphore.signal() } }
                     
+                    // Extract the jamfId from the policy (0 if nil, though we filtered these out)
                     let jamfIdVal = policy.jamfId ?? 0
+                    // Convert the jamfId to a string for the API call
                     let policyID = String(describing: jamfIdVal)
                     
+                    // Wrap the network request in error handling
                     do {
-                        // Use semaphore to enforce rate limiting across concurrent tasks
+                        // Wait for rate limiting permission (only 1 request at a time across all tasks)
                         await requestSemaphore.wait()
+                        // Ensure we release the rate limiting permission when done
                         defer { Task { await requestSemaphore.signal() } }
                         
-                        // Respect minimum interval between requests
+                        // Get current time for rate limiting calculations
                         let now = Date()
+                        // Retrieve the timestamp of the last request from MainActor (UI thread)
                         let lastRequestDate = await MainActor.run { self.lastRequestDate }
+                        // Get the configured minimum delay between requests from MainActor
                         let policyRequestDelay = await MainActor.run { self.policyRequestDelay }
                         
+                        // Check if we need to delay this request to respect rate limits
                         if let last = lastRequestDate {
+                            // Calculate how much time has passed since the last request
                             let elapsed = now.timeIntervalSince(last)
+                            // If not enough time has passed, calculate the required delay
                             if elapsed < policyRequestDelay {
                                 let delay = policyRequestDelay - elapsed
+                                // Format the delay in human-readable form for logging
                                 let human = await MainActor.run { self.formatDuration(delay) }
+                                // Calculate when the next request will run
                                 let nextRunAt = Date().addingTimeInterval(delay)
+                                // Log the throttling behavior for debugging
                                 print("Throttling: sleeping for \(delay) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
+                                // Update UI status to show we're delaying
                                 await MainActor.run {
                                     self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
                                 }
+                                // Sleep for the required delay time
                                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                             }
                         }
                         
+                        // Update the last request timestamp to now (on MainActor for thread safety)
                         await MainActor.run {
                             self.lastRequestDate = Date()
                         }
                         
+                        // Make the actual network request to fetch policy details
                         try await self.getDetailedPolicy(server: server, authToken: authToken, policyID: policyID)
                         
-                        // policy.name is a non-optional String, so don't use `if let` on it
+                        // Extract the policy name for logging (policy.name is non-optional)
                         let name = policy.name
+                        // Log success with policy name if available
                         if !name.isEmpty {
                             print("Fetched policy detail for: \(name) (ID: \(policyID))")
                         } else {
+                            // Fallback log if policy name is empty
                             print("Fetched policy detail for ID: \(policyID)")
                         }
                         
                     } catch {
+                        // Log the error for debugging purposes
                         print("Error fetching detailed policy ID \(policyID): \(error)")
+                        // Add the failed policy ID to our tracking array (on MainActor for thread safety)
                         await MainActor.run {
                             failedCalls.append(policyID)
                         }
@@ -941,19 +971,24 @@ actor AsyncSemaphore {
                 }
             }
             
-            // Wait for all remaining tasks to complete
+            // Wait for all tasks in the group to complete (ensures no task is left running)
             try await group.waitForAll()
         }
 
+        // Check if any policy fetches failed during processing
         if !failedCalls.isEmpty {
+            // Log the failed policy IDs for debugging
             print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
-            // Optionally keep failedCalls in a published property for UI retry handling
+            // Future enhancement: store failed calls for retry functionality
             // self.retryFailedDetailedPolicyCalls = failedCalls
+            // Update UI state to indicate incomplete success (on MainActor)
             await MainActor.run {
                 self.fetchedDetailedPolicies = false
             }
         } else {
+            // Log complete success for debugging
             print("getAllPoliciesDetailed completed successfully for all policies")
+            // Update UI state to indicate complete success (on MainActor)
             await MainActor.run {
                 self.fetchedDetailedPolicies = true
             }
