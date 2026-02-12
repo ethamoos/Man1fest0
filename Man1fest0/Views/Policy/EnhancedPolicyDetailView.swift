@@ -87,14 +87,14 @@ struct EnhancedPolicyDetailView: View {
     
     // MARK: - Environment Objects
     @EnvironmentObject var networkController: NetBrain
-    @StateObject private var cacheManager = SimplePolicyCache()
+    @StateObject private var policyCacheManager = SimplePolicyCache()
     
     // MARK: - Properties
     let server: String
     var policy: Policy
     var policyID: Int
-    @State private var currentDetailedPolicy: PoliciesDetailed?
-    @State private var isIncrementalLoading: Bool = false
+    @State private var currentlyViewedPolicyDetails: PoliciesDetailed?
+    @State private var shouldUseIncrementalLoadingMode: Bool = false
     
     // MARK: - Initialization
     init(server: String, policy: Policy) {
@@ -110,7 +110,7 @@ struct EnhancedPolicyDetailView: View {
             cacheStatusBar
             
             // Main content
-            policyContent
+            policyContentSection
             
             // Loading overlay
             if cacheManager.isLoading {
@@ -125,22 +125,34 @@ struct EnhancedPolicyDetailView: View {
         }
     }
     
-    // MARK: - View Components
-    private var cacheStatusBar: some View {
+// MARK: - View Components
+    private var cacheStatusDisplayBar: some View {
         HStack {
-            Image(systemName: cacheManager.cache.count > 0 ? "internaldrive.fill" : "externaldrive.connected.to.line")
+            Image(systemName: policyCacheManager.cachedPolicies.count > 0 ? "internaldrive.fill" : "externaldrive.connected.to.line")
                 .foregroundColor(.blue)
             
-            Text(cacheManager.getCacheInfo())
+            Text(policyCacheManager.getCacheStatisticsInformation())
                 .font(.caption)
                 .foregroundColor(.secondary)
             
             Spacer()
             
-            if cacheManager.cache.count > 0 {
+            if policyCacheManager.cachedPolicies.count > 0 {
                 Button("Clear Cache") {
-                    cacheManager.clearCache()
+                    policyCacheManager.clearAllCachedPolicies()
                 }
+                .font(.caption)
+                .foregroundColor(.red)
+            }
+            
+            Toggle("Incremental Loading", isOn: $shouldUseIncrementalLoadingMode)
+                .font(.caption)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
+    }
                 .font(.caption)
                 .foregroundColor(.red)
             }
@@ -159,12 +171,17 @@ struct EnhancedPolicyDetailView: View {
                 // Policy header
                 policyHeaderSection
                 
-                // Main policy details
-                if let detailedPolicy = currentDetailedPolicy {
-                    policyDetailsSection(detailedPolicy)
+// Main policy details
+                if let currentlyViewedPolicyDetails = currentlyViewedPolicyDetails {
+                    policyDetailsSection(currentlyViewedPolicyDetails)
                 } else {
                     // Loading skeleton
                     loadingSkeletonSection
+                }
+                
+                // Cache statistics (for debugging)
+                if policyCacheManager.totalPolicyRequests > 0 {
+                    cacheStatisticsSection
                 }
             }
             .padding()
