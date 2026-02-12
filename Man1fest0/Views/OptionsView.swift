@@ -7,6 +7,7 @@ struct OptionsView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var prestageController: PrestageBrain
     @EnvironmentObject var progress: Progress
+    @StateObject private var userPreferences = AppUserPreferences()
     
     @State var prestageID = ""
     @State var serial = ""
@@ -215,31 +216,36 @@ struct OptionsView: View {
                             }
                         }
                         
-                        // Preferences
-//                        Group {
-//                            Divider()
-//                            DisclosureGroup("Preferences") {
-//                                NavigationLink(destination: PolicyDelayInlineView()) {
-//                                    Text("Policy fetch delay")
-//                                }
-//                            }
-//                        }
-                        
-//                            NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
-//                                Text("Prestages")
-//                            }
-                        Divider()
-
-                        
+// Preferences
                         Group {
-                            DisclosureGroup("Structures") {
-                   
-                    //    ###########################################################################
-                    //    Categories
-                    //    ###########################################################################
-                                NavigationLink(destination: CategoriesView(selectedResourceType: ResourceType.category, server: server )) {
-                                    Text("Categories")
+                            Divider()
+                            DisclosureGroup("Preferences") {
+                                NavigationLink(destination: PolicyDelayInlineView()) {
+                                    Text("Policy fetch delay")
                                 }
+                                
+                                NavigationLink(destination: SecuritySettingsView()) {
+                                    HStack {
+                                        Image(systemName: "lock.shield")
+                                        Text("Security Settings")
+                                    }
+                                }
+                                
+                                NavigationLink(destination: SimpleLandingPagePreferencesView()) {
+                                    HStack {
+                                        Image(systemName: "house.fill")
+                                        Text("Landing Page")
+                                    }
+                                }
+                                
+                                NavigationLink(destination: SimpleWelcomeScreenPreferencesView()) {
+                                    HStack {
+                                        Image(systemName: "sparkles.star.fill")
+                                        Text("Welcome Screen")
+                                    }
+                                }
+                            }
+                        }
                                 //  ###########################################################################
                                 //  Buildings
                                 //  ###########################################################################
@@ -424,11 +430,11 @@ struct OptionsView: View {
                 //  #######################################################################
                 
                 
-            }
-            .listStyle(.sidebar)
+                .listStyle(.sidebar)
             .padding()
             .frame(minWidth: 220)
-        }
+            
+            VStack(spacing: 16) {
     }
 }
 
