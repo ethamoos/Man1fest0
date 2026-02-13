@@ -413,7 +413,7 @@ struct OptionsView: View {
                     }
                 }
                 .foregroundColor(.blue)
-                .frame(minWidth: 220)
+                 .frame(minWidth: 300)
 
                 //  #######################################################################
                 //  END OF SIDEBAR
@@ -427,7 +427,7 @@ struct OptionsView: View {
             }
             .listStyle(.sidebar)
             .padding()
-            .frame(minWidth: 220)
+             .frame(minWidth: 300)
         }
     }
 }
