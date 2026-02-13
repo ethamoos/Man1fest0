@@ -31,37 +31,35 @@ struct WelcomeToMan1fest0: View {
     
     // MARK: - Body
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Header section
-                welcomeHeaderSection
-                
-                // Feature overview grid
-                featureCategoriesGrid
-                
-                // Quick actions section
-                quickActionsSection
-                
-                // Getting started section
-                gettingStartedSection
-                
-                Spacer()
-            }
-            .background(
-                LinearGradient(
-                    colors: [Color.blue.opacity(0.1), Color.clear],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+        VStack(spacing: 0) {
+            // Header section
+            welcomeHeaderSection
+            
+            // Feature overview grid
+            featureCategoriesGrid
+            
+            // Quick actions section
+            quickActionsSection
+            
+            // Getting started section
+            gettingStartedSection
+            
+            Spacer()
+        }
+        .background(
+            LinearGradient(
+                colors: [Color.blue.opacity(0.1), Color.clear],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            .navigationTitle("Welcome to Man1fest0")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Skip") {
-                        userPreferences.shouldShowWelcomeScreen = false
-                    }
-                    .foregroundColor(.white)
+        )
+        .navigationTitle("Welcome to Man1fest0")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Skip") {
+                    userPreferences.shouldShowWelcomeScreen = false
                 }
+                .foregroundColor(.white)
             }
         }
         .onAppear {
@@ -299,7 +297,9 @@ struct FeatureCategoryCard: View {
     let category: String
     let features: [AppFeature]
     let animateIn: Bool
-    
+
+    @EnvironmentObject var networkController: NetBrain
+
     var body: some View {
         VStack(spacing: 16) {
             // Category header
@@ -307,19 +307,19 @@ struct FeatureCategoryCard: View {
                 Image(systemName: getIconForCategory(category))
                     .font(.title2)
                     .foregroundColor(.blue)
-                
+
                 Text(category)
                     .font(.headline)
                     .fontWeight(.semibold)
-                
+
                 Spacer()
-                
+
                 Text("\(features.count) features")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .padding(.bottom, 12)
-            
+
             // Feature cards
             LazyVGrid(columns: [
                 GridItem(.flexible())
@@ -327,6 +327,9 @@ struct FeatureCategoryCard: View {
                 ForEach(features, id: \.id) { feature in
                     NavigationLink(destination: getViewForDestination(feature.destination)) {
                         FeatureCard(feature: feature, animateIn: animateIn)
+                            .onTapGesture {
+                                prefetchIfNeeded(destination: feature.destination)
+                            }
                     }
                 }
             }
@@ -336,7 +339,7 @@ struct FeatureCategoryCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
     }
-    
+
     private func getIconForCategory(_ category: String) -> String {
         switch category {
         case "Policy Management": return "doc.text.fill"
@@ -346,13 +349,49 @@ struct FeatureCategoryCard: View {
         default: return "square.grid.3x3"
         }
     }
-    
+
     @ViewBuilder
     private func getViewForDestination(_ destination: String) -> some View {
-        if destination.isEmpty {
-            Text("Action triggered").font(.title2)
-        } else {
+        // Map known destination strings to actual views in the app
+        switch destination {
+        case "PolicyView":
+            PolicyView(server: networkController.server, selectedResourceType: .policy)
+        case "PoliciesActionView":
+            PoliciesActionView(server: networkController.server, selectedResourceType: .policies)
+        case "PackageView", "PackagesView":
+            PackagesView(server: networkController.server, selectedResourceType: .packages)
+        case "ScriptsView":
+            ScriptsView(server: networkController.server)
+        case "ScriptUsageView":
+            // Fallback to ScriptsView if a dedicated ScriptUsageView isn't available
+            ScriptsView(server: networkController.server)
+        default:
+            // Generic fallback: show a simple destination placeholder
             Text("Navigate to \(destination)").font(.title2)
+        }
+    }
+
+    // Prefetch network data for known destinations so destination views are not empty on arrival
+    private func prefetchIfNeeded(destination: String) {
+        switch destination {
+        case "PolicyView", "PoliciesActionView":
+            Task {
+                print("Prefetching policies data for destination: \(destination)")
+                try? await networkController.getAllPolicies(server: networkController.server, authToken: networkController.authToken)
+                try? await Task.sleep(nanoseconds: 200_000_000) // small delay to let UI update
+            }
+        case "PackageView", "PackagesView":
+            Task {
+                print("Prefetching packages data")
+                try? await networkController.getAllPackages(server: networkController.server)
+            }
+        case "ScriptsView", "ScriptUsageView":
+            Task {
+                print("Prefetching scripts data")
+                try? await networkController.getAllScripts(server: networkController.server, authToken: networkController.authToken)
+            }
+        default:
+            break
         }
     }
 }
