@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A800E8452F3F25CE000250E7 /* WelcomeToMan1fest0.swift in Sources */ = {isa = PBXBuildFile; fileRef = A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */; };
 		A801D8EB2B7E178600E9D5B0 /* GroupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */; };
 		A80DE2CB2E97D69800509F4F /* Structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80DE2CA2E97D69800509F4F /* Structures.swift */; };
 		A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */; };
@@ -114,6 +115,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeToMan1fest0.swift; sourceTree = "<group>"; };
 		A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupDetailView.swift; sourceTree = "<group>"; };
 		A80DE2CA2E97D69800509F4F /* Structures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Structures.swift; sourceTree = "<group>"; };
 		A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopingBrain.swift; sourceTree = "<group>"; };
@@ -267,6 +269,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A800E8442F3F25CE000250E7 /* Welcome */ = {
+			isa = PBXGroup;
+			children = (
+				A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */,
+			);
+			path = Welcome;
+			sourceTree = "<group>";
+		};
 		A857A4292E25686600A96F3A /* NotesPersistent */ = {
 			isa = PBXGroup;
 			children = (
@@ -282,6 +292,7 @@
 				A87260E02C99793A005A5562 /* Shared */,
 				E477727D2B5B20F0009FC571 /* Development */,
 				E45E13262C53B22F007C175F /* ContentView.swift */,
+				A800E8442F3F25CE000250E7 /* Welcome */,
 				E45E13282C53B27F007C175F /* ConnectSheet.swift */,
 				E45E132A2C53B2CA007C175F /* OptionsView.swift */,
 				A840186C2D4BCA6700C09FD3 /* ImportView.swift */,
@@ -673,6 +684,7 @@
 				E45E13272C53B22F007C175F /* ContentView.swift in Sources */,
 				A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */,
 				A840186D2D4BCA6B00C09FD3 /* ImportView.swift in Sources */,
+				A800E8452F3F25CE000250E7 /* WelcomeToMan1fest0.swift in Sources */,
 				A83D00DB2D774FCA0091B794 /* ErrorView.swift in Sources */,
 				A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */,
 				A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */,

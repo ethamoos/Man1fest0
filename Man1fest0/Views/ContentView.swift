@@ -34,8 +34,7 @@ struct ContentView: View {
                     // Fallback on earlier versions
                 }
             }
-            Text("Select an Item")
-                .foregroundColor(Color.gray)
+            WelcomeToMan1fest0()
         }
         .sheet(isPresented: $networkController.needsCredentials) {
             ConnectSheet(
