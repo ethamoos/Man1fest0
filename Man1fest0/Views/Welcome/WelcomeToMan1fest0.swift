@@ -39,12 +39,12 @@ struct WelcomeToMan1fest0: View {
             featureCategoriesGrid
             
             // Quick actions section
-            quickActionsSection
+//            quickActionsSection
             
             // Getting started section
             gettingStartedSection
             
-            Spacer()
+//            Spacer()
         }
         .background(
             LinearGradient(
@@ -191,11 +191,11 @@ struct WelcomeToMan1fest0: View {
             return [
                 AppFeature(title: "Policies", description: "View and manage all policies", iconName: "doc.text.fill", destination: "PolicyView", category: category, accessLevel: .basic),
                 AppFeature(title: "Policy Actions", description: "Batch operations on policies", iconName: "hammer.fill", destination: "PoliciesActionView", category: category, accessLevel: .advanced),
-                AppFeature(title: "Package Management", description: "Configure policy packages", iconName: "box.fill", destination: "PackageView", category: category, accessLevel: .advanced)
+                AppFeature(title: "Package Management", description: "Configure policy packages", iconName: "archivebox.fill", destination: "PackageView", category: category, accessLevel: .advanced)
             ]
         case "Device Management":
             return [
-                AppFeature(title: "Computers", description: "View and manage computers", iconName: "desktopcomputer.fill", destination: "ComputerView", category: category, accessLevel: .basic),
+                AppFeature(title: "Computers", description: "View and manage computers", iconName: "desktopcomputer", destination: "ComputerView", category: category, accessLevel: .basic),
                 AppFeature(title: "Computer Groups", description: "Organize computers into groups", iconName: "person.3.fill", destination: "ComputerGroupView", category: category, accessLevel: .basic),
                 AppFeature(title: "Buildings", description: "Manage building locations", iconName: "building.fill", destination: "BuildingsView", category: category, accessLevel: .basic)
             ]
@@ -343,7 +343,7 @@ struct FeatureCategoryCard: View {
     private func getIconForCategory(_ category: String) -> String {
         switch category {
         case "Policy Management": return "doc.text.fill"
-        case "Device Management": return "desktopcomputer.fill"
+        case "Device Management": return "desktopcomputer"
         case "Script Management": return "terminal.fill"
         case "System Administration": return "gearshape.fill"
         default: return "square.grid.3x3"
@@ -436,7 +436,7 @@ struct FeatureCard: View {
 private func colorForAccessLevel(_ level: AppFeature.AccessLevel) -> Color {
     switch level {
     case .basic: return .blue
-    case .advanced: return .orange
+    case .advanced: return .blue
     case .admin: return .red
     case .premium: return .purple
     }
