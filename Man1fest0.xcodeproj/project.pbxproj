@@ -142,9 +142,6 @@
 		A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainWrapper.swift; sourceTree = "<group>"; };
 		A857A4272E2566B300A96F3A /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicySelfServiceTabView.swift; sourceTree = "<group>"; };
-		A860115E2F3E608E009FCEB4 /* WelcomeToMan1fest0.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeToMan1fest0.swift; sourceTree = "<group>"; };
-		A860115F2F3E60BD009FCEB4 /* LandingPagePreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingPagePreferencesView.swift; sourceTree = "<group>"; };
-		A86011602F3E60BD009FCEB4 /* SimpleLandingPagePreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleLandingPagePreferencesView.swift; sourceTree = "<group>"; };
 		A861F25629D7447A0075D622 /* ComputersBasicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicView.swift; sourceTree = "<group>"; };
 		A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicDetailedView.swift; sourceTree = "<group>"; };
 		A86533ED2C3C22DB002894B2 /* XmlBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XmlBrain.swift; sourceTree = "<group>"; };
@@ -503,9 +500,6 @@
 		E4CE363029D1C43100533707 = {
 			isa = PBXGroup;
 			children = (
-				A860115F2F3E60BD009FCEB4 /* LandingPagePreferencesView.swift */,
-				A86011602F3E60BD009FCEB4 /* SimpleLandingPagePreferencesView.swift */,
-				A860115E2F3E608E009FCEB4 /* WelcomeToMan1fest0.swift */,
 				E4CE363B29D1C43100533707 /* Man1fest0 */,
 				E4CE363A29D1C43100533707 /* Products */,
 			);
