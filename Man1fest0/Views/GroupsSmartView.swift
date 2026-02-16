@@ -62,8 +62,7 @@ struct GroupsSmartView: View {
                         
 #if os(macOS)
                         
-                        
-                        List(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self,selection: $selection) { group in
+                        List(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , selection: $selection) { group in
                             if group.isSmart == true {
                                 Text(String(describing: group.name))
                             }
@@ -75,7 +74,7 @@ struct GroupsSmartView: View {
                         
                         
 #else
-                        List(searchResults, id: \.self) { group in
+                        List(searchResults) { group in
                             if group.isSmart != true {
                                 NavigationLink(destination: GroupDetailView( group: group, server: server)) {
                                     Text(String(describing: group.name))
@@ -201,4 +200,3 @@ struct GroupsSmartView: View {
         }
     }
 }
-

@@ -29,7 +29,7 @@ struct ScriptsActionView: View {
             if networkController.scripts.count > 0 {
                 
                 // Removed inner NavigationView to avoid creating duplicate NSToolbar search items.
-                List(searchResults, id: \.self, selection: $selection) { script in
+                List(searchResults, selection: $selection) { script in
                     HStack {
                         Image(systemName: "applescript")
                         Text("\(script.name)").font(.system(size: 12.0)).foregroundColor(.blue)
@@ -66,7 +66,7 @@ struct ScriptsActionView: View {
                 VStack(alignment: .leading) {
                     
                     Text("Selections").fontWeight(.bold)
-                    List(Array(selection), id: \.self) { script in
+                    List(Array(selection)) { script in
                         Text(script.name )
                     }
                     

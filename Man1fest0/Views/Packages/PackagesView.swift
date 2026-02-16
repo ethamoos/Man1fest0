@@ -24,7 +24,7 @@ struct PackagesView: View {
             if networkController.packages.count > 0 {
                 NavigationView {
                     
-                    List(searchResults, id: \.self, selection: $selection) { package in
+                    List(searchResults, selection: $selection) { package in
                         NavigationLink(destination: PackageDetailView(package: package, server: server)) {
                             
                             HStack {

@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 
@@ -25,7 +24,7 @@ struct ScriptsView: View {
                 
                 NavigationView {
                     
-                    List(searchResults, id: \.self, selection: $selection) { script in
+                    List(searchResults, selection: $selection) { script in
                         NavigationLink(destination: ScriptsDetailView(script: script, scriptID: script.jamfId, server: server)) {
                             
                             HStack {

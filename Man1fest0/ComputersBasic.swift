@@ -1,5 +1,3 @@
-
-
 import SwiftUI
 
 struct ComputerBasicView: View {
@@ -21,7 +19,7 @@ struct ComputerBasicView: View {
             
             if networkController.computers.count > 0 {
                 NavigationView {
-                    List(networkController.computers, id: \.self, selection: $selection) { computer in
+                    List(networkController.computers, selection: $selection) { computer in
                         NavigationLink(destination: ComputerDetailedView(server: server, user: user,password: password, computer: computer)) {
                             
                             HStack {

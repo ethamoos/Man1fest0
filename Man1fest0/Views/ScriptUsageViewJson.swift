@@ -87,7 +87,7 @@ struct ScriptUsageViewJson: View {
                         
                         Section(header: Text("All Scripts").bold()) {
                             
-                            ForEach(networkController.scripts, id: \.self) { script in
+                            ForEach(networkController.scripts) { script in
                                 
                                 Text(String(describing: script.name))
                                 
@@ -102,7 +102,7 @@ struct ScriptUsageViewJson: View {
                     
                     Section(header: Text("Assigned Scripts").bold()) {
                         
-                        ForEach(assignedScripts, id: \.self) { item in
+                        ForEach(assignedScripts) { item in
                             
                             Text(item.name ?? "")
                         }

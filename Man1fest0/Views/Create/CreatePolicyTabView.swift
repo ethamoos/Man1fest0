@@ -174,7 +174,7 @@ struct CreatePolicyTabView: View {
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategoryId, label: Text("Category")) {
                         Text("No category").tag(nil as Int?)
-                        ForEach(networkController.categories, id: \.self) { category in
+                        ForEach(networkController.categories) { category in
                             Text(category.name).tag(category.jamfId as Int?)
                         }
                     }
@@ -187,7 +187,7 @@ struct CreatePolicyTabView: View {
                 
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedDepartment, label: Text("Department:")) {
-                        ForEach(networkController.departments, id: \.self) { department in
+                        ForEach(networkController.departments) { department in
                             Text(department.name).tag(department)
                         }
                     }
@@ -199,7 +199,7 @@ struct CreatePolicyTabView: View {
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedPackageId, label: Text("Package:")) {
                         Text("No package selected").tag(nil as Int?)
-                        ForEach(networkController.packages, id: \.self) { package in
+                        ForEach(networkController.packages) { package in
                             Text(package.name).tag(package.jamfId as Int?)
                         }
                     }
@@ -207,7 +207,7 @@ struct CreatePolicyTabView: View {
                 
                 LazyVGrid(columns: columns, spacing: 20) {
                     Picker(selection: $selectedScript, label: Text("Scripts")) {
-                        ForEach(networkController.scripts, id: \.self) { script in
+                        ForEach(networkController.scripts) { script in
                             Text(script.name).tag(script)
                         }
                     }
