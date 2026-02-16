@@ -1,11 +1,68 @@
 import SwiftUI
 
+#if os(macOS)
+import AppKit
+#endif
+
+// Inline SubFeature helper and lists (moved here because the separate file may not be part of the Xcode target)
+struct SubFeature: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let detail: String?
+    init(_ title: String, detail: String? = nil) {
+        self.title = title
+        self.detail = detail
+    }
+}
+
+typealias SubFeatures = [SubFeature]
+
+func makeSubFeatures(_ items: String...) -> SubFeatures { items.map { SubFeature($0) } }
+
+let policySubfeatures: SubFeatures = makeSubFeatures(
+    "View and search policies",
+    "Inspect detailed policy settings",
+    "Export/Download policies",
+    "Batch actions and scope changes"
+)
+
+let policyActionsSubfeatures: SubFeatures = makeSubFeatures(
+    "Batch delete/enable/disable policies",
+    "Scope operations: add/remove/clear",
+    "Set distribution points for packages"
+)
+
+let packageSubfeatures: SubFeatures = makeSubFeatures(
+    "List and inspect packages",
+    "Assign packages to policies",
+    "Upload and download package files"
+)
+
+let computersSubfeatures: SubFeatures = makeSubFeatures(
+    "View computer inventory",
+    "Group membership and scoping",
+    "Run remote commands"
+)
+
+let scriptsSubfeatures: SubFeatures = makeSubFeatures(
+    "View and edit scripts",
+    "Check script usage",
+    "Track script parameters"
+)
+
+let optionsSubfeatures: SubFeatures = makeSubFeatures(
+    "Manage app preferences",
+    "Connect to Jamf servers",
+    "Access advanced tools"
+)
+
 // MARK: - App Feature Categories
-struct AppFeature: Identifiable, Hashable {
+struct AppFeature: Identifiable {
     let id = UUID()
     let title: String
     let description: String
     let iconName: String
+    let subFeatures: SubFeatures?
     let destination: String
     let category: String
     let accessLevel: AccessLevel
@@ -39,12 +96,12 @@ struct WelcomeToMan1fest0: View {
             featureCategoriesGrid
             
             // Quick actions section
-//            quickActionsSection
+            quickActionsSection
             
             // Getting started section
             gettingStartedSection
             
-//            Spacer()
+            Spacer()
         }
         .background(
             LinearGradient(
@@ -93,6 +150,23 @@ struct WelcomeToMan1fest0: View {
                 }
                 
                 Spacer()
+                
+                // Small export button: print a summary of all AppFeature entries and copy to pasteboard on macOS
+                Button(action: {
+                    let all = featureCategories.flatMap { getFeatures(for: $0) }
+                    let report = summarizeAppFeatures(all)
+                    print("--- App Feature Summary ---\n\(report)")
+#if os(macOS)
+                    let pb = NSPasteboard.general
+                    pb.clearContents()
+                    pb.setString(report, forType: .string)
+#endif
+                }) {
+                    Image(systemName: "square.and.arrow.up")
+                        .imageScale(.large)
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
             }
             
             // Welcome message
@@ -189,26 +263,26 @@ struct WelcomeToMan1fest0: View {
         switch category {
         case "Policy Management":
             return [
-                AppFeature(title: "Policies", description: "View and manage all policies", iconName: "doc.text.fill", destination: "PolicyView", category: category, accessLevel: .basic),
-                AppFeature(title: "Policy Actions", description: "Batch operations on policies", iconName: "hammer.fill", destination: "PoliciesActionView", category: category, accessLevel: .advanced),
-                AppFeature(title: "Package Management", description: "Configure policy packages", iconName: "archivebox.fill", destination: "PackageView", category: category, accessLevel: .advanced)
+                AppFeature(title: "Policies", description: "View and manage all policies", iconName: "doc.text.fill", subFeatures: policySubfeatures, destination: "PolicyView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Policy Actions", description: "Batch operations on policies", iconName: "hammer.fill", subFeatures: policyActionsSubfeatures, destination: "PoliciesActionView", category: category, accessLevel: AppFeature.AccessLevel.advanced),
+                AppFeature(title: "Package Management", description: "Configure policy packages", iconName: "box.fill", subFeatures: packageSubfeatures, destination: "PackageView", category: category, accessLevel: AppFeature.AccessLevel.advanced)
             ]
         case "Device Management":
             return [
-                AppFeature(title: "Computers", description: "View and manage computers", iconName: "desktopcomputer", destination: "ComputerView", category: category, accessLevel: .basic),
-                AppFeature(title: "Computer Groups", description: "Organize computers into groups", iconName: "person.3.fill", destination: "ComputerGroupView", category: category, accessLevel: .basic),
-                AppFeature(title: "Buildings", description: "Manage building locations", iconName: "building.fill", destination: "BuildingsView", category: category, accessLevel: .basic)
+                AppFeature(title: "Computers", description: "View and manage computers", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "ComputerView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Computer Groups", description: "Organize computers into groups", iconName: "person.3.fill", subFeatures: computersSubfeatures, destination: "ComputerGroupView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Buildings", description: "Manage building locations", iconName: "building.fill", subFeatures: nil, destination: "BuildingsView", category: category, accessLevel: AppFeature.AccessLevel.basic)
             ]
         case "Script Management":
             return [
-                AppFeature(title: "Scripts", description: "View and manage scripts", iconName: "terminal.fill", destination: "ScriptsView", category: category, accessLevel: .basic),
-                AppFeature(title: "Script Usage", description: "Track script deployment", iconName: "chart.bar.fill", destination: "ScriptUsageView", category: category, accessLevel: .advanced)
+                AppFeature(title: "Scripts", description: "View and manage scripts", iconName: "terminal.fill", subFeatures: scriptsSubfeatures, destination: "ScriptsView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Script Usage", description: "Track script deployment", iconName: "chart.bar.fill", subFeatures: scriptsSubfeatures, destination: "ScriptUsageView", category: category, accessLevel: AppFeature.AccessLevel.advanced)
             ]
         case "System Administration":
             return [
-                AppFeature(title: "Categories", description: "Manage item categories", iconName: "folder.fill", destination: "CategoriesView", category: category, accessLevel: .basic),
-                AppFeature(title: "Icons", description: "Manage app icons", iconName: "photo.fill", destination: "IconsView", category: category, accessLevel: .basic),
-                AppFeature(title: "Departments", description: "Organize departments", iconName: "building.2.fill", destination: "DepartmentsView", category: category, accessLevel: .basic)
+                AppFeature(title: "Categories", description: "Manage item categories", iconName: "folder.fill", subFeatures: nil, destination: "CategoriesView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Icons", description: "Manage app icons", iconName: "photo.fill", subFeatures: optionsSubfeatures, destination: "IconsView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Departments", description: "Organize departments", iconName: "building.2.fill", subFeatures: nil, destination: "DepartmentsView", category: category, accessLevel: AppFeature.AccessLevel.basic)
             ]
         default:
             return []
@@ -419,6 +493,23 @@ struct FeatureCard: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.leading)
+                    
+                    // Render sub-features as bullet list when present
+                    if let subs = feature.subFeatures, !subs.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(subs) { s in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text("•")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(s.title)
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.top, 4)
+                    }
                 }
                 
                 Spacer()
@@ -436,7 +527,7 @@ struct FeatureCard: View {
 private func colorForAccessLevel(_ level: AppFeature.AccessLevel) -> Color {
     switch level {
     case .basic: return .blue
-    case .advanced: return .blue
+    case .advanced: return .orange
     case .admin: return .red
     case .premium: return .purple
     }
@@ -659,4 +750,18 @@ class AppUserPreferences: ObservableObject {
         rememberUserPreference = true
         savePreferences()
     }
+}
+
+// Summarize helper moved into this file so we can reference AppFeature without circular imports
+func summarizeAppFeatures(_ features: [AppFeature]) -> String {
+    var lines: [String] = []
+    for f in features {
+        lines.append("- \(f.title): \(f.description)")
+        if let subs = f.subFeatures, !subs.isEmpty {
+            for s in subs {
+                lines.append("    • \(s.title)")
+            }
+        }
+    }
+    return lines.joined(separator: "\n")
 }
