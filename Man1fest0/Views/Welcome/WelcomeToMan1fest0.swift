@@ -96,7 +96,7 @@ struct WelcomeToMan1fest0: View {
             featureCategoriesGrid
             
             // Quick actions section
-            quickActionsSection
+//            quickActionsSection
             
             // Getting started section
             gettingStartedSection
@@ -217,26 +217,26 @@ struct WelcomeToMan1fest0: View {
         .frame(height: 400)
     }
     
-    private var quickActionsSection: some View {
-        VStack(spacing: 16) {
-            Text("Quick Actions")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
-                ForEach(quickActions, id: \.title) { action in
-                    QuickActionCard(action: action)
-                }
-            }
-        }
-        .padding(.horizontal, 30)
-    }
-    
+    //    private var quickActionsSection: some View {
+    //        VStack(spacing: 16) {
+    //            Text("Quick Actions")
+    //                .font(.title2)
+    //                .fontWeight(.semibold)
+    //                .frame(maxWidth: .infinity, alignment: .leading)
+    //
+    //            LazyVGrid(columns: [
+    //                GridItem(.flexible()),
+    //                GridItem(.flexible()),
+    //                GridItem(.flexible())
+    //            ], spacing: 16) {
+    //                ForEach(quickActions, id: \.title) { action in
+    //                    QuickActionCard(action: action)
+    //                }
+    //            }
+    //        }
+    //        .padding(.horizontal, 30)
+    //    }
+    //
     private var gettingStartedSection: some View {
         VStack(spacing: 16) {
             Text("Getting Started")
@@ -255,8 +255,9 @@ struct WelcomeToMan1fest0: View {
     }
     
     // MARK: - Data
+    // ADD NEW FEATURES HERE AND UPDATE getFeatures() SWITCH TO RETURN THEM IN THE CORRECT CATEGORY
     private var featureCategories: [String] {
-        return ["Policy Management", "Device Management", "Script Management", "System Administration"]
+        return ["Policy Management", "Device Management", "Script Management", "System Administration","Create Items"]
     }
     
     private func getFeatures(for category: String) -> [AppFeature] {
@@ -265,7 +266,7 @@ struct WelcomeToMan1fest0: View {
             return [
                 AppFeature(title: "Policies", description: "View and manage all policies", iconName: "doc.text.fill", subFeatures: policySubfeatures, destination: "PolicyView", category: category, accessLevel: AppFeature.AccessLevel.basic),
                 AppFeature(title: "Policy Actions", description: "Batch operations on policies", iconName: "hammer.fill", subFeatures: policyActionsSubfeatures, destination: "PoliciesActionView", category: category, accessLevel: AppFeature.AccessLevel.advanced),
-                AppFeature(title: "Package Management", description: "Configure policy packages", iconName: "box.fill", subFeatures: packageSubfeatures, destination: "PackageView", category: category, accessLevel: AppFeature.AccessLevel.advanced)
+                AppFeature(title: "Package Management", description: "Configure policy packages", iconName: "suitcase.fill", subFeatures: packageSubfeatures, destination: "PackageView", category: category, accessLevel: AppFeature.AccessLevel.advanced)
             ]
         case "Device Management":
             return [
@@ -278,6 +279,10 @@ struct WelcomeToMan1fest0: View {
                 AppFeature(title: "Scripts", description: "View and manage scripts", iconName: "terminal.fill", subFeatures: scriptsSubfeatures, destination: "ScriptsView", category: category, accessLevel: AppFeature.AccessLevel.basic),
                 AppFeature(title: "Script Usage", description: "Track script deployment", iconName: "chart.bar.fill", subFeatures: scriptsSubfeatures, destination: "ScriptUsageView", category: category, accessLevel: AppFeature.AccessLevel.advanced)
             ]
+        case "Create Items":
+            return [
+                AppFeature(title: "Create", description: "Create items", iconName: "hammer.fill", subFeatures: nil, destination: "CreateView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+            ]
         case "System Administration":
             return [
                 AppFeature(title: "Categories", description: "Manage item categories", iconName: "folder.fill", subFeatures: nil, destination: "CategoriesView", category: category, accessLevel: AppFeature.AccessLevel.basic),
@@ -287,83 +292,88 @@ struct WelcomeToMan1fest0: View {
         default:
             return []
         }
+        
+        
+        
     }
     
-    private var quickActions: [QuickAction] {
-        return [
-            QuickAction(
-                title: "Policies",
-                description: "View all policies",
-                iconName: "doc.text.fill",
-                destination: "PolicyView",
-                color: .blue,
-                isAction: false
-            ),
-            QuickAction(
-                title: "Computers",
-                description: "Manage computers",
-                iconName: "desktopcomputer.fill",
-                destination: "ComputerView",
-                color: .green,
-                isAction: false
-            ),
-            QuickAction(
-                title: "Scripts",
-                description: "Manage scripts",
-                iconName: "terminal.fill",
-                destination: "ScriptsView",
-                color: .orange,
-                isAction: false
-            ),
-            QuickAction(
-                title: "Packages",
-                description: "View packages",
-                iconName: "box.fill",
-                destination: "PackageView",
-                color: .purple,
-                isAction: false
-            ),
-            QuickAction(
-                title: "Settings",
-                description: "App preferences",
-                iconName: "gearshape.fill",
-                destination: "OptionsView",
-                color: .gray,
-                isAction: false
-            ),
-            QuickAction(
-                title: "Refresh Data",
-                description: "Update all data",
-                iconName: "arrow.clockwise",
-                destination: "",
-                color: .red,
-                isAction: true
-            )
-        ]
-    }
     
-    private var gettingStartedSteps: [GettingStartedStep] {
-        return [
-            GettingStartedStep(
-                number: 1,
-                title: "Connect to Jamf",
-                description: "Enter your server credentials",
-                iconName: "server.rack"
-            ),
-            GettingStartedStep(
-                number: 2,
-                title: "Load Data",
-                description: "Policies, computers, and scripts will be loaded",
-                iconName: "arrow.down.circle.fill"
-            ),
-            GettingStartedStep(
-                number: 3,
-                title: "Manage Resources",
-                description: "Use powerful management tools",
-                iconName: "gearshape.2.fill"
-            )
-        ]
-    }
+}
+
+private var quickActions: [QuickAction] {
+    return [
+        QuickAction(
+            title: "Policies",
+            description: "View all policies",
+            iconName: "doc.text.fill",
+            destination: "PolicyView",
+            color: .blue,
+            isAction: false
+        ),
+        QuickAction(
+            title: "Computers",
+            description: "Manage computers",
+            iconName: "desktopcomputer.fill",
+            destination: "ComputerView",
+            color: .green,
+            isAction: false
+        ),
+        QuickAction(
+            title: "Scripts",
+            description: "Manage scripts",
+            iconName: "terminal.fill",
+            destination: "ScriptsView",
+            color: .orange,
+            isAction: false
+        ),
+        QuickAction(
+            title: "Packages",
+            description: "View packages",
+            iconName: "box.fill",
+            destination: "PackageView",
+            color: .purple,
+            isAction: false
+        ),
+        QuickAction(
+            title: "Settings",
+            description: "App preferences",
+            iconName: "gearshape.fill",
+            destination: "OptionsView",
+            color: .gray,
+            isAction: false
+        ),
+        QuickAction(
+            title: "Refresh Data",
+            description: "Update all data",
+            iconName: "arrow.clockwise",
+            destination: "",
+            color: .red,
+            isAction: true
+        )
+    ]
+}
+
+private var gettingStartedSteps: [GettingStartedStep] {
+    return [
+        GettingStartedStep(
+            number: 1,
+            title: "Connect to Jamf",
+            description: "Enter your server credentials",
+            iconName: "server.rack"
+        ),
+        GettingStartedStep(
+            number: 2,
+            title: "Load Data",
+            description: "Policies, computers, and scripts will be loaded",
+            iconName: "arrow.down.circle.fill"
+        ),
+        GettingStartedStep(
+            number: 3,
+            title: "Manage Resources",
+            description: "Use powerful management tools",
+            iconName: "gearshape.2.fill"
+        )
+    ]
 }
 
 // MARK: - Feature Category Card
@@ -371,9 +381,9 @@ struct FeatureCategoryCard: View {
     let category: String
     let features: [AppFeature]
     let animateIn: Bool
-
+    
     @EnvironmentObject var networkController: NetBrain
-
+    
     var body: some View {
         VStack(spacing: 16) {
             // Category header
@@ -381,19 +391,19 @@ struct FeatureCategoryCard: View {
                 Image(systemName: getIconForCategory(category))
                     .font(.title2)
                     .foregroundColor(.blue)
-
+                
                 Text(category)
                     .font(.headline)
                     .fontWeight(.semibold)
-
+                
                 Spacer()
-
+                
                 Text("\(features.count) features")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .padding(.bottom, 12)
-
+            
             // Feature cards
             LazyVGrid(columns: [
                 GridItem(.flexible())
@@ -413,17 +423,18 @@ struct FeatureCategoryCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
     }
-
+    
     private func getIconForCategory(_ category: String) -> String {
         switch category {
         case "Policy Management": return "doc.text.fill"
         case "Device Management": return "desktopcomputer"
         case "Script Management": return "terminal.fill"
         case "System Administration": return "gearshape.fill"
+        case "Create Items": return "hammer.fill"
         default: return "square.grid.3x3"
         }
     }
-
+    
     @ViewBuilder
     private func getViewForDestination(_ destination: String) -> some View {
         // Map known destination strings to actual views in the app
@@ -444,7 +455,7 @@ struct FeatureCategoryCard: View {
             Text("Navigate to \(destination)").font(.title2)
         }
     }
-
+    
     // Prefetch network data for known destinations so destination views are not empty on arrival
     private func prefetchIfNeeded(destination: String) {
         switch destination {
