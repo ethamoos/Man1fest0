@@ -18,6 +18,18 @@ enum SectionHeadingStyle {
     case band          // full-width colored band
 }
 
+/// Preset shorthand names for common section heading combinations.
+/// Use these with `Text("Title").sectionHeading(preset: .standard)`
+enum SectionHeadingPreset {
+    case standard    // default lightweight heading
+    case bold        // high-contrast band-style heading (strong)
+    case minimal     // compact heading with divider
+    case accent      // accent bar to the left
+    case boxedCard   // boxed rounded card style
+    case pillBlue    // pill with blue tint
+    case bandStrong  // full-width accent band
+}
+
 /// A consistent heading style used across the app for section headings.
 /// Use `Text("Title").sectionHeading()` or pass `style:` to choose a variant.
 struct SectionHeading: ViewModifier {
@@ -121,5 +133,38 @@ extension View {
         accentColor: Color? = nil
     ) -> some View {
         self.modifier(SectionHeading(style: style, size: size, weight: weight, color: color, paddingEdges: padding, background: background, accentColor: accentColor))
+    }
+
+    /// Convenience shorthand that maps `SectionHeadingPreset` names to specific combinations
+    /// of `SectionHeadingStyle` and parameters. Returns an `AnyView` wrapper so the API is
+    /// simple to call from any place in the views.
+    func sectionHeading(preset: SectionHeadingPreset) -> some View {
+        switch preset {
+        case .standard:
+            return AnyView(self.sectionHeading(style: .standard))
+        case .bold:
+            // Strong band with accent color for high-visibility headers
+            return AnyView(self.sectionHeading(style: .band, size: 16, weight: .semibold, color: .white, background: Color.accentColor))
+        case .minimal:
+            // Compact divider-based heading
+            return AnyView(self.sectionHeading(style: .divider, size: 13, weight: .semibold, color: .primary))
+        case .accent:
+            // Small leading accent bar
+            return AnyView(self.sectionHeading(style: .accentBar, size: 14, weight: .semibold, color: .primary, background: nil, accentColor: Color.accentColor))
+        case .boxedCard:
+            // Subtle rounded rectangle card
+            #if os(iOS)
+            let bg = Color(.secondarySystemBackground)
+            #elseif os(macOS)
+            let bg = Color(NSColor.windowBackgroundColor)
+            #else
+            let bg = Color.gray.opacity(0.08)
+            #endif
+            return AnyView(self.sectionHeading(style: .boxed, size: 14, weight: .semibold, color: .primary, background: bg))
+        case .pillBlue:
+            return AnyView(self.sectionHeading(style: .pill, size: 13, weight: .semibold, color: .primary, background: Color.blue.opacity(0.12)))
+        case .bandStrong:
+            return AnyView(self.sectionHeading(style: .band, size: 15, weight: .semibold, color: .white, background: Color.blue))
+        }
     }
 }
