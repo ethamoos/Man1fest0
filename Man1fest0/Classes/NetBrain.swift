@@ -1670,7 +1670,6 @@ actor AsyncSemaphore {
     }
     
     func batchDeleteScripts(selection:  Set<ScriptClassic>, server: String, authToken: String, resourceType: ResourceType) {
-        
         self.separationLine()
         print("Running: batchDeleteScripts")
         print("selection is: \(selection)")
@@ -1683,15 +1682,12 @@ actor AsyncSemaphore {
             print("Running: deleteScriptAlt")
             print("resourceType is: \(resourceType)")
             
-//            self.deleteScriptAlt(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
-            
             Task {
                 try await self.deleteScript(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
             }
         }
         self.separationLine()
         print("Finished - batchDeleteScripts")
-
     }
     
     func deleteGroup(server: String,resourceType: ResourceType, itemID: String, authToken: String)  async throws {
