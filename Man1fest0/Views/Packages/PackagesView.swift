@@ -16,6 +16,10 @@ struct PackagesView: View {
     @State var searchText = ""
     @State var selection = Set<Package>()
     @State var packages: [Package] = []
+
+    // Snapshot of filtered results used by the List to reduce UI work
+    @State private var filteredPackages: [Package] = []
+    @StateObject private var filterDebouncer = Debouncer()
     
     var body: some View {
 
@@ -24,7 +28,7 @@ struct PackagesView: View {
             if networkController.packages.count > 0 {
                 NavigationView {
                     
-                    List(searchResults, selection: $selection) { package in
+                    List(filteredPackages, selection: $selection) { package in
                         NavigationLink(destination: PackageDetailView(package: package, server: server)) {
                             
                             HStack {
@@ -34,6 +38,32 @@ struct PackagesView: View {
                         }
                     }
                     .searchable(text: $searchText)
+                    .onChange(of: searchText) { newValue in
+                        // Debounce typing and compute the filtered snapshot off the main actor
+                        filterDebouncer.debounce(interval: 0.25) {
+                            Task {
+                                // Snapshot safely on the MainActor
+                                let snapshot = await MainActor.run { networkController.packages }
+                                // Filter off-main-thread
+                                let q = newValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                                let result: [Package]
+                                if q.isEmpty {
+                                    result = snapshot
+                                } else {
+                                    result = await Task.detached(priority: .userInitiated) {
+                                        return snapshot.filter { $0.name.lowercased().contains(q) }
+                                    }.value
+                                }
+                                await MainActor.run {
+                                    self.filteredPackages = result
+                                }
+                            }
+                        }
+                    }
+                    .onAppear {
+                        // initialize snapshot
+                        self.filteredPackages = networkController.packages
+                    }
                     .foregroundColor(.blue)
 #if os(macOS)
                         .frame(minWidth: 300, maxWidth: .infinity)
@@ -42,7 +72,6 @@ struct PackagesView: View {
 
                 }
 #if os(macOS)
-//                #if os(macOS)
                 .navigationTitle("Packages")
 #endif
                 .listStyle(.inset)
@@ -71,6 +100,7 @@ struct PackagesView: View {
         networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
     }
     
+    // keep original helper for compatibility
     var searchResults: [Package] {
         
         if searchText.isEmpty {

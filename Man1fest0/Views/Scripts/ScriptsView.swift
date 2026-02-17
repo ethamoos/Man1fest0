@@ -71,8 +71,10 @@ struct ScriptsView: View {
                     .onChange(of: searchText) { newValue in
                         // debounce updates to the query used for filtering
                         searchDebouncer.debounce(interval: 0.35) {
-                            await MainActor.run {
-                                self.debouncedQuery = newValue
+                            Task {
+                                await MainActor.run {
+                                    self.debouncedQuery = newValue
+                                }
                             }
                         }
                     }
