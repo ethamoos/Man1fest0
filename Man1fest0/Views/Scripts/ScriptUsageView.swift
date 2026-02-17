@@ -42,7 +42,7 @@ struct ScriptUsageView: View {
     @State var allScriptsByNameSet = Set<String>()
     
     @State var totalScriptsNotUsed = 0
-    
+
     //    ########################################
     //    Selections
     //    ########################################
@@ -50,6 +50,17 @@ struct ScriptUsageView: View {
     @State var selection = Set<String>()
     @State var selectedKey: [String] = []
     @State var selectedValue: String = ""
+
+    // Computed cross-platform background color for boxed headings
+    private var sectionBoxBackground: Color {
+        #if os(iOS)
+        return Color(.secondarySystemBackground)
+        #elseif os(macOS)
+        return Color(NSColor.windowBackgroundColor)
+        #else
+        return Color.gray.opacity(0.08)
+        #endif
+    }
     
     //    @State var fetchedDetailedPolicies: Bool = false
     
@@ -65,8 +76,8 @@ struct ScriptUsageView: View {
                 
                 if networkController.allPoliciesConverted.count != networkController.allPoliciesDetailed.count {
                     
-                    Section(header: Text("All Scripts").bold().padding()) {
-                        
+                    Section(header: Text("All Scripts").sectionHeading(style: .pill, background: Color.blue.opacity(0.12)))
+                    {
                         List {
                             
                             ForEach(searchResults, id: \.self) { script in
@@ -90,7 +101,7 @@ struct ScriptUsageView: View {
                     
                     VStack(alignment: .leading, spacing: 5) {
                         
-                        Section(header: Text("Assigned Scripts").sectionHeading()) {
+                        Section(header: Text("Assigned Scripts").sectionHeading(style: .pill, background: Color.blue.opacity(0.12))) {
                             
                             List(selection: $selection) {
                                 ForEach(assignedScriptsByNameDict.keys.sorted(), id: \.self) { script in
@@ -107,7 +118,7 @@ struct ScriptUsageView: View {
                     //        Unassigned scripts
                     //        ########################################
                     
-                    Section(header: Text("Scripts not in use").sectionHeading()) {
+                    Section(header: Text("Scripts not in use").sectionHeading(style: .pill, background: Color.blue.opacity(0.12)))  {
                         
                         List(selection: $selection) {
                             ForEach(unassignedScriptsSet.sorted(), id: \.self) { script in
