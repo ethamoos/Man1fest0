@@ -90,7 +90,7 @@ struct ScriptUsageView: View {
                     
                     VStack(alignment: .leading, spacing: 5) {
                         
-                        Section(header: Text("Assigned Scripts").bold().padding()) {
+                        Section(header: Text("Assigned Scripts").sectionHeading()) {
                             
                             List(selection: $selection) {
                                 ForEach(assignedScriptsByNameDict.keys.sorted(), id: \.self) { script in
@@ -107,8 +107,8 @@ struct ScriptUsageView: View {
                     //        Unassigned scripts
                     //        ########################################
                     
-                    Section(header: Text("Scripts not in use").bold().padding()) {
-                                                
+                    Section(header: Text("Scripts not in use").sectionHeading()) {
+                        
                         List(selection: $selection) {
                             ForEach(unassignedScriptsSet.sorted(), id: \.self) { script in
                                 HStack {

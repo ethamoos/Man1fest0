@@ -85,9 +85,9 @@ struct ScriptUsageViewJson: View {
     
                     List {
                         
-                        Section(header: Text("All Scripts").bold()) {
+                        Section(header: Text("All Scripts").sectionHeading()) {
                             
-                            ForEach(networkController.scripts) { script in
+                            ForEach(networkController.scripts, id: \.self) { script in
                                 
                                 Text(String(describing: script.name))
                                 
@@ -100,9 +100,9 @@ struct ScriptUsageViewJson: View {
             
                 List {
                     
-                    Section(header: Text("Assigned Scripts").bold()) {
+                    Section(header: Text("Assigned Scripts").sectionHeading()) {
                         
-                        ForEach(assignedScripts) { item in
+                        ForEach(assignedScripts, id: \.self) { item in
                             
                             Text(item.name ?? "")
                         }
@@ -113,7 +113,7 @@ struct ScriptUsageViewJson: View {
                 
                 List {
                     
-                    Section(header: Text("Scripts not in use").bold()) {
+                    Section(header: Text("Scripts not in use").sectionHeading()) {
                         
                         ForEach(differentScripts.sorted(), id: \.self) { item in
                             
