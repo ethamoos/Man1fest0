@@ -44,6 +44,13 @@ let computersSubfeatures: SubFeatures = makeSubFeatures(
     "Run remote commands"
 )
 
+let computerGroupsSubfeatures: SubFeatures = makeSubFeatures(
+    "View computer static groups",
+    "View computer smart groups",
+    "Edit computer static groups"
+
+)
+
 let scriptsSubfeatures: SubFeatures = makeSubFeatures(
     "View and edit scripts",
     "Check script usage",
@@ -97,7 +104,7 @@ struct WelcomeToMan1fest0: View {
             
             // Quick actions section
 //            quickActionsSection
-            
+            Spacer()
             // Getting started section
             gettingStartedSection
             
@@ -214,7 +221,7 @@ struct WelcomeToMan1fest0: View {
             }
             .padding(.horizontal)
         }
-        .frame(height: 400)
+        .frame(height: 600)
     }
     
     //    private var quickActionsSection: some View {
@@ -257,7 +264,7 @@ struct WelcomeToMan1fest0: View {
     // MARK: - Data
     // ADD NEW FEATURES HERE AND UPDATE getFeatures() SWITCH TO RETURN THEM IN THE CORRECT CATEGORY
     private var featureCategories: [String] {
-        return ["Policy Management", "Device Management", "Script Management", "System Administration","Create Items"]
+        return ["Policy Management", "Device Management", "Computer Prestage Management", "Script Management", "System Administration","Create Items"]
     }
     
     private func getFeatures(for category: String) -> [AppFeature] {
@@ -271,9 +278,32 @@ struct WelcomeToMan1fest0: View {
         case "Device Management":
             return [
                 AppFeature(title: "Computers", description: "View and manage computers", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "ComputerView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-                AppFeature(title: "Computer Groups", description: "Organize computers into groups", iconName: "person.3.fill", subFeatures: computersSubfeatures, destination: "ComputerGroupView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-                AppFeature(title: "Buildings", description: "Manage building locations", iconName: "building.fill", subFeatures: nil, destination: "BuildingsView", category: category, accessLevel: AppFeature.AccessLevel.basic)
+                AppFeature(title: "Computer Groups", description: "Organize computers into groups", iconName: "person.3.fill", subFeatures: computerGroupsSubfeatures, destination: "ComputerGroupView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+          
             ]
+            
+            
+//             case "Computer Group Management":
+//                 return [
+//                     
+//                     AppFeature(title: "List Prestages", description: "List all computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+//                     AppFeature(title: "Show Prestage Assignment", description: "View details of computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+//                     AppFeature(title: "Edit Prestage Assignment", description: "View and manage computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+//                     AppFeature(title: "Add Device Prestage Assignment", description: "Assign unassigned device to computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic)
+//               
+//                 ]
+            
+       
+        case "Prestage Management":
+            return [
+                
+                AppFeature(title: "List Prestages", description: "List all computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Show Prestage Assignment", description: "View details of computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Edit Prestage Assignment", description: "View and manage computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Add Device Prestage Assignment", description: "Assign unassigned device to computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic)
+          
+            ]
+            
         case "Script Management":
             return [
                 AppFeature(title: "Scripts", description: "View and manage scripts", iconName: "terminal.fill", subFeatures: scriptsSubfeatures, destination: "ScriptsView", category: category, accessLevel: AppFeature.AccessLevel.basic),
@@ -281,13 +311,14 @@ struct WelcomeToMan1fest0: View {
             ]
         case "Create Items":
             return [
-                AppFeature(title: "Create", description: "Create items", iconName: "hammer.fill", subFeatures: nil, destination: "CreateView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Create", description: "Create items", iconName: "hammer.fill", subFeatures: nil, destination: "CreateView", category: category, accessLevel: AppFeature.AccessLevel.basic)
             ]
         case "System Administration":
             return [
+                AppFeature(title: "Buildings", description: "Manage building locations", iconName: "building.fill", subFeatures: nil, destination: "BuildingsView", category: category, accessLevel: AppFeature.AccessLevel.basic),
                 AppFeature(title: "Categories", description: "Manage item categories", iconName: "folder.fill", subFeatures: nil, destination: "CategoriesView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-                AppFeature(title: "Icons", description: "Manage app icons", iconName: "photo.fill", subFeatures: optionsSubfeatures, destination: "IconsView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-                AppFeature(title: "Departments", description: "Organize departments", iconName: "building.2.fill", subFeatures: nil, destination: "DepartmentsView", category: category, accessLevel: AppFeature.AccessLevel.basic)
+                AppFeature(title: "Departments", description: "Organize departments", iconName: "building.2.fill", subFeatures: nil, destination: "DepartmentsView", category: category, accessLevel: AppFeature.AccessLevel.basic),
+                AppFeature(title: "Icons", description: "Manage app icons", iconName: "photo.fill", subFeatures: optionsSubfeatures, destination: "IconsView", category: category, accessLevel: AppFeature.AccessLevel.basic)
             ]
         default:
             return []
