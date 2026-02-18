@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 
@@ -8,6 +7,8 @@ struct ScriptsView: View {
     @EnvironmentObject var progress: Progress
     
     @State private var searchText = ""
+    @State private var debouncedQuery = ""
+    @StateObject private var searchDebouncer = Debouncer()
     @State var selection = Set<ScriptClassic>()
     
 //    var selectedResourceType: ResourceType
@@ -25,7 +26,7 @@ struct ScriptsView: View {
                 
                 NavigationView {
                     
-                    List(searchResults, id: \.self, selection: $selection) { script in
+                    List(searchResults, selection: $selection) { script in
                         NavigationLink(destination: ScriptsDetailView(script: script, scriptID: script.jamfId, server: server)) {
                             
                             HStack {
@@ -49,20 +50,17 @@ struct ScriptsView: View {
                     
                     .toolbar {
                         
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            print("Refresh")
-//                            Task {
-//                               try await networkController.getAllScripts(server: server, authToken: networkController.authToken)
-//                            }
-                            networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "arrow.clockwise")
-                                Text("Refresh")
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                print("Refresh")
+                                networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Refresh")
+                                }
                             }
-                        }
                     }
                     
                     //              ################################################################################
@@ -70,6 +68,16 @@ struct ScriptsView: View {
                     //              ################################################################################
                     
                     .searchable(text: $searchText)
+                    .onChange(of: searchText) { newValue in
+                        // debounce updates to the query used for filtering
+                        searchDebouncer.debounce(interval: 0.35) {
+                            Task {
+                                await MainActor.run {
+                                    self.debouncedQuery = newValue
+                                }
+                            }
+                        }
+                    }
 
                     Text("\(networkController.scripts.count) total scripts")
                 }
@@ -113,17 +121,11 @@ struct ScriptsView: View {
     }
     
     var searchResults: [ScriptClassic] {
-        if searchText.isEmpty {
-            // print("Search is empty")
-//            DEBUG
-//            print(networkController.scripts)
+        let query = debouncedQuery.isEmpty ? searchText : debouncedQuery
+        if query.isEmpty {
             return networkController.scripts
         } else {
-            // print("Search is currently is currently:\(searchText)")
-//            DEBUG
-//            print(networkController.scripts)
-            return networkController.scripts.filter { $0.name.lowercased().contains(searchText.lowercased())}
-            
+            return networkController.scripts.filter { $0.name.lowercased().contains(query.lowercased())}
         }
     }
 }

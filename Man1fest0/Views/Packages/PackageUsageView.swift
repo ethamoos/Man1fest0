@@ -1,4 +1,3 @@
-
 //  PackageUsageView.swift
 //  Man1fest0
 //
@@ -71,7 +70,7 @@ struct PackageUsageView: View {
                         
                         List {
                             
-                            ForEach(searchResults, id: \.self) { package in
+                            ForEach(searchResults) { package in
                                 
                                 HStack {
                                     Image(systemName: "suitcase.fill")

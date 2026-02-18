@@ -505,7 +505,7 @@ struct PolicyDetailView: View {
                         
                         if !networkController.categories.isEmpty {
                             Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                                ForEach(networkController.categories, id: \.self) { category in
+                                ForEach(networkController.categories) { category in
                                     Text(category.name).tag(category)
                                 }
                             }

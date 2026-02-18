@@ -133,7 +133,7 @@ struct CreatePolicyView: View {
                 
                 Section(header: Text("All Packages").bold().padding(.leading)) {
                     
-                    List(searchResults, id: \.self, selection: $packageMultiSelection) { package in
+                    List(searchResults, selection: $packageMultiSelection) { package in
                         HStack {
                             Image(systemName: "suitcase.fill")
                             Text(package.name ).font(.system(size: 12.0))
@@ -189,7 +189,7 @@ struct CreatePolicyView: View {
         //  ################################################################################
         
         
-        List(Array(packageMultiSelection), id: \.self) { package in
+        List(Array(packageMultiSelection)) { package in
             
             Text(package.name )
         }

@@ -100,7 +100,7 @@ struct PolicyDetailScopeTabView: View {
                     Picker(selection: $computerGroupSelection, label:Label("Groups", systemImage: "person.3")
                     ) {
                         //                        Text("").tag("")
-                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
+                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)})) { group in
                             Text(String(describing: group.name))
                                 .tag(group as ComputerGroup?)
                         }

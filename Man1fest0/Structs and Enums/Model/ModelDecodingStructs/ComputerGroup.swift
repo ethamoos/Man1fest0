@@ -20,7 +20,7 @@ struct allComputerGroups: Codable {
 }
 
 // MARK: - ComputerGroup
-struct ComputerGroup: Codable, Hashable {
+struct ComputerGroup: Codable, Hashable, Identifiable {
     let id: Int
     let name: String
     let isSmart: Bool
@@ -95,4 +95,3 @@ struct Site: Codable {
     let id: Int
     let name: String
 }
-

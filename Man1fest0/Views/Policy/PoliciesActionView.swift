@@ -178,7 +178,7 @@ struct PoliciesActionView: View {
                 }
                 .padding([.leading, .trailing, .top])
                 
-                List(searchResults, id: \.self, selection: $policiesSelection) { policy in
+                List(searchResults, selection: $policiesSelection) { policy in
 
                     HStack {
                         Image(systemName:"text.justify")
@@ -362,7 +362,7 @@ struct PoliciesActionView: View {
                             if !networkController.categories.isEmpty {
                                 Picker(selection: $categorySelection, label: Text("Category:\t\t")) {
                                     Text("No category selected").tag(nil as Category?)
-                                    ForEach(networkController.categories, id: \.self) { category in
+                                    ForEach(networkController.categories) { category in
                                         Text(category.name).tag(category as Category?)
                                     }
                                 }
@@ -708,7 +708,7 @@ struct PoliciesActionScopeTab: View {
                 LazyVGrid(columns: layout.columns, spacing: 10) {
                     Picker(selection: $computerGroupSelection, label: Label("Static Groups", systemImage: "person.3")) {
                         Text("No group selected").tag(nil as ComputerGroup?)
-                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}), id: \.self) { group in
+                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)})) { group in
                             if group.isSmart != true {
                                 Text(group.name).tag(group as ComputerGroup?)
                             }
@@ -732,7 +732,7 @@ struct PoliciesActionScopeTab: View {
                 LazyVGrid(columns: layout.columns, spacing: 10) {
                     Picker(selection: $computerGroupSelection, label: Label("Smart Groups", systemImage: "person.3")) {
                         Text("No group selected").tag(nil as ComputerGroup?)
-                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}), id: \.self) { group in
+                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)})) { group in
                             if group.isSmart == true {
                                 Text(group.name).tag(group as ComputerGroup?)
                             }

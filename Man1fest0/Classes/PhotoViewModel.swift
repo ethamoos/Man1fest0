@@ -14,6 +14,9 @@ class PhotoViewModel: ObservableObject {
 
     let apiURL = "" // Replace with your actual API
 
+    // Simple in-memory cache for downloaded image data to avoid repeated network requests
+    private static let imageDataCache = NSCache<NSString, NSData>()
+
     func fetchPhotos(apiURL: String) {
         isLoading = true
         errorMessage = nil
@@ -24,23 +27,37 @@ class PhotoViewModel: ObservableObject {
         }
         print("API URL is:\(apiURL)")
         URLSession.shared.dataTask(with: url) { data, response, error in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                if let error = error {
+            // Handle network errors and nil data on the main thread
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.isLoading = false
                     self.errorMessage = error.localizedDescription
-                    return
                 }
-                guard let data = data else {
+                return
+            }
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
                     self.errorMessage = "No data received"
-                    return
                 }
+                return
+            }
+            // Decode JSON off the main thread to avoid blocking UI
+            DispatchQueue.global(qos: .userInitiated).async {
                 do {
                     var decoded = try JSONDecoder().decode([Photo].self, from: data)
                     // Initial selection state
                     for i in decoded.indices { decoded[i].isSelected = false }
-                    self.photos = decoded
+                    // Publish once on the main actor
+                    DispatchQueue.main.async {
+                        self.photos = decoded
+                        self.isLoading = false
+                    }
                 } catch {
-                    self.errorMessage = "Failed to decode photos: \(error)"
+                    DispatchQueue.main.async {
+                        self.isLoading = false
+                        self.errorMessage = "Failed to decode photos: \(error)"
+                    }
                 }
             }
         }.resume()
@@ -73,5 +90,24 @@ class PhotoViewModel: ObservableObject {
             }
         }
         task.resume()
+    }
+
+    /// Fetch raw image Data for a given image URL string. Uses an in-memory cache to avoid repeated downloads.
+    /// Calls the completion on the main thread.
+    func fetchImageData(for urlString: String, completion: @escaping (Data?) -> Void) {
+        if let cached = Self.imageDataCache.object(forKey: urlString as NSString) {
+            completion(cached as Data)
+            return
+        }
+        guard let url = URL(string: urlString) else { completion(nil); return }
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data, error == nil else {
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            // Optionally we could validate/transform the data off-main-thread here (create NSImage/UIImage) if needed
+            Self.imageDataCache.setObject(data as NSData, forKey: urlString as NSString)
+            DispatchQueue.main.async { completion(data) }
+        }.resume()
     }
 }
