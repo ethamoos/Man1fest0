@@ -96,6 +96,22 @@ struct OptionsView: View {
                                     Text("Computer Actions")
                                 }
 #endif
+                                
+                                NavigationLink(destination: GroupsView(server: server)) {
+                                    Text("Computer Static Groups")
+                                }
+                                NavigationLink(destination: GroupsSmartView(server: server)) {
+                                    Text("Computer Smart Groups")
+                                }
+                                
+                                DisclosureGroup("Extension Attributes") {
+                                    NavigationLink(destination: ComputerExtAttributeView(server: server)) {
+                                        Text("Computer Extension Attributes")
+                                    }
+                                    NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
+                                        Text("Computer Extension Attributes Actions")
+                                    }
+                                }
                             }
                           
 #if os(macOS)
@@ -289,37 +305,37 @@ struct OptionsView: View {
                             }
 #if os(macOS)
                             
-                            Group {
-                                Divider()
-                                
-                                DisclosureGroup("Groups") {
-                                    //  #######################################################################
-                                    //  Static Groups
-                                    //  #######################################################################
-                                    
-                                    NavigationLink(destination: GroupsView(server: server)) {
-                                        Text("Static Groups")
-                                    }
-                                    NavigationLink(destination: GroupsSmartView(server: server)) {
-                                        Text("Smart Groups")
-                                    }
-                                }
-                            }
-                            
-                            Group {
-                                Divider()
-
-                                DisclosureGroup("Extension Attributes") {
-                                    NavigationLink(destination: ComputerExtAttributeView(server: server)) {
-                                        Text("Computer Extension Attributes")
-                                    }
-                                    NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
-                                        Text("Computer Extension Attributes Actions")
-                                    }
-                                }
-                            }
-                                           
-                            Divider()
+//                            Group {
+//                                Divider()
+//                                
+//                                DisclosureGroup("Groups") {
+//                                    //  #######################################################################
+//                                    //  Static Groups
+//                                    //  #######################################################################
+//                                    
+//                                    NavigationLink(destination: GroupsView(server: server)) {
+//                                        Text("Static Groups")
+//                                    }
+//                                    NavigationLink(destination: GroupsSmartView(server: server)) {
+//                                        Text("Smart Groups")
+//                                    }
+//                                }
+//                            }
+//                            
+//                            Group {
+//                                Divider()
+//
+//                                DisclosureGroup("Extension Attributes") {
+//                                    NavigationLink(destination: ComputerExtAttributeView(server: server)) {
+//                                        Text("Computer Extension Attributes")
+//                                    }
+//                                    NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
+//                                        Text("Computer Extension Attributes Actions")
+//                                    }
+//                                }
+//                            }
+//                                           
+//                            Divider()
                             
                             NavigationLink(destination: ReportsView()) {
                                 Text("Reports")
@@ -413,7 +429,7 @@ struct OptionsView: View {
                     }
                 }
                 .foregroundColor(.blue)
-                .frame(minWidth: 220)
+                 .frame(minWidth: 300)
 
                 //  #######################################################################
                 //  END OF SIDEBAR
@@ -427,7 +443,7 @@ struct OptionsView: View {
             }
             .listStyle(.sidebar)
             .padding()
-            .frame(minWidth: 220)
+             .frame(minWidth: 300)
         }
     }
 }
