@@ -121,7 +121,8 @@ actor AsyncSemaphore {
     //  #############################################################################
 
     @Published var allConfigProfiles: ConfigurationProfiles = ConfigurationProfiles()
-    
+    @Published var OSXConfigProfileDetailed: OSXConfigProfileDetailed? = nil
+
     //  #############################################################################
     //    ############ Department
     //  #############################################################################
@@ -618,6 +619,28 @@ actor AsyncSemaphore {
         let decoder = JSONDecoder()
         print("Decoding without array - using ConfigurationProfiles")
         self.allConfigProfiles = try decoder.decode(ConfigurationProfiles.self, from: data)
+    }
+    
+    
+    // Fetch detailed user by id
+    func getDetailOSXConfigProfile(userID: String) async throws {
+        
+        print("Running func: getDetailOSXConfigProfile")
+
+        do {
+            let request = APIRequest<OSXConfigProfileDetailedResponse>(endpoint: "osxconfigurationprofiles/id/" + userID, method: .get)
+            print("APIRequest: \(request)")
+            // ensure we have an auth token
+            if authToken.isEmpty {
+                try await getToken(server: server, username: username, password: password )
+            }
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.OSXConfigProfileDetailed = decoded.osxConfigurationProfile
+            print("Loaded detail for user id: \(userID)")
+        } catch {
+            publishError(error, title: "Failed to load user details")
+            throw error
+        }
     }
     
     

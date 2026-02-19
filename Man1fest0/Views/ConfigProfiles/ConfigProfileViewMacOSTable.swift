@@ -16,10 +16,10 @@ struct ConfigProfileViewMacOSTable: View {
     
     @State var server: String
     @State private var searchText = ""
-    @State private var sortOrder = [KeyPathComparator(\ConfigurationProfiles.ConfigurationProfile.name, order: .reverse)]
+    @State private var sortOrder = [KeyPathComparator(\ConfigProfileSummary.name, order: .reverse)]
     @State private var showingWarning = false
     
-    @State private var selectionID = Set<ConfigurationProfiles.ConfigurationProfile.ID>()
+    @State private var selectionID = Set<ConfigProfileSummary.ID>()
     @State private var selectedDevice = ""
     @State private var selectedCommand = ""
     @State var selectedGroup: ComputerGroup = ComputerGroup(id: 0, name: "", isSmart: false)
@@ -131,7 +131,7 @@ struct ConfigProfileViewMacOSTable: View {
         .textSelection(.enabled)
     }
     
-    var searchResults: [ConfigurationProfiles.ConfigurationProfile] {
+    var searchResults: [ConfigProfileSummary] {
         if searchText.isEmpty {
             return networkController.allConfigProfiles.computerConfigurations!
         } else {
@@ -148,5 +148,3 @@ struct ConfigProfileViewMacOSTable: View {
 //        ConfigProfilesView()
 //    }
 //}
-
-
