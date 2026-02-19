@@ -19,6 +19,13 @@ typealias SubFeatures = [SubFeature]
 
 func makeSubFeatures(_ items: String...) -> SubFeatures { items.map { SubFeature($0) } }
 
+let computerPrestageSubFeatures: SubFeatures = makeSubFeatures(
+    "List all computer prestages",
+    "View details of computer prestages",
+    "View and manage computer prestages",
+    "Assign unassigned device to computer prestages"
+)
+
 let policySubfeatures: SubFeatures = makeSubFeatures(
     "View and search policies",
     "Inspect detailed policy settings",
@@ -40,7 +47,7 @@ let packageSubfeatures: SubFeatures = makeSubFeatures(
 
 let computersSubfeatures: SubFeatures = makeSubFeatures(
     "View computer inventory",
-    "Group membership and scoping",
+    "Edit computer group membership",
     "Run remote commands"
 )
 
@@ -48,13 +55,24 @@ let computerGroupsSubfeatures: SubFeatures = makeSubFeatures(
     "View computer static groups",
     "View computer smart groups",
     "Edit computer static groups"
-
 )
+
+let createSubfeatures: SubFeatures = makeSubFeatures(
+    "Create Departments, Buildings, Categories",
+    "Check policies",
+"Create scripts",
+    "Create packages"
+    )
+
 
 let scriptsSubfeatures: SubFeatures = makeSubFeatures(
     "View and edit scripts",
-    "Check script usage",
-    "Track script parameters"
+    "Check for most recent items",
+    "Edit script parameters"
+)
+let scriptsUsageSubfeatures: SubFeatures = makeSubFeatures(
+    "View and script usage",
+    "Remove unused scripts"
 )
 
 let optionsSubfeatures: SubFeatures = makeSubFeatures(
@@ -264,7 +282,7 @@ struct WelcomeToMan1fest0: View {
     // MARK: - Data
     // ADD NEW FEATURES HERE AND UPDATE getFeatures() SWITCH TO RETURN THEM IN THE CORRECT CATEGORY
     private var featureCategories: [String] {
-        return ["Policy Management", "Device Management", "Computer Prestage Management", "Script Management", "System Administration","Create Items"]
+        return ["Policy Management", "Device Management",  "Script Management", "System Administration","Create Items"]
     }
     
     private func getFeatures(for category: String) -> [AppFeature] {
@@ -279,30 +297,13 @@ struct WelcomeToMan1fest0: View {
             return [
                 AppFeature(title: "Computers", description: "View and manage computers", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "ComputerView", category: category, accessLevel: AppFeature.AccessLevel.basic),
                 AppFeature(title: "Computer Groups", description: "Organize computers into groups", iconName: "person.3.fill", subFeatures: computerGroupsSubfeatures, destination: "ComputerGroupView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-          
+                AppFeature(title: "Computer Prestages", description: "Manage Computers Prestages", iconName: "desktopcomputer", subFeatures: computerPrestageSubFeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic)
             ]
-            
-            
-//             case "Computer Group Management":
-//                 return [
-//                     
-//                     AppFeature(title: "List Prestages", description: "List all computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-//                     AppFeature(title: "Show Prestage Assignment", description: "View details of computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-//                     AppFeature(title: "Edit Prestage Assignment", description: "View and manage computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-//                     AppFeature(title: "Add Device Prestage Assignment", description: "Assign unassigned device to computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic)
-//               
-//                 ]
-            
        
-        case "Prestage Management":
-            return [
-                
-                AppFeature(title: "List Prestages", description: "List all computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-                AppFeature(title: "Show Prestage Assignment", description: "View details of computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-                AppFeature(title: "Edit Prestage Assignment", description: "View and manage computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic),
-                AppFeature(title: "Add Device Prestage Assignment", description: "Assign unassigned device to computer prestages", iconName: "desktopcomputer", subFeatures: computersSubfeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic)
-          
-            ]
+//        case "Prestage Management":
+//            return [
+//                AppFeature(title: "Computer Prestages", description: "Manage Computers Prestages", iconName: "desktopcomputer", subFeatures: computerPrestageSubFeatures, destination: "PrestageView", category: category, accessLevel: AppFeature.AccessLevel.basic)
+//            ]
             
         case "Script Management":
             return [
@@ -311,7 +312,7 @@ struct WelcomeToMan1fest0: View {
             ]
         case "Create Items":
             return [
-                AppFeature(title: "Create", description: "Create items", iconName: "hammer.fill", subFeatures: nil, destination: "CreateView", category: category, accessLevel: AppFeature.AccessLevel.basic)
+                AppFeature(title: "Create", description: "Create items", iconName: "hammer.fill", subFeatures: createSubfeatures, destination: "CreateView", category: category, accessLevel: AppFeature.AccessLevel.basic)
             ]
         case "System Administration":
             return [
@@ -459,6 +460,7 @@ struct FeatureCategoryCard: View {
         switch category {
         case "Policy Management": return "doc.text.fill"
         case "Device Management": return "desktopcomputer"
+        case "Prestage Management": return "desktopcomputer"
         case "Script Management": return "terminal.fill"
         case "System Administration": return "gearshape.fill"
         case "Create Items": return "hammer.fill"
