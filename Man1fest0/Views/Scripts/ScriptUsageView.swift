@@ -10,27 +10,19 @@ import SwiftUI
 struct ScriptUsageView: View {
     
     var server: String
-    // var username: String
-    // var password: String
     
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var policyController: PolicyBrain
-    // @EnvironmentObject var controller: JamfController
     
     @State private var searchText = ""
-    
-    
     @State var assignedScripts: [PolicyScripts] = []
     @State var assignedScriptsArray: [String] = []
-    
     @State var assignedScriptsByNameDict: [String: String] = [:]
     @State var assignedScriptsByNameSet = Set<String>()
-    
     //    ########################################
     //    SUMMARIES
     //    ########################################
-    
     
     @State var clippedScripts = Set<String>()
     @State var unassignedScriptsSet = Set<String>()
@@ -40,7 +32,6 @@ struct ScriptUsageView: View {
     @State var allScripts: [ScriptClassic] = []
     @State var allScriptsByNameDict: [String: String] = [:]
     @State var allScriptsByNameSet = Set<String>()
-    
     @State var totalScriptsNotUsed = 0
 
     //    ########################################
@@ -61,9 +52,7 @@ struct ScriptUsageView: View {
         return Color.gray.opacity(0.08)
         #endif
     }
-    
-    //    @State var fetchedDetailedPolicies: Bool = false
-    
+        
     var body: some View {
         
         VStack(alignment: .leading) {

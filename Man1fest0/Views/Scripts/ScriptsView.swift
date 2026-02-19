@@ -9,7 +9,8 @@ struct ScriptsView: View {
     @State private var searchText = ""
     @State private var debouncedQuery = ""
     @StateObject private var searchDebouncer = Debouncer()
-    @State var selection = Set<ScriptClassic>()
+    // Use ID-based selection to remain stable across list refreshes
+    @State var selection = Set<Int>()
     
 //    var selectedResourceType: ResourceType
     
@@ -26,7 +27,8 @@ struct ScriptsView: View {
                 
                 NavigationView {
                     
-                    List(searchResults, selection: $selection) { script in
+                    // Bind selection to IDs (jamfId) and use id: \ .jamfId to keep List content stable
+                    List(searchResults, id: \.jamfId, selection: $selection) { script in
                         NavigationLink(destination: ScriptsDetailView(script: script, scriptID: script.jamfId, server: server)) {
                             
                             HStack {

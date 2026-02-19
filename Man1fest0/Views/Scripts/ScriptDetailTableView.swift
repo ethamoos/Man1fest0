@@ -39,7 +39,8 @@ struct ScriptDetailTableView: View {
     @State var computerGroupSelection = ComputerGroup(id: 0, name: "", isSmart: false)
     @State var selectedScript = ScriptClassic(name: "", jamfId: 0)
 //    @State var selection = ScriptClassic(name: "", jamfId: 0)
-    @State var selection = Set<ScriptClassic>()
+    // Use ID-based selection for stability
+    @State var selection = Set<Int>()
 //    @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
     @State private var selectedIDs = []
@@ -65,6 +66,7 @@ struct ScriptDetailTableView: View {
         
         
 //        Table(networkController.scripts, sortOrder: $sortOrderScript, selection: $selection) {
+        // Use Table without direct selection of model objects; selection is ID-based elsewhere if needed
         Table(searchResults, sortOrder: $sortOrderScript) {
             
             TableColumn("name", value: \.name)
