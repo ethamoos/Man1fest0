@@ -49,7 +49,114 @@ struct ConfigProfileViewMacOSDetail: View {
 
                 // Display a compact summary of scope
                 if let scope = currentProfile?.scope {
-                    Text("Scope - All Computers: \(scope.allComputers == true ? "Yes" : "No")")
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 20) {
+                            Text("All Computers: \(scope.allComputers == true ? "Yes" : "No")")
+                            Text("All Users: \(scope.allJssUsers == true ? "Yes" : "No")")
+                        }
+
+                        // Helper to render arrays of ConfigCategoryElement
+                        Group {
+                            if let computers = scope.computers, !computers.isEmpty {
+                                Text("Computers:").font(.subheadline).bold()
+                                ForEach(computers, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let buildings = scope.buildings, !buildings.isEmpty {
+                                Text("Buildings:").font(.subheadline).bold()
+                                ForEach(buildings, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let departments = scope.departments, !departments.isEmpty {
+                                Text("Departments:").font(.subheadline).bold()
+                                ForEach(departments, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let groups = scope.computerGroups, !groups.isEmpty {
+                                Text("Computer Groups:").font(.subheadline).bold()
+                                ForEach(groups, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let users = scope.jssUsers, !users.isEmpty {
+                                Text("JSS Users:").font(.subheadline).bold()
+                                ForEach(users, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            // jss_user_groups is a dictionary – show values if present
+                            if let jssUserGroups = scope.jssUserGroups, !jssUserGroups.isEmpty {
+                                Text("JSS User Groups:").font(.subheadline).bold()
+                                ForEach(Array(jssUserGroups.values), id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                        }
+
+                        // Limitations
+                        if let lim = scope.limitations {
+                            if let users = lim.users, !users.isEmpty {
+                                Text("Limitations - Users:").font(.subheadline).bold()
+                                ForEach(users, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let userGroups = lim.userGroups, !userGroups.isEmpty {
+                                Text("Limitations - User Groups:").font(.subheadline).bold()
+                                ForEach(userGroups, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let networks = lim.networkSegments, !networks.isEmpty {
+                                Text("Limitations - Network Segments:").font(.subheadline).bold()
+                                ForEach(networks, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let ibeacons = lim.ibeacons, !ibeacons.isEmpty {
+                                Text("Limitations - iBeacons:").font(.subheadline).bold()
+                                ForEach(ibeacons, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                        }
+
+                        // Exclusions
+                        if let exc = scope.exclusions {
+                            if let computers = exc.computers, !computers.isEmpty {
+                                Text("Exclusions - Computers:").font(.subheadline).bold()
+                                ForEach(computers, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let buildings = exc.buildings, !buildings.isEmpty {
+                                Text("Exclusions - Buildings:").font(.subheadline).bold()
+                                ForEach(buildings, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let departments = exc.departments, !departments.isEmpty {
+                                Text("Exclusions - Departments:").font(.subheadline).bold()
+                                ForEach(departments, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let groups = exc.computerGroups, !groups.isEmpty {
+                                Text("Exclusions - Computer Groups:").font(.subheadline).bold()
+                                ForEach(groups, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                        }
+                    }
                 } else {
                     Text("Scope: (not loaded)")
                 }
