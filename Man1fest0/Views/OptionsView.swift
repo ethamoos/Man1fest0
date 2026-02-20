@@ -377,6 +377,8 @@ struct OptionsView: View {
                         }
                     }
                     
+                    
+                    
                     // #################################################################################
                     //  CONNECT
                     // #################################################################################
@@ -395,17 +397,6 @@ struct OptionsView: View {
                         }
                         
                       
-                    }
-                 
-                    ToolbarItem(id: "Status") {
-                            VStack(alignment: .leading, spacing: 1) {
-                            HStack {
-                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
-                                    .foregroundColor(.green)
-                                Text(server)
-                                    .foregroundColor(.green)
-                            }
-                        }
                     }
                     
                     ToolbarItem(id: "Refresh") {
@@ -427,9 +418,33 @@ struct OptionsView: View {
                         }
 //                    }
                     }
+                 
+                    ToolbarItem(id: "Status") {
+                            VStack(alignment: .leading, spacing: 1) {
+                            HStack {
+                                Text(server)
+                                    .foregroundColor(.green)
+                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
+                                    .foregroundColor(.green)
+                               
+                            }
+                        }
+                    }
+                    
+                    
                 }
                 .foregroundColor(.blue)
                  .frame(minWidth: 300)
+                
+                HStack() {
+                    Text("man1fest0 - Jamf Pro management tool")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("App version is \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
 
                 //  #######################################################################
                 //  END OF SIDEBAR
