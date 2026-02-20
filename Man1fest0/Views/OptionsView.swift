@@ -307,12 +307,12 @@ struct OptionsView: View {
                             
 //                            Group {
 //                                Divider()
-//                                
+//
 //                                DisclosureGroup("Groups") {
 //                                    //  #######################################################################
 //                                    //  Static Groups
 //                                    //  #######################################################################
-//                                    
+//
 //                                    NavigationLink(destination: GroupsView(server: server)) {
 //                                        Text("Static Groups")
 //                                    }
@@ -321,7 +321,7 @@ struct OptionsView: View {
 //                                    }
 //                                }
 //                            }
-//                            
+//
 //                            Group {
 //                                Divider()
 //
@@ -334,7 +334,7 @@ struct OptionsView: View {
 //                                    }
 //                                }
 //                            }
-//                                           
+//
 //                            Divider()
                             
                             NavigationLink(destination: ReportsView()) {
@@ -463,7 +463,7 @@ struct OptionsView: View {
 // Lightweight inline preferences view to use from OptionsView (avoid external target membership issues)
 fileprivate struct PolicyDelayInlineView: View {
     @EnvironmentObject var networkController: NetBrain
-    @State private var delayValue: Double = 3.0
+    @State private var delayValue: Double = 0.0
     @State private var showSavedToast = false
 
     var body: some View {

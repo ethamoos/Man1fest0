@@ -313,7 +313,7 @@ actor AsyncSemaphore {
     @Published var policyRequestDelay: TimeInterval
     private var lastRequestDate: Date?
 
-    init(minInterval: TimeInterval = 3.0) {
+    init(minInterval: TimeInterval = 0.0) {
         // look for a persisted setting first
         let persisted = UserDefaults.standard.double(forKey: "policyRequestDelay")
         if persisted > 0 {
