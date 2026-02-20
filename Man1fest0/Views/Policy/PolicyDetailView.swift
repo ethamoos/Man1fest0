@@ -637,84 +637,84 @@ struct PolicyDetailView: View {
         //            .background(Color.blue)
         //        }
         
-        .onAppear {
+        .task {
             networkController.separationLine()
             progress.showProgress()
             progress.waitForNotVeryLong()
 
-            Task {
-                print("PolicyDetailView appeared - running getDetailedPolicy function")
-                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    print("PolicyDetailView appeared - running getDetailedPolicy function")
+                    try? await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    
+                    let fetchedPolicy = networkController.policyDetailed
+                    
+                    policyName = fetchedPolicy?.general?.name ?? ""
+                    policyCustomTrigger = fetchedPolicy?.general?.triggerOther ?? ""
+                    trigger_login = fetchedPolicy?.general?.triggerLogin ?? false
+                    trigger_checkin = fetchedPolicy?.general?.triggerCheckin ?? false
+                    trigger_startup = fetchedPolicy?.general?.triggerStartup ?? false
+                    trigger_enrollment_complete = fetchedPolicy?.general?.triggerEnrollmentComplete ?? false
+                   
+                   if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
+                       pushTriggerActiveWarning = true
+                       print("Push trigger is active!")
+                   } else {
+                       pushTriggerActiveWarning = false
+                       print("Push trigger has been deactivated")
+                   }
+                }
                 
-                let fetchedPolicy = networkController.policyDetailed
+                group.addTask {
+                    try? await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
+                }
                 
-                policyName = fetchedPolicy?.general?.name ?? ""
-                policyCustomTrigger = fetchedPolicy?.general?.triggerOther ?? ""
-                trigger_login = fetchedPolicy?.general?.triggerLogin ?? false
-                trigger_checkin = fetchedPolicy?.general?.triggerCheckin ?? false
-                trigger_startup = fetchedPolicy?.general?.triggerStartup ?? false
-                trigger_enrollment_complete = fetchedPolicy?.general?.triggerEnrollmentComplete ?? false
-               
-               if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
-                   pushTriggerActiveWarning = true
-                   print("Push trigger is active!")
-               } else {
-                   pushTriggerActiveWarning = false
-                   print("Push trigger has been deactivated")
-               }
-                try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
-            }
-            
-            Task {
-                print("getPolicyAsXML - running get policy as xml function")
-                _ = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-            }
-            
-            if networkController.categories.count <= 1 {
-                print("No categories - fetching")
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                group.addTask {
+                    print("getPolicyAsXML - running get policy as xml function")
+                    try? await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                 }
-            }
-            
-            if networkController.packages.count <= 1 {
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.departments.count <= 1 {
-                Task {
-                    networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.buildings.count <= 1 {
-                Task {
-                    try await networkController.getBuildings(server: server, authToken: networkController.authToken)
-                }
-            }
-            
-            if networkController.allComputerGroups.count <= 0 {
                 
-                Task {
-                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                if networkController.categories.count <= 1 {
+                    group.addTask {
+                        print("No categories - fetching")
+                        networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                    }
+                }
+                
+                if networkController.packages.count <= 1 {
+                    group.addTask {
+                        networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                    }
+                }
+                
+                if networkController.departments.count <= 1 {
+                    group.addTask {
+                        networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                    }
+                }
+                
+                if networkController.buildings.count <= 1 {
+                    group.addTask {
+                        try? await networkController.getBuildings(server: server, authToken: networkController.authToken)
+                    }
+                }
+                
+                if networkController.allComputerGroups.count <= 0 {
+                    group.addTask {
+                        try? await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                    }
+                }
+              
+                if networkController.packagesAssignedToPolicy.count <= 0 {
+                    group.addTask {
+                        networkController.getPackagesAssignedToPolicy()
+                        networkController.addExistingPackages()
+                        fetchData()
+                    }
                 }
             }
-          
-          
-         
-          
-            if networkController.packagesAssignedToPolicy.count <= 0 {
-                
-                Task {
-                    networkController.getPackagesAssignedToPolicy()
-                    networkController.addExistingPackages()
-                    fetchData()
-                }
         }
-    }
 
         // Whenever the XML representation of the current policy changes (children often edit XML),
         // refresh the detailed policy from the server so the UI reflects server-side state.
