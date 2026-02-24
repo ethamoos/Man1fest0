@@ -437,9 +437,9 @@ struct OptionsView: View {
                  .frame(minWidth: 300)
                 
                 HStack() {
-                    Text("man1fest0 - Jamf Pro management tool")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
+//                    Text("man1fest0 - Jamf Pro management tool")
+//                        .font(.footnote)
+//                        .foregroundColor(.secondary)
                     Spacer()
                     Text("App version is \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
                         .font(.footnote)

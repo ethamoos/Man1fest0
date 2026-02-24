@@ -179,6 +179,7 @@
 		A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceTypeEnums.swift; sourceTree = "<group>"; };
 		A8BAD2D42DE074CF006C9B34 /* CreateScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateScriptView.swift; sourceTree = "<group>"; };
 		A8BC96A52E68224A0078AF53 /* PhotoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoViewModel.swift; sourceTree = "<group>"; };
+		A8BCADC02F4DCFB8005C2186 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
 		A8C1E2612EC3AB6800DEDBF8 /* Breakout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Breakout.swift; sourceTree = "<group>"; };
 		A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerExtAttDetailView.swift; sourceTree = "<group>"; };
 		A8C4EAC82D53BDD10022E0ED /* EaBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EaBrain.swift; sourceTree = "<group>"; };
@@ -426,6 +427,7 @@
 				A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */,
 				A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */,
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
+				A8BCADC02F4DCFB8005C2186 /* Untitled.swift */,
 				A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */,
 				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				A8C4B5BC2E83EF80009893BB /* PoliciesActionView */,
