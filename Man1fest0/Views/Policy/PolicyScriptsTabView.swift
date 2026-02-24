@@ -107,6 +107,8 @@ struct PolicyScriptsTabView: View {
                         
                         Text("Assigned Scripts").bold()
 #if os(macOS)
+                        
+                        
                         List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
                             //                        if script != nil {
                             //                        var currentScript = script
@@ -273,7 +275,7 @@ struct PolicyScriptsTabView: View {
                 }
                 
                 
-                Group {
+                DisclosureGroup("Add/Remove Scripts") {
                     
                     //  ################################################################################
                     //              Scripts picker
@@ -390,59 +392,36 @@ struct PolicyScriptsTabView: View {
                     }
                 }
                 
-                //            Group {
-                //                Divider()
-                //                LazyVGrid(columns: columns, spacing: 10) {
-                //                    VStack(alignment: .leading) {
-                //                        DisclosureGroup("Parameters") {
-                //
-                //                            TextField("Parameter 4", text: $scriptParameter4)
-                //                            TextField("Parameter 5", text: $scriptParameter5)
-                //                            TextField("Parameter 6", text: $scriptParameter6)
-                //                            TextField("Parameter 7", text: $scriptParameter7)
-                //                            TextField("Parameter 8", text: $scriptParameter8)
-                //                            TextField("Parameter 9", text: $scriptParameter9)
-                //                            TextField("Parameter 10", text: $scriptParameter10)
-                //                            TextField("Parameter 11", text: $scriptParameter11)
-                //                            Text("Priority:")
-                //                            TextField("Before/After?", text: $priority)
-                //                        }
-                //                    }
-                //                }
-                //            }
                 
-                //            Text("Add Individual Command/s To Run In Policy").fontWeight(.bold)
-                TextEditor(text: $command)
-                    .frame(minHeight: 20)
-                    .frame(maxHeight: 40)
-                
-                    .border(Color.gray)
-                
-                //  ################################################################################
-                //  Add custom command in policy
-                //  ################################################################################
-                
-                Button(action: {
+                DisclosureGroup("Add Individual Command/s To Run In Policy") {
                     
-                    progress.showProgress()
-                    progress.waitForABit()
+                    //  ################################################################################
+                    //  Add custom command in policy
+                    //  ################################################################################
                     
-                    networkController.separationLine()
-                    print("Add custom command to policy:\(String(describing: policyID))")
-                    policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
                     
-                }) {
-                    HStack {
-                        Image(systemName: "keyboard")
-                        Text("Add Individual Command To Policy")
+                    TextEditor(text: $command)
+                        .frame(minHeight: 20)
+                        .frame(maxHeight: 40)
+                        .border(Color.gray)
+              
+                    Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.separationLine()
+                        print("Add custom command to policy:\(String(describing: policyID))")
+                        policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
+                    }) {
+                        HStack {
+                            Image(systemName: "keyboard")
+                            Text("Add Individual Command To Policy")
+                        }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .help("Add a custom shell command to be run by this policy.")
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .help("Add a custom shell command to be run by this policy.")
-                
-                
-                
                 Spacer()
             }
             .frame(minWidth: 400, alignment: .leading)
@@ -453,29 +432,13 @@ struct PolicyScriptsTabView: View {
                     print("Fetching scripts")
                     print("Script count is:\(networkController.scripts.count))")
                     networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
-                    
                 } else {
-                    
                     print("script data is available")
                 }
             }
         }
     }
 }
-
-//var searchResults: [Script] {
-//    if searchText.isEmpty {
-//        // print("Search is empty")
-//        //            DEBUG
-//        //            print(networkController.scripts)
-//        return controller.scripts
-//    } else {
-//        // print("Search is currently is currently:\(searchText)")
-//        //            DEBUG
-//        //            print(networkController.scripts)
-//        return controller.scripts.filter { $0.name.lowercased().contains(searchText.lowercased())}
-//    }
-//}
 
 
 //#Preview {
