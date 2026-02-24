@@ -298,6 +298,7 @@ struct PolicyDetailView: View {
                     isPresented: $exporting,
                     document: document,
                     contentType: .xml
+                    
                 ) { result in
                     switch result {
                     case .success(let file):

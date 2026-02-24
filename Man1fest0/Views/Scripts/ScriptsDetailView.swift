@@ -47,14 +47,14 @@ struct ScriptsDetailView: View {
 
                 // Primary actions
                 HStack(spacing: 8) {
-                    Button(action: {
-                        // Run placeholder
-                        progress.showProgress()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { progress.endProgress() }
-                        print("Run script id:\(scriptID)")
-                    }) {
-                        Label("Run", systemImage: "play.fill")
-                    }
+//                    Button(action: {
+//                        // Run placeholder
+//                        progress.showProgress()
+//                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { progress.endProgress() }
+//                        print("Run script id:\(scriptID)")
+//                    }) {
+//                        Label("Run", systemImage: "play.fill")
+//                    }
 
                     Button(action: {
                         isEditing.toggle()
@@ -64,21 +64,39 @@ struct ScriptsDetailView: View {
                     }
 
                     Button(action: {
-                        // Save
+                        // Save: network update + write file to ~/Downloads (macOS) or Documents (iOS) as fallback
                         progress.showProgress()
                         Task {
+                            // First attempt network update (preserve existing behavior)
                             do {
                                 try await networkController.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing: scriptID), authToken: networkController.authToken)
-                                progress.endProgress()
+                            } catch {
+                                print("Failed network save: \(error)")
+                            }
+
+                            // Then attempt to write to disk
+                            do {
+                                let filename = sanitizedFilename(from: scriptName.isEmpty ? "script_\(scriptID)" : scriptName) + ".txt"
+                                let savedURL = try saveBodyTextToDownloads(text: bodyText, filename: filename)
+                                print("Saved script to: \(savedURL.path)")
+
+                                // On macOS, reveal the file in Finder
+    #if os(macOS)
+                                NSWorkspace.shared.activateFileViewerSelecting([savedURL])
+    #endif
+
                                 showSavedToast = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
                             } catch {
-                                progress.endProgress()
-                                print("Failed to save script: \(error)")
+                                print("Failed to save file locally: \(error)")
+                                showSavedToast = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
                             }
+
+                            progress.endProgress()
                         }
                     }) {
-                        Label("Save", systemImage: "square.and.arrow.down")
+                        Label("Download", systemImage: "square.and.arrow.down")
                     }
 
                     Button(action: {
@@ -201,6 +219,42 @@ struct ScriptsDetailView: View {
                 scriptName = networkController.scriptDetailed.name
             }
         }
+    }
+
+    // MARK: - Helpers
+    private func sanitizedFilename(from name: String) -> String {
+        // Remove characters not allowed in filenames
+        let illegalChars = CharacterSet(charactersIn: "\\/:*?\"<>|\n\r\t")
+        var cleaned = name
+        if let range = cleaned.rangeOfCharacter(from: illegalChars) {
+            cleaned.removeSubrange(range)
+        }
+        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleaned.isEmpty { cleaned = "script" }
+        return cleaned.replacingOccurrences(of: " ", with: "_")
+    }
+
+    private func saveBodyTextToDownloads(text: String, filename: String) throws -> URL {
+        let data = Data(text.utf8)
+
+        // Prefer the Downloads directory on macOS, fall back to Documents on iOS
+    #if os(macOS)
+        if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+            let dest = downloads.appendingPathComponent(filename)
+            try data.write(to: dest, options: .atomic)
+            return dest
+        } else {
+            throw NSError(domain: "SaveError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Downloads directory not found"])
+        }
+    #else
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let dest = docs.appendingPathComponent(filename)
+            try data.write(to: dest, options: .atomic)
+            return dest
+        } else {
+            throw NSError(domain: "SaveError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Documents directory not found"])
+        }
+    #endif
     }
 }
 
