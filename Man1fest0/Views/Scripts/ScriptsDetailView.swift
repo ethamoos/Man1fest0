@@ -64,27 +64,37 @@ struct ScriptsDetailView: View {
                     }
 
                     Button(action: {
-                        // Save: network update + write file to ~/Downloads (macOS) or Documents (iOS) as fallback
+                        // Save: only network update (upload changes to server)
                         progress.showProgress()
                         Task {
-                            // First attempt network update (preserve existing behavior)
                             do {
                                 try await networkController.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing: scriptID), authToken: networkController.authToken)
+                                // indicate saved
+                                showSavedToast = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
                             } catch {
                                 print("Failed network save: \(error)")
+                                // still show toast as a simple feedback; consider showing error alert in future
+                                showSavedToast = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
                             }
+                            progress.endProgress()
+                        }
+                    }) {
+                        Label("Save", systemImage: "square.and.arrow.up")
+                    }
 
-                            // Then attempt to write to disk
+                    // Separate Download button: export to local file system
+                    Button(action: {
+                        progress.showProgress()
+                        Task {
                             do {
                                 let filename = sanitizedFilename(from: scriptName.isEmpty ? "script_\(scriptID)" : scriptName) + ".txt"
                                 let savedURL = try saveBodyTextToDownloads(text: bodyText, filename: filename)
                                 print("Saved script to: \(savedURL.path)")
-
-                                // On macOS, reveal the file in Finder
-    #if os(macOS)
+#if os(macOS)
                                 NSWorkspace.shared.activateFileViewerSelecting([savedURL])
-    #endif
-
+#endif
                                 showSavedToast = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
                             } catch {
@@ -92,7 +102,6 @@ struct ScriptsDetailView: View {
                                 showSavedToast = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
                             }
-
                             progress.endProgress()
                         }
                     }) {
@@ -100,13 +109,13 @@ struct ScriptsDetailView: View {
                     }
 
                     Button(action: {
-    #if os(macOS)
+#if os(macOS)
                         let pasteboard = NSPasteboard.general
                         pasteboard.clearContents()
                         pasteboard.setString(bodyText, forType: .string)
-    #else
+#else
                         UIPasteboard.general.string = bodyText
-    #endif
+#endif
                     }) {
                         Label("Copy", systemImage: "doc.on.doc")
                     }
@@ -181,13 +190,13 @@ struct ScriptsDetailView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-    #if os(macOS)
+#if os(macOS)
                         let pasteboard = NSPasteboard.general
                         pasteboard.clearContents()
                         pasteboard.setString(bodyText, forType: .string)
-    #else
+#else
                         UIPasteboard.general.string = bodyText
-    #endif
+#endif
                     }) {
                         Image(systemName: "doc.on.doc")
                         Text("Copy")
