@@ -35,31 +35,30 @@ struct OptionsView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
  
-                    HStack {
-                        Text("man1fest0")
-                            .fontWeight(.black)
-                            .font(.title)
-                            .font(.headline)
-                            .padding()
-       
-                        VStack {
-                            
-                        Image("Man1fest0Icon")
-//                            .frame(width: 80, height: 80, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-//                            .clipped()
-//                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("man1fest0")
+                                .font(.system(size: 20, weight: .black, design: .default))
+                                .foregroundColor(.primary)
+                            Text("manage Jamf policies and more")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
-                        .frame(width: 60, height: 60, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .padding()
+                        Spacer()
+                        Image("Man1fest0Icon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .shadow(radius: 2)
                     }
+                    .padding(.vertical, 6)
                     
                     Divider()
                     
                     Text("manage Jamf policies and more ")
                         .fontWeight(.black)
-                        .padding()
+                        .padding(.vertical, 6)
                 }
                 
                 Divider()

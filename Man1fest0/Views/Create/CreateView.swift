@@ -99,18 +99,58 @@ struct CreateView: View {
             
             VStack(alignment: .leading, spacing: 20) {
                 
+                // New header: nicer title, subtitle and quick actions
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Create")
+                            .font(.title)
+                            .fontWeight(.semibold)
+                        Text("Create categories, groups, packages and scripts")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            // quick refresh
+                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(action: {
+                            // open import/export filename if available
+                            // keep as info-only quick action
+                        }) {
+                            Image(systemName: "square.and.arrow.down")
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.03)))
+
                 //  ################################################################################
                 //  TabView - TAB
                 //  ################################################################################
                 
-                TabView {
-                    
-                    CreateGeneralTabView(selectedFilename: $importExportController.selectedFilename)
-                        .tabItem {
-                            //                                Text("Scoping")
-                            Label("General", systemImage: "square.and.pencil")
-                        }
+                VStack {
+                    TabView {
+                        
+                        CreateGeneralTabView(selectedFilename: $importExportController.selectedFilename)
+                            .tabItem {
+                                //                                Text("Scoping")
+                                Label("General", systemImage: "square.and.pencil")
+                            }
+                    }
+                    .padding()
                 }
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.04)))
+                
             }
             
             if progress.showProgressView {
@@ -124,19 +164,7 @@ struct CreateView: View {
             } else {
                 Text("")
             }
-            
-            
-            
-//            var searchResults: [Policy] {
-//                if searchText.isEmpty {
-//                    // print("Search is empty")
-//                    return networkController.policies
-//                } else {
-//                    print("Search is currently:\(searchText)")
-//
-//                    return networkController.policies.filter { $0.name.lowercased().contains(searchText.lowercased())}
-//                }
-//            }
+
         }
         //    }
         //}

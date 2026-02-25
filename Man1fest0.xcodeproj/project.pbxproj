@@ -293,7 +293,6 @@
 				A87260E02C99793A005A5562 /* Shared */,
 				E477727D2B5B20F0009FC571 /* Development */,
 				E45E13262C53B22F007C175F /* ContentView.swift */,
-				A800E8442F3F25CE000250E7 /* Welcome */,
 				E45E13282C53B27F007C175F /* ConnectSheet.swift */,
 				E45E132A2C53B2CA007C175F /* OptionsView.swift */,
 				A840186C2D4BCA6700C09FD3 /* ImportView.swift */,
@@ -312,6 +311,7 @@
 				A8A46D0C2C47C91F00EF5987 /* PrestageViews */,
 				A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */,
 				A87E851B2F16686E00CF42D0 /* UsersView.swift */,
+				A800E8442F3F25CE000250E7 /* Welcome */,
 			);
 			path = Views;
 			sourceTree = "<group>";
