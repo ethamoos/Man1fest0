@@ -179,11 +179,11 @@ struct OptionsView: View {
                                 NavigationLink(destination: ScriptUsageView(server: server)) {
                                     Text("Script Usage")
                                 }
-                                NavigationLink(destination: ScriptsActionView(server: server)) {
-                                    Text("Script Actions")
-                                }
+//                                NavigationLink(destination: ScriptsActionView(server: server)) {
+//                                    Text("Script Actions")
+//                                }
                                 NavigationLink(destination: ScriptDetailTableView(server: server)) {
-                                    Text("Script Detailed List")
+                                    Text("Script Actions")
                                 }
 #endif
                             }

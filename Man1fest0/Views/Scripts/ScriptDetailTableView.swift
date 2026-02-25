@@ -39,8 +39,8 @@ struct ScriptDetailTableView: View {
     @State var computerGroupSelection = ComputerGroup(id: 0, name: "", isSmart: false)
     @State var selectedScript = ScriptClassic(name: "", jamfId: 0)
 //    @State var selection = ScriptClassic(name: "", jamfId: 0)
-    // Use ID-based selection for stability
-    @State var selection = Set<Int>()
+    // Use ID-based selection for stability (ScriptClassic.id is UUID)
+    @State var selection = Set<ScriptClassic.ID>()
 //    @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
     @State private var selectedIDs = []
@@ -66,15 +66,29 @@ struct ScriptDetailTableView: View {
     var body: some View {
         
         // Use Table without direct selection of model objects; selection is ID-based elsewhere if needed
+        #if os(macOS)
+        // On macOS use native Table selection (mouse) bound to the ID set
+        Table(searchResults, selection: $selection, sortOrder: $sortOrderScript) {
+            TableColumn("Name", value: \.name) { script in
+                Text(script.name)
+            }
+
+            TableColumn("ID", value: \.jamfId) { script in
+                Text(String(script.jamfId))
+            }
+        }
+        .searchable(text: $searchText)
+        #else
+        // Fallback for other platforms: keep the checkbox-style toggle
         Table(searchResults, sortOrder: $sortOrderScript) {
             // First column: selection checkbox + name
             TableColumn("name") { script in
                 HStack(spacing: 8) {
-                    // Checkbox-style button to toggle selection (works on macOS & iOS)
+                    // Checkbox-style button to toggle selection (works on iOS)
                     Button(action: {
                         toggleSelection(for: script)
                     }) {
-                        Image(systemName: selection.contains(script.jamfId) ? "checkmark.square" : "square")
+                        Image(systemName: selection.contains(script.id) ? "checkmark.square" : "square")
                     }
                     .buttonStyle(.plain)
 
@@ -88,6 +102,7 @@ struct ScriptDetailTableView: View {
             }
         }
         .searchable(text: $searchText)
+        #endif
         
         // Selection summary and delete action (macOS layout compatible)
         #if os(macOS)
@@ -119,10 +134,10 @@ struct ScriptDetailTableView: View {
             }
             .padding(.vertical, 6)
 
-            // Show the selected scripts by matching stored Jamf IDs back to the current script list
+            // Show the selected scripts by matching selection UUIDs back to the current script list
             if !selection.isEmpty {
                 List {
-                    ForEach(searchResults.filter { selection.contains($0.jamfId) }) { script in
+                    ForEach(searchResults.filter { selection.contains($0.id) }) { script in
                         Text(script.name)
                     }
                 }
@@ -185,16 +200,16 @@ struct ScriptDetailTableView: View {
     
     // Toggle selection convenience
     private func toggleSelection(for script: ScriptClassic) {
-        if selection.contains(script.jamfId) {
-            selection.remove(script.jamfId)
+        if selection.contains(script.id) {
+            selection.remove(script.id)
         } else {
-            selection.insert(script.jamfId)
+            selection.insert(script.id)
         }
     }
     
     // Computed helper: map selected Jamf IDs back to ScriptClassic objects
     private var selectedScripts: [ScriptClassic] {
-        return networkController.scripts.filter { selection.contains($0.jamfId) }
+        return networkController.scripts.filter { selection.contains($0.id) }
     }
     
     // Perform batch delete using network controller
