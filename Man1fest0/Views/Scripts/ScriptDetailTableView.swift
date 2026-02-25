@@ -47,6 +47,7 @@ struct ScriptDetailTableView: View {
     @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
     @State private var sortOrderScript = [KeyPathComparator(\ScriptClassic.name, order: .reverse)]
     @State var searchText = ""
+    @State private var showingDeleteConfirmation = false
     
     //  ########################################################################################
     //  ########################################################################################
@@ -64,12 +65,22 @@ struct ScriptDetailTableView: View {
         
     var body: some View {
         
-        
-//        Table(networkController.scripts, sortOrder: $sortOrderScript, selection: $selection) {
         // Use Table without direct selection of model objects; selection is ID-based elsewhere if needed
         Table(searchResults, sortOrder: $sortOrderScript) {
-            
-            TableColumn("name", value: \.name)
+            // First column: selection checkbox + name
+            TableColumn("name") { script in
+                HStack(spacing: 8) {
+                    // Checkbox-style button to toggle selection (works on macOS & iOS)
+                    Button(action: {
+                        toggleSelection(for: script)
+                    }) {
+                        Image(systemName: selection.contains(script.jamfId) ? "checkmark.square" : "square")
+                    }
+                    .buttonStyle(.plain)
+
+                    Text(script.name)
+                }
+            }
             
             TableColumn("ID", value: \.jamfId) {
                 script in
@@ -78,62 +89,56 @@ struct ScriptDetailTableView: View {
         }
         .searchable(text: $searchText)
         
-        
-        //  ########################################################################################
-        //  ########################################################################################
-        //  ########################################################################################
-        //  ########################################################################################
-        
-        
-        //        Table(searchResults, selection: $selectedPolicyIDs, sortOrder: $sortOrder) {
-        //
-        
-        //              ################################################################################
-        //              DELETE
-        //              ################################################################################
-        
-        //        VStack(alignment: .leading) {
-        //            Divider()
-        //            HStack(spacing: 20) {
-        //                Button(action: {
-        //                    showingWarning = true
-        //                    progress.showProgressView = true
-        //                    print("Set showProgressView to true")
-        //                    print(progress.showProgressView)
-        //                    progress.waitForABit()
-        //                    print("Check processingComplete")
-        //                    print(String(describing: networkController.processingComplete))
-        //
-        //                }) {
-        //                    Text("Delete")
-        //                }
-        //                .alert(isPresented: $showingWarning) {
-        //                    Alert(
-        //                        title: Text("Caution!"),
-        //                        message: Text("This action will delete data.\n Always ensure that you have a backup!"),
-        //                        primaryButton: .destructive(Text("I understand!")) {
-        //                            // Code to execute when "Yes" is tapped
-        //
-        //                            networkController.processDeletePoliciesGeneral(selection: selectedPoliciesInt, server: server,  authToken: networkController.authToken, resourceType: ResourceType.policies)
-        //                            print("Yes tapped")
-        //
-        //                        },
-        //                        secondaryButton: .cancel()
-        //                    )
-        //                }
-        //                .buttonStyle(.borderedProminent)
-        //                .tint(.red)
-        //                .shadow(color: .gray, radius: 2, x: 0, y: 2)
+        // Selection summary and delete action (macOS layout compatible)
+        #if os(macOS)
+        VStack(alignment: .leading) {
+            HStack {
+                Text("Selected: \(selection.count)")
+                    .font(.caption)
+                Spacer()
+                Button(role: .destructive, action: {
+                    // show confirmation alert
+                    showingDeleteConfirmation = true
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "trash")
+                        Text("Delete")
+                    }
+                }
+                .disabled(selection.isEmpty)
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .alert("Caution!", isPresented: $showingDeleteConfirmation) {
+                    Button("I understand!", role: .destructive) {
+                        performBatchDelete()
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("This action will delete the selected scripts. Always ensure that you have a backup!")
+                }
+            }
+            .padding(.vertical, 6)
+
+            // Show the selected scripts by matching stored Jamf IDs back to the current script list
+            if !selection.isEmpty {
+                List {
+                    ForEach(searchResults.filter { selection.contains($0.jamfId) }) { script in
+                        Text(script.name)
+                    }
+                }
+                .frame(minHeight: 80)
+            }
+        }
+        .padding()
+        #endif
         
         Button(action: {
-            
             progress.showProgress()
             progress.waitForABit()
             Task {
                 try? await Script.getAll(server: server, auth: networkController.auth ?? JamfAuthToken(token: "", expires: ""))
             }
             print("Refresh")
-            
         }) {
             HStack(spacing: 10) {
                 Image(systemName: "arrow.clockwise")
@@ -142,10 +147,6 @@ struct ScriptDetailTableView: View {
         }
         .buttonStyle(.borderedProminent)
         .tint(.blue)
-        
-        //  ################################################################################
-        //  END
-        //  ################################################################################
         
         .onAppear() {
             
@@ -173,7 +174,6 @@ struct ScriptDetailTableView: View {
     //  Master Fetch function
     //  #################################################################################
     
-    
     func fetchData() {
         
         if networkController.scripts.count == 0 {
@@ -183,16 +183,31 @@ struct ScriptDetailTableView: View {
         
     }
     
+    // Toggle selection convenience
+    private func toggleSelection(for script: ScriptClassic) {
+        if selection.contains(script.jamfId) {
+            selection.remove(script.jamfId)
+        } else {
+            selection.insert(script.jamfId)
+        }
+    }
     
+    // Computed helper: map selected Jamf IDs back to ScriptClassic objects
+    private var selectedScripts: [ScriptClassic] {
+        return networkController.scripts.filter { selection.contains($0.jamfId) }
+    }
     
-    
-    
-    //            var searchResults: [General] {
-    //
-    //                if searchText.isEmpty {
-    //                    return networkController.allPoliciesDetailedGeneral
-    //                } else {
-    //                    return networkController.allPoliciesDetailedGeneral.filter { $0.name!.lowercased().contains(searchText.lowercased())}
-    //                }
-    //            }
+    // Perform batch delete using network controller
+    private func performBatchDelete() {
+        guard !selection.isEmpty else { return }
+        progress.showProgressView = true
+        progress.waitForABit()
+        Task {
+            let selected = selectedScripts
+            networkController.batchDeleteScripts(selection: Set(selected), server: server, authToken: networkController.authToken, resourceType: ResourceType.script)
+            // clear selection after delete request
+            selection.removeAll()
+            progress.showProgressView = false
+        }
+    }
 }
