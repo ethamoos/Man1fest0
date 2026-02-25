@@ -131,6 +131,19 @@ struct ScriptDetailTableView: View {
                 } message: {
                     Text("This action will delete the selected scripts. Always ensure that you have a backup!")
                 }
+
+                // Download Selected button (batch download)
+                Button(action: {
+                    performBatchDownload()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("Download")
+                    }
+                }
+                .disabled(selection.isEmpty)
+                .buttonStyle(.bordered)
+                .tint(.blue)
             }
             .padding(.vertical, 6)
 
@@ -224,5 +237,80 @@ struct ScriptDetailTableView: View {
             selection.removeAll()
             progress.showProgressView = false
         }
+    }
+
+    // Perform batch download: fetch each selected script details and save to Downloads
+    private func performBatchDownload() {
+        guard !selection.isEmpty else { return }
+        progress.showProgressView = true
+        progress.waitForABit()
+        Task {
+            var savedURLs: [URL] = []
+            for script in selectedScripts {
+                do {
+                    // Fetch detailed script from server (this populates networkController.scriptDetailed)
+                    try await networkController.getDetailedScript(server: server, scriptID: script.jamfId, authToken: networkController.authToken)
+
+                    // Read the fetched content
+                    let contents = networkController.scriptDetailed.scriptContents
+                    let name = networkController.scriptDetailed.name.isEmpty ? script.name : networkController.scriptDetailed.name
+                    let filename = sanitizedFilename(from: name.isEmpty ? "script_\(script.jamfId)" : name) + "_\(script.jamfId).txt"
+
+                    // Save to Downloads
+                    let saved = try saveBodyTextToDownloads(text: contents, filename: filename)
+                    savedURLs.append(saved)
+                    print("Saved script \(script.jamfId) to: \(saved.path)")
+
+                } catch {
+                    print("Failed to download/save script \(script.jamfId): \(error)")
+                }
+            }
+
+            // If on macOS, reveal the saved files in Finder (select them)
+            #if os(macOS)
+            if !savedURLs.isEmpty {
+                NSWorkspace.shared.activateFileViewerSelecting(savedURLs)
+            }
+            #endif
+
+            // feedback
+            progress.showProgressView = false
+        }
+    }
+
+    // MARK: - Helpers (filename sanitization & saving) - adapted from ScriptsDetailView
+    private func sanitizedFilename(from name: String) -> String {
+        // Remove characters not allowed in filenames
+        let illegalChars = CharacterSet(charactersIn: "\\/:*?\"<>|\n\r\t")
+        var cleaned = name
+        if let range = cleaned.rangeOfCharacter(from: illegalChars) {
+            cleaned.removeSubrange(range)
+        }
+        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleaned.isEmpty { cleaned = "script" }
+        return cleaned.replacingOccurrences(of: " ", with: "_")
+    }
+
+    private func saveBodyTextToDownloads(text: String, filename: String) throws -> URL {
+        let data = Data(text.utf8)
+
+        // Prefer the Downloads directory on macOS, fall back to Documents on iOS
+    #if os(macOS)
+        if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+            let dest = downloads.appendingPathComponent(filename)
+            try data.write(to: dest, options: .atomic)
+            return dest
+        } else {
+            throw NSError(domain: "SaveError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Downloads directory not found"])
+        }
+    #else
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let dest = docs.appendingPathComponent(filename)
+            try data.write(to: dest, options: .atomic)
+            return dest
+        } else {
+            throw NSError(domain: "SaveError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Documents directory not found"])
+        }
+    #endif
     }
 }
