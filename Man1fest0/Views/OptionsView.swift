@@ -54,11 +54,11 @@ struct OptionsView: View {
                     }
                     .padding(.vertical, 6)
                     
-                    Divider()
-                    
-                    Text("manage Jamf policies and more ")
-                        .fontWeight(.black)
-                        .padding(.vertical, 6)
+//                    Divider()
+//                    
+//                    Text("manage Jamf policies and more ")
+//                        .fontWeight(.black)
+//                        .padding(.vertical, 6)
                 }
                 
                 Divider()

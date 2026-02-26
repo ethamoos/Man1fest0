@@ -32,6 +32,12 @@ struct PackageUsageView: View {
     @State var selectedValue: String = ""
     
     @State var fetchedDetailedPolicies: Bool = false
+
+    // Computed property: are detailed policies fully downloaded?
+    private var detailedPoliciesComplete: Bool {
+        // Consider complete only when there is at least one policy and the detailed count equals the converted list
+        return networkController.allPoliciesConverted.count > 0 && networkController.allPoliciesDetailed.count == networkController.allPoliciesConverted.count
+    }
     
     var body: some View {
                 
@@ -226,6 +232,8 @@ struct PackageUsageView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    // Disable the button until all detailed policies have finished downloading
+                    .disabled(!detailedPoliciesComplete)
 
                     Button(action: {
                         networkController.allPoliciesDetailed.removeAll()
@@ -254,11 +262,14 @@ struct PackageUsageView: View {
                                 }
                                 Spacer()
                                 VStack(alignment: .leading) {
+                                    // Make the label and count red & bold until detailed policies are finished
                                     Text("Policy records downloaded:")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(detailedPoliciesComplete ? .secondary : .red)
+                                        .fontWeight(detailedPoliciesComplete ? .regular : .bold)
                                     Text("\(networkController.allPoliciesDetailed.count)")
                                         .fontWeight(.bold)
+                                        .foregroundColor(detailedPoliciesComplete ? .primary : .red)
                                 }
                             }
 

@@ -50,13 +50,13 @@ struct PackagesView: View {
                 .buttonStyle(.bordered)
 
 #if os(macOS)
-                Button(action: {
-                    // Placeholder for Add package
-                }) {
-                    Image(systemName: "plus")
-                }
-                .help("Add package")
-                .buttonStyle(.bordered)
+//                Button(action: {
+//                    // Placeholder for Add package
+//                }) {
+//                    Image(systemName: "plus")
+//                }
+//                .help("Add package")
+//                .buttonStyle(.bordered)
 #endif
             }
         }
