@@ -24,7 +24,7 @@ struct ComputerActionView: View {
     @State var selectionComp = Set<Computer>()
 
     @State var selection: ComputerBasicRecord = ComputerBasicRecord(id: 0, name: "", managed: false, username: "", model: "", department: "", building: "",macAddress: "", udid: "", serialNumber: "", reportDateUTC: "", reportDateEpoch: 0)
-  
+     
     
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
 
@@ -39,29 +39,37 @@ struct ComputerActionView: View {
     var body: some View {
         
         VStack(alignment: .leading) {
+            // header
+            HStack {
+                VStack(alignment: .leading) {
+                    Text("Computers").font(.title).fontWeight(.semibold)
+                    Text("Browse and act on computer records").font(.subheadline).foregroundColor(.secondary)
+                }
+                Spacer()
+                HStack(spacing: 8) {
+                    Button(action: {
+                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+                        progress.showProgress()
+                        progress.waitForABit()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Refresh")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+            .padding([.top, .horizontal])
 
             if networkController.allComputersBasic.computers.count > 0 {
-                
-                //              ################################################################################
-                //              Display computers
-                //              ################################################################################
-
-//                if selection.count <= 1 {
-                    
-                    NavigationView {
-                        
-                        VStack(alignment: .leading, spacing: 10) {
+                NavigationView {
+                    VStack(alignment: .leading, spacing: 10) {
 
 #if os(macOS)
-
-                            Section(header: Text("All Computers").bold().padding()) {
-                                
+                        Section(header: Text("All Computers").bold().padding(.horizontal)) {
+                            // card-like list
+                            VStack {
                                 List(searchResults, id: \.self, selection: $selection) { computer in
-                                    
-//              ################################################################################
-//              Single computer selected - showing detailed view
-//              ################################################################################
-
                                     NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer, selection: $selection)) {
                                         HStack {
                                             Image(systemName: "desktopcomputer")
@@ -71,32 +79,14 @@ struct ComputerActionView: View {
                                     }
                                 }
                                 .searchable(text: $searchText)
-                                .toolbar {
-                                    
-                                    Button(action: {
-                                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-                                        progress.showProgress()
-                                        progress.waitForABit()
-                                        print("Refresh")
-                                        print("Reset selection to empty")
-                                    }) {
-                                        HStack(spacing: 10) {
-                                            Image(systemName: "arrow.clockwise")
-                                            Text("Refresh")
-                                        }
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.blue)
-                                }
                             }
-                                #else
-                                
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.windowBackgroundColor)).shadow(radius: 1))
+                            .frame(minHeight: 200)
+                        }
+#else
+                        VStack {
                             List(searchResults, id: \.self) { computer in
-                                
-//              ################################################################################
-//              Single computer selected - showing detailed view
-//              ################################################################################
-
                                 NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer)) {
                                     HStack {
                                         Image(systemName: "desktopcomputer")
@@ -106,14 +96,15 @@ struct ComputerActionView: View {
                                 }
                             }
                             .searchable(text: $searchText)
-#endif
-                                
                         }
-                        .frame(width: 400, alignment: .leading)
+                        .padding()
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(UIColor.secondarySystemBackground)).shadow(radius: 1))
+                        .frame(minHeight: 200)
+#endif
                     }
-                
+                    .frame(width: 400, alignment: .leading)
+                }
             } else {
-                
                 ProgressView {
                     Text("Loading data")
                         .font(.title)
@@ -121,143 +112,96 @@ struct ComputerActionView: View {
                 }
                 .padding()
             }
-        }
 
+            Divider()
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("\(networkController.allComputersBasic.computers.count) total computers")
+            }
+            .padding(.horizontal)
+
+            Divider()
+
+            // Actions card
+            VStack(alignment: .leading) {
+                HStack {
+                    Button(action: {
+                        showingWarning = true
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.processDeleteComputers(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policies)
+                    }) {
+                        Text("Delete Selection")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.blue)
+                    .alert(isPresented: $showingWarning) {
+                        Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
+                    }
+                }
+            }
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.controlBackgroundColor)).shadow(radius: 1))
+            .padding([.horizontal, .bottom])
+
+            Divider()
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
+
+                HStack {
+                    Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
+                        Text("").tag("") //basically added empty tag and it solve the case
+                        ForEach(networkController.departments, id: \.self) { department in
+                            Text(String(describing: department.name))
+                        }
+                    }
+
+                    Button(action: {
+                        networkController.updateComputerDepartment(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, departmentName: selectionDepartment.name, computerID: String(describing: selection.id))
+                        progress.showProgress()
+                        progress.waitForABit()
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Update")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+            }
+            .padding()
+
+            Divider()
+
+            if progress.showProgressView == true {
+                ProgressView {
+                    Text("Processing")
+                        .padding()
+                }
+            } else {
+                Text("")
+            }
+        }
         .onAppear {
-            
             if networkController.allComputersBasic.computers.count == 0 {
-                print("Fetching computers")
                 Task {
                     try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
                 }
             }
-        }
-        
-//              ##########################################################################
-//              TOTAL AND SELECTION
-//              ##########################################################################
-
-        Divider()
-        
-        VStack(alignment: .leading, spacing: 10) {
-            
-            Text("\(networkController.allComputersBasic.computers.count) total computers")
-            
-        }
-
-        Divider()
-
-//              ##########################################################################
-//              DELETE AND PROCESS SELECTION
-//              ##########################################################################
-
-        VStack(alignment: .leading) {
-            
-            HStack {
-                
-                Button(action: {
-                    
-                    showingWarning = true
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    print("Set showProgressView to true")
-                    print(progress.showProgressView)
-
-                    print("Check processingComplete")
-                    print(String(describing: networkController.processingComplete))
-                    print("Running:processDeleteComputers")
-                    
-                    networkController.processDeleteComputers(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policies)
-                }) {
-                    Text("Delete Selection")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                
-                Button(action: {
-                    
-                     print("Refresh")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Refresh")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .alert(isPresented: $showingWarning) {
-                    Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
-                }
-            }
-        }
-        
-        Divider()
-        
-        //              ##########################################################################
-        //              Department
-        //              ##########################################################################
-        
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
-
-            HStack {
-                Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                    Text("").tag("") //basically added empty tag and it solve the case
-                    ForEach(networkController.departments, id: \.self) { department in
-                        Text(String(describing: department.name))
-                    }
-                }
-                
-                Button(action: {
-                    
-                    //  ##########################################################################
-                    //  processUpdateComputerDepartment
-                    //  ##########################################################################
-                    
-                    networkController.updateComputerDepartment(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, departmentName: selectionDepartment.name, computerID: String(describing: selection.id))
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Update")
-                    }
-                }
-            }
-        }
-        .padding()
-        
-        //              ##########################################################################
-        //              Selections
-        //              ##########################################################################
-//        Text("Selections").fontWeight(.bold)
-//        List(Array(selection), id: \.self) { computer in//
-//            Text(computer.name )
-//        }
-//        .toolbar {
-//            Text("Total Policies").fontWeight(.bold)
-//            Text("\(networkController.policies.count)")
-//        }
-
-        //              ##########################################################################
-        //              Progress view
-        //              ##########################################################################
-        Divider()
-
-        if progress.showProgressView == true {
-            
-            ProgressView {
-                
-                Text("Processing")
-                    .padding()
-            }
-        } else {
-            Text("")
         }
     }
     

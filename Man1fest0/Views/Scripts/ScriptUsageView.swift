@@ -54,177 +54,230 @@ struct ScriptUsageView: View {
     }
         
     var body: some View {
-        
-        VStack(alignment: .leading) {
-            
-            if networkController.scripts.count > 0 {
-                
-                //        ########################################
-                //        All scripts
-                //        ########################################
-                
-                if networkController.allPoliciesConverted.count != networkController.allPoliciesDetailed.count {
-                    
-                    Section(header: Text("All Scripts").sectionHeading(style: .pill, background: Color.blue.opacity(0.12)))
-                    {
-                        List {
-                            
-                            ForEach(searchResults, id: \.self) { script in
-                                
-                                HStack {
-                                    Image(systemName: "applescript")
-                                    Text(String(describing: script.name))
-                                }
-                            }
-                        }
-                        .searchable(text: $searchText)
-                        .foregroundColor(.blue)
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Script Usage")
+                        .font(.title)
+                        .fontWeight(.semibold)
+                    Text("Overview of scripts and where they are used")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                
-                //        ########################################
-                //        Assigned scripts
-                //        ########################################
-                
-//                if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
-                    
-                    VStack(alignment: .leading, spacing: 5) {
-                        
-                        Section(header: Text("Assigned Scripts").sectionHeading(style: .pill, background: Color.blue.opacity(0.12))) {
-                            
-                            List(selection: $selection) {
-                                ForEach(assignedScriptsByNameDict.keys.sorted(), id: \.self) { script in
-                                    HStack {
-                                        Text(script)
-                                        Spacer()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    //        ########################################
-                    //        Unassigned scripts
-                    //        ########################################
-                    
-                    Section(header: Text("Scripts not in use").sectionHeading(style: .pill, background: Color.blue.opacity(0.12)))  {
-                        
-                        List(selection: $selection) {
-                            ForEach(unassignedScriptsSet.sorted(), id: \.self) { script in
-                                HStack {
-                                    Text(script)
-                                    Spacer()
-                                }
-                            }
-                        }
-                    }
-                    
+
+                Spacer()
+
+                // Quick action buttons grouped on the right
+                HStack(spacing: 10) {
                     Button(action: {
-                        
                         progress.showProgress()
                         progress.waitForABit()
-                        
-                        print("Selection is:")
-                        print(selection)
-                        
-                        selectedValue = selection
-                            .compactMap { policyController.allScriptsByNameDict[$0] }
-                            .joined(separator: ", ")
-                        
-                        selectedKey = selection.map{return $0}
-                        
-                        let selectedValueArray = selectedValue.components(separatedBy: ",")
-                        
-                        print("selectedValue is: \(selectedValue)")
-                        print("selectedKey is: \(selectedKey)")
-                        print("selectedValueArray is: \(selectedValueArray)")
-                        
-                        for eachItem in selectedValueArray {
-                            print("Item untrimmed:\(eachItem)")
-                            let eachItemTrimmed = eachItem.trimmingCharacters(in: .whitespacesAndNewlines)
-                            print("Item trimmed:\(eachItemTrimmed)")
-                            Task {
-                                try await networkController.deleteScript(server: server, resourceType: ResourceType.script, itemID: eachItemTrimmed, authToken: networkController.authToken)
-                            }
-                        }
+                        getScriptsInUse()
+                        getScriptValues()
                     }) {
-                        Text("Delete Selection")
+                        Label("Analyse", systemImage: "chart.bar.doc.horizontal")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                    .padding()
-//                }
-                
-                
-                Group {
-                    
-                    if networkController.allPoliciesDetailed.count > 0 {
-                        
-                        VStack(alignment: .leading, spacing: 5) {
-                            
-                            Text("Total policies in Jamf:\t\t\t\t\(networkController.allPoliciesConverted.count )")
-                                .fontWeight(.bold)
-                            
-                            Text("Policy records downloaded:\t\t\t\(networkController.allPoliciesDetailed.count)")
-                                .fontWeight(.bold)
-                            
-                            Text("Total Scripts in Jamf:\t\t\t\t\t\(networkController.scripts.count )")
-                            
-                                .fontWeight(.bold)
-                            
-                            Text("Scripts in a policy:\t\t\t\t\t\(assignedScriptsByNameDict.count)")
-                                .fontWeight(.bold)
-                            
-                            
-                            Text("Scripts not in a policy:\t\t\t\t\(unassignedScriptsArray.count)")
-                                .fontWeight(.bold)
+                    .tint(.blue)
+
+                    Button(action: {
+                        networkController.allPoliciesDetailed.removeAll()
+                        Task {
+                            try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
                         }
-                        .padding()
-                        .border(.blue)
+                    }) {
+                        Label("Refresh", systemImage: "arrow.clockwise")
                     }
+                    .buttonStyle(.bordered)
+
                 }
-                
-                    HStack {
-                        
-//                        if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
-                            
+            }
+            .padding([.top, .horizontal])
+
+            if networkController.scripts.count == 0 {
+                VStack(alignment: .center) {
+                    Spacer()
+                    Text("No scripts available yet — fetching from server...")
+                        .foregroundColor(.secondary)
+                        .padding()
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 8).fill(sectionBoxBackground))
+                .padding(.horizontal)
+            } else {
+                // Content area
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Stats Card
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Total Scripts")
+                                        .font(.headline)
+                                    Spacer()
+                                    Text("\(networkController.scripts.count)")
+                                        .font(.title2)
+                                        .fontWeight(.bold)
+                                }
+
+                                HStack {
+                                    Text("Scripts in policies")
+                                    Spacer()
+                                    Text("\(assignedScriptsByNameDict.count)")
+                                }
+
+                                HStack {
+                                    Text("Scripts not used")
+                                    Spacer()
+                                    Text("\(unassignedScriptsArray.count)")
+                                }
+                            }
+                            .padding()
+
+                            Spacer()
+                        }
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color(.windowBackgroundColor)).shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3))
+                        .padding(.horizontal)
+
+                        // All Scripts (searchable)
+                        if networkController.allPoliciesConverted.count != networkController.allPoliciesDetailed.count {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("All Scripts")
+                                    .font(.headline)
+                                    .padding(.horizontal)
+
+                                List {
+                                    ForEach(searchResults, id: \ .self) { script in
+                                        HStack(spacing: 10) {
+                                            Image(systemName: "applescript")
+                                                .foregroundColor(.blue)
+                                            Text(script.name)
+                                                .lineLimit(1)
+                                            Spacer()
+                                            Text("#\(script.jamfId)")
+                                                .foregroundColor(.secondary)
+                                                .font(.caption)
+                                        }
+                                        .padding(.vertical, 6)
+                                    }
+                                }
+                                .frame(minHeight: 120, maxHeight: 260)
+                                .listStyle(.inset)
+                                .searchable(text: $searchText)
+                            }
+                        }
+
+                        // Assigned Scripts card
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Assigned Scripts")
+                                .font(.headline)
+                                .padding(.horizontal)
+
+                            List(selection: $selection) {
+                                ForEach(assignedScriptsByNameDict.keys.sorted(), id: \ .self) { script in
+                                    HStack {
+                                        Label(script, systemImage: "checkmark.seal")
+                                        Spacer()
+                                        Text(policyController.assignedScriptsByNameDict[script] ?? "")
+                                            .foregroundColor(.secondary)
+                                            .font(.caption)
+                                    }
+                                    .padding(.vertical, 6)
+                                }
+                            }
+                            .frame(minHeight: 140, maxHeight: 320)
+                            .listStyle(.inset)
+                        }
+                        .background(RoundedRectangle(cornerRadius: 10).fill(sectionBoxBackground))
+                        .padding(.horizontal)
+
+                        // Unassigned Scripts card
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Scripts not in use")
+                                .font(.headline)
+                                .padding(.horizontal)
+
+                            List(selection: $selection) {
+                                ForEach(unassignedScriptsSet.sorted(), id: \ .self) { script in
+                                    HStack {
+                                        Label(script, systemImage: "xmark.circle")
+                                            .foregroundColor(.orange)
+                                        Spacer()
+                                        Text(allScriptsByNameDict[script] ?? "")
+                                            .foregroundColor(.secondary)
+                                            .font(.caption)
+                                    }
+                                    .padding(.vertical, 6)
+                                }
+                            }
+                            .frame(minHeight: 140, maxHeight: 320)
+                            .listStyle(.inset)
+                        }
+                        .background(RoundedRectangle(cornerRadius: 10).fill(sectionBoxBackground))
+                        .padding(.horizontal)
+
+                        // Action toolbar at bottom of content
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                // Delete selection
+                                progress.showProgress()
+                                progress.waitForABit()
+
+                                selectedValue = selection
+                                    .compactMap { policyController.allScriptsByNameDict[$0] }
+                                    .joined(separator: ", ")
+
+                                selectedKey = selection.map{return $0}
+
+                                let selectedValueArray = selectedValue.components(separatedBy: ",")
+
+                                for eachItem in selectedValueArray {
+                                    let eachItemTrimmed = eachItem.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    Task {
+                                        try await networkController.deleteScript(server: server, resourceType: ResourceType.script, itemID: eachItemTrimmed, authToken: networkController.authToken)
+                                    }
+                                }
+                            }) {
+                                Label("Delete Selection", systemImage: "trash")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+
+                            Spacer()
+
                             Button(action: {
                                 progress.showProgress()
                                 progress.waitForABit()
-                                
                                 getScriptsInUse()
                                 getScriptValues()
                             }) {
-                                Text("Analyse Data")
+                                Label("Analyse Data", systemImage: "wand.and.stars")
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-//                        }
-                        
-                        Button(action: {
-                            
-                            networkController.allPoliciesDetailed.removeAll()
-                            Task {
-                                try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                            .buttonStyle(.bordered)
+
+                            Button(action: {
+                                networkController.allPoliciesDetailed.removeAll()
+                                Task {
+                                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                                }
+                            }) {
+                                Label("Refresh Policy Data", systemImage: "arrow.triangle.2.circlepath")
                             }
-                        }) {
-                            Text("Refresh Policy Data")
+                            .buttonStyle(.bordered)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+
+                        if progress.showProgressView == true {
+                            ProgressView("Loading…")
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                        }
                     }
-                    .padding()
-                
-                if progress.showProgressView == true {
-                    
-                    ProgressView {
-                        Text("Loading")
-                            .font(.title)
-                            .progressViewStyle(.horizontal)
-                    }
-                    .padding()
-                    Spacer()
+                    .padding(.vertical)
                 }
             }
         }

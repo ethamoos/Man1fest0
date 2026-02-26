@@ -32,6 +32,12 @@ struct PackageUsageView: View {
     @State var selectedValue: String = ""
     
     @State var fetchedDetailedPolicies: Bool = false
+
+    // Computed property: are detailed policies fully downloaded?
+    private var detailedPoliciesComplete: Bool {
+        // Consider complete only when there is at least one policy and the detailed count equals the converted list
+        return networkController.allPoliciesConverted.count > 0 && networkController.allPoliciesDetailed.count == networkController.allPoliciesConverted.count
+    }
     
     var body: some View {
                 
@@ -56,66 +62,91 @@ struct PackageUsageView: View {
         //    PROGRESS BAR - END
         //    ########################################
         
-        VStack(alignment: .leading) {
-            
-            if networkController.allPoliciesConverted.count != networkController.allPoliciesDetailed.count {
-                
-                if networkController.allPackages.count > 0 {
-                    
-                    //        ########################################
-                    //        All packages - show initially
-                    //        ########################################
-                    
-                    Section(header: Text("All Packages").bold().padding(.leading)) {
-                        
-                        List {
-                            
-                            ForEach(searchResults) { package in
-                                
-                                HStack {
-                                    Image(systemName: "suitcase.fill")
-                                    Text(String(describing: package.name ))
-                                }
-                                .foregroundColor(.blue)
-                            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Header card
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "suitcase.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 44, height: 44)
+                        .foregroundStyle(.blue)
+                        .padding(8)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.blue.opacity(0.12)))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Package Usage")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+
+                        Text("Overview of packages assigned to policies and those not used")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: 12) {
+                        VStack(alignment: .trailing) {
+                            Text("Total")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("\(networkController.allPackages.count)")
+                                .font(.headline)
+                                .fontWeight(.bold)
                         }
-                        .searchable(text: $searchText)
+
+                        VStack(alignment: .trailing) {
+                            Text("Assigned")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("\(backgroundTasks.assignedPackagesByNameDict.count)")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                        }
+
+                        VStack(alignment: .trailing) {
+                            Text("Unused")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("\(backgroundTasks.unassignedPackagesArray.count)")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                        }
                     }
                 }
-            }
-            
-            
-//            if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
-                
-                //        ########################################
-                //        Assigned packages
-                //        ########################################
-                
-                VStack(alignment: .leading, spacing: 5) {
-                    
-                    Section(header: Text("Assigned Packages").bold().padding()) {
-                        
-                        List(selection: $selection) {
-                            ForEach(backgroundTasks.assignedPackagesByNameDict.keys.sorted(), id: \.self) { package in
-                                HStack {
-                                    Image(systemName: "suitcase.fill")
-                                    Text(package)
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.03)))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.04)))
+                .padding(.bottom, 6)
+
+                // If packages are still downloading show a simple notice
+                if networkController.allPoliciesConverted.count != networkController.allPoliciesDetailed.count {
+                    if networkController.allPackages.count > 0 {
+                        Section(header: Text("All Packages").sectionHeading(style: .pill)) {
+                            List {
+                                ForEach(searchResults) { package in
+                                    HStack {
+                                        Image(systemName: "suitcase.fill")
+                                        Text(String(describing: package.name ))
+                                    }
+                                    .foregroundColor(.blue)
                                 }
-                                .foregroundColor(.blue)
                             }
+                            .listStyle(.inset)
+                            .frame(maxHeight: 240)
+                            .searchable(text: $searchText)
                         }
                     }
                 }
-                
-                //        ########################################
-                //        Unassigned packages
-                //        ########################################
-                
-                Section(header: Text("Packages not in use").bold().padding(.leading)) {
-                    
+
+                // Assigned packages
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Assigned Packages")
+                        .sectionHeading(style: .boxed)
+
                     List(selection: $selection) {
-                        ForEach(backgroundTasks.unassignedPackagesArray.sorted(), id: \.self) { package in
-                            
+                        ForEach(backgroundTasks.assignedPackagesByNameDict.keys.sorted(), id: \.self) { package in
                             HStack {
                                 Image(systemName: "suitcase.fill")
                                 Text(package)
@@ -123,133 +154,173 @@ struct PackageUsageView: View {
                             .foregroundColor(.blue)
                         }
                     }
+                    .listStyle(.inset)
+                    .frame(minHeight: 120, maxHeight: 260)
                 }
-                
-                Button(action: {
-                    
-                    progress.showProgressView = true
-                    progress.waitForABit()
-                    
-                    selectedValue = selection
-                        .compactMap { backgroundTasks.allPackagesByNameDict[$0] }
-                        .joined(separator: ", ")
-                    
-                    selectedKey = selection.map{return $0}
-                    
-                    let selectedValueArray = selectedValue.components(separatedBy: ",")
-                    print("selectedValue is: \(selectedValue)")
-                    print("selectedKey is: \(selectedKey)")
-                    print("selectedValueArray is: \(selectedValueArray)")
-                    
-                    for eachItem in selectedValueArray {
-                        print("Item untrimmed:\(eachItem)")
-                        let eachItemTrimmed = eachItem.trimmingCharacters(in: .whitespacesAndNewlines)
-                        print("Item trimmed:\(eachItemTrimmed)")
-                        
-                        networkController.deletePackage(server: server, resourceType: ResourceType.package, itemID: eachItemTrimmed, authToken: networkController.authToken )
-                    }
-                    
-                }) {
-                    Text("Delete Selection")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                .padding()
-//            }
-                
-            Form {
-                
-                Group {
-                    
-//                    if networkController.allPoliciesDetailed.count > 0 {
-                        
-                        VStack(alignment: .leading, spacing: 5) {
-                            
-                            Text("Total policies in Jamf:\t\t\t\t\(networkController.allPoliciesConverted.count)")
-                                .fontWeight(.bold)
-                            
-                            Text("Policy records downloaded:\t\t\t\(networkController.allPoliciesDetailed.count)")
-                                .fontWeight(.bold)
-                            
-                            Text("Total Packages in Jamf:\t\t\t\t\(networkController.allPackages.count )")
-                                .fontWeight(.bold)
-                            
-                            Text("Packages in a policy:\t\t\t\t\t\(backgroundTasks.assignedPackagesByNameDict.count)")
-                                .fontWeight(.bold)
-                            
-                            Text("Packages not in a policy :\t\t\t\t\(backgroundTasks.unassignedPackagesArray.count)")
-                                .fontWeight(.bold)
+
+                // Unassigned packages
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Packages not in use")
+                        .sectionHeading(style: .boxed)
+
+                    List(selection: $selection) {
+                        ForEach(backgroundTasks.unassignedPackagesArray.sorted(), id: \.self) { package in
+                            HStack {
+                                Image(systemName: "suitcase.fill")
+                                Text(package)
+                            }
+                            .foregroundColor(.blue)
                         }
-                        .padding()
-                        .border(.blue)
-//                    }
+                    }
+                    .listStyle(.inset)
+                    .frame(minHeight: 120, maxHeight: 260)
                 }
-            }
-                
-                //        ########################################
-                //        Analyse Data
-                //        ########################################
-            
-            HStack {
-//                if networkController.allPoliciesConverted.count == networkController.allPoliciesDetailed.count {
-                    
+
+                // Actions
+                HStack(spacing: 12) {
                     Button(action: {
-                        
+                        progress.showProgressView = true
+                        progress.waitForABit()
+
+                        selectedValue = selection
+                            .compactMap { backgroundTasks.allPackagesByNameDict[$0] }
+                            .joined(separator: ", ")
+
+                        selectedKey = selection.map{return $0}
+
+                        let selectedValueArray = selectedValue.components(separatedBy: ",")
+                        print("selectedValue is: \(selectedValue)")
+                        print("selectedKey is: \(selectedKey)")
+                        print("selectedValueArray is: \(selectedValueArray)")
+
+                        for eachItem in selectedValueArray {
+                            print("Item untrimmed:\(eachItem)")
+                            let eachItemTrimmed = eachItem.trimmingCharacters(in: .whitespacesAndNewlines)
+                            print("Item trimmed:\(eachItemTrimmed)")
+
+                            networkController.deletePackage(server: server, resourceType: ResourceType.package, itemID: eachItemTrimmed, authToken: networkController.authToken )
+                        }
+
+                    }) {
+                        Text("Delete Selection")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+
+                    Spacer()
+
+                    Button(action: {
                         Task {
-                            
                             progress.showExtendedProgress()
                             progress.currentProgress = 0.25
-                            
+
                             backgroundTasks.getPackagesInUse(allPoliciesDetailedArray: networkController.allPoliciesDetailed)
                             backgroundTasks.getPackagesNotInUse(allPoliciesDetailedArray: networkController.allPoliciesDetailed, allPackages: networkController.allPackages)
-                            
+
                             if backgroundTasks.unassignedPackagesArray.count > 0 {
                                 progress.currentProgress = 0.5
                             }
-                            
+
                             print("End extended progress")
                             progress.endExtendedProgress()
-                            
+
                         }
-                        
+
                     }) {
                         Text("Analyse Data")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    .padding()
-//                }
-                
-                Button(action: {
-                    
-                    networkController.allPoliciesDetailed.removeAll()
-                    Task {
-                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    // Disable the button until all detailed policies have finished downloading
+                    .disabled(!detailedPoliciesComplete)
+
+                    Button(action: {
+                        networkController.allPoliciesDetailed.removeAll()
+                        Task {
+                            try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                        }
+                    }) {
+                        Text("Refresh Policy Data")
                     }
-                }) {
-                    Text("Refresh Policy Data")
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .padding()
-            }
-            
-            
-            if progress.showProgressView == true {
-                
-                ProgressView {
-                    Text("Loading")
-                        .font(.title)
-                        .progressViewStyle(.horizontal)
+                .padding(.top)
+
+                // Summary card
+                Form {
+                    Group {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Total policies in Jamf:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("\(networkController.allPoliciesConverted.count)")
+                                        .fontWeight(.bold)
+                                }
+                                Spacer()
+                                VStack(alignment: .leading) {
+                                    // Make the label and count red & bold until detailed policies are finished
+                                    Text("Policy records downloaded:")
+                                        .font(.caption)
+                                        .foregroundColor(detailedPoliciesComplete ? .secondary : .red)
+                                        .fontWeight(detailedPoliciesComplete ? .regular : .bold)
+                                    Text("\(networkController.allPoliciesDetailed.count)")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(detailedPoliciesComplete ? .primary : .red)
+                                }
+                            }
+
+                            Divider()
+
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Total Packages in Jamf:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("\(networkController.allPackages.count )")
+                                        .fontWeight(.bold)
+                                }
+                                Spacer()
+                                VStack(alignment: .leading) {
+                                    Text("Packages in a policy:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("\(backgroundTasks.assignedPackagesByNameDict.count)")
+                                        .fontWeight(.bold)
+                                }
+                                Spacer()
+                                VStack(alignment: .leading) {
+                                    Text("Packages not in a policy:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("\(backgroundTasks.unassignedPackagesArray.count)")
+                                        .fontWeight(.bold)
+                                }
+                            }
+                        }
+                        .padding()
+                    }
                 }
-                .padding()
-                Spacer()
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.02)))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.03)))
+                .padding(.top)
+
+                if progress.showProgressView == true {
+                    ProgressView {
+                        Text("Loading")
+                            .font(.title)
+                            .progressViewStyle(.horizontal)
+                    }
+                    .padding()
+                    Spacer()
+                }
             }
+            .padding()
         }
         .frame(minHeight: 50)
-        .padding()
-
         .onAppear(){
             
             progress.showProgress()
@@ -281,7 +352,7 @@ struct PackageUsageView: View {
                     print("End extended progress")
                     progress.endExtendedProgress()
                 }
-                
+
                 print("Setting: fetchedDetailedPolicies to true")
                 networkController.fetchedDetailedPolicies = true
                 
@@ -290,7 +361,7 @@ struct PackageUsageView: View {
             }
         }
     }
-    
+
     var searchResults: [Package] {
         
         let allPackages = networkController.allPackages

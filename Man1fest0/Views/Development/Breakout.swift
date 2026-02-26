@@ -321,7 +321,7 @@ struct BreakoutGameView: View {
             words = []
         } else {
             words = networkController.policies.map { $0.name }.shuffled()
-            print("Words are:\(words)")
+//            print("Words are:\(words)")
         }
         // Rebuild bricks so the new words are applied to brick.word
         DispatchQueue.main.async {
