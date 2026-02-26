@@ -96,11 +96,14 @@ struct OptionsView: View {
                                 }
 #endif
                                 
-                                NavigationLink(destination: GroupsView(server: server)) {
-                                    Text("Computer Static Groups")
-                                }
-                                NavigationLink(destination: GroupsSmartView(server: server)) {
-                                    Text("Computer Smart Groups")
+                                DisclosureGroup("Groups") {
+                                    
+                                    NavigationLink(destination: GroupsView(server: server)) {
+                                        Text("Computer Static Groups")
+                                    }
+                                    NavigationLink(destination: GroupsSmartView(server: server)) {
+                                        Text("Computer Smart Groups")
+                                    }
                                 }
                                 
                                 DisclosureGroup("Extension Attributes") {
@@ -304,37 +307,6 @@ struct OptionsView: View {
                             }
 #if os(macOS)
                             
-//                            Group {
-//                                Divider()
-//
-//                                DisclosureGroup("Groups") {
-//                                    //  #######################################################################
-//                                    //  Static Groups
-//                                    //  #######################################################################
-//
-//                                    NavigationLink(destination: GroupsView(server: server)) {
-//                                        Text("Static Groups")
-//                                    }
-//                                    NavigationLink(destination: GroupsSmartView(server: server)) {
-//                                        Text("Smart Groups")
-//                                    }
-//                                }
-//                            }
-//
-//                            Group {
-//                                Divider()
-//
-//                                DisclosureGroup("Extension Attributes") {
-//                                    NavigationLink(destination: ComputerExtAttributeView(server: server)) {
-//                                        Text("Computer Extension Attributes")
-//                                    }
-//                                    NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
-//                                        Text("Computer Extension Attributes Actions")
-//                                    }
-//                                }
-//                            }
-//
-//                            Divider()
                             
                             NavigationLink(destination: ReportsView()) {
                                 Text("Reports")
