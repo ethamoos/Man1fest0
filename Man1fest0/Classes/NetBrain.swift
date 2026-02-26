@@ -3,7 +3,24 @@ import Foundation
 import SwiftUI
 import AEXML
 
-// AsyncSemaphore for rate limiting in concurrent environments
+// AsyncSemaphore for rate limiting in concurrent environments.
+// This actor-based implementation provides a thread-safe way to limit concurrent access to a resource.
+// It works similarly to a traditional semaphore but designed for Swift's async/await concurrency model.
+//
+// How it works:
+// - The `value` property represents the number of available permits. When initialized with value N,
+//   up to N concurrent tasks can proceed without waiting.
+// - When `wait()` is called: if a permit is available (value > 0), it decrements the value and returns
+//   immediately. If no permits are available (value == 0), the caller is suspended until a permit
+//   is released via `signal()`.
+// - When `signal()` is called: if there are waiting tasks in the queue, the oldest waiter is resumed
+//   (consuming the permit). Otherwise, the permit count is incremented for future waiters.
+//
+// Usage pattern:
+//   let semaphore = AsyncSemaphore(value: 4)  // Allow up to 4 concurrent operations
+//   await semaphore.wait()    // Acquire a permit (blocks if none available)
+//   // ... perform limited operation ...
+//   semaphore.signal()        // Release the permit
 actor AsyncSemaphore {
     private var value: Int
     private var waiters: [CheckedContinuation<Void, Never>] = []
