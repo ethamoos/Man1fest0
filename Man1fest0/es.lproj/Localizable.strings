@@ -1,0 +1,10 @@
+/* Spanish Localizable strings - initial quick wins */
+"Save" = "Guardar";
+"Cancel" = "Cancelar";
+"Download" = "Descargar";
+"Edit" = "Editar";
+"Run" = "Ejecutar";
+"Scripts" = "Scripts";
+"Policies" = "Políticas";
+"Analyse Data" = "Analizar datos";
+"Policy records downloaded:" = "Registros de políticas descargados:";

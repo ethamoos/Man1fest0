@@ -1,0 +1,10 @@
+/* English Localizable strings - initial set */
+"Save" = "Save";
+"Cancel" = "Cancel";
+"Download" = "Download";
+"Edit" = "Edit";
+"Run" = "Run";
+"Scripts" = "Scripts";
+"Policies" = "Policies";
+"Analyse Data" = "Analyse Data";
+"Policy records downloaded:" = "Policy records downloaded:";
