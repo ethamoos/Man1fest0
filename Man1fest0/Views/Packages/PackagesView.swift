@@ -120,6 +120,31 @@ struct PackagesView: View {
 
                 Divider()
 
+                // Column headers to make the list appear as a table (Name | ID)
+                HStack {
+                    HStack(alignment: .center) {
+                        Text("Name")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.leading)
+
+                    // ID column header - fixed width so columns line up
+                    Text("ID")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 120, alignment: .trailing)
+                        .padding(.trailing)
+                }
+                .padding(.vertical, 6)
+                // cross-platform background color
+#if os(macOS)
+                .background(Color(NSColor.controlBackgroundColor))
+#else
+                .background(Color(UIColor.secondarySystemBackground))
+#endif
+
                 // Rows
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -132,9 +157,11 @@ struct PackagesView: View {
                                             .lineLimit(1)
                                     }
                                     Spacer()
+                                    // ID column - prefer jamfId when available, otherwise UUID
                                     Text(package.jamfId != 0 ? String(package.jamfId) : package.id.uuidString)
-                                        .font(.caption)
+                                        .font(.caption.monospaced())
                                         .foregroundColor(.secondary)
+                                        .frame(width: 120, alignment: .trailing)
                                 }
                                 .padding(.vertical, 8)
                                 .padding(.horizontal)

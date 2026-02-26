@@ -78,6 +78,9 @@ struct CreatePolicyView: View {
     @State private var packageSortBy: PackageSortField = .name
     @State private var packageSortAscending: Bool = true
 
+    // Table selection (UUID-based) for macOS Table; we synchronize this with packageMultiSelection (Set<Int>)
+    @State private var packageSelectionIDs = Set<UUID>()
+
     // ################################################################################
     // Scripts
     // ################################################################################
@@ -130,53 +133,8 @@ struct CreatePolicyView: View {
     var body: some View {
         
         VStack(alignment: .leading) {
-            
             if networkController.packages.count > 0 {
-                
-                Section(header:
-                            // Header now includes sort controls
-                            VStack(alignment: .leading) {
-                                HStack {
-                                    Text("All Packages").bold().padding(.leading)
-                                    Spacer()
-                                    HStack(spacing: 8) {
-                                        Picker("Sort by", selection: $packageSortBy) {
-                                            Text("Name").tag(PackageSortField.name)
-                                            Text("ID").tag(PackageSortField.id)
-                                        }
-                                        .pickerStyle(.segmented)
-                                        .frame(maxWidth: 220)
-
-                                        Button(action: { packageSortAscending.toggle() }) {
-                                            Image(systemName: packageSortAscending ? "arrow.up" : "arrow.down")
-                                        }
-                                        .buttonStyle(.plain)
-                                        .help("Toggle sort direction")
-                                    }
-                                }
-                            }
-                ) {
-                    
-                    // Identify items by their jamfId (Int) and bind selection to a Set<Int>
-                    List(sortedPackages, id: \.jamfId, selection: $packageMultiSelection) { package in
-                        
-                        HStack {
-                            Image(systemName: "suitcase.fill")
-                            Text(package.name ).font(.system(size: 12.0))
-                        }
-                        .foregroundColor(.blue)
-                    }
-                    .searchable(text: $searchText)
-                    
-                    VStack(alignment: .leading) {
-                        Text("\(networkController.packages.count) total packages")
-                    }
-                        #if os(macOS)
-                .navigationTitle("Packages")
-#endif
-                        .listStyle(.inset)
-                        .padding()
-                }
+                packagesSection
             }
         }
         //              ################################################################################
@@ -534,4 +492,111 @@ struct CreatePolicyView: View {
             }
         }
     }
+    
+    // Extracted packages header to simplify type-checking
+    private var packagesHeader: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Text("All Packages").bold().padding(.leading)
+                Spacer()
+                HStack(spacing: 8) {
+                    Picker("Sort by", selection: $packageSortBy) {
+                        Text("Name").tag(PackageSortField.name)
+                        Text("ID").tag(PackageSortField.id)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 220)
+
+                    Button(action: { packageSortAscending.toggle() }) {
+                        Image(systemName: packageSortAscending ? "arrow.up" : "arrow.down")
+                    }
+                    .buttonStyle(.plain)
+                    .help("Toggle sort direction")
+                }
+            }
+        }
+    }
+
+    // Extracted packages section to simplify `body` and help the compiler
+    private var packagesSection: some View {
+        Section(header: packagesHeader) {
+            // Table-like header (Name | ID)
+            HStack {
+                Text("Name")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+
+                Text("ID")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(width: 120, alignment: .trailing)
+                    .padding(.trailing)
+            }
+            .padding(.vertical, 6)
+    #if os(macOS)
+            .background(Color(NSColor.controlBackgroundColor))
+    #else
+            .background(Color(UIColor.secondarySystemBackground))
+    #endif
+
+            Group {
+    #if os(macOS)
+                packagesTable
+    #else
+                packagesListView
+    #endif
+            }
+            .searchable(text: $searchText)
+            .listStyle(.inset)
+            .padding()
+        }
+    }
+
+    // Small macOS Table extracted to reduce overall expression complexity
+    private var packagesTable: some View {
+        Table(sortedPackages, selection: $packageSelectionIDs) {
+            TableColumn("Name") { pkg in
+                Text(pkg.name)
+                    .font(.system(size: 12.0))
+                    .lineLimit(1)
+            }
+            TableColumn("ID") { pkg in
+                Text(pkg.jamfId != 0 ? String(pkg.jamfId) : pkg.id.uuidString)
+                    .font(.caption.monospaced())
+                    .foregroundColor(.secondary)
+                    .frame(width: 120, alignment: .trailing)
+            }
+        }
+        .onChange(of: packageSelectionIDs) { newIDs in
+            let selectedIds = Set(newIDs.compactMap { id in
+                networkController.packages.first(where: { $0.id == id })?.jamfId
+            })
+            packageMultiSelection = selectedIds
+        }
+    }
+
+    // Small iOS/List alternative extracted separately
+    private var packagesListView: some View {
+        List(sortedPackages, id: \.jamfId, selection: $packageMultiSelection) { package in
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(package.name)
+                        .font(.system(size: 12.0))
+                        .lineLimit(1)
+                }
+                Spacer()
+                Text(package.jamfId != 0 ? String(package.jamfId) : package.id.uuidString)
+                    .font(.caption.monospaced())
+                    .foregroundColor(.secondary)
+                    .frame(width: 120, alignment: .trailing)
+            }
+            .contentShape(Rectangle())
+        }
+    }
+    
+    // End of view helpers
 }
+
+// End of file
