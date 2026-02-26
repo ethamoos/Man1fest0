@@ -73,6 +73,11 @@ struct CreatePolicyView: View {
     @State private var packageID = "0"
     @State private var packageName = ""
     
+    // Sorting for package selection list
+    private enum PackageSortField: Hashable { case name, id }
+    @State private var packageSortBy: PackageSortField = .name
+    @State private var packageSortAscending: Bool = true
+
     // ################################################################################
     // Scripts
     // ################################################################################
@@ -128,10 +133,32 @@ struct CreatePolicyView: View {
             
             if networkController.packages.count > 0 {
                 
-                Section(header: Text("All Packages").bold().padding(.leading)) {
+                Section(header:
+                            // Header now includes sort controls
+                            VStack(alignment: .leading) {
+                                HStack {
+                                    Text("All Packages").bold().padding(.leading)
+                                    Spacer()
+                                    HStack(spacing: 8) {
+                                        Picker("Sort by", selection: $packageSortBy) {
+                                            Text("Name").tag(PackageSortField.name)
+                                            Text("ID").tag(PackageSortField.id)
+                                        }
+                                        .pickerStyle(.segmented)
+                                        .frame(maxWidth: 220)
+
+                                        Button(action: { packageSortAscending.toggle() }) {
+                                            Image(systemName: packageSortAscending ? "arrow.up" : "arrow.down")
+                                        }
+                                        .buttonStyle(.plain)
+                                        .help("Toggle sort direction")
+                                    }
+                                }
+                            }
+                ) {
                     
                     // Identify items by their jamfId (Int) and bind selection to a Set<Int>
-                    List(searchResults, id: \.jamfId, selection: $packageMultiSelection) { package in
+                    List(sortedPackages, id: \.jamfId, selection: $packageMultiSelection) { package in
                         
                         HStack {
                             Image(systemName: "suitcase.fill")
@@ -483,6 +510,28 @@ struct CreatePolicyView: View {
             return networkController.packages
         } else {
             return networkController.packages.filter { $0.name.lowercased().contains(searchText.lowercased())}
+        }
+    }
+    
+    // Combined sorted packages based on current searchResults and sort settings
+    private var sortedPackages: [Package] {
+        let arr = searchResults
+        switch packageSortBy {
+        case .name:
+            return arr.sorted { a, b in
+                if packageSortAscending {
+                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+                } else {
+                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedDescending
+                }
+            }
+        case .id:
+            return arr.sorted { a, b in
+                // Treat jamfId==0 as large so it sorts after real ids
+                let aId = (a.jamfId != 0) ? a.jamfId : Int.max
+                let bId = (b.jamfId != 0) ? b.jamfId : Int.max
+                return packageSortAscending ? (aId < bId) : (aId > bId)
+            }
         }
     }
 }
