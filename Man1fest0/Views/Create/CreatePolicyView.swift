@@ -12,9 +12,7 @@ import SwiftUI
 struct CreatePolicyView: View {
     
     var selectedResourceType: ResourceType = ResourceType.package
-    
     var server: String
-    
     
     //              ################################################################################
     //              EnvironmentObject
@@ -30,6 +28,7 @@ struct CreatePolicyView: View {
     //              ################################################################################
     //              Variables
     //              ################################################################################
+    
     @State private var searchText = ""
     @State private var showingWarning = false
     @State var enableDisable: Bool = true
@@ -55,12 +54,12 @@ struct CreatePolicyView: View {
     @State var computerName = ""
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
-    //              ################################################################################
-    //              New items
-    //              ################################################################################
+    // ################################################################################
+    // New items
+    // ################################################################################
     
     @State var newPolicyName = ""
-    //    @State var departmentName: String = ""
+    // @State var departmentName: String = ""
     @State var newCategoryName: String = ""
     @State var newGroupName: String = ""
     @State var newPolicyId = "0"
@@ -81,25 +80,23 @@ struct CreatePolicyView: View {
     @State var scriptName = ""
     @State var scriptID = ""
     
-    //              ################################################################################
-    //              Selections
-    //              ################################################################################
+    // ################################################################################
+    // Selections
+    // ################################################################################
     
     @State var selectedComputer: Computer = Computer(id: 0, name: "")
     
+    // ################################################################################
     // Selection IDs used by Pickers to avoid mismatched tag/selection warnings
+    // ################################################################################
+
     @State var selectedCategoryId: Int? = nil
-    
     @State var selectedDepartmentId: Int? = nil
-    
     @State var selectedScriptId: Int? = nil
-    
     @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
-    
-    @State var packageMultiSelection = Set<Package>()
-    
+    // Use jamfId (Int) for multi-selection so List selection matches the id used by the data source
+    @State var packageMultiSelection = Set<Int>()
     @State var iconMultiSelection = Set<String>()
-    
     @State var selectedIconString = ""
     @State var iconFilter: String = ""
     @State var categoryFilter: String = ""
@@ -133,7 +130,9 @@ struct CreatePolicyView: View {
                 
                 Section(header: Text("All Packages").bold().padding(.leading)) {
                     
-                    List(searchResults, selection: $packageMultiSelection) { package in
+                    // Identify items by their jamfId (Int) and bind selection to a Set<Int>
+                    List(searchResults, id: \.jamfId, selection: $packageMultiSelection) { package in
+                        
                         HStack {
                             Image(systemName: "suitcase.fill")
                             Text(package.name ).font(.system(size: 12.0))
@@ -189,9 +188,8 @@ struct CreatePolicyView: View {
         //  ################################################################################
         
         
-        List(Array(packageMultiSelection)) { package in
-            
-            Text(package.name )
+        List(Array(packageMultiSelection), id: \.self) { selectedJamfId in
+            Text(networkController.packages.first(where: { $0.jamfId == selectedJamfId })?.name ?? "")
         }
         
         .frame(height: 100)
@@ -224,6 +222,9 @@ struct CreatePolicyView: View {
                             let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
                             let scriptNameLocal = scriptLocal?.name ?? ""
                             let scriptIdString = String(scriptLocal?.jamfId ?? 0)
+
+                            // Prepare selected package ids to pass to XML builder
+                            let selectedPackageIdsToAdd = Set(packageMultiSelection)
                             
                             xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken,
                                                                   server: server,
@@ -239,7 +240,8 @@ struct CreatePolicyView: View {
                                                                   enabledStatus: enableDisable,
                                                                   iconId: iconIdString,
                                                                   iconName: iconNameLocal,
-                                                                  iconUrl: iconUrlLocal)
+                                                                  iconUrl: iconUrlLocal,
+                                                                  selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages)
                             
                             layout.separationLine()
                             print("Creating New Policy:\(newPolicyName)")
@@ -428,7 +430,7 @@ struct CreatePolicyView: View {
                           
                           Picker(selection: $selectedScriptId, label: Text("Scripts")) {
                               ForEach(networkController.scripts.filter { s in
-                                scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
+                                  scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
                               }, id: \.jamfId) { script in
                                   Text(script.name).tag(script.jamfId)
                               }
