@@ -218,6 +218,32 @@ struct ScriptsDetailView: View {
                 .padding(.horizontal)
             }
 
+            // Open in Browser button (mirrors PolicyDetailView behavior)
+            HStack {
+                Spacer()
+                Button(action: {
+                    // Construct Jamf Pro script UI URL directly (avoids translation mismatches)
+                    let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                    var base = trimmedServer
+                    if base.hasSuffix("/") { base.removeLast() }
+                    let uiURL = "\(base)/view/settings/computer-management/scripts/\(scriptID)?tab=general"
+                    print("Opening script UI URL: \(uiURL)")
+                    layout.openURL(urlString: uiURL)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari")
+                        Text("Open in Browser")
+                    }
+                }
+                .help("Open this script in the Jamf web interface in your default browser.")
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .padding(.top, 6)
+                Spacer()
+            }
+            .padding()
+            .textSelection(.enabled)
+
             Spacer()
         }
         .padding()
