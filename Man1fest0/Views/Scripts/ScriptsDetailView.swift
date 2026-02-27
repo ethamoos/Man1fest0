@@ -14,6 +14,10 @@ struct ScriptsDetailView: View {
     
     @State private var bodyText: String = ""
     @State private var scriptName: String = ""
+    @State private var category: String = ""
+    @State private var filename: String = ""
+    @State private var info: String = ""
+    @State private var notes: String = ""
     @State private var isEditing: Bool = false
     @State private var showReadOnly: Bool = false
     @State private var showSavedToast: Bool = false
@@ -31,9 +35,15 @@ struct ScriptsDetailView: View {
             // Header / Top bar
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(scriptName.isEmpty ? currentScript.name : scriptName)
-                        .font(.title)
-                        .fontWeight(.semibold)
+                    if isEditing {
+                        TextField(scriptName.isEmpty ? currentScript.name : scriptName, text: $scriptName)
+                            .padding(4)
+                            .border(Color.gray)
+                    } else {
+                        Text(scriptName.isEmpty ? currentScript.name : scriptName)
+                            .font(.title)
+                            .fontWeight(.semibold)
+                    }
                     HStack(spacing: 10) {
                         Text("ID: \(currentScript.id)")
                             .font(.subheadline)
@@ -68,7 +78,7 @@ struct ScriptsDetailView: View {
                         progress.showProgress()
                         Task {
                             do {
-                                try await networkController.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing: scriptID), authToken: networkController.authToken)
+                                try await networkController.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing: scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes)
                                 // indicate saved
                                 showSavedToast = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
@@ -141,15 +151,42 @@ struct ScriptsDetailView: View {
             Divider()
 
             // Notes / Info
-            if currentScript.notes != "" {
+            if currentScript.notes != "" || isEditing {
                 Section(header: Text("Notes").bold()) {
-                    Text(currentScript.notes)
+                    if isEditing {
+                        TextEditor(text: $notes)
+                            .frame(minHeight: 60)
+                            .border(Color.gray)
+                    } else {
+                        Text(currentScript.notes)
+                    }
                 }
             }
 
-            if currentScript.info != "" {
+            if currentScript.info != "" || isEditing {
                 Section(header: Text("Info").bold()) {
-                    Text(currentScript.info)
+                    if isEditing {
+                        TextEditor(text: $info)
+                            .frame(minHeight: 60)
+                            .border(Color.gray)
+                    } else {
+                        Text(currentScript.info)
+                    }
+                }
+            }
+
+            // Category and Filename fields
+            if isEditing {
+                Section(header: Text("Category").bold()) {
+                    TextField(currentScript.categoryName, text: $category)
+                        .padding(4)
+                        .border(Color.gray)
+                }
+
+                Section(header: Text("Filename").bold()) {
+                    TextField("Filename", text: $filename)
+                        .padding(4)
+                        .border(Color.gray)
                 }
             }
 
@@ -218,6 +255,32 @@ struct ScriptsDetailView: View {
                 .padding(.horizontal)
             }
 
+            // Open in Browser button (mirrors PolicyDetailView behavior)
+            HStack {
+                Spacer()
+                Button(action: {
+                    // Construct Jamf Pro script UI URL directly (avoids translation mismatches)
+                    let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                    var base = trimmedServer
+                    if base.hasSuffix("/") { base.removeLast() }
+                    let uiURL = "\(base)/view/settings/computer-management/scripts/\(scriptID)?tab=general"
+                    print("Opening script UI URL: \(uiURL)")
+                    layout.openURL(urlString: uiURL)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari")
+                        Text("Open in Browser")
+                    }
+                }
+                .help("Open this script in the Jamf web interface in your default browser.")
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .padding(.top, 6)
+                Spacer()
+            }
+            .padding()
+            .textSelection(.enabled)
+
             Spacer()
         }
         .padding()
@@ -226,6 +289,10 @@ struct ScriptsDetailView: View {
                 try await networkController.getDetailedScript(server: server, scriptID: scriptID, authToken: networkController.authToken)
                 bodyText = networkController.scriptDetailed.scriptContents
                 scriptName = networkController.scriptDetailed.name
+                category = networkController.scriptDetailed.categoryName
+                filename = networkController.scriptDetailed.name
+                info = networkController.scriptDetailed.info
+                notes = networkController.scriptDetailed.notes
             }
         }
     }
