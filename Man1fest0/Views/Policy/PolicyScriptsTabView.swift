@@ -67,8 +67,10 @@ struct PolicyScriptsTabView: View {
     
     @Binding var computerGroupSelection: Set<ComputerGroup>
     @State private var selection: PolicyScripts? = nil
-    @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
-    @State var listSelection: PolicyScripts = PolicyScripts(id:(UUID(uuidString: "") ?? UUID()) , jamfId: 0, name: "")
+    // Picker uses the script's jamfId as the selection to avoid complex generic inference issues
+    @State var selectedScriptId: Int = 0
+    // Use a single optional selection for the List selection on macOS
+    @State var listSelection: PolicyScripts? = nil
     @State var pickerSelectedScript = 0
     @State private var selectedNumber = 0
 
@@ -104,68 +106,57 @@ struct PolicyScriptsTabView: View {
                     // ################################################################################
                     
                     if networkController.policyDetailed?.scripts?.count ?? 0 > 0 {
-                        
                         Text("Assigned Scripts").bold()
-#if os(macOS)
-                        
-                        
-                        List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
-                            NavigationLink(destination: PolicyScriptsTabViewDetail(script: script, policyID: policyID, server: server)) {
+
+                        // Use a simple ForEach to avoid platform-specific List generic inference problems
+                        if let scripts = networkController.policyDetailed?.scripts, !scripts.isEmpty {
+                            ForEach(scripts, id: \.jamfId) { script in
                                 HStack {
-                                    
                                     Text(script.name ?? "")
-                                    if script.parameter4 != "" {
+                                    if let p4 = script.parameter4, !p4.isEmpty {
                                         Image(systemName: "4.circle").bold()
                                             .foregroundColor(.red)
-                                        Text(script.parameter4 ?? "" )
+                                        Text(p4)
                                     }
-                                    if script.parameter5 != "" {
+                                    if let p5 = script.parameter5, !p5.isEmpty {
                                         Image(systemName: "5.circle").bold()
                                             .foregroundColor(.red)
-                                        Text(script.parameter5 ?? "" )
+                                        Text(p5)
                                     }
-                                    if script.parameter6 != "" {
+                                    if let p6 = script.parameter6, !p6.isEmpty {
                                         Image(systemName: "6.circle").bold()
                                             .foregroundColor(.red)
-                                        Text(script.parameter6 ?? "" )
+                                        Text(p6)
                                     }
-                                    if script.parameter7 != "" {
+                                    if let p7 = script.parameter7, !p7.isEmpty {
                                         Image(systemName: "7.circle").bold()
                                             .foregroundColor(.red)
-                                        Text(script.parameter7 ?? "" )
+                                        Text(p7)
                                     }
-                                    if script.parameter8 != "" {
+                                    if let p8 = script.parameter8, !p8.isEmpty {
                                         Image(systemName: "8.circle").bold()
                                             .foregroundColor(.red)
-                                        Text(script.parameter8 ?? "" )
+                                        Text(p8)
                                     }
-                                    if script.parameter9 != "" {
+                                    if let p9 = script.parameter9, !p9.isEmpty {
                                         Image(systemName: "9.circle").bold()
                                             .foregroundColor(.red)
-                                        Text(script.parameter9 ?? "" )
+                                        Text(p9)
                                     }
-                                    if script.parameter10 != "" {
+                                    if let p10 = script.parameter10, !p10.isEmpty {
                                         Image(systemName: "10.circle").bold()
                                             .foregroundColor(.red)
-                                        Text(script.parameter10 ?? "" )
+                                        Text(p10)
                                     }
-                                    if script.priority != "" {
-                                        Text(script.priority ?? "" )
+                                    if let pr = script.priority, !pr.isEmpty {
+                                        Text(pr)
                                     }
                                 }
+                                .padding(.vertical, 4)
                             }
+                            .frame(minHeight: 100)
+                            .frame(minWidth: 120, maxWidth: .infinity)
                         }
-                        .frame(minHeight: 100)
-                        .frame(minWidth: 120, maxWidth: .infinity)
-#else
-                        List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self) { script in
-                            HStack {
-                                Image(systemName: "applescript")
-                                Text(script.name ?? "" )
-                            }
-                        }
-                        .frame(minHeight: 0)
-#endif
                     }
                     
                     //  ################################################################################
@@ -270,7 +261,7 @@ struct PolicyScriptsTabView: View {
                 }
                 
                 
-                DisclosureGroup("Add/Remove Scripts") {
+                Group {
                     
                     //  ################################################################################
                     //              Scripts picker
@@ -281,21 +272,20 @@ struct PolicyScriptsTabView: View {
                         LazyVGrid(columns: layout.threeColumns, spacing: 10) {
 
                             
-                            // Mirror the filtered picker below: allow filtering by name and guard optional names
-                            Picker(selection: $selectedScript, label: Text("Scripts").bold()) {
+                            // Mirror the filtered picker below: use the script's jamfId for selection
+                            Picker(selection: $selectedScriptId, label: Text("Scripts").bold()) {
                                 ForEach(networkController.scripts.filter { script in
                                     let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
                                     guard !query.isEmpty else { return true }
                                     return script.name.localizedCaseInsensitiveContains(query)
-                                }, id: \.self) { script in
+                                }, id: \.jamfId) { script in
                                     Text(script.name)
-                                        .tag(script)
+                                        .tag(script.jamfId)
                                 }
                             }
                             .onAppear {
-                                if networkController.scripts.isEmpty != true {
-                                    print("Setting package picker default")
-                                    selectedScript = networkController.scripts[0]
+                                if let first = networkController.scripts.first {
+                                    selectedScriptId = first.jamfId
                                 }
                             }
                             
@@ -319,9 +309,11 @@ struct PolicyScriptsTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                            // Resolve selected script object from the id before calling the xml controller
+                            let selectedScriptResolved = networkController.scripts.first(where: { $0.jamfId == selectedScriptId }) ?? ScriptClassic(name: "", jamfId: 0)
+                            xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc, xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScriptResolved.name, scriptId: String(describing: selectedScriptResolved.jamfId), scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5, scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10, scriptParameter11: scriptParameter11, priority: priority, newPolicyFlag: false)
                             
-                            print("Adding script:\(selectedScript.name)")
+                            print("Adding script:\(selectedScriptResolved.name)")
                             print("parameter 4 is :\(scriptParameter4)")
                             
                         }) {
@@ -345,9 +337,9 @@ struct PolicyScriptsTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            // Pass listSelection.jamfId as optional Int? (nil if 0)
-                            let selId: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
-                            xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
+                            // Pass currently selected script from the list (if any)
+                            let selId: Int? = (listSelection?.jamfId == 0) ? nil : listSelection?.jamfId
+                            xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection?.name ?? "", selectedScriptId: listSelection?.jamfId ?? 0)
                             
                         }) {
                             HStack(spacing: 10) {
@@ -387,36 +379,59 @@ struct PolicyScriptsTabView: View {
                     }
                 }
                 
+                //            Group {
+                //                Divider()
+                //                LazyVGrid(columns: columns, spacing: 10) {
+                //                    VStack(alignment: .leading) {
+                //                        DisclosureGroup("Parameters") {
+                //
+                //                            TextField("Parameter 4", text: $scriptParameter4)
+                //                            TextField("Parameter 5", text: $scriptParameter5)
+                //                            TextField("Parameter 6", text: $scriptParameter6)
+                //                            TextField("Parameter 7", text: $scriptParameter7)
+                //                            TextField("Parameter 8", text: $scriptParameter8)
+                //                            TextField("Parameter 9", text: $scriptParameter9)
+                //                            TextField("Parameter 10", text: $scriptParameter10)
+                //                            TextField("Parameter 11", text: $scriptParameter11)
+                //                            Text("Priority:")
+                //                            TextField("Before/After?", text: $priority)
+                //                        }
+                //                    }
+                //                }
+                //            }
                 
-                DisclosureGroup("Add Individual Command/s To Run In Policy") {
+                //            Text("Add Individual Command/s To Run In Policy").fontWeight(.bold)
+                TextEditor(text: $command)
+                    .frame(minHeight: 20)
+                    .frame(maxHeight: 40)
+                
+                    .border(Color.gray)
+                
+                //  ################################################################################
+                //  Add custom command in policy
+                //  ################################################################################
+                
+                Button(action: {
                     
-                    //  ################################################################################
-                    //  Add custom command in policy
-                    //  ################################################################################
+                    progress.showProgress()
+                    progress.waitForABit()
                     
+                    networkController.separationLine()
+                    print("Add custom command to policy:\(String(describing: policyID))")
+                    policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
                     
-                    TextEditor(text: $command)
-                        .frame(minHeight: 20)
-                        .frame(maxHeight: 40)
-                        .border(Color.gray)
-              
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.separationLine()
-                        print("Add custom command to policy:\(String(describing: policyID))")
-                        policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
-                    }) {
-                        HStack {
-                            Image(systemName: "keyboard")
-                            Text("Add Individual Command To Policy")
-                        }
+                }) {
+                    HStack {
+                        Image(systemName: "keyboard")
+                        Text("Add Individual Command To Policy")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .help("Add a custom shell command to be run by this policy.")
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .help("Add a custom shell command to be run by this policy.")
+                
+                
+                
                 Spacer()
             }
             .frame(minWidth: 400, alignment: .leading)
@@ -427,7 +442,9 @@ struct PolicyScriptsTabView: View {
                     print("Fetching scripts")
                     print("Script count is:\(networkController.scripts.count))")
                     networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                    
                 } else {
+                    
                     print("script data is available")
                 }
             }
@@ -435,96 +452,22 @@ struct PolicyScriptsTabView: View {
     }
 }
 
+//var searchResults: [Script] {
+//    if searchText.isEmpty {
+//        // print("Search is empty")
+//        //            DEBUG
+//        //            print(networkController.scripts)
+//        return controller.scripts
+//    } else {
+//        // print("Search is currently is currently:\(searchText)")
+//        //            DEBUG
+//        //            print(networkController.scripts)
+//        return controller.scripts.filter { $0.name.lowercased().contains(searchText.lowercased())}
+//    }
+//}
 
-// Minimal inline detail view so the NavigationLink can resolve the type without
-// requiring the file to be added to the Xcode project. This mirrors the
-// standalone `PolicyScriptsTabViewDetail` behavior and is intentionally
-// lightweight.
-#if os(macOS)
-struct PolicyScriptsTabViewDetail: View {
-    var script: PolicyScripts
-    var policyID: Int
-    var server: String
-
-    @EnvironmentObject var xmlController: XmlBrain
-    @EnvironmentObject var networkController: NetBrain
-    @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
-
-    @State private var parameter4: String = ""
-    @State private var parameter5: String = ""
-    @State private var parameter6: String = ""
-    @State private var parameter7: String = ""
-    @State private var parameter8: String = ""
-    @State private var parameter9: String = ""
-    @State private var parameter10: String = ""
-    @State private var priority: String = ""
-    @State private var selectedScriptNumber: Int = 0
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(script.name ?? "").font(.title2).bold()
-
-                Group {
-                    HStack { Text("Parameter 4:") ; TextField("parameter4", text: $parameter4) }
-                    HStack { Text("Parameter 5:") ; TextField("parameter5", text: $parameter5) }
-                    HStack { Text("Parameter 6:") ; TextField("parameter6", text: $parameter6) }
-                    HStack { Text("Parameter 7:") ; TextField("parameter7", text: $parameter7) }
-                    HStack { Text("Parameter 8:") ; TextField("parameter8", text: $parameter8) }
-                    HStack { Text("Parameter 9:") ; TextField("parameter9", text: $parameter9) }
-                    HStack { Text("Parameter 10:") ; TextField("parameter10", text: $parameter10) }
-
-                    HStack {
-                        Text("Priority:")
-                        TextField("Before/After", text: $priority).frame(minWidth: 120)
-                    }
-                }
-
-                HStack {
-                    Picker("Script Index", selection: $selectedScriptNumber) {
-                        ForEach(0..<10) { i in Text("\(i)") }
-                    }
-                    .pickerStyle(.menu)
-
-                    Spacer()
-
-                    Button("Update Parameter") {
-                        progress.showProgress()
-                        progress.waitForABit()
-
-                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: selectedScriptNumber, parameter4: parameter4, parameter5: parameter5, parameter6: parameter6, parameter7: parameter7, parameter8: parameter8, parameter9: parameter9, parameter10: parameter10, priority: priority)
-
-                        Task {
-                            do {
-                                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                            } catch {
-                                print("Failed to refresh detailed policy after replacing script parameter: \(error)")
-                            }
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                }
-
-                Spacer()
-            }
-            .padding()
-            .onAppear {
-                parameter4 = script.parameter4 ?? ""
-                parameter5 = script.parameter5 ?? ""
-                parameter6 = script.parameter6 ?? ""
-                parameter7 = script.parameter7 ?? ""
-                parameter8 = script.parameter8 ?? ""
-                parameter9 = script.parameter9 ?? ""
-                parameter10 = script.parameter10 ?? ""
-                priority = script.priority ?? ""
-            }
-        }
-    }
-}
-#endif
 
 //#Preview {
 //    PolicyEditTabView()
 //}
+

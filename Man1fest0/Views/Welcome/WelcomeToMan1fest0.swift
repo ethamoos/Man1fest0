@@ -495,18 +495,22 @@ struct FeatureCategoryCard: View {
         case "PolicyView", "PoliciesActionView":
             Task {
                 print("Prefetching policies data for destination: \(destination)")
-                try? await networkController.getAllPolicies(server: networkController.server, authToken: networkController.authToken)
+                // capture the environment object into a local constant for use inside the Task
+                let nc = networkController
+                try? await nc.getAllPolicies(server: nc.server, authToken: nc.authToken)
                 try? await Task.sleep(nanoseconds: 200_000_000) // small delay to let UI update
             }
         case "PackageView", "PackagesView":
             Task {
                 print("Prefetching packages data")
-                try? await networkController.getAllPackages(server: networkController.server)
+                let nc = networkController
+                try? await nc.getAllPackages(server: nc.server)
             }
         case "ScriptsView", "ScriptUsageView":
             Task {
                 print("Prefetching scripts data")
-                try? await networkController.getAllScripts(server: networkController.server, authToken: networkController.authToken)
+                let nc = networkController
+                try? await nc.getAllScripts(server: nc.server, authToken: nc.authToken)
             }
         default:
             break

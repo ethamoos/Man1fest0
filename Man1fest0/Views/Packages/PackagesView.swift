@@ -13,6 +13,7 @@ struct PackagesView: View {
     var server: String
     var selectedResourceType: ResourceType
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var progress: Progress
     @State var searchText = ""
     @State var selection = Set<Package>()
     // macOS Table uses UUID-based selection; keep both representations and sync between them
@@ -47,7 +48,24 @@ struct PackagesView: View {
     // Local helper to trigger network loads - matches other views' behavior
     func handleConnect(resourceType: ResourceType) {
         print("PackagesView.handleConnect: \(resourceType)")
-        networkController.connect(server: server,resourceType: resourceType, authToken: networkController.authToken)
+        Task {
+            // Ensure NetBrain has a token and is connected
+            await networkController.connect()
+
+            // Build URL for the requested resource and send request via NetBrain.request
+            guard let serverURL = URL(string: server) else {
+                print("handleConnect: invalid server URL: \(server)")
+                return
+            }
+
+            // Use JSSResource path for most resources. getURLFormat returns the correct fragment.
+            let path = getURLFormat(data: resourceType)
+            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(path)
+
+            await MainActor.run {
+                networkController.request(url: url, resourceType: resourceType, authToken: networkController.authToken)
+            }
+        }
     }
 
     // Extracted subviews to help the compiler type-check large SwiftUI bodies
@@ -83,9 +101,13 @@ struct PackagesView: View {
         .padding([.horizontal, .top])
     }
 
-    private var packagesListView: some View {
+    private var packagesListView: AnyView {
+        AnyView(makePackagesListView())
+    }
+
+    // Extracted large view into a helper to reduce compiler type-check complexity
+    private func makePackagesListView() -> some View {
         NavigationView {
-            // Simpler, compiler-friendly table-like layout with sortable columns
             VStack(spacing: 0) {
                 // Header with searchable field and actions
                 HStack {
@@ -164,16 +186,12 @@ struct PackagesView: View {
                     }
                 }
                 .onChange(of: packageSelectionIDs) { newIDs in
-                    // Sync UUID selection to package objects set used elsewhere
                     let selectedPkgs = networkController.packages.filter { newIDs.contains($0.id) }
                     self.selection = Set(selectedPkgs)
                 }
                 .onChange(of: selection) { newSelection in
-                    // If other code modifies the Set<Package>, reflect that back into the UUID-based table selection
-                    let ids = Set(newSelection.map { $0.id })
-                    if ids != packageSelectionIDs {
-                        packageSelectionIDs = ids
-                    }
+                    // When user selects a package in the macOS table (or selection changes), delegate to helper
+                    selectionChanged(newSelection)
                 }
                 #else
                 ScrollView {
@@ -187,7 +205,6 @@ struct PackagesView: View {
                                             .lineLimit(1)
                                     }
                                     Spacer()
-                                    // ID column - prefer jamfId when available, otherwise UUID
                                     Text(package.jamfId != 0 ? String(package.jamfId) : package.id.uuidString)
                                         .font(.caption.monospaced())
                                         .foregroundColor(.secondary)
@@ -203,49 +220,27 @@ struct PackagesView: View {
                 }
                 #endif
             }
-             .searchable(text: $searchText)
-             .onChange(of: searchText) { newValue in
-                 // Debounce typing and compute the filtered snapshot off the main actor
-                 // filterDebouncer.debounce(interval: 0.25) {
-                 //     Task {
-                 //         // Snapshot safely on the MainActor
-                 //         let snapshot = await MainActor.run { networkController.packages }
-                 //         // Filter off-main-thread
-                 //         let q = newValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                 //         let result: [Package]
-                 //         if q.isEmpty {
-                 //             result = snapshot
-                 //         } else {
-                 //             result = await Task.detached(priority: .userInitiated) {
-                 //                 return snapshot.filter { $0.name.lowercased().contains(q) || ($0.filename?.lowercased().contains(q) ?? false) }
-                 //             }.value
-                 //         }
-                 //         await MainActor.run {
-                 //             self.filteredPackages = result
-                 //         }
-                 //     }
-                 // }
-             }
-             .onAppear {
-                 // initialize snapshot
-                 // self.filteredPackages = networkController.packages
-             }
-             .foregroundColor(.primary)
- #if os(macOS)
-             .frame(minWidth: 350, maxWidth: .infinity)
- #endif
- 
-             // Detail placeholder on right side for NavigationView
-             Text("Select a package to view details")
-                 .foregroundColor(.secondary)
-                 .padding()
-         }
- #if os(macOS)
-         .navigationTitle("Packages")
- #endif
-         .listStyle(.inset)
-         .navigationViewStyle(DefaultNavigationViewStyle())
-     }
+        }
+    }
+
+    private func selectionChanged(_ newSelection: Set<Package>) {
+        guard let pkg = newSelection.first else { return }
+        networkController.packageDetailed = nil
+        print("selectionChanged: selected package jamfId=\(pkg.jamfId), name=\(pkg.name)")
+        Task {
+            await MainActor.run { progress.showProgress() }
+            do {
+                try await networkController.getDetailedPackage(server: server, authToken: networkController.authToken, packageID: String(pkg.jamfId))
+                // After fetch, log the detailed package received
+                await MainActor.run {
+                    print("selectionChanged: fetched packageDetailed=\(String(describing: networkController.packageDetailed))")
+                }
+            } catch {
+                print("Failed to fetch detailed package for selection: \(error)")
+            }
+            await MainActor.run { progress.endProgress() }
+        }
+    }
     
     // Sorting state and helpers
     private enum SortField { case name, id }
