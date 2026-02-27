@@ -172,7 +172,22 @@ struct CreatePolicyView: View {
         //              selections
         //  ################################################################################
         
+        // Selection row always shown under header so users see selection count
+        HStack(spacing: 8) {
+            Text("Selection:")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+            Spacer()
+            Text("Selected: \(packageMultiSelection.count)")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.top, 4)
         
+        Divider()
+
         List(Array(packageMultiSelection), id: \.self) { selectedJamfId in
             Text(networkController.packages.first(where: { $0.jamfId == selectedJamfId })?.name ?? "")
         }
@@ -183,9 +198,9 @@ struct CreatePolicyView: View {
             
             Group {
                 
-            // ######################################################################################
+            // ####################################################
             // CREATE NEW POLICY - with multiple packages
-            // ######################################################################################
+            // ####################################################
                 
                 LazyVGrid(columns: columns, spacing: 5) {
                     
@@ -493,6 +508,26 @@ struct CreatePolicyView: View {
         }
     }
     
+    // Added packagesSection composed view (renders header + platform-specific selectable list/table)
+    private var packagesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            packagesHeader
+
+            // Platform-specific selectable view: native macOS Table or iOS List
+            Group {
+                #if os(macOS)
+                packagesTable
+                    .frame(minHeight: 200)
+                #else
+                packagesListView
+                    .frame(minHeight: 200)
+                #endif
+            }
+            .padding(.top, 4)
+        }
+        .padding(.vertical, 6)
+    }
+
     // Extracted packages header to simplify type-checking
     private var packagesHeader: some View {
         VStack(alignment: .leading) {
@@ -514,43 +549,7 @@ struct CreatePolicyView: View {
                     .help("Toggle sort direction")
                 }
             }
-        }
-    }
 
-    // Extracted packages section to simplify `body` and help the compiler
-    private var packagesSection: some View {
-        Section(header: packagesHeader) {
-            // Table-like header (Name | ID)
-            HStack {
-                Text("Name")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading)
-
-                Text("ID")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .frame(width: 120, alignment: .trailing)
-                    .padding(.trailing)
-            }
-            .padding(.vertical, 6)
-    #if os(macOS)
-            .background(Color(NSColor.controlBackgroundColor))
-    #else
-            .background(Color(UIColor.secondarySystemBackground))
-    #endif
-
-            Group {
-    #if os(macOS)
-                packagesTable
-    #else
-                packagesListView
-    #endif
-            }
-            .searchable(text: $searchText)
-            .listStyle(.inset)
-            .padding()
         }
     }
 
@@ -577,24 +576,44 @@ struct CreatePolicyView: View {
         }
     }
 
-    // Small iOS/List alternative extracted separately
-    private var packagesListView: some View {
-        List(sortedPackages, id: \.jamfId, selection: $packageMultiSelection) { package in
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(package.name)
-                        .font(.system(size: 12.0))
-                        .lineLimit(1)
-                }
-                Spacer()
-                Text(package.jamfId != 0 ? String(package.jamfId) : package.id.uuidString)
-                    .font(.caption.monospaced())
-                    .foregroundColor(.secondary)
-                    .frame(width: 120, alignment: .trailing)
-            }
-            .contentShape(Rectangle())
-        }
-    }
+     // Small iOS/List alternative extracted separately
+     private var packagesListView: some View {
+    
+         // Show a small header row above the selectable list so users understand this pane
+         
+          
+         
+         VStack(alignment: .leading, spacing: 6) {
+             // Selection row always shown under header so users see selection count
+             HStack(spacing: 8) {
+                 Text("Selection:")
+                     .font(.caption)
+                     .fontWeight(.semibold)
+                     .foregroundColor(.primary)
+                 Spacer()
+                 Text("Selected: \(packageMultiSelection.count)")
+                     .font(.caption2)
+                     .foregroundColor(.secondary)
+             }
+             .padding(.horizontal)
+             .padding(.top, 4)
+             List(sortedPackages, id: \.jamfId, selection: $packageMultiSelection) { package in
+                 HStack(alignment: .center, spacing: 12) {
+                     VStack(alignment: .leading, spacing: 2) {
+                         Text(package.name)
+                             .font(.system(size: 12.0))
+                             .lineLimit(1)
+                     }
+                     Spacer()
+                     Text(package.jamfId != 0 ? String(package.jamfId) : package.id.uuidString)
+                         .font(.caption.monospaced())
+                         .foregroundColor(.secondary)
+                         .frame(width: 120, alignment: .trailing)
+                 }
+                 .contentShape(Rectangle())
+             }
+         }
+      }
     
     // End of view helpers
 }

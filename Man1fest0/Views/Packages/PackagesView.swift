@@ -15,6 +15,8 @@ struct PackagesView: View {
     @EnvironmentObject var networkController: NetBrain
     @State var searchText = ""
     @State var selection = Set<Package>()
+    // macOS Table uses UUID-based selection; keep both representations and sync between them
+    @State private var packageSelectionIDs = Set<UUID>()
     @State var packages: [Package] = []
 
     // Snapshot of filtered results used by the List to reduce UI work
@@ -146,6 +148,34 @@ struct PackagesView: View {
 #endif
 
                 // Rows
+                #if os(macOS)
+                // Native macOS Table with selection by UUID
+                Table(sortedPackages, selection: $packageSelectionIDs) {
+                    TableColumn("Name") { pkg in
+                        Text(pkg.name)
+                            .font(.system(size: 13, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                    TableColumn("ID") { pkg in
+                        Text(pkg.jamfId != 0 ? String(pkg.jamfId) : pkg.id.uuidString)
+                            .font(.caption.monospaced())
+                            .foregroundColor(.secondary)
+                            .frame(width: 120, alignment: .trailing)
+                    }
+                }
+                .onChange(of: packageSelectionIDs) { newIDs in
+                    // Sync UUID selection to package objects set used elsewhere
+                    let selectedPkgs = networkController.packages.filter { newIDs.contains($0.id) }
+                    self.selection = Set(selectedPkgs)
+                }
+                .onChange(of: selection) { newSelection in
+                    // If other code modifies the Set<Package>, reflect that back into the UUID-based table selection
+                    let ids = Set(newSelection.map { $0.id })
+                    if ids != packageSelectionIDs {
+                        packageSelectionIDs = ids
+                    }
+                }
+                #else
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(sortedPackages) { package in
@@ -171,6 +201,7 @@ struct PackagesView: View {
                         }
                     }
                 }
+                #endif
             }
              .searchable(text: $searchText)
              .onChange(of: searchText) { newValue in
