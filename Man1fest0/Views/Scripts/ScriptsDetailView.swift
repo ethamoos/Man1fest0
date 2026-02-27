@@ -31,9 +31,15 @@ struct ScriptsDetailView: View {
             // Header / Top bar
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(scriptName.isEmpty ? currentScript.name : scriptName)
-                        .font(.title)
-                        .fontWeight(.semibold)
+                    if isEditing {
+                        TextField(scriptName.isEmpty ? currentScript.name : scriptName, text: $scriptName)
+                            .padding(4)
+                            .border(Color.gray)
+                    } else {
+                        Text(scriptName.isEmpty ? currentScript.name : scriptName)
+                            .font(.title)
+                            .fontWeight(.semibold)
+                    }
                     HStack(spacing: 10) {
                         Text("ID: \(currentScript.id)")
                             .font(.subheadline)
