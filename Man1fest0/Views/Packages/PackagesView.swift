@@ -96,7 +96,7 @@ struct PackagesView: View {
                             Text("ID").tag(SortField.id)
                         }
                         .pickerStyle(.segmented)
-                        .frame(maxWidth: 220)
+                        .frame(maxWidth: 300)
 
                         Button(action: { sortAscending.toggle() }) {
                             Image(systemName: sortAscending ? "arrow.up" : "arrow.down")
@@ -232,7 +232,7 @@ struct PackagesView: View {
              }
              .foregroundColor(.primary)
  #if os(macOS)
-             .frame(minWidth: 300, maxWidth: .infinity)
+             .frame(minWidth: 350, maxWidth: .infinity)
  #endif
  
              // Detail placeholder on right side for NavigationView
