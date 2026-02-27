@@ -77,6 +77,8 @@
 		A8DD6B3B2A13CA890098563C /* ComputerActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8DD6B3A2A13CA890098563C /* ComputerActionView.swift */; };
 		A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8DECD592BD7FA2700D79A11 /* Layout.swift */; };
 		A8DECD5E2BD999AE00D79A11 /* BackgroundTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8DECD5D2BD999AE00D79A11 /* BackgroundTasks.swift */; };
+		A8EA615C2F521D760011BD56 /* PackagesUnsortedDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EA615B2F521D760011BD56 /* PackagesUnsortedDetailView.swift */; };
+		A8EA615E2F521E130011BD56 /* PackagesUnsortedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EA615D2F521E130011BD56 /* PackagesUnsortedView.swift */; };
 		A8EC41122B0277B500496EC2 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EC41112B0277B500496EC2 /* TestView.swift */; };
 		A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8ECB7BE2C88478600FAFDC2 /* CommandBrain.swift */; };
 		A8ECB7C12C88492700FAFDC2 /* PushBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8ECB7C02C88492700FAFDC2 /* PushBrain.swift */; };
@@ -186,6 +188,8 @@
 		A8DD6B3A2A13CA890098563C /* ComputerActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerActionView.swift; sourceTree = "<group>"; };
 		A8DECD592BD7FA2700D79A11 /* Layout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
 		A8DECD5D2BD999AE00D79A11 /* BackgroundTasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTasks.swift; sourceTree = "<group>"; };
+		A8EA615B2F521D760011BD56 /* PackagesUnsortedDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesUnsortedDetailView.swift; sourceTree = "<group>"; };
+		A8EA615D2F521E130011BD56 /* PackagesUnsortedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesUnsortedView.swift; sourceTree = "<group>"; };
 		A8EC41112B0277B500496EC2 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
 		A8ECB7BE2C88478600FAFDC2 /* CommandBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandBrain.swift; sourceTree = "<group>"; };
 		A8ECB7C02C88492700FAFDC2 /* PushBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushBrain.swift; sourceTree = "<group>"; };
@@ -449,6 +453,8 @@
 		E48D59D42C5961B800E1E35B /* Packages */ = {
 			isa = PBXGroup;
 			children = (
+				A8EA615D2F521E130011BD56 /* PackagesUnsortedView.swift */,
+				A8EA615B2F521D760011BD56 /* PackagesUnsortedDetailView.swift */,
 				A813124329D4B50800BB1C9F /* PackagesView.swift */,
 				A886701C2AA8E5C0009DA6AA /* PackagesActionView.swift */,
 				A813124529D4B52800BB1C9F /* PackagesDetailView.swift */,
@@ -689,6 +695,7 @@
 				A800E8452F3F25CE000250E7 /* WelcomeToMan1fest0.swift in Sources */,
 				A83D00DB2D774FCA0091B794 /* ErrorView.swift in Sources */,
 				A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */,
+				A8EA615C2F521D760011BD56 /* PackagesUnsortedDetailView.swift in Sources */,
 				A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */,
 				A87E84722F10F31400CF42D0 /* APIRequest.swift in Sources */,
 				E493197F2B6429C300B58519 /* PrestageBrain.swift in Sources */,
@@ -715,6 +722,7 @@
 				E49319852B67976C00B58519 /* PrestagesView.swift in Sources */,
 				A8DD6B3B2A13CA890098563C /* ComputerActionView.swift in Sources */,
 				E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */,
+				A8EA615E2F521E130011BD56 /* PackagesUnsortedView.swift in Sources */,
 				A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */,
 				E41BA0DD2C4C0E790060673C /* JamfObject.swift in Sources */,
 				E493198F2B679E3200B58519 /* PrestagesDetailView.swift in Sources */,

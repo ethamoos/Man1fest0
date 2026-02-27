@@ -122,10 +122,16 @@ struct OptionsView: View {
 
                             DisclosureGroup("Packages") {
                                 
-                                NavigationLink(destination: PackagesView(server: server, selectedResourceType: ResourceType.package )) {
+                             
+                                
+                                NavigationLink(destination: PackagesUnsortedView(server: server, selectedResourceType: ResourceType.package )) {
                                     Text("Packages")
                                 }
-
+                                
+                                NavigationLink(destination: PackagesView(server: server, selectedResourceType: ResourceType.package )) {
+                                    Text("Packages (sorted)")
+                                }
+                                
                                 NavigationLink(destination: PackagesActionView(selectedResourceType: ResourceType.package, server: server )) {
                                     Text("Package Actions")
                                 }
