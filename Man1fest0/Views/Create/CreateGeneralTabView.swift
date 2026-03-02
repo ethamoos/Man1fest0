@@ -339,7 +339,7 @@ struct CreateGeneralTabView: View {
 //                        Text("Select File")
 //                    }
 //                })
-//                
+//
 //                Button(action: {
 //                    progress.showProgress()
 //                    progress.waitForABit()
@@ -356,7 +356,7 @@ struct CreateGeneralTabView: View {
 //                }
 //                .buttonStyle(.borderedProminent)
 //                .tint(.blue)
-//                
+//
 //
 //            }
             
@@ -367,7 +367,7 @@ struct CreateGeneralTabView: View {
                     TextField("Filter", text: $packageFilter)
                     Picker(selection: $selectedPackageId, label: Text("").bold()) {
                         Text("No package selected").tag(nil as Int?)
-                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)}), id: \.self) { package in
+                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)})) { package in
                             Text(String(describing: package.name))
                                 .tag(package.jamfId as Int?)
                         }

@@ -5,23 +5,24 @@ import Foundation
 // MARK: - ConfigurationProfile
 struct ConfigurationProfiles: Codable, Identifiable, Hashable {
     var id = UUID()
-    var configurationProfiles: [ConfigurationProfile]?
-    var computerConfigurations: [ConfigurationProfile]?
+    // list of lightweight configuration profile summaries returned by the API
+    var configurationProfiles: [ConfigProfileSummary]?
+    var computerConfigurations: [ConfigProfileSummary]?
     enum CodingKeys: String, CodingKey {
         case configurationProfiles = "configuration_profiles"
         case computerConfigurations = "os_x_configuration_profiles"
     }
-    
-    struct ConfigurationProfile: Codable, Identifiable, Hashable {
-        
-        var id = UUID()
-        var jamfId: Int?
-        var name: String
-        
-        enum CodingKeys: String, CodingKey {
-            case jamfId = "id"
-            case name = "name"
-        }
+}
+
+// Lightweight summary used in listings
+struct ConfigProfileSummary: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var jamfId: Int?
+    var name: String
+
+    enum CodingKeys: String, CodingKey {
+        case jamfId = "id"
+        case name = "name"
     }
 }
 
@@ -36,16 +37,206 @@ struct MobileConfigurationProfile: Codable, Hashable {
 }
 
 struct ConfigurationProfile: Codable, Hashable {
-    var general: General?
-    //    var scope: Scope?
-    //    var selfService: SelfService?
-    //    var payloads: ConfigPayload?
+    var general: ConfigProfileGeneral?
+}
+
+// This file was generated from JSON Schema using codebeautify, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let welcome6 = try Welcome6(json)
+
+//import Foundation
+
+// MARK: - osXConfigProfileDetailedResponse
+struct OSXConfigProfileDetailedResponse: Codable {
     
+    let osxConfigurationProfile: OSXConfigProfileDetailed
+
     enum CodingKeys: String, CodingKey {
-        case general = "general"
-        //        case scope = "scope"
-        //        case selfService = "self_service"
-        //        case payloads = "payloads"
+        case osxConfigurationProfile = "os_x_configuration_profile"
+    }
+}
+
+// MARK: - osXConfigProfileDetailed
+struct OSXConfigProfileDetailed: Codable, Hashable {
+    let general: ConfigProfileGeneral?
+    let scope: ConfigScope?
+    let selfService: ConfigSelfService?
+
+    enum CodingKeys: String, CodingKey {
+        case general
+        case scope
+        case selfService = "self_service"
+    }
+}
+
+// MARK: - General
+struct ConfigProfileGeneral: Codable, Hashable {
+    let id: Int?
+    let name: String?
+    let generalDescription: String?
+    let site: ConfigCategoryElement?
+    let category: ConfigCategoryElement?
+    let distributionMethod: String?
+    let userRemovable: Bool?
+    let level: String?
+    let uuid: String?
+    let redeployOnUpdate: String?
+    let payloads: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case generalDescription = "description"
+        case site
+        case category
+        case distributionMethod = "distribution_method"
+        case userRemovable = "user_removable"
+        case level
+        case uuid
+        case redeployOnUpdate = "redeploy_on_update"
+        case payloads
+    }
+}
+
+// MARK: - CategoryElement
+struct ConfigCategoryElement: Codable, Hashable {
+    let id: Int?
+    let name: String?
+}
+
+// MARK: - Scope
+struct ConfigScope: Codable, Hashable {
+    let allComputers: Bool?
+    let allJssUsers: Bool?
+    let computers: [ConfigCategoryElement]?
+    let buildings: [ConfigCategoryElement]?
+    let departments: [ConfigCategoryElement]?
+    let computerGroups: [ConfigCategoryElement]?
+    let jssUsers: [ConfigCategoryElement]?
+    let jssUserGroups: [String: ConfigCategoryElement]?
+    let limitations: ConfigLimitations?
+    let exclusions: ConfigExclusions?
+
+    enum CodingKeys: String, CodingKey {
+        case allComputers = "all_computers"
+        case allJssUsers = "all_jss_users"
+        case computers
+        case buildings
+        case departments
+        case computerGroups = "computer_groups"
+        case jssUsers = "jss_users"
+        case jssUserGroups = "jss_user_groups"
+        case limitations
+        case exclusions
+    }
+}
+
+// MARK: - Exclusions
+struct ConfigExclusions: Codable, Hashable {
+    let computers: [ConfigCategoryElement]?
+    let buildings: [ConfigCategoryElement]?
+    let departments: [ConfigCategoryElement]?
+    let computerGroups: [ConfigCategoryElement]?
+    let users: [ConfigCategoryElement]?
+    let userGroups: [ConfigCategoryElement]?
+    let networkSegments: [ConfigCategoryElement]?
+    let ibeacons: [ConfigCategoryElement]?
+    let jssUsers: [ConfigCategoryElement]?
+    let jssUserGroups: [ConfigCategoryElement]?
+
+    enum CodingKeys: String, CodingKey {
+        case computers
+        case buildings
+        case departments
+        case computerGroups = "computer_groups"
+        case users
+        case userGroups = "user_groups"
+        case networkSegments = "network_segments"
+        case ibeacons
+        case jssUsers = "jss_users"
+        case jssUserGroups = "jss_user_groups"
+    }
+}
+
+// MARK: - ComputerGroups
+struct ConfigComputerGroups: Codable, Hashable {
+    let computerGroup: [ConfigCategoryElement]?
+
+    enum CodingKeys: String, CodingKey {
+        case computerGroup = "computer_group"
+    }
+}
+
+// MARK: - Limitations
+struct ConfigLimitations: Codable, Hashable {
+    let users: [ConfigCategoryElement]?
+    let userGroups: [ConfigCategoryElement]?
+    let networkSegments: [ConfigCategoryElement]?
+    let ibeacons: [ConfigCategoryElement]?
+
+    enum CodingKeys: String, CodingKey {
+        case users
+        case userGroups = "user_groups"
+        case networkSegments = "network_segments"
+        case ibeacons
+    }
+}
+
+// MARK: - SelfService
+struct ConfigSelfService: Codable, Hashable {
+    let selfServiceDisplayName: String?
+    let installButtonText: String?
+    let selfServiceDescription: String?
+    let forceUsersToViewDescription: Bool?
+    let security: ConfigSecurity?
+    let selfServiceIcon: ConfigSelfServiceIcon?
+    let featureOnMainPage: Bool?
+    let selfServiceCategories: [ConfigSelfServiceCategory]?
+    let notification: String?
+    let notificationSubject: String?
+    let notificationMessage: String?
+
+    enum CodingKeys: String, CodingKey {
+        case selfServiceDisplayName = "self_service_display_name"
+        case installButtonText = "install_button_text"
+        case selfServiceDescription = "description"
+        case forceUsersToViewDescription = "force_users_to_view_description"
+        case security
+        case selfServiceIcon = "self_service_icon"
+        case featureOnMainPage = "feature_on_main_page"
+        case selfServiceCategories = "self_service_categories"
+        case notification
+        case notificationSubject = "notification_subject"
+        case notificationMessage = "notification_message"
+    }
+}
+
+// A minimal placeholder for the self service icon object (API sometimes returns an object)
+struct ConfigSelfServiceIcon: Codable, Hashable {
+    // keep flexible / empty – we only need to accept an object or empty object
+}
+
+// MARK: - Security
+struct ConfigSecurity: Codable, Hashable {
+    let removalDisallowed: String?
+
+    enum CodingKeys: String, CodingKey {
+        case removalDisallowed = "removal_disallowed"
+    }
+}
+
+// MARK: - SelfServiceCategoriesCategory
+struct ConfigSelfServiceCategory: Codable, Hashable {
+    let id: Int?
+    let name: String?
+    let displayIn: Bool?
+    let featureIn: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case displayIn = "display_in"
+        case featureIn = "feature_in"
     }
 }
 
@@ -288,7 +479,7 @@ struct computerGroupResponse: Codable {
         let priority: Int
         let andOr, searchType, value: String
         let openingParen, closingParen: Bool
-        
+
         enum CodingKeys: String, CodingKey {
             case name, priority
             case andOr = "and_or"
@@ -296,6 +487,28 @@ struct computerGroupResponse: Codable {
             case value
             case openingParen = "opening_paren"
             case closingParen = "closing_paren"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.name = try container.decode(String.self, forKey: .name)
+            self.priority = try container.decode(Int.self, forKey: .priority)
+            self.andOr = try container.decode(String.self, forKey: .andOr)
+            self.searchType = try container.decode(String.self, forKey: .searchType)
+            self.value = try container.decode(String.self, forKey: .value)
+            self.openingParen = try container.decode(Bool.self, forKey: .openingParen)
+            self.closingParen = try container.decode(Bool.self, forKey: .closingParen)
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(name, forKey: .name)
+            try container.encode(priority, forKey: .priority)
+            try container.encode(andOr, forKey: .andOr)
+            try container.encode(searchType, forKey: .searchType)
+            try container.encode(value, forKey: .value)
+            try container.encode(openingParen, forKey: .openingParen)
+            try container.encode(closingParen, forKey: .closingParen)
         }
     }
     

@@ -138,7 +138,7 @@ struct PolicySelfServiceTabView: View {
                     .clipShape(.rect(cornerRadius: 25))
                     
 #if os(macOS)
-                    List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
+                    List(networkController.allIconsDetailed, selection: $selectedIcon) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
                             Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
@@ -157,7 +157,7 @@ struct PolicySelfServiceTabView: View {
                     .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
 #else
                     
-                    List(networkController.allIconsDetailed, id: \.self) { icon in
+                    List(networkController.allIconsDetailed) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
                             Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
@@ -182,7 +182,7 @@ struct PolicySelfServiceTabView: View {
                         TextField("Filter", text: $iconFilter)
                         Picker(selection: $selectedIcon, label: Text("").bold()) {
                                 
-                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter.lowercased())}), id: \.self) { icon in
+                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter.lowercased())})) { icon in
                                 HStack {
                                     Text(String(describing: icon.name))
                                     AsyncImage(url: URL(string: icon.url))  { image in

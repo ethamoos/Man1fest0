@@ -7,6 +7,7 @@
 //
 import SwiftUI
 import UniformTypeIdentifiers
+import AppKit
 
 struct ReportsView: View {
     
@@ -45,141 +46,230 @@ struct ReportsView: View {
 
     @State private var exporting = false
 
+    // lightweight local refresh trigger (uses networkController publisher)
+    @State private var refreshToggle = false
     
     var body: some View {
-        
+        // Break complex expressions into small locals so the compiler can type-check faster
+        let hasPolicies = !networkController.allPoliciesDetailed.isEmpty
+        let totalPoliciesConverted = networkController.allPoliciesConverted.count
+        let totalPoliciesDetailed = networkController.allPoliciesDetailed.count
+        let totalPackages = networkController.allPackages.count
+        let assignedPackagesCount = backgroundTasks.assignedPackagesByNameDict.count
+        let unassignedPackagesCount = backgroundTasks.unassignedPackagesArray.count
+        let totalScripts = networkController.scripts.count
+        let assignedScriptsCount = policyController.assignedScriptsByNameDict.count
+        let unassignedScriptsCount = policyController.unassignedScriptsArray.count
+        let currentDateString = layout.date
+
         let text = String(describing: networkController.allPackages)
         let document = TextDocument(text: text)
 
-        Form {
-            
-            Group {
-                
-                if networkController.allPoliciesDetailed.count > 0 {
-                    
-                    VStack(alignment: .leading, spacing: 5) {
-                        
-                        Text("Jamf server is:\t\t\t\t\t\t\(server)")
-                            .fontWeight(.bold)
-                        
-                        Divider()
-                        
-                        Text("Total policies in Jamf:\t\t\t\t\(networkController.allPoliciesConverted.count)")
-                            .fontWeight(.bold)
-                        
-                        Text("Policy records downloaded:\t\t\t\(networkController.allPoliciesDetailed.count)")
-                            .fontWeight(.bold)
-                        
-                        Divider()
-                        
-                        Text("Total Packages in Jamf:\t\t\t\t\(networkController.allPackages.count )")
-                            .fontWeight(.bold)
-                        
-                        Text("Packages in a policy:\t\t\t\t\t\(backgroundTasks.assignedPackagesByNameDict.count)")
-                            .fontWeight(.bold)
-                        
-                        Text("Packages not in a policy :\t\t\t\t\(backgroundTasks.unassignedPackagesArray.count)")
-                            .fontWeight(.bold)
-                        
-                        Divider()
-                        
-                        Text("Total Scripts in Jamf:\t\t\t\t\t\(networkController.scripts.count)")
-                            .fontWeight(.bold)
-                        
-                        Text("Scripts in a policy:\t\t\t\t\t\(policyController.assignedScriptsByNameDict.count)")
-                            .fontWeight(.bold)
-                        
-                        Text("Scripts not in a policy:\t\t\t\t\(policyController.unassignedScriptsArray.count)")
-                            .fontWeight(.bold)
-                        
-                        Divider()
-                        
-                        Text("Current date is:\t\t\t\t\t\t\(layout.date)")
-                            .fontWeight(.bold)
-                        
-                        //                        Table(networkController.allPoliciesConverted, selection: $selection, sortOrder: $sortOrder) {
-                        //
-                        //                            TableColumn("Name", value: \.name)
-                        ////                            TableColumn("Category", value: \.category)
-                        //                            TableColumn("ID") {
-                        //                                policy in
-                        //                                Text(String(policy.jamfId ?? 0))
-                        //                            }
-                        //                        }
-                        //                        .onChange(of: sortOrder) { newOrder in
-                        //                            networkController.allPoliciesConverted.sort(using: newOrder)
-                        //                        }
-                        
-                        Button("Export Text") {
-                            exporting = true
-                            print("Export text pressed")
-//                            print(text)
-                        }
-                        .fileExporter(
-                            isPresented: $exporting,
-                            document: document,
-                            contentType: .plainText
-                        ) { result in
-                            switch result {
-                            case .success(let file):
-                                print("File:\(file) has exported")
-                            case .failure(let error):
-                                print(error)
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.yellow)
-                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
+        ScrollView {
+            VStack(spacing: 16) {
+                headerView
+
+                // Card with stats
+                Group {
+                    if hasPolicies {
+                        statsCardView(totalPoliciesConverted: totalPoliciesConverted,
+                                      totalPoliciesDetailed: totalPoliciesDetailed,
+                                      totalPackages: totalPackages,
+                                      assignedPackagesCount: assignedPackagesCount,
+                                      unassignedPackagesCount: unassignedPackagesCount,
+                                      totalScripts: totalScripts,
+                                      assignedScriptsCount: assignedScriptsCount,
+                                      unassignedScriptsCount: unassignedScriptsCount,
+                                      currentDateString: currentDateString,
+                                      document: document)
+                    } else {
+                        emptyCardView
                     }
-                    .padding()
-                    .border(.blue)
-//                }
-            } else {
-                Spacer()
-                VStack(alignment: .leading) {
-                    Text("No usage tasks performed yet\n")
-                    Text("Select:\n")
-                    Text("Packages/Package Usage\n").fontWeight(.bold)
-                    Text("or:\n")
-                    Text("Scripts/Script Usage").fontWeight(.bold)
                 }
-                .padding()
-            
-               
-                .font(.system(size: 22))
-                Spacer()
+
+                Spacer(minLength: 20)
             }
+            .padding(.bottom)
+        }
+        .fileExporter(
+            isPresented: $exporting,
+            document: document,
+            contentType: .plainText
+        ) { result in
+            switch result {
+            case .success(let file):
+                print("File:\(file) has exported")
+            case .failure(let error):
+                print(error)
             }
         }
     }
-    
-    
-    
-//    let id = UUID()
-//    var jamfId: Int
-//    var name: String
-//    @Published var allComputerRecordsInit: ComputerGroupMembers = ComputerGroupMembers(computer: ComputerMember(id: 0, name: "") )
 
-    
-//    var id = UUID()
-//    let jamfId: Int?
-//    let name: String?
-//    let enabled: Bool?
-//    let trigger: String?
-//    let triggerCheckin, triggerEnrollmentComplete, triggerLogin, triggerLogout: Bool?
-//    let triggerNetworkStateChanged, triggerStartup: Bool?
-//    let triggerOther, frequency: String?
-//    let locationUserOnly: Bool?
-//    let targetDrive: String?
-//    let offline: Bool?
-//        let category: Category?
-//    //    let dateTimeLimitations: DateTimeLimitations?
-//    //    let networkLimitations: NetworkLimitations?
-//    //    let overrideDefaultSettings: OverrideDefaultSettings?
-//    let networkRequirements: String?
-//    //    let site: Category?
-//    let mac_address: String?
-//    let ip_address: String?
-//    let payloads: String?
-//    
+    // MARK: - Subviews broken out to help type-checker
+
+    private var headerView: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Reports")
+                    .font(.largeTitle)
+                    .fontWeight(.semibold)
+                Text("Overview of server counts and usage")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    // trigger a lightweight refresh visually
+                    refreshToggle.toggle()
+                    // Signal that something changed in the NetBrain (harmless if it's an ObservableObject)
+                    networkController.objectWillChange.send()
+                }) {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+
+                Button(action: { exporting = true }) {
+                    Label("Export", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.accentColor)
+            }
+        }
+        .padding([.horizontal, .top])
+    }
+
+    @ViewBuilder
+    private func statsCardView(totalPoliciesConverted: Int,
+                               totalPoliciesDetailed: Int,
+                               totalPackages: Int,
+                               assignedPackagesCount: Int,
+                               unassignedPackagesCount: Int,
+                               totalScripts: Int,
+                               assignedScriptsCount: Int,
+                               unassignedScriptsCount: Int,
+                               currentDateString: String,
+                               document: TextDocument) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Jamf server:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text(server)
+                    .foregroundColor(.secondary)
+            }
+
+            Divider()
+
+            HStack {
+                Text("Total policies in Jamf:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(totalPoliciesConverted)")
+            }
+
+            HStack {
+                Text("Policy records downloaded:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(totalPoliciesDetailed)")
+            }
+
+            Divider()
+
+            HStack {
+                Text("Total Packages in Jamf:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(totalPackages)")
+            }
+
+            HStack {
+                Text("Packages in a policy:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(assignedPackagesCount)")
+            }
+
+            HStack {
+                Text("Packages not in a policy:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(unassignedPackagesCount)")
+            }
+
+            Divider()
+
+            HStack {
+                Text("Total Scripts in Jamf:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(totalScripts)")
+            }
+
+            HStack {
+                Text("Scripts in a policy:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(assignedScriptsCount)")
+            }
+
+            HStack {
+                Text("Scripts not in a policy:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text("\(unassignedScriptsCount)")
+            }
+
+            Divider()
+
+            HStack {
+                Text("Current date:")
+                    .fontWeight(.semibold)
+                Spacer()
+                Text(currentDateString)
+            }
+
+            // Export button remains available inside the card for convenience
+            HStack {
+                Spacer()
+                Button("Export Text") {
+                    exporting = true
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.yellow)
+                .shadow(color: .gray, radius: 2, x: 0, y: 2)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.gray.opacity(0.12))
+        )
+        .padding(.horizontal)
+    }
+
+    private var emptyCardView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("No usage tasks performed yet")
+                .font(.title2)
+                .fontWeight(.semibold)
+            Text("Try: Packages → Package Usage or Scripts → Script Usage")
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .padding(.horizontal)
+    }
+
 }

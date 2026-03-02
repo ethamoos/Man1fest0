@@ -552,7 +552,7 @@ enum SearchField: String, CaseIterable {
     // New scope-related fields
     case scopeAllComputers
     case scopeAllJSSUsers
-    case scopeComputers
+    case scopeComputers 
     case scopeComputerGroups
     case scopeBuildings
     case scopeDepartments

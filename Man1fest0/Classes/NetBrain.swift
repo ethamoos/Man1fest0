@@ -121,7 +121,8 @@ actor AsyncSemaphore {
     //  #############################################################################
 
     @Published var allConfigProfiles: ConfigurationProfiles = ConfigurationProfiles()
-    
+    @Published var OSXConfigProfileDetailed: OSXConfigProfileDetailed? = nil
+
     //  #############################################################################
     //    ############ Department
     //  #############################################################################
@@ -213,9 +214,14 @@ actor AsyncSemaphore {
     @Published var policyDetailed: PolicyDetailed? = nil
     @Published var allPoliciesDetailed: [PolicyDetailed?] = []
     @Published var allPoliciesDetailedGeneral: [General] = []
-    
+
     var singlePolicyDetailedGeneral: General? = nil
-    
+
+    // New: track whether we're actively fetching detailed policies to avoid concurrent/repeat runs
+    @Published var isFetchingDetailedPolicies: Bool = false
+    // Store failed policy IDs so callers can inspect and retry if needed
+    @Published var retryFailedDetailedPolicyCalls: [String] = []
+
     //    var imageA1: UIImage? = nil
     //    var imageA2: UIImage!
     //    var imageA3: UIImage = UIImage()
@@ -307,7 +313,7 @@ actor AsyncSemaphore {
     @Published var policyRequestDelay: TimeInterval
     private var lastRequestDate: Date?
 
-    init(minInterval: TimeInterval = 3.0) {
+    init(minInterval: TimeInterval = 0.0) {
         // look for a persisted setting first
         let persisted = UserDefaults.standard.double(forKey: "policyRequestDelay")
         if persisted > 0 {
@@ -616,6 +622,28 @@ actor AsyncSemaphore {
     }
     
     
+    // Fetch detailed user by id
+    func getDetailOSXConfigProfile(userID: String) async throws {
+        
+        print("Running func: getDetailOSXConfigProfile")
+
+        do {
+            let request = APIRequest<OSXConfigProfileDetailedResponse>(endpoint: "osxconfigurationprofiles/id/" + userID, method: .get)
+            print("APIRequest: \(request)")
+            // ensure we have an auth token
+            if authToken.isEmpty {
+                try await getToken(server: server, username: username, password: password )
+            }
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.OSXConfigProfileDetailed = decoded.osxConfigurationProfile
+            print("Loaded detail for user id: \(userID)")
+        } catch {
+            publishError(error, title: "Failed to load user details")
+            throw error
+        }
+    }
+    
+    
     
     
 //    func getBuildings(server: String, authToken: String) async throws {
@@ -728,43 +756,6 @@ actor AsyncSemaphore {
 //    }
 //
 //
-//
-//    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String) async throws {
-//
-//        let xml = """
-//        <?xml version="1.0" encoding="utf-8"?>
-//        <script>
-//            <name>\(scriptName)</name>
-//            <script_contents>\(scriptContent)</script_contents>
-//        </script>
-//        """
-//
-//
-//        separationLine()
-//        print("Running func: updateScript")
-//        print("scriptName is set to:\(scriptName)")
-//        print("scriptID is set to:\(scriptId)")
-//        separationLine()
-//        print("scriptContent is\(scriptContent)")
-//
-////        let scriptData = Data(scriptContent.utf8)
-//        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
-////        let url = URL(string: jamfURLQuery)!
-//        var request = URLRequest(url: URL(string: jamfURLQuery)!)
-//        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-//        request.addValue("application/xml", forHTTPHeaderField: "Accept")
-//        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-//        request.httpMethod = "PUT"
-//        request.httpBody = xml.data(using: .utf8)
-//
-////
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200")
-//            throw JamfAPIError.badResponseCode
-//        }
-//    }
-    
     
     
     
@@ -873,6 +864,13 @@ actor AsyncSemaphore {
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
+        // Avoid re-entrancy: if a fetch is already running, skip
+        if isFetchingDetailedPolicies {
+            print("getAllPoliciesDetailed called while a fetch is already in progress; skipping")
+            return
+        }
+        await MainActor.run { self.isFetchingDetailedPolicies = true; self.retryFailedDetailedPolicyCalls = [] }
+
         // Ignore passed authToken and use managed token instead
         let validToken = try await getValidToken(server: server)
         // Print visual separator for debugging logs
@@ -889,116 +887,63 @@ actor AsyncSemaphore {
         let maxConcurrentTasks = 4
         // Initialize array to track which policy fetches failed
         var failedCalls: [String] = []
-        
-        // Create a TaskGroup for structured concurrency with error handling
-        // Void.self means tasks don't return values (they just perform side effects)
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            // Create semaphore to limit number of concurrent tasks to maxConcurrentTasks
-            // This prevents overwhelming the system with too many parallel operations
-            let concurrencySemaphore = AsyncSemaphore(value: maxConcurrentTasks)
-            // Create semaphore to enforce rate limiting (only 1 network request at a time)
-            // This ensures we don't violate API rate limits even with concurrent processing
-            let requestSemaphore = AsyncSemaphore(value: 1)
-            
-            // Loop through each valid policy and create a concurrent task for it
-            for policy in validPolicies {
-                // Add a new task to the group that will fetch this policy's details
-                group.addTask {
-                    // Wait for an available concurrency slot (blocks if all 4 slots are busy)
-                    await concurrencySemaphore.wait()
-                    // Ensure we release the concurrency slot when this task exits (even if it crashes)
-                    defer { Task { await concurrencySemaphore.signal() } }
-                    
-                    // Extract the jamfId from the policy (0 if nil, though we filtered these out)
-                    let jamfIdVal = policy.jamfId ?? 0
-                    // Convert the jamfId to a string for the API call
-                    let policyID = String(describing: jamfIdVal)
-                    
-                    // Wrap the network request in error handling
-                    do {
-                        // Wait for rate limiting permission (only 1 request at a time across all tasks)
-                        await requestSemaphore.wait()
-                        // Ensure we release the rate limiting permission when done
-                        defer { Task { await requestSemaphore.signal() } }
-                        
-                        // Get current time for rate limiting calculations
-                        let now = Date()
-                        // Retrieve the timestamp of the last request from MainActor (UI thread)
-                        let lastRequestDate = await MainActor.run { self.lastRequestDate }
-                        // Get the configured minimum delay between requests from MainActor
-                        let policyRequestDelay = await MainActor.run { self.policyRequestDelay }
-                        
-                        // Check if we need to delay this request to respect rate limits
-                        if let last = lastRequestDate {
-                            // Calculate how much time has passed since the last request
-                            let elapsed = now.timeIntervalSince(last)
-                            // If not enough time has passed, calculate the required delay
-                            if elapsed < policyRequestDelay {
-                                let delay = policyRequestDelay - elapsed
-                                // Format the delay in human-readable form for logging
-                                let human = await MainActor.run { self.formatDuration(delay) }
-                                // Calculate when the next request will run
-                                let nextRunAt = Date().addingTimeInterval(delay)
-                                // Log the throttling behavior for debugging
-                                print("Throttling: sleeping for \(delay) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
-                                // Update UI status to show we're delaying
-                                await MainActor.run {
-                                    self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
-                                }
-                                // Sleep for the required delay time
-                                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                            }
-                        }
-                        
-                        // Update the last request timestamp to now (on MainActor for thread safety)
-                        await MainActor.run {
-                            self.lastRequestDate = Date()
-                        }
-                        
-                        // Make the actual network request to fetch policy details
-                        try await self.getDetailedPolicy(server: server, authToken: validToken, policyID: policyID)
-                        
-                        // Extract the policy name for logging (policy.name is non-optional)
-                        let name = policy.name
-                        // Log success with policy name if available
-                        if !name.isEmpty {
-                            print("Fetched policy detail for: \(name) (ID: \(policyID))")
-                        } else {
-                            // Fallback log if policy name is empty
-                            print("Fetched policy detail for ID: \(policyID)")
-                        }
-                        
-                    } catch {
-                        // Log the error for debugging purposes
-                        print("Error fetching detailed policy ID \(policyID): \(error)")
-                        // Add the failed policy ID to our tracking array (on MainActor for thread safety)
-                        await MainActor.run {
-                            failedCalls.append(policyID)
-                        }
+
+        // Sequentially fetch each policy detail to avoid MainActor reentrancy issues
+        for policy in validPolicies {
+            let jamfIdVal = policy.jamfId ?? 0
+            let policyID = String(describing: jamfIdVal)
+            do {
+                // Rate limiting: ensure minimum delay between requests
+                let now = Date()
+                let last = await MainActor.run { self.lastRequestDate }
+                let delayNeeded: TimeInterval = await MainActor.run { () -> TimeInterval in
+                    if let last = last {
+                        let elapsed = now.timeIntervalSince(last)
+                        return elapsed < self.policyRequestDelay ? (self.policyRequestDelay - elapsed) : 0
+                    } else {
+                        return 0
                     }
                 }
+
+                if delayNeeded > 0 {
+                    let human = await MainActor.run { self.formatDuration(delayNeeded) }
+                    let nextRunAt = Date().addingTimeInterval(delayNeeded)
+                    print("Throttling: sleeping for \(delayNeeded) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
+                    await MainActor.run { self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))" }
+                    try await Task.sleep(nanoseconds: UInt64(delayNeeded * 1_000_000_000))
+                }
+
+                // Update last request time
+                await MainActor.run { self.lastRequestDate = Date() }
+
+                // Perform the network request for the detailed policy
+                try await self.getDetailedPolicy(server: server, authToken: validToken, policyID: policyID)
+
+                let name = policy.name
+                if !name.isEmpty {
+                    print("Fetched policy detail for: \(name) (ID: \(policyID))")
+                } else {
+                    print("Fetched policy detail for ID: \(policyID)")
+                }
+            } catch {
+                print("Error fetching detailed policy ID \(policyID): \(error)")
+                await MainActor.run { failedCalls.append(policyID) }
             }
-            
-            // Wait for all tasks in the group to complete (ensures no task is left running)
-            try await group.waitForAll()
         }
 
-        // Check if any policy fetches failed during processing
+        // On completion, record failures but mark detailed fetch as completed so callers don't retry infinitely
         if !failedCalls.isEmpty {
-            // Log the failed policy IDs for debugging
             print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
-            // Future enhancement: store failed calls for retry functionality
-            // self.retryFailedDetailedPolicyCalls = failedCalls
-            // Update UI state to indicate incomplete success (on MainActor)
             await MainActor.run {
-                self.fetchedDetailedPolicies = false
+                self.retryFailedDetailedPolicyCalls = failedCalls
+                self.fetchedDetailedPolicies = true
+                self.isFetchingDetailedPolicies = false
             }
         } else {
-            // Log complete success for debugging
             print("getAllPoliciesDetailed completed successfully for all policies")
-            // Update UI state to indicate complete success (on MainActor)
             await MainActor.run {
                 self.fetchedDetailedPolicies = true
+                self.isFetchingDetailedPolicies = false
             }
         }
     }
@@ -1670,7 +1615,6 @@ actor AsyncSemaphore {
     }
     
     func batchDeleteScripts(selection:  Set<ScriptClassic>, server: String, authToken: String, resourceType: ResourceType) {
-        
         self.separationLine()
         print("Running: batchDeleteScripts")
         print("selection is: \(selection)")
@@ -1683,15 +1627,12 @@ actor AsyncSemaphore {
             print("Running: deleteScriptAlt")
             print("resourceType is: \(resourceType)")
             
-//            self.deleteScriptAlt(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
-            
             Task {
                 try await self.deleteScript(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
             }
         }
         self.separationLine()
         print("Finished - batchDeleteScripts")
-
     }
     
     func deleteGroup(server: String,resourceType: ResourceType, itemID: String, authToken: String)  async throws {
@@ -2152,16 +2093,20 @@ actor AsyncSemaphore {
     }
     
     
-    
-    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String) async throws {
+  
+    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String,category: String,filename: String,info: String, notes: String) async throws {
         
         let xml = """
         <?xml version="1.0" encoding="utf-8"?>
         <script>
             <name>\(scriptName)</name>
-            <script_contents>\(scriptContent)</script_contents>
+            <category>No category assigned</category>
+            <filename>\(filename)</filename>
+            <info>\(info)</info>
+            <notes>\(notes)</notes>
         </script>
         """
+
 
         
         separationLine()

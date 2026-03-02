@@ -208,9 +208,9 @@ struct PolicyDetailView: View {
                 .textSelection(.enabled)
                 .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
                 
-                //              ################################################################################
+                //  ################################################################################
                 //              Toolbar
-                //              ################################################################################
+                //  ################################################################################
                 
                 .toolbar {
                     
@@ -298,6 +298,7 @@ struct PolicyDetailView: View {
                     isPresented: $exporting,
                     document: document,
                     contentType: .xml
+                    
                 ) { result in
                     switch result {
                     case .success(let file):
@@ -505,7 +506,7 @@ struct PolicyDetailView: View {
                         
                         if !networkController.categories.isEmpty {
                             Picker(selection: $selectedCategory, label: Text("Category").fontWeight(.bold)) {
-                                ForEach(networkController.categories, id: \.self) { category in
+                                ForEach(networkController.categories) { category in
                                     Text(category.name).tag(category)
                                 }
                             }
@@ -550,7 +551,7 @@ struct PolicyDetailView: View {
             
             //  ##########################################################################
             //  Manually add to assigned list
-            //  ##########################################################################
+            //   ##########################################################################
             
             //  ##########################################################################
             //  TabView - TAB
@@ -645,12 +646,15 @@ struct PolicyDetailView: View {
             Task {
                 print("PolicyDetailView appeared - running getDetailedPolicy function")
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                policyName = networkController.policyDetailed?.general?.name ?? ""
-                policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
-                trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
-                trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
-                trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
-                trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+                
+                let fetchedPolicy = networkController.policyDetailed
+                
+                policyName = fetchedPolicy?.general?.name ?? ""
+                policyCustomTrigger = fetchedPolicy?.general?.triggerOther ?? ""
+                trigger_login = fetchedPolicy?.general?.triggerLogin ?? false
+                trigger_checkin = fetchedPolicy?.general?.triggerCheckin ?? false
+                trigger_startup = fetchedPolicy?.general?.triggerStartup ?? false
+                trigger_enrollment_complete = fetchedPolicy?.general?.triggerEnrollmentComplete ?? false
                
                if trigger_login || trigger_checkin || trigger_startup || trigger_enrollment_complete == true {
                    pushTriggerActiveWarning = true

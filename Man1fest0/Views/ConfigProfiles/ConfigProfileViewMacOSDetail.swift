@@ -14,9 +14,12 @@ struct ConfigProfileViewMacOSDetail: View {
     @EnvironmentObject var pushController: PushBrain
     @EnvironmentObject var layout: Layout
 
-    @State var selection: ConfigurationProfiles.ConfigurationProfile
-    @State private var selectedDevice = ""
-    @State private var selectedCommand = ""
+    // selection is a lightweight summary (ConfigProfileSummary)
+    @State var selection: ConfigProfileSummary
+    @State private var selectedDevice = 0
+//    @State private var selectedCommand = ""
+    // Make currentProfile optional so we can represent "not loaded" state
+    @State private var currentProfile: OSXConfigProfileDetailed? = nil
 
     @State var server: String
     
@@ -31,8 +34,132 @@ struct ConfigProfileViewMacOSDetail: View {
             
             Section(header: Text("Config Profile Detail").bold()) {
               
-                    Text("Name:\t\(selection.name)")
-                    Text("ID:\t\(String(describing: selection.jamfId ?? 0))")
+                // Safely unwrap and display profile fields. Avoid interpolating whole structs.
+                if let general = currentProfile?.general {
+                    Text("Name:\t\(general.name ?? "")")
+                    if let id = general.id {
+                        Text("ID:\t\(id)")
+                    } else {
+                        Text("ID:\t(none)")
+                    }
+                } else {
+                    Text("Name:\t")
+                    Text("ID:\t")
+                }
+
+                // Display a compact summary of scope
+                if let scope = currentProfile?.scope {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 20) {
+                            Text("All Computers: \(scope.allComputers == true ? "Yes" : "No")")
+                            Text("All Users: \(scope.allJssUsers == true ? "Yes" : "No")")
+                        }
+
+                        // Helper to render arrays of ConfigCategoryElement
+                        Group {
+                            if let computers = scope.computers, !computers.isEmpty {
+                                Text("Computers:").font(.subheadline).bold()
+                                ForEach(computers, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let buildings = scope.buildings, !buildings.isEmpty {
+                                Text("Buildings:").font(.subheadline).bold()
+                                ForEach(buildings, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let departments = scope.departments, !departments.isEmpty {
+                                Text("Departments:").font(.subheadline).bold()
+                                ForEach(departments, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let groups = scope.computerGroups, !groups.isEmpty {
+                                Text("Computer Groups:").font(.subheadline).bold()
+                                ForEach(groups, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            if let users = scope.jssUsers, !users.isEmpty {
+                                Text("JSS Users:").font(.subheadline).bold()
+                                ForEach(users, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+
+                            // jss_user_groups is a dictionary – show values if present
+                            if let jssUserGroups = scope.jssUserGroups, !jssUserGroups.isEmpty {
+                                Text("JSS User Groups:").font(.subheadline).bold()
+                                ForEach(Array(jssUserGroups.values), id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                        }
+
+                        // Limitations
+                        if let lim = scope.limitations {
+                            if let users = lim.users, !users.isEmpty {
+                                Text("Limitations - Users:").font(.subheadline).bold()
+                                ForEach(users, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let userGroups = lim.userGroups, !userGroups.isEmpty {
+                                Text("Limitations - User Groups:").font(.subheadline).bold()
+                                ForEach(userGroups, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let networks = lim.networkSegments, !networks.isEmpty {
+                                Text("Limitations - Network Segments:").font(.subheadline).bold()
+                                ForEach(networks, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let ibeacons = lim.ibeacons, !ibeacons.isEmpty {
+                                Text("Limitations - iBeacons:").font(.subheadline).bold()
+                                ForEach(ibeacons, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                        }
+
+                        // Exclusions
+                        if let exc = scope.exclusions {
+                            if let computers = exc.computers, !computers.isEmpty {
+                                Text("Exclusions - Computers:").font(.subheadline).bold()
+                                ForEach(computers, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let buildings = exc.buildings, !buildings.isEmpty {
+                                Text("Exclusions - Buildings:").font(.subheadline).bold()
+                                ForEach(buildings, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let departments = exc.departments, !departments.isEmpty {
+                                Text("Exclusions - Departments:").font(.subheadline).bold()
+                                ForEach(departments, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                            if let groups = exc.computerGroups, !groups.isEmpty {
+                                Text("Exclusions - Computer Groups:").font(.subheadline).bold()
+                                ForEach(groups, id: \.self) { item in
+                                    Text("• \(item.name ?? String(describing: item.id ?? 0))")
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Text("Scope: (not loaded)")
+                }
             }
 
 //            LazyVGrid(columns: layout.columnsFlex) {
@@ -42,7 +169,7 @@ struct ConfigProfileViewMacOSDetail: View {
 //                    }
 //                }
 //            }
-//            
+//
 //            LazyVGrid(columns: layout.columnsFlex) {
 //                Picker("Commands", selection: $selectedCommand) {
 //                    ForEach(pushController.flushCommands, id: \.self) {
@@ -50,12 +177,12 @@ struct ConfigProfileViewMacOSDetail: View {
 //                    }
 //                }
 //            }
-//            
+//
 //            Button("Flush Commands") {
-//                
+//
 //                progress.showProgress()
 //                progress.waitForABit()
-//                
+//
 //                Task {
 //                   try await pushController.flushCommands(deviceId: selection.jamfId!, deviceType: selectedDevice, command: selectedCommand, authToken: networkController.authToken, server: server )
 //                }
@@ -68,8 +195,9 @@ struct ConfigProfileViewMacOSDetail: View {
                 progress.showProgress()
                 progress.waitForABit()
                 showingWarning = true
-                print("Deleting:\($selection)")
-                networkController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selection.jamfId))
+                // Use selection (not $selection which is a Binding) in debug output
+                print("Deleting:\(selection)")
+                networkController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selection.jamfId ?? 0))
                 print("Deleting ConfigProfile:\(String(describing: selection.jamfId ?? 0))")
             }) {
                 HStack(spacing: 10) {
@@ -80,10 +208,26 @@ struct ConfigProfileViewMacOSDetail: View {
             .buttonStyle(.borderedProminent)
             .tint(.red)
             .shadow(color: .gray, radius: 2, x: 0, y: 2)
+
+            Spacer()
         }
   
         .padding(20)
-        Spacer()
+        .onAppear() {
+            // Initialize currentProfile from the network controller if present and kick off any async work
+            currentProfile = networkController.OSXConfigProfileDetailed
+            if let jamfId = selection.jamfId {
+                Task {
+                    do {
+                        try await networkController.getDetailOSXConfigProfile(userID: String(jamfId))
+                        // update local currentProfile after fetch
+                        currentProfile = networkController.OSXConfigProfileDetailed
+                    } catch {
+                        print("Failed to load config profile\(jamfId) - detail: \(error)")
+                    }
+                }
+            }
+        }
     }
     
 }

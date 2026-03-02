@@ -130,7 +130,7 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
 #if os(macOS)
 fileprivate struct AppPolicyDelayPreferencesView: View {
     @EnvironmentObject var networkController: NetBrain
-    @State private var delayValue: Double = 3.0
+    @State private var delayValue: Double = 0.0
     @State private var showSavedToast = false
 
     var body: some View {

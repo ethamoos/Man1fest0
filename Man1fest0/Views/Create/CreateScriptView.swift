@@ -116,7 +116,7 @@ struct CreateScriptView: View {
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategoryId, label: Text("Category")) {
                         Text("No category selected").tag(nil as Int?)
-                        ForEach(networkController.categories, id: \.self) { category in
+                        ForEach(networkController.categories) { category in
                             Text(category.name).tag(category.jamfId as Int?)
                         }
                     }

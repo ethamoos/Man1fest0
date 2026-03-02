@@ -47,7 +47,7 @@ struct PackagesActionView: View {
                 
                 Section(header: Text("All Packages").bold().padding(.leading)) {
                     
-                    List(searchResults, id: \.self, selection: $selection) { package in
+                    List(searchResults, selection: $selection) { package in
                         
                         HStack {
                             Image(systemName: "suitcase.fill")
@@ -145,7 +145,7 @@ struct PackagesActionView: View {
                     
                     Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
                         Text("No category selected").tag(nil as Int?)
-                        ForEach(networkController.categories, id: \.self) { category in
+                        ForEach(networkController.categories) { category in
                             Text(String(describing: category.name))
                                 .tag(category.jamfId as Int?)
                         }
@@ -181,7 +181,7 @@ struct PackagesActionView: View {
         .padding()
 
 
-        List(Array(selection), id: \.self) { package in
+        List(Array(selection)) { package in
             
             Text(package.name )
             

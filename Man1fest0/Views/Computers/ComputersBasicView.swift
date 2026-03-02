@@ -35,49 +35,66 @@ struct ComputersBasicView: View {
         
         VStack(alignment: .leading) {
             
+            // Header
+            HStack(alignment: .center) {
+                VStack(alignment: .leading) {
+                    Text("Computers")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Browse and manage computers")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    Task {
+                        try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                    }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.bottom, 6)
+            .padding(.horizontal)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
+            
             if networkController.allComputersBasic.computers.count > 0 {
                 
                 NavigationView {
 #if os(macOS)
                     List(searchResults, id: \.self, selection: $selection) { computer in
                         HStack {
-                            Image(systemName: "apple.logo")
-                            Text(computer.name).font(.system(size: 12.0))
+                            Image(systemName: "desktopcomputer")
+                                .foregroundColor(.accentColor)
+                            Text(computer.name)
+                                .font(.system(size: 13.0))
                         }
-                        .foregroundColor(.blue)
+                        .padding(.vertical, 4)
                     }
                     .searchable(text: $searchText)
-                    
+                    .listStyle(.sidebar)
 #else
                     List(searchResults, id: \.self) { computer in
                         HStack {
-                            Image(systemName: "apple.logo")
-                            Text(computer.name).font(.system(size: 12.0))
+                            Image(systemName: "desktopcomputer")
+                                .foregroundColor(.accentColor)
+                            Text(computer.name)
+                                .font(.system(size: 13.0))
                         }
-                        .foregroundColor(.blue)
+                        .padding(.vertical, 4)
                     }
                     .searchable(text: $searchText)
 #endif
                     Text("\(networkController.computers.count) total computers")
                 }
                 
-                //                .toolbar {
-                //
-                //                    Button(action: {
-                //                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-                //                        progress.showProgress()
-                //                        progress.waitForABit()
-                //                        print("Refresh")
-                //                    }) {
-                //                        HStack(spacing: 10) {
-                //                            Image(systemName: "arrow.clockwise")
-                //                            Text("Refresh")
-                //                        }
-                //                    }
-                //                }
-                
                 Text("\(networkController.computers.count) total computers")
-                
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 6)
                     .navigationViewStyle(DefaultNavigationViewStyle())
                 
                 //  ##########################################################################

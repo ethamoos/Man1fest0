@@ -39,6 +39,31 @@ struct GroupsView: View {
         
         VStack(alignment: .leading) {
             
+            // Header
+            HStack(alignment: .center) {
+                VStack(alignment: .leading) {
+                    Text("Groups")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Manage static and smart computer groups")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    Task {
+                        try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                    }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 6)
+            
             Section(header: Text("Static Groups:").bold().padding()) {
                 
                 // Filter/search field for Static Groups

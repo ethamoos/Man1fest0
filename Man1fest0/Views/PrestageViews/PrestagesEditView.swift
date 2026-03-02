@@ -78,228 +78,171 @@ struct PrestagesEditView: View {
         
         VStack(alignment: .leading) {
             
-            VStack(alignment: .leading) {
-                
-                
-                Text("Update Assigned Prestage").bold()
-                
-                LazyVGrid(columns: columns, spacing: 20) {
-                    
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Label("serial", systemImage: "globe")
-                        TextField("serial", text: $serial)
-                    }
-                    .foregroundColor(.blue)
-                }
-                
-                Divider()
-                
-                Text("Current Prestage Name:").bold()
-                
-                //                VStack(alignment: .leading, spacing: 20) {
-                LazyVGrid(columns: columns, spacing: 20) {
-                    
-                    HStack {
-                        
-                        Label("Name", systemImage: "globe")
-//                            Text("\(currentPrestage.displayName)")
-                        TextField("Name", text: $currentPrestageName)
-
-                        
-                    }
-                    .foregroundColor(.blue)
-                }
-                
-                Divider()
-
-                Text("Current Prestage ID:").bold()
-                
-                LazyVGrid(columns: columns, spacing: 20) {
-                    
-                    HStack {
-                        Label("ID", systemImage: "globe")
-                        TextField("ID", text: $initialPrestageID)
-                    }
-                    .foregroundColor(.blue)
-                }
-                
-                // ################################################################################
-                // targetPrestageID
-                // ################################################################################
-                
-                HStack {
-#if os(iOS)
-                    Text("Target Prestage:")
-#endif
-                    
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        Picker(selection: $selectedPrestageTarget, label: Text("Target Prestage:")) {
-                            Text("").tag("") //basically added empty tag and it solve the case
-                            ForEach(prestageController.allPrestages, id: \.self) { prestage in
-                                var currentPrestageID = Int(prestage.id) ?? 0
-                                //                                    Text("\(String(describing: prestage.displayName)) \(String(describing: prestage.id))   ").tag("")
-                                Text("\(String(describing: prestage.displayName)) \(String(describing: prestage.id))   ")
-                                    .tag(prestage as PreStage?)
-                            }
-                            //
+                        VStack(alignment: .leading) {
+                            Text("Update Assigned Prestage").font(.title2).fontWeight(.semibold)
+                            Text("Move or remove a device from a prestage").font(.subheadline).foregroundColor(.secondary)
                         }
-                        .foregroundColor(.blue)
+                        Spacer()
+                    }
+
+                    // Group: Serial and current prestage
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Label("Serial", systemImage: "barcode.viewfinder")
+                            TextField("serial", text: $serial)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Current Prestage Name:").fontWeight(.bold)
+                                TextField("Name", text: $currentPrestageName)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+
+                            VStack(alignment: .leading) {
+                                Text("Current Prestage ID:").fontWeight(.bold)
+                                TextField("ID", text: $initialPrestageID)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.windowBackgroundColor)).shadow(radius: 1))
+
+                    // Target picker
+                    VStack(alignment: .leading) {
+                        Text("Target Prestage:").fontWeight(.bold)
+                        Picker(selection: $selectedPrestageTarget, label: Text("Target Prestage:")) {
+                            Text("").tag(PreStage(keepExistingSiteMembership: false, enrollmentSiteId: "", id: "", displayName: ""))
+                            ForEach(prestageController.allPrestages, id: \.self) { prestage in
+                                Text("\(prestage.displayName) (ID: \(prestage.id))")
+                                    .tag(prestage)
+                            }
+                        }
+                        .pickerStyle(.menu)
                         .onAppear {
                             if prestageController.allPrestages.isEmpty != true {
                                 print("Setting allPrestages picker default")
                                 print("currentPrestageID is set as:\(self.initialPrestageID)")
                             }
                         }
-                        
+                    }
+                    .padding(.vertical)
+
+                    // Update button
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            // use selectedPrestageTarget.id safely
+                            let targetID = selectedPrestageTarget.id
+                            updatePrestage(initialPrestageID: initialPrestageID, authToken: networkController.authToken)
+                            progress.showProgress()
+                            progress.waitForABit()
+                            print("Selecting prestage:\($selectedPrestageInitial)")
+                            print("Printing serialPrestageAssignment :\(prestageController.serialPrestageAssignment)")
+                            print("Printing serialsPrestageName :\(serialsPrestageName)")
+                        }) {
+                            Text("Update")
+                                .frame(minWidth: 100)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+
+                    if progress.showProgressView == true {
+                        ProgressView {
+                            Text("Loading")
+                                .font(.title)
+                                .progressViewStyle(.horizontal)
+                        }
+                        .padding()
                     }
                 }
-                // ################################################################################
-                // Update button
-                // ################################################################################
-                
-                VStack(alignment: .leading) {
-                    
+                .padding()
+
+                Divider()
+
+                // Add Unassigned Device
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Add Unassigned Device").font(.headline)
+
+                    HStack {
+                        Label("Serial", systemImage: "barcode.viewfinder")
+                        TextField("serial", text: $serial)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+
+                    HStack {
+                        Text("Target Prestage:")
+                        Picker(selection: $selectedPrestageTarget, label: Text("Target Prestage:")) {
+                            Text("").tag(PreStage(keepExistingSiteMembership: false, enrollmentSiteId: "", id: "", displayName: ""))
+                            ForEach(prestageController.allPrestages, id: \.self) { prestage in
+                                Text(String(describing: prestage.displayName)).tag(prestage)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+
                     Button(action: {
-                        updatePrestage(initialPrestageID: initialPrestageID, targetPrestageID: $selectedPrestageTarget.id)
                         progress.showProgress()
                         progress.waitForABit()
-                        
-                        print("Selecting prestage:\($selectedPrestageInitial)")
-                        print("Printing serialPrestageAssignment :\(prestageController.serialPrestageAssignment)")
-                        print("Printing serialsPrestageName :\(serialsPrestageName)")
-                        
+                        let targetID = selectedPrestageTarget.id
+                        showPrestage(targetPrestageID: targetID, authToken: networkController.authToken)
                     }) {
                         HStack(spacing:30) {
-                            Text("Update")
+                            Text("Add")
                         }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                 }
-                //    ########################################
-                //    PROGRESS BAR
-                //    ########################################
-                
-                if progress.showProgressView == true {
-                    
-                    ProgressView {
-                        Text("Loading")
-                            .font(.title)
-                            .progressViewStyle(.horizontal)
-                    }
-                    .padding()
-                }
-                //    ########################################
-                //    PROGRESS BAR - END
-                //    ########################################
-            }
-            .padding()
-            
-            // ################################################################################
-            // Add Unassigned Device
-            // ################################################################################
-            
-            Divider()
-            
-            VStack(alignment: .leading) {
-                
-                Text("Add Unassigned Device").bold()
-                
-                LazyVGrid(columns: columns, spacing: 20) {
-                    
-                    HStack {
-                        Label("serial", systemImage: "globe")
-                        TextField("serial", text: $serial)
-                    }
-                    .foregroundColor(.blue)
-                }
-                
-                HStack {
-#if os(iOS)
-                    Text("Target Prestage:")
-#endif
-                    
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        Picker(selection: $selectedPrestageTarget, label: Text("Target Prestage:").bold()) {
-                            Text("").tag("") //basically added empty tag and it solve the case
-                            ForEach(prestageController.allPrestages, id: \.self) { prestage in
-                                Text(String(describing: prestage.displayName)).tag("")
-                            }
-                        }
-                        .foregroundColor(.blue)
-                    }
-                }
-                
-                Button(action: {
-                    
-                    progress.showProgress()
-                    progress.waitForABit()
-                    showPrestage(targetPrestageID: $selectedPrestageTarget.id, authToken: networkController.authToken)
-                    
-                }) {
-                    HStack(spacing:30) {
-                        Text("Add")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-            }
-            .padding()
-            
-            Divider()
-            
-            // ################################################################################
-            // Unassign Device
-            // ################################################################################
-            
-            VStack(alignment: .leading) {
-                
-                Text("Unassign Device").bold()
-                
-                if prestageController.allPsScComplete == true && prestageController.serialPrestageAssignment.count > 0 {
-                    
-                    Button(action: {
-                        updatePrestage(initialPrestageID: initialPrestageID, authToken: networkController.authToken)
-                    }) {
-                        Text("Remove")
-                    }
-                    .alert(isPresented: $showingWarning) {
-                        Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    
-                } else {
-                    
-                    if prestageController.allPsScComplete == false {
-                        
-                        ProgressView {
-                            
-                            Text("Loading")
-                                .progressViewStyle(.horizontal)
-                        }
-                        
-                    } else {
-                        
-                        Text("No Devices Assigned To A Prestage")
-                    }
-                }
-                
-            }
-            .padding()
-            .onAppear() {
-                
-                getCurrentPrestageName(initialPrestageID: initialPrestageID)
-                getCurrentPrestage(targetPrestageID: initialPrestageID, authToken: networkController.authToken)
-                currentPrestageName = self.currentPrestage.displayName
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.windowBackgroundColor)).shadow(radius: 1))
 
-            }
-            
-            Divider()
+                Divider()
+
+                // Unassign Device
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Unassign Device").font(.headline)
+
+                    if prestageController.allPsScComplete == true && prestageController.serialPrestageAssignment.count > 0 {
+
+                        Button(action: {
+                            updatePrestage(initialPrestageID: initialPrestageID, authToken: networkController.authToken)
+                        }) {
+                            Text("Remove")
+                        }
+                        .alert(isPresented: $showingWarning) {
+                            Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+
+                    } else {
+                        if prestageController.allPsScComplete == false {
+                            ProgressView {
+                                Text("Loading")
+                                    .progressViewStyle(.horizontal)
+                            }
+                        } else {
+                            Text("No Devices Assigned To A Prestage")
+                        }
+                    }
+                }
+                .padding()
+
             Spacer()
         }
         .padding(.top)
         .padding(.bottom)
+        .onAppear() {
+            getCurrentPrestageName(initialPrestageID: initialPrestageID)
+            getCurrentPrestage(targetPrestageID: initialPrestageID, authToken: networkController.authToken)
+            currentPrestageName = self.currentPrestage.displayName
+        }
     }
     
     var searchResults: [String] {

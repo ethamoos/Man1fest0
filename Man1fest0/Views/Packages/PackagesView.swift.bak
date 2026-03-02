@@ -15,8 +15,6 @@ struct PackagesView: View {
     @EnvironmentObject var networkController: NetBrain
     @State var searchText = ""
     @State var selection = Set<Package>()
-    // macOS Table uses UUID-based selection; keep both representations and sync between them
-    @State private var packageSelectionIDs = Set<UUID>()
     @State var packages: [Package] = []
 
     // Snapshot of filtered results used by the List to reduce UI work
@@ -91,17 +89,24 @@ struct PackagesView: View {
                 HStack {
                     // Column headers which act as sort buttons
                     HStack(spacing: 12) {
-                        Picker("Sort by", selection: $sortBy) {
-                            Text("Name").tag(SortField.name)
-                            Text("ID").tag(SortField.id)
+                        Button(action: {
+                            if sortBy == .name { sortAscending.toggle() } else { sortBy = .name; sortAscending = true }
+                        }) {
+                            HStack(spacing: 4) {
+                                Text("Name").bold()
+                                if sortBy == .name { Image(systemName: sortAscending ? "arrow.up" : "arrow.down").font(.caption) }
+                            }
                         }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 300)
+                        .buttonStyle(.plain)
 
-                        Button(action: { sortAscending.toggle() }) {
-                            Image(systemName: sortAscending ? "arrow.up" : "arrow.down")
+                        Button(action: {
+                            if sortBy == .id { sortAscending.toggle() } else { sortBy = .id; sortAscending = true }
+                        }) {
+                            HStack(spacing: 4) {
+                                Text("ID").bold()
+                                if sortBy == .id { Image(systemName: sortAscending ? "arrow.up" : "arrow.down").font(.caption) }
+                            }
                         }
-                        .help("Toggle sort direction")
                         .buttonStyle(.plain)
                     }
                     Spacer()
@@ -122,60 +127,7 @@ struct PackagesView: View {
 
                 Divider()
 
-                // Column headers to make the list appear as a table (Name | ID)
-                HStack {
-                    HStack(alignment: .center) {
-                        Text("Name")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.leading)
-
-                    // ID column header - fixed width so columns line up
-                    Text("ID")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(width: 120, alignment: .trailing)
-                        .padding(.trailing)
-                }
-                .padding(.vertical, 6)
-                // cross-platform background color
-#if os(macOS)
-                .background(Color(NSColor.controlBackgroundColor))
-#else
-                .background(Color(UIColor.secondarySystemBackground))
-#endif
-
                 // Rows
-                #if os(macOS)
-                // Native macOS Table with selection by UUID
-                Table(sortedPackages, selection: $packageSelectionIDs) {
-                    TableColumn("Name") { pkg in
-                        Text(pkg.name)
-                            .font(.system(size: 13, weight: .semibold))
-                            .lineLimit(1)
-                    }
-                    TableColumn("ID") { pkg in
-                        Text(pkg.jamfId != 0 ? String(pkg.jamfId) : pkg.id.uuidString)
-                            .font(.caption.monospaced())
-                            .foregroundColor(.secondary)
-                            .frame(width: 120, alignment: .trailing)
-                    }
-                }
-                .onChange(of: packageSelectionIDs) { newIDs in
-                    // Sync UUID selection to package objects set used elsewhere
-                    let selectedPkgs = networkController.packages.filter { newIDs.contains($0.id) }
-                    self.selection = Set(selectedPkgs)
-                }
-                .onChange(of: selection) { newSelection in
-                    // If other code modifies the Set<Package>, reflect that back into the UUID-based table selection
-                    let ids = Set(newSelection.map { $0.id })
-                    if ids != packageSelectionIDs {
-                        packageSelectionIDs = ids
-                    }
-                }
-                #else
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(sortedPackages) { package in
@@ -187,11 +139,9 @@ struct PackagesView: View {
                                             .lineLimit(1)
                                     }
                                     Spacer()
-                                    // ID column - prefer jamfId when available, otherwise UUID
                                     Text(package.jamfId != 0 ? String(package.jamfId) : package.id.uuidString)
-                                        .font(.caption.monospaced())
+                                        .font(.caption)
                                         .foregroundColor(.secondary)
-                                        .frame(width: 120, alignment: .trailing)
                                 }
                                 .padding(.vertical, 8)
                                 .padding(.horizontal)
@@ -201,7 +151,6 @@ struct PackagesView: View {
                         }
                     }
                 }
-                #endif
             }
              .searchable(text: $searchText)
              .onChange(of: searchText) { newValue in
@@ -232,7 +181,7 @@ struct PackagesView: View {
              }
              .foregroundColor(.primary)
  #if os(macOS)
-             .frame(minWidth: 350, maxWidth: .infinity)
+             .frame(minWidth: 300, maxWidth: .infinity)
  #endif
  
              // Detail placeholder on right side for NavigationView

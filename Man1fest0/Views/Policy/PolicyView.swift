@@ -58,7 +58,7 @@ struct PolicyView: View {
                     NavigationView {
                         
 #if os(macOS)
-                        List(searchResults, id: \.self, selection: $selection) { policy in
+                        List(searchResults, selection: $selection) { policy in
                             NavigationLink(destination: PolicyDetailView(server: server, policy: policy, policyID: policy.jamfId ?? 1)) {
                                 
                                 HStack {
