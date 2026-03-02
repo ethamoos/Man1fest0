@@ -1761,9 +1761,6 @@ actor AsyncSemaphore {
         self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
         self.refreshUsername = username
         self.refreshPassword = password
-        
-        // Update last active time for security monitoring
-        // This will be handled by the InactivityMonitor in the main app
         return auth
     }
     
