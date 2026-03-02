@@ -19,42 +19,23 @@ struct ContentView: View {
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
     var password: String = ""
     
-    @AppStorage("ShouldShowWelcomeScreen") private var storedShouldShowWelcome: Bool = false
-    @AppStorage("ShouldShowWelcomeScreenSet") private var storedShouldShowWelcomeSet: Bool = false
-
     var body: some View {
-         NavigationView {
-            // Primary column: always show the app sidebar so navigation links work
-            OptionsView()
-
-            // Detail column: show loading, welcome, or default placeholder
+        
+        NavigationView {
             if networkController.isLoading {
                 VStack {
                     ProgressView()
                     Text("Loading…").foregroundColor(Color.gray)
                 }
             } else {
-                #if DEBUG
-                let debugForceShowWelcome = true
-                #else
-                let debugForceShowWelcome = false
-                #endif
-
-                // Reactive preferences: use @AppStorage-backed values so changes update UI immediately
-                let showWelcome: Bool = {
-                    if debugForceShowWelcome { return true }
-                    if !storedShouldShowWelcomeSet { return true }
-                    return storedShouldShowWelcome
-                }()
-
-                if showWelcome {
-                    WelcomeToMan1fest0()
+                if #available(macOS 13.3, *) {
+                    OptionsView()
                 } else {
-                    Text("Select an Item")
-                        .foregroundColor(Color.gray)
+                    // Fallback on earlier versions
                 }
             }
-                
+            Text("Select an Item")
+                .foregroundColor(Color.gray)
         }
         .sheet(isPresented: $networkController.needsCredentials) {
             ConnectSheet(

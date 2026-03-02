@@ -38,90 +38,65 @@ struct PrestagesView: View {
     var body: some View {
         
         VStack(alignment: .leading) {
-            // Header: Title, subtitle and quick actions
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Prestages").font(.title).fontWeight(.semibold)
-                    Text("Manage device prestages and assigned devices").font(.subheadline).foregroundColor(.secondary)
-                }
-                Spacer()
-                HStack(spacing: 8) {
-                    Button(action: {
-                        Task {
-                            try? await prestageController.getAllPrestages(server: server, authToken: networkController.authToken)
-                        }
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Refresh")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-
-                    Toggle(isOn: $showAssignedDevices) {
-                        Text("Show assigned devices")
-                    }
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                }
-            }
-            .padding([.top, .horizontal])
-
-            // Main content
+            
             if prestageController.allPsComplete == true && prestageController.allPrestages.count > 0 {
+                
                 NavigationView {
+                    
                     VStack(alignment: .leading) {
 #if os(macOS)
-                        // Card-like container for the list
-                        VStack(spacing: 0) {
-                            List(searchResults, id: \.self, selection: $selectedPrestage) { prestage in
-                                NavigationLink(destination: PrestagesDetailView(prestage: prestage)) {
-                                    HStack() {
-                                        HStack {
-                                            Image(systemName: "smallcircle.filled.circle")
-                                            Text("\(prestage.displayName) ID:\(prestage.id)")
-                                                .lineLimit(1)
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal)
-                                    .foregroundColor(.blue)
-                                    .frame(minWidth: 450,alignment: .leading)
-#if os(macOS)
-                                    .navigationTitle("List all Prestages")
-#endif
-                                }
-                            }
-                            .listStyle(.inset)
-                            .searchable(text: $searchText)
-                        }
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color(NSColor.windowBackgroundColor)).shadow(radius: 1))
-                        .frame(minWidth: 400, minHeight: 200, alignment: .leading)
-#else
-                        VStack(spacing: 0) {
-                            List(searchResults, id: \.self) { prestage in
-                                NavigationLink(destination: PrestagesDetailView(prestage: prestage)) {
-                                    HStack() {
+                        List(searchResults, id: \.self, selection: $selectedPrestage) { prestage in
+                            NavigationLink(destination: PrestagesDetailView(prestage: prestage)) {
+                                HStack() {
+                                    HStack {
                                         Image(systemName: "smallcircle.filled.circle")
                                         Text("\(prestage.displayName) ID:\(prestage.id)")
                                     }
-                                    .padding(.vertical, 6)
-                                    .foregroundColor(.blue)
                                 }
-                            }
-                            .listStyle(.insetGrouped)
-                            .searchable(text: $searchText)
-                        }
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color(UIColor.secondarySystemBackground)).shadow(radius: 1))
-                        .frame(minWidth: 400, minHeight: 200, alignment: .leading)
+                                .padding(.horizontal)
+                                .foregroundColor(.blue)
+                                .frame(minWidth: 450,alignment: .leading)
+#if os(macOS)
+                                .navigationTitle("List all Prestages")
 #endif
+                            }
+                        }
+                        .frame(minWidth: 400, minHeight: 100, alignment: .leading)
+                        .searchable(text: $searchText)
+#else
+                        
+                        List(searchResults, id: \.self) { prestage in
+                            NavigationLink(destination: PrestagesDetailView(prestage: prestage)) {
+                                HStack() {
+                                    HStack {
+                                        Image(systemName: "smallcircle.filled.circle")
+                                        Text("\(prestage.displayName) ID:\(prestage.id)")
+                                    }
+                                }
+                                .padding(.horizontal)
+                                .foregroundColor(.blue)
+                                //                                #if os(macOS)
+                                .navigationTitle("List all Prestages")
+                            }
+                        }
+                        .frame(minWidth: 400, minHeight: 100, alignment: .leading)
+                        .searchable(text: $searchText)
+                        
+#endif
+                        
+                        
+                        
                     }
-
+                    
+                    
                     if showAssignedDevices == true {
+                        
                         if let prestageMembers = prestageController.selectedPrestageScope {
+                            
                             if prestageMembers == prestageController.selectedPrestageScope {
+                                
                                 NavigationView {
+                                    
                                     List {
                                         ForEach(prestageMembers.assignments, id: \.self) { prestageAssignment in
                                             NavigationLink(destination: PrestageDetailView2(prestageAssignment: prestageAssignment)) {
@@ -147,7 +122,9 @@ struct PrestagesView: View {
                     }
                 }
             } else {
+                
                 if prestageController.allPsComplete == false {
+                    
                     ProgressView {
                         Text("Loading")
                             .font(.title)
@@ -159,18 +136,21 @@ struct PrestagesView: View {
                 }
             }
         }
+        
         .padding()
+        
         .onAppear {
+            
             print("Hide prestage memebers")
             showAssignedDevices = false
             showPrestage(prestageID: selectedPrestage.id)
             Task {
                 print("Running: getAllDevicesPrestageScope")
                 try await prestageController.getAllDevicesPrestageScope(server: server, prestageID: selectedPrestage.id, authToken: networkController.authToken)
-
+                
                 print("Running: getAllPrestages")
                 try await prestageController.getAllPrestages(server: server, authToken: networkController.authToken)
-
+                
                 showPrestage(prestageID: selectedPrestage.id)
             }
         }
@@ -196,4 +176,7 @@ struct PrestagesView: View {
         }
     }
 }
+
+
+
 

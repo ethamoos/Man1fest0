@@ -34,7 +34,18 @@ struct ConfigProfileViewMacOS: View {
 #if os(macOS)
                         .frame(minWidth: 300, maxWidth: .infinity)
 #endif
-
+                //                Button(action: {
+                //                    print("Deleting:\($selection)")
+                //                }) {
+                //                    HStack(spacing: 10) {
+                //                        Image(systemName: "trash")
+                //                        Text("Delete")
+                //                    }
+                //                    .padding()
+                //                }
+                //                //    }
+                
+//                .padding()
                 .textSelection(.enabled)
             }
         }
@@ -46,12 +57,12 @@ struct ConfigProfileViewMacOS: View {
         }
     }
     
-    var searchResults: [ConfigProfileSummary] {
+    var searchResults: [ConfigurationProfiles.ConfigurationProfile] {
         if searchText.isEmpty {
             return networkController.allConfigProfiles.computerConfigurations!.sorted { $0.name < $1.name }
         } else {
             print("Search is currently:\(searchText)")
-            return networkController.allConfigProfiles.computerConfigurations!.filter { $0.name.contains(searchText) }
+            return networkController.allConfigProfiles.computerConfigurations!.filter {$0.name.contains(searchText) }
         }
     }
 }

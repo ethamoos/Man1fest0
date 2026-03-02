@@ -125,30 +125,31 @@ struct OptionsView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
  
-                    HStack(alignment: .center) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("man1fest0")
-                                .font(.system(size: 20, weight: .black, design: .default))
-                                .foregroundColor(.primary)
-                            Text("manage Jamf policies and more")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
+                    HStack {
+                        Text("man1fest0")
+                            .fontWeight(.black)
+                            .font(.title)
+                            .font(.headline)
+                            .padding()
+       
+                        VStack {
+                            
                         Image("Man1fest0Icon")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 56, height: 56)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .shadow(radius: 2)
+//                            .frame(width: 80, height: 80, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+//                            .clipped()
+//                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .frame(width: 60, height: 60, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .padding()
                     }
-                    .padding(.vertical, 6)
                     
-//                    Divider()
-//                    
-//                    Text("manage Jamf policies and more ")
-//                        .fontWeight(.black)
-//                        .padding(.vertical, 6)
+                    Divider()
+                    
+                    Text("manage Jamf policies and more ")
+                        .fontWeight(.black)
+                        .padding()
                 }
                 
                 Divider()
@@ -185,25 +186,6 @@ struct OptionsView: View {
                                     Text("Computer Actions")
                                 }
 #endif
-                                
-                                DisclosureGroup("Groups") {
-                                    
-                                    NavigationLink(destination: GroupsView(server: server)) {
-                                        Text("Computer Static Groups")
-                                    }
-                                    NavigationLink(destination: GroupsSmartView(server: server)) {
-                                        Text("Computer Smart Groups")
-                                    }
-                                }
-                                
-                                DisclosureGroup("Extension Attributes") {
-                                    NavigationLink(destination: ComputerExtAttributeView(server: server)) {
-                                        Text("Computer Extension Attributes")
-                                    }
-                                    NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
-                                        Text("Computer Extension Attributes Actions")
-                                    }
-                                }
                             }
                           
 #if os(macOS)
@@ -271,11 +253,11 @@ struct OptionsView: View {
                                 NavigationLink(destination: ScriptUsageView(server: server)) {
                                     Text("Script Usage")
                                 }
-//                                NavigationLink(destination: ScriptsActionView(server: server)) {
-//                                    Text("Script Actions")
-//                                }
-                                NavigationLink(destination: ScriptDetailTableView(server: server)) {
+                                NavigationLink(destination: ScriptsActionView(server: server)) {
                                     Text("Script Actions")
+                                }
+                                NavigationLink(destination: ScriptDetailTableView(server: server)) {
+                                    Text("Script Detailed List")
                                 }
 #endif
                             }
@@ -404,6 +386,37 @@ struct OptionsView: View {
                             }
 #if os(macOS)
                             
+                            Group {
+                                Divider()
+                                
+                                DisclosureGroup("Groups") {
+                                    //  #######################################################################
+                                    //  Static Groups
+                                    //  #######################################################################
+                                    
+                                    NavigationLink(destination: GroupsView(server: server)) {
+                                        Text("Static Groups")
+                                    }
+                                    NavigationLink(destination: GroupsSmartView(server: server)) {
+                                        Text("Smart Groups")
+                                    }
+                                }
+                            }
+                            
+                            Group {
+                                Divider()
+
+                                DisclosureGroup("Extension Attributes") {
+                                    NavigationLink(destination: ComputerExtAttributeView(server: server)) {
+                                        Text("Computer Extension Attributes")
+                                    }
+                                    NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
+                                        Text("Computer Extension Attributes Actions")
+                                    }
+                                }
+                            }
+                                           
+                            Divider()
                             
                             NavigationLink(destination: ReportsView()) {
                                 Text("Reports")
@@ -445,8 +458,6 @@ struct OptionsView: View {
                         }
                     }
                     
-                    
-                    
                     // #################################################################################
                     //  CONNECT
                     // #################################################################################
@@ -465,6 +476,17 @@ struct OptionsView: View {
                         }
                         
                       
+                    }
+                 
+                    ToolbarItem(id: "Status") {
+                            VStack(alignment: .leading, spacing: 1) {
+                            HStack {
+                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
+                                    .foregroundColor(.green)
+                                Text(server)
+                                    .foregroundColor(.green)
+                            }
+                        }
                     }
                     
                     ToolbarItem(id: "Refresh") {
@@ -486,33 +508,9 @@ struct OptionsView: View {
                         }
 //                    }
                     }
-                 
-                    ToolbarItem(id: "Status") {
-                            VStack(alignment: .leading, spacing: 1) {
-                            HStack {
-                                Text(server)
-                                    .foregroundColor(.green)
-                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
-                                    .foregroundColor(.green)
-                               
-                            }
-                        }
-                    }
-                    
-                    
                 }
                 .foregroundColor(.blue)
-                 .frame(minWidth: 300)
-                
-                HStack() {
-//                    Text("man1fest0 - Jamf Pro management tool")
-//                        .font(.footnote)
-//                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text("App version is \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                .frame(minWidth: 220)
 
                 //  #######################################################################
                 //  END OF SIDEBAR
@@ -526,7 +524,7 @@ struct OptionsView: View {
             }
             .listStyle(.sidebar)
             .padding()
-             .frame(minWidth: 300)
+            .frame(minWidth: 220)
         }
     }
 }
@@ -546,7 +544,7 @@ struct OptionsView: View {
 // Lightweight inline preferences view to use from OptionsView (avoid external target membership issues)
 fileprivate struct PolicyDelayInlineView: View {
     @EnvironmentObject var networkController: NetBrain
-    @State private var delayValue: Double = 0.0
+    @State private var delayValue: Double = 3.0
     @State private var showSavedToast = false
 
     var body: some View {

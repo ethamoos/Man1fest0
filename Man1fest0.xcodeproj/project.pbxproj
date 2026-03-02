@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A800E8452F3F25CE000250E7 /* WelcomeToMan1fest0.swift in Sources */ = {isa = PBXBuildFile; fileRef = A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */; };
 		A801D8EB2B7E178600E9D5B0 /* GroupDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */; };
 		A80DE2CB2E97D69800509F4F /* Structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80DE2CA2E97D69800509F4F /* Structures.swift */; };
 		A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */; };
@@ -116,7 +115,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeToMan1fest0.swift; sourceTree = "<group>"; };
 		A801D8EA2B7E178600E9D5B0 /* GroupDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupDetailView.swift; sourceTree = "<group>"; };
 		A80DE2CA2E97D69800509F4F /* Structures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Structures.swift; sourceTree = "<group>"; };
 		A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopingBrain.swift; sourceTree = "<group>"; };
@@ -180,7 +178,6 @@
 		A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceTypeEnums.swift; sourceTree = "<group>"; };
 		A8BAD2D42DE074CF006C9B34 /* CreateScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateScriptView.swift; sourceTree = "<group>"; };
 		A8BC96A52E68224A0078AF53 /* PhotoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoViewModel.swift; sourceTree = "<group>"; };
-		A8BCADC02F4DCFB8005C2186 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
 		A8C1E2612EC3AB6800DEDBF8 /* Breakout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Breakout.swift; sourceTree = "<group>"; };
 		A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerExtAttDetailView.swift; sourceTree = "<group>"; };
 		A8C4EAC82D53BDD10022E0ED /* EaBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EaBrain.swift; sourceTree = "<group>"; };
@@ -272,14 +269,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A800E8442F3F25CE000250E7 /* Welcome */ = {
-			isa = PBXGroup;
-			children = (
-				A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */,
-			);
-			path = Welcome;
-			sourceTree = "<group>";
-		};
 		A857A4292E25686600A96F3A /* NotesPersistent */ = {
 			isa = PBXGroup;
 			children = (
@@ -313,7 +302,6 @@
 				A8A46D0C2C47C91F00EF5987 /* PrestageViews */,
 				A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */,
 				A87E851B2F16686E00CF42D0 /* UsersView.swift */,
-				A800E8442F3F25CE000250E7 /* Welcome */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -430,7 +418,6 @@
 				A813C01E2E53083300735884 /* PolicyRemoveItemsTabView.swift */,
 				A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */,
 				A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */,
-				A8BCADC02F4DCFB8005C2186 /* Untitled.swift */,
 				A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */,
 				A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */,
 				A8C4B5BC2E83EF80009893BB /* PoliciesActionView */,
@@ -600,7 +587,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1420;
-				LastUpgradeCheck = 2610;
+				LastUpgradeCheck = 1530;
 				TargetAttributes = {
 					E4CE363829D1C43100533707 = {
 						CreatedOnToolsVersion = 14.2;
@@ -690,7 +677,6 @@
 				E45E13272C53B22F007C175F /* ContentView.swift in Sources */,
 				A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */,
 				A840186D2D4BCA6B00C09FD3 /* ImportView.swift in Sources */,
-				A800E8452F3F25CE000250E7 /* WelcomeToMan1fest0.swift in Sources */,
 				A83D00DB2D774FCA0091B794 /* ErrorView.swift in Sources */,
 				A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */,
 				A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */,
@@ -790,7 +776,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -812,7 +797,6 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -854,7 +838,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -869,7 +852,6 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
@@ -883,17 +865,12 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-
-				CURRENT_PROJECT_VERSION = 1.57.1;
-
+				CURRENT_PROJECT_VERSION = 1.54.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Man1fest0/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Man1fest0;
@@ -912,9 +889,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-
 				MARKETING_VERSION = 1.57.1;
-
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -935,17 +910,12 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-
-				CURRENT_PROJECT_VERSION = 1.57.1
-
+				CURRENT_PROJECT_VERSION = 1.54.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				DEVELOPMENT_TEAM = T8LP25947P;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Man1fest0/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Man1fest0;
@@ -964,9 +934,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-
 				MARKETING_VERSION = 1.57.1;
-
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

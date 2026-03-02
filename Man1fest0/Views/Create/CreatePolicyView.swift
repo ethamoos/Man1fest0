@@ -12,7 +12,9 @@ import SwiftUI
 struct CreatePolicyView: View {
     
     var selectedResourceType: ResourceType = ResourceType.package
+    
     var server: String
+    
     
     //              ################################################################################
     //              EnvironmentObject
@@ -28,7 +30,6 @@ struct CreatePolicyView: View {
     //              ################################################################################
     //              Variables
     //              ################################################################################
-    
     @State private var searchText = ""
     @State private var showingWarning = false
     @State var enableDisable: Bool = true
@@ -54,12 +55,12 @@ struct CreatePolicyView: View {
     @State var computerName = ""
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
-    // ################################################################################
-    // New items
-    // ################################################################################
+    //              ################################################################################
+    //              New items
+    //              ################################################################################
     
     @State var newPolicyName = ""
-    // @State var departmentName: String = ""
+    //    @State var departmentName: String = ""
     @State var newCategoryName: String = ""
     @State var newGroupName: String = ""
     @State var newPolicyId = "0"
@@ -73,14 +74,6 @@ struct CreatePolicyView: View {
     @State private var packageID = "0"
     @State private var packageName = ""
     
-    // Sorting for package selection list
-    private enum PackageSortField: Hashable { case name, id }
-    @State private var packageSortBy: PackageSortField = .name
-    @State private var packageSortAscending: Bool = true
-
-    // Table selection (UUID-based) for macOS Table; we synchronize this with packageMultiSelection (Set<Int>)
-    @State private var packageSelectionIDs = Set<UUID>()
-
     // ################################################################################
     // Scripts
     // ################################################################################
@@ -88,23 +81,25 @@ struct CreatePolicyView: View {
     @State var scriptName = ""
     @State var scriptID = ""
     
-    // ################################################################################
-    // Selections
-    // ################################################################################
+    //              ################################################################################
+    //              Selections
+    //              ################################################################################
     
     @State var selectedComputer: Computer = Computer(id: 0, name: "")
     
-    // ################################################################################
     // Selection IDs used by Pickers to avoid mismatched tag/selection warnings
-    // ################################################################################
-
     @State var selectedCategoryId: Int? = nil
+    
     @State var selectedDepartmentId: Int? = nil
+    
     @State var selectedScriptId: Int? = nil
+    
     @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
-    // Use jamfId (Int) for multi-selection so List selection matches the id used by the data source
-    @State var packageMultiSelection = Set<Int>()
+    
+    @State var packageMultiSelection = Set<Package>()
+    
     @State var iconMultiSelection = Set<String>()
+    
     @State var selectedIconString = ""
     @State var iconFilter: String = ""
     @State var categoryFilter: String = ""
@@ -133,8 +128,29 @@ struct CreatePolicyView: View {
     var body: some View {
         
         VStack(alignment: .leading) {
+            
             if networkController.packages.count > 0 {
-                packagesSection
+                
+                Section(header: Text("All Packages").bold().padding(.leading)) {
+                    
+                    List(searchResults, id: \.self, selection: $packageMultiSelection) { package in
+                        HStack {
+                            Image(systemName: "suitcase.fill")
+                            Text(package.name ).font(.system(size: 12.0))
+                        }
+                        .foregroundColor(.blue)
+                    }
+                    .searchable(text: $searchText)
+                    
+                    VStack(alignment: .leading) {
+                        Text("\(networkController.packages.count) total packages")
+                    }
+                        #if os(macOS)
+                .navigationTitle("Packages")
+#endif
+                        .listStyle(.inset)
+                        .padding()
+                }
             }
         }
         //              ################################################################################
@@ -172,24 +188,10 @@ struct CreatePolicyView: View {
         //              selections
         //  ################################################################################
         
-        // Selection row always shown under header so users see selection count
-        HStack(spacing: 8) {
-            Text("Selection:")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            Spacer()
-            Text("Selected: \(packageMultiSelection.count)")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal)
-        .padding(.top, 4)
         
-        Divider()
-
-        List(Array(packageMultiSelection), id: \.self) { selectedJamfId in
-            Text(networkController.packages.first(where: { $0.jamfId == selectedJamfId })?.name ?? "")
+        List(Array(packageMultiSelection), id: \.self) { package in
+            
+            Text(package.name )
         }
         
         .frame(height: 100)
@@ -198,9 +200,9 @@ struct CreatePolicyView: View {
             
             Group {
                 
-            // ####################################################
+            // ######################################################################################
             // CREATE NEW POLICY - with multiple packages
-            // ####################################################
+            // ######################################################################################
                 
                 LazyVGrid(columns: columns, spacing: 5) {
                     
@@ -222,9 +224,6 @@ struct CreatePolicyView: View {
                             let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
                             let scriptNameLocal = scriptLocal?.name ?? ""
                             let scriptIdString = String(scriptLocal?.jamfId ?? 0)
-
-                            // Prepare selected package ids to pass to XML builder
-                            let selectedPackageIdsToAdd = Set(packageMultiSelection)
                             
                             xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken,
                                                                   server: server,
@@ -240,8 +239,7 @@ struct CreatePolicyView: View {
                                                                   enabledStatus: enableDisable,
                                                                   iconId: iconIdString,
                                                                   iconName: iconNameLocal,
-                                                                  iconUrl: iconUrlLocal,
-                                                                  selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages)
+                                                                  iconUrl: iconUrlLocal)
                             
                             layout.separationLine()
                             print("Creating New Policy:\(newPolicyName)")
@@ -430,7 +428,7 @@ struct CreatePolicyView: View {
                           
                           Picker(selection: $selectedScriptId, label: Text("Scripts")) {
                               ForEach(networkController.scripts.filter { s in
-                                  scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
+                                scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
                               }, id: \.jamfId) { script in
                                   Text(script.name).tag(script.jamfId)
                               }
@@ -485,137 +483,4 @@ struct CreatePolicyView: View {
             return networkController.packages.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
     }
-    
-    // Combined sorted packages based on current searchResults and sort settings
-    private var sortedPackages: [Package] {
-        let arr = searchResults
-        switch packageSortBy {
-        case .name:
-            return arr.sorted { a, b in
-                if packageSortAscending {
-                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-                } else {
-                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedDescending
-                }
-            }
-        case .id:
-            return arr.sorted { a, b in
-                // Treat jamfId==0 as large so it sorts after real ids
-                let aId = (a.jamfId != 0) ? a.jamfId : Int.max
-                let bId = (b.jamfId != 0) ? b.jamfId : Int.max
-                return packageSortAscending ? (aId < bId) : (aId > bId)
-            }
-        }
-    }
-    
-    // Added packagesSection composed view (renders header + platform-specific selectable list/table)
-    private var packagesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            packagesHeader
-
-            // Platform-specific selectable view: native macOS Table or iOS List
-            Group {
-                #if os(macOS)
-                packagesTable
-                    .frame(minHeight: 200)
-                #else
-                packagesListView
-                    .frame(minHeight: 200)
-                #endif
-            }
-            .padding(.top, 4)
-        }
-        .padding(.vertical, 6)
-    }
-
-    // Extracted packages header to simplify type-checking
-    private var packagesHeader: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Text("All Packages").bold().padding(.leading)
-                Spacer()
-                HStack(spacing: 8) {
-                    Picker("Sort by", selection: $packageSortBy) {
-                        Text("Name").tag(PackageSortField.name)
-                        Text("ID").tag(PackageSortField.id)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 220)
-
-                    Button(action: { packageSortAscending.toggle() }) {
-                        Image(systemName: packageSortAscending ? "arrow.up" : "arrow.down")
-                    }
-                    .buttonStyle(.plain)
-                    .help("Toggle sort direction")
-                }
-            }
-
-        }
-    }
-
-    // Small macOS Table extracted to reduce overall expression complexity
-    private var packagesTable: some View {
-        Table(sortedPackages, selection: $packageSelectionIDs) {
-            TableColumn("Name") { pkg in
-                Text(pkg.name)
-                    .font(.system(size: 12.0))
-                    .lineLimit(1)
-            }
-            TableColumn("ID") { pkg in
-                Text(pkg.jamfId != 0 ? String(pkg.jamfId) : pkg.id.uuidString)
-                    .font(.caption.monospaced())
-                    .foregroundColor(.secondary)
-                    .frame(width: 120, alignment: .trailing)
-            }
-        }
-        .onChange(of: packageSelectionIDs) { newIDs in
-            let selectedIds = Set(newIDs.compactMap { id in
-                networkController.packages.first(where: { $0.id == id })?.jamfId
-            })
-            packageMultiSelection = selectedIds
-        }
-    }
-
-     // Small iOS/List alternative extracted separately
-     private var packagesListView: some View {
-    
-         // Show a small header row above the selectable list so users understand this pane
-         
-          
-         
-         VStack(alignment: .leading, spacing: 6) {
-             // Selection row always shown under header so users see selection count
-             HStack(spacing: 8) {
-                 Text("Selection:")
-                     .font(.caption)
-                     .fontWeight(.semibold)
-                     .foregroundColor(.primary)
-                 Spacer()
-                 Text("Selected: \(packageMultiSelection.count)")
-                     .font(.caption2)
-                     .foregroundColor(.secondary)
-             }
-             .padding(.horizontal)
-             .padding(.top, 4)
-             List(sortedPackages, id: \.jamfId, selection: $packageMultiSelection) { package in
-                 HStack(alignment: .center, spacing: 12) {
-                     VStack(alignment: .leading, spacing: 2) {
-                         Text(package.name)
-                             .font(.system(size: 12.0))
-                             .lineLimit(1)
-                     }
-                     Spacer()
-                     Text(package.jamfId != 0 ? String(package.jamfId) : package.id.uuidString)
-                         .font(.caption.monospaced())
-                         .foregroundColor(.secondary)
-                         .frame(width: 120, alignment: .trailing)
-                 }
-                 .contentShape(Rectangle())
-             }
-         }
-      }
-    
-    // End of view helpers
 }
-
-// End of file

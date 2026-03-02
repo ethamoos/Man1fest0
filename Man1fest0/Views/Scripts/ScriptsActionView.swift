@@ -15,8 +15,7 @@ struct ScriptsActionView: View {
     @EnvironmentObject var progress: Progress
     
     @State private var searchText = ""
-    // Use a set of Jamf IDs for selection — stable across refreshes and API fetches
-    @State private var selection = Set<Int>()
+    @State var selection = Set<ScriptClassic>()
     @State private var showingWarning = false
     
     var server: String
@@ -28,9 +27,9 @@ struct ScriptsActionView: View {
         VStack(alignment: .leading) {
             
             if networkController.scripts.count > 0 {
+                
                 // Removed inner NavigationView to avoid creating duplicate NSToolbar search items.
-                // Use the Jamf integer ID for the List selection binding
-                List(searchResults, id: \ .jamfId, selection: $selection) { script in
+                List(searchResults, id: \.self, selection: $selection) { script in
                     HStack {
                         Image(systemName: "applescript")
                         Text("\(script.name)").font(.system(size: 12.0)).foregroundColor(.blue)
@@ -58,32 +57,27 @@ struct ScriptsActionView: View {
                 }
                 .searchable(text: $searchText)
                 
-                //  ################################################################################
+                //              ################################################################################
                 //              Toolbar - END
-                //  ################################################################################
+                //              ################################################################################
                 
                 #if os(macOS)
                 
                 VStack(alignment: .leading) {
+                    
                     Text("Selections").fontWeight(.bold)
-                    
-                    // Show number of selected items for quick feedback
-                    Text("Selected: \(selection.count)").font(.caption)
-                    
-                    // Show the selected scripts by matching stored Jamf IDs back to the current script list
-                    List {
-                        ForEach(searchResults.filter { selection.contains($0.jamfId) }) { script in
-                            Text(script.name)
-                        }
+                    List(Array(selection), id: \.self) { script in
+                        Text(script.name )
                     }
                     
-                    //  ################################################################################
+                    //              ################################################################################
                     //              DELETE
-                    //  ################################################################################
+                    //              ################################################################################
                     
                     HStack(spacing:20) {
                         Button(action: {
                             showingWarning = true
+                       
                         }) {
                             Text("Delete")
                         }
@@ -96,9 +90,7 @@ struct ScriptsActionView: View {
                                     progress.showProgressView = true
                                     progress.waitForABit()
                                     Task {
-                                        // Use the computed property to get the selected ScriptClassic objects
-                                        let selected = selectedScripts
-                                        networkController.batchDeleteScripts(selection: Set(selected), server: server, authToken: networkController.authToken, resourceType: ResourceType.script)
+                                        try await networkController.batchDeleteScripts(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.script)
                                     }
                                     print("Yes tapped")
                                 },
@@ -120,7 +112,9 @@ struct ScriptsActionView: View {
                 }
             }
         }
-                
+        
+//        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
+        
         .frame(minWidth: 300, minHeight: 100, alignment: .leading)
 
         .onAppear {
@@ -134,7 +128,9 @@ struct ScriptsActionView: View {
         }
         
         if progress.showProgressView == true {
+            
             ProgressView {
+                
                 Text("Processing")
                     .padding()
             }
@@ -149,10 +145,5 @@ struct ScriptsActionView: View {
         } else {
             return networkController.scripts.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
-    }
-    
-    // Computed helper: map selected Jamf IDs back to ScriptClassic objects
-    private var selectedScripts: [ScriptClassic] {
-        return networkController.scripts.filter { selection.contains($0.jamfId) }
     }
 }
