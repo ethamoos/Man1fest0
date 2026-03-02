@@ -83,6 +83,7 @@
 		A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F16D6F2C621E5700CC0751 /* ViewModifiers.swift */; };
 		A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F8A2AEA59120061D5F7 /* Basher.swift */; };
 		A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */; };
+		A8FBCF072F55E219001B8518 /* TestView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBCF062F55E20F001B8518 /* TestView2.swift */; };
 		E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40161252C62A18E0054A1FF /* CreatePolicyView.swift */; };
 		E41BA0DD2C4C0E790060673C /* JamfObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41BA0D82C4C0E790060673C /* JamfObject.swift */; };
 		E41BA0DE2C4C0E790060673C /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41BA0D92C4C0E790060673C /* Keychain.swift */; };
@@ -192,6 +193,7 @@
 		A8F16D6F2C621E5700CC0751 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		A8FB5F8A2AEA59120061D5F7 /* Basher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Basher.swift; sourceTree = "<group>"; };
 		A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASyncFileDownloader.swift; sourceTree = "<group>"; };
+		A8FBCF062F55E20F001B8518 /* TestView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView2.swift; sourceTree = "<group>"; };
 		E40161252C62A18E0054A1FF /* CreatePolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePolicyView.swift; sourceTree = "<group>"; };
 		E41BA0D82C4C0E790060673C /* JamfObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JamfObject.swift; sourceTree = "<group>"; };
 		E41BA0D92C4C0E790060673C /* Keychain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -406,6 +408,7 @@
 		E477727D2B5B20F0009FC571 /* Development */ = {
 			isa = PBXGroup;
 			children = (
+				A8FBCF062F55E20F001B8518 /* TestView2.swift */,
 				A8C1E2612EC3AB6800DEDBF8 /* Breakout.swift */,
 				A8EC41112B0277B500496EC2 /* TestView.swift */,
 				E433D9DD2B58488C005727E1 /* TestOptionsView.swift */,
@@ -658,6 +661,7 @@
 				A813C0D92E5482B100735884 /* PolicyDetailClearItemsTabView.swift in Sources */,
 				A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */,
 				A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */,
+				A8FBCF072F55E219001B8518 /* TestView2.swift in Sources */,
 				E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */,
 				A86CB8652D3E618000D8F22F /* ReportsExport.swift in Sources */,
 				A866AE222DBAA35600675075 /* ScriptDetailTableView.swift in Sources */,
@@ -879,7 +883,9 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.56.1;
+
+				CURRENT_PROJECT_VERSION = 1.57.1;
+
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -906,7 +912,9 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.56;
+
+				MARKETING_VERSION = 1.57.1;
+
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -927,7 +935,9 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.56.1;
+
+				CURRENT_PROJECT_VERSION = 1.57.1
+
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -954,7 +964,9 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.56;
+
+				MARKETING_VERSION = 1.57.1;
+
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
