@@ -83,6 +83,11 @@
 		A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F16D6F2C621E5700CC0751 /* ViewModifiers.swift */; };
 		A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F8A2AEA59120061D5F7 /* Basher.swift */; };
 		A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */; };
+		A8FBD3492F5755CB001B8518 /* InactivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD3462F5755CB001B8518 /* InactivityMonitor.swift */; };
+		A8FBD34A2F5755CB001B8518 /* SecuritySettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD3472F5755CB001B8518 /* SecuritySettingsManager.swift */; };
+		A8FBD34F2F5755FF001B8518 /* SecureAppWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34C2F5755FF001B8518 /* SecureAppWrapper.swift */; };
+		A8FBD3502F5755FF001B8518 /* LockScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34B2F5755FF001B8518 /* LockScreenView.swift */; };
+		A8FBD3512F5755FF001B8518 /* SecuritySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34D2F5755FF001B8518 /* SecuritySettingsView.swift */; };
 		E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40161252C62A18E0054A1FF /* CreatePolicyView.swift */; };
 		E41BA0DD2C4C0E790060673C /* JamfObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41BA0D82C4C0E790060673C /* JamfObject.swift */; };
 		E41BA0DE2C4C0E790060673C /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41BA0D92C4C0E790060673C /* Keychain.swift */; };
@@ -192,6 +197,11 @@
 		A8F16D6F2C621E5700CC0751 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		A8FB5F8A2AEA59120061D5F7 /* Basher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Basher.swift; sourceTree = "<group>"; };
 		A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASyncFileDownloader.swift; sourceTree = "<group>"; };
+		A8FBD3462F5755CB001B8518 /* InactivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityMonitor.swift; sourceTree = "<group>"; };
+		A8FBD3472F5755CB001B8518 /* SecuritySettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsManager.swift; sourceTree = "<group>"; };
+		A8FBD34B2F5755FF001B8518 /* LockScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenView.swift; sourceTree = "<group>"; };
+		A8FBD34C2F5755FF001B8518 /* SecureAppWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureAppWrapper.swift; sourceTree = "<group>"; };
+		A8FBD34D2F5755FF001B8518 /* SecuritySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsView.swift; sourceTree = "<group>"; };
 		E40161252C62A18E0054A1FF /* CreatePolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePolicyView.swift; sourceTree = "<group>"; };
 		E41BA0D82C4C0E790060673C /* JamfObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JamfObject.swift; sourceTree = "<group>"; };
 		E41BA0D92C4C0E790060673C /* Keychain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -307,6 +317,7 @@
 				E48D59D42C5961B800E1E35B /* Packages */,
 				E48D59D32C5961A200E1E35B /* Policy */,
 				E45E132C2C53B5FB007C175F /* ReportsView.swift */,
+				A8FBD34E2F5755FF001B8518 /* Security */,
 				A88A6A222DB79374009A64B8 /* Scripts */,
 				A8A46D0C2C47C91F00EF5987 /* PrestageViews */,
 				A87E851A2F16686E00CF42D0 /* UserDetailedView.swift */,
@@ -401,6 +412,25 @@
 				A83898122C6686F3003D3F95 /* Buttons.swift */,
 			);
 			path = ViewModifiers;
+			sourceTree = "<group>";
+		};
+		A8FBD3482F5755CB001B8518 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				A8FBD3462F5755CB001B8518 /* InactivityMonitor.swift */,
+				A8FBD3472F5755CB001B8518 /* SecuritySettingsManager.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		A8FBD34E2F5755FF001B8518 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				A8FBD34B2F5755FF001B8518 /* LockScreenView.swift */,
+				A8FBD34C2F5755FF001B8518 /* SecureAppWrapper.swift */,
+				A8FBD34D2F5755FF001B8518 /* SecuritySettingsView.swift */,
+			);
+			path = Security;
 			sourceTree = "<group>";
 		};
 		E477727D2B5B20F0009FC571 /* Development */ = {
@@ -506,6 +536,7 @@
 				A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */,
 				A86CB8622D3E5C8100D8F22F /* TextDocument.swift */,
 				A86533ED2C3C22DB002894B2 /* XmlBrain.swift */,
+				A8FBD3482F5755CB001B8518 /* Security */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -713,6 +744,9 @@
 				A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */,
 				E41BA0DE2C4C0E790060673C /* Keychain.swift in Sources */,
 				E49319852B67976C00B58519 /* PrestagesView.swift in Sources */,
+				A8FBD34F2F5755FF001B8518 /* SecureAppWrapper.swift in Sources */,
+				A8FBD3502F5755FF001B8518 /* LockScreenView.swift in Sources */,
+				A8FBD3512F5755FF001B8518 /* SecuritySettingsView.swift in Sources */,
 				A8DD6B3B2A13CA890098563C /* ComputerActionView.swift in Sources */,
 				E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */,
 				A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */,
@@ -723,6 +757,8 @@
 				A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */,
 				A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */,
 				E493198D2B679BE400B58519 /* PrestageRemoveDeviceView.swift in Sources */,
+				A8FBD3492F5755CB001B8518 /* InactivityMonitor.swift in Sources */,
+				A8FBD34A2F5755CB001B8518 /* SecuritySettingsManager.swift in Sources */,
 				A87004362C81C48700C1AB97 /* PolicyActionsDetailTableView.swift in Sources */,
 				A8ECB7C12C88492700FAFDC2 /* PushBrain.swift in Sources */,
 				A87BF5C82EB13CDC00E065BB /* PolicyRowView.swift in Sources */,
