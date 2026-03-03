@@ -20,6 +20,7 @@ class InactivityMonitor: ObservableObject {
         self.securitySettings = securitySettings
         
         // Monitor app state changes
+        #if canImport(UIKit)
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
                 self?.appDidBecomeActive()
@@ -31,6 +32,7 @@ class InactivityMonitor: ObservableObject {
                 self?.appWillResignActive()
             }
             .store(in: &cancellables)
+        #endif
         
         #if os(macOS)
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
@@ -96,8 +98,9 @@ class InactivityMonitor: ObservableObject {
         print("🔓 App unlocked")
     }
     
-    // MARK: - Private Methods
-    private func checkLockStatus() {
+    // MARK: - Internal Methods
+    // Made internal (default) so other parts of the app can trigger a manual check
+    func checkLockStatus() {
         if securitySettings.shouldLock() {
             lockApp()
         } else {
@@ -144,17 +147,21 @@ class InactivityMonitor: ObservableObject {
 // MARK: - User Activity Extension
 extension View {
     func trackUserActivity(inactivityMonitor: InactivityMonitor) -> some View {
-        self.onReceive(NotificationCenter.default.publisher(for: UIApplication.userDidTakeScreenshotNotification)) { _ in
+        var v = self
+        #if canImport(UIKit)
+        v = v.onReceive(NotificationCenter.default.publisher(for: UIApplication.userDidTakeScreenshotNotification)) { _ in
             inactivityMonitor.trackUserActivity()
         }
-        .onTapGesture {
-            inactivityMonitor.trackUserActivity()
-        }
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    inactivityMonitor.trackUserActivity()
-                }
-        )
+        #endif
+        return v
+            .onTapGesture {
+                inactivityMonitor.trackUserActivity()
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        inactivityMonitor.trackUserActivity()
+                    }
+            )
     }
 }

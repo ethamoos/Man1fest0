@@ -102,6 +102,7 @@ struct SecuritySettingsView: View {
                 }
             }
             .navigationTitle("Security Settings")
+            #if canImport(UIKit)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -112,6 +113,16 @@ struct SecuritySettingsView: View {
                     }
                 }
             }
+            #else
+            // macOS: use a simple toolbar item placement that's available
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button("Done") {
+                        securitySettings.saveSettings()
+                    }
+                }
+            }
+            #endif
         }
         .alert("Keychain Access", isPresented: $showingKeychainAlert) {
             Button("OK", role: .cancel) { }

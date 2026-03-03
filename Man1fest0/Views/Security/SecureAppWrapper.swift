@@ -7,13 +7,16 @@ struct SecureAppWrapper<Content: View>: View {
     let content: Content
     
     // MARK: - Environment Objects
-    @StateObject private var securitySettings = SecuritySettingsManager()
+    @StateObject private var securitySettings: SecuritySettingsManager
     @StateObject private var inactivityMonitor: InactivityMonitor
     
     // MARK: - Initialization
     init(@ViewBuilder content: () -> Content) {
+        // Create a local settings instance so we can initialize both StateObjects
+        let settings = SecuritySettingsManager()
+        self._securitySettings = StateObject(wrappedValue: settings)
+        self._inactivityMonitor = StateObject(wrappedValue: InactivityMonitor(securitySettings: settings))
         self.content = content()
-        self._inactivityMonitor = StateObject(wrappedValue: InactivityMonitor(securitySettings: securitySettings))
     }
     
     // MARK: - Body
@@ -42,10 +45,15 @@ struct SecureAppWrapper<Content: View>: View {
             // Start monitoring when app appears
             inactivityMonitor.resetInactivityTimer()
         }
+        // Only subscribe to foreground notifications on iOS/Catalyst
+        #if os(iOS) || targetEnvironment(macCatalyst)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             // Check lock status when app comes to foreground
             inactivityMonitor.checkLockStatus()
         }
+        #else
+        // For macOS we can observe NSWorkspace notifications inside InactivityMonitor directly; no-op here
+        #endif
     }
 }
 
@@ -61,7 +69,7 @@ struct SecureActivityModifier: ViewModifier {
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
     
     func body(content: Content) -> some View {
-        content
+        var view = content
             .onTapGesture {
                 inactivityMonitor.trackUserActivity()
             }
@@ -71,6 +79,10 @@ struct SecureActivityModifier: ViewModifier {
                         inactivityMonitor.trackUserActivity()
                     }
             )
+        
+        // Add iOS/Catalyst-specific notification listeners only when available
+        #if os(iOS) || targetEnvironment(macCatalyst)
+        view = view
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.userDidTakeScreenshotNotification)) { _ in
                 inactivityMonitor.trackUserActivity()
             }
@@ -80,6 +92,9 @@ struct SecureActivityModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
                 inactivityMonitor.trackUserActivity()
             }
+        #endif
+        
+        return view
     }
 }
 
