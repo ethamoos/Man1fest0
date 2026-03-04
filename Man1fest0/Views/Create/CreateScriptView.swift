@@ -22,7 +22,7 @@ struct CreateScriptView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: AppLayout
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var policyController: PolicyBrain
     
@@ -116,7 +116,7 @@ struct CreateScriptView: View {
                 LazyVGrid(columns: columns, spacing: 30) {
                     Picker(selection: $selectedCategoryId, label: Text("Category")) {
                         Text("No category selected").tag(nil as Int?)
-                        ForEach(networkController.categories) { category in
+                        ForEach(networkController.categories, id: \.self) { category in
                             Text(category.name).tag(category.jamfId as Int?)
                         }
                     }

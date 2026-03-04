@@ -20,7 +20,7 @@ struct PolicyPackageTabView: View {
     
     @EnvironmentObject var xmlController: XmlBrain
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: AppLayout
     
     var policyID: Int
     var server: String
@@ -74,7 +74,7 @@ struct PolicyPackageTabView: View {
                 
                 if currentPolicyPackages.count >= 1 {
                     
-                    List(currentPolicyPackages) { package in
+                    List(currentPolicyPackages, id: \.self) { package in
                         
                         HStack {
                             Image(systemName: "suitcase")
@@ -119,7 +119,7 @@ struct PolicyPackageTabView: View {
                     TextField("Filter", text: $packageFilter)
                     Picker(selection: $selectedPackageId, label: Text("").bold()) {
                         Text("No package selected").tag(nil as Int?)
-                        ForEach(networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }) { package in
+                        ForEach(networkController.packages.filter { packageFilter.isEmpty ? true : $0.name.contains(packageFilter) }, id: \.self) { package in
                             Text(String(describing: package.name))
                                 .tag(package.jamfId as Int?)
                         }

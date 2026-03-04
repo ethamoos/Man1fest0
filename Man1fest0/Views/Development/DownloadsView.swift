@@ -10,7 +10,7 @@ import SwiftUI
 struct DownloadsView: View {
     
     @EnvironmentObject var networkController: NetBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     
     var authToken: String
     var server: String
@@ -43,4 +43,3 @@ struct DownloadsView: View {
         .padding()
     }
 }
-

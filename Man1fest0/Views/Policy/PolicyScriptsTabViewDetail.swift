@@ -8,7 +8,7 @@ struct PolicyScriptsTabViewDetail: View {
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: AppLayout
 
     @State private var parameter4: String = ""
     @State private var parameter5: String = ""
@@ -114,7 +114,7 @@ struct PolicyScriptsTabViewDetail_Previews: PreviewProvider {
             .environmentObject(XmlBrain())
             .environmentObject(NetBrain())
             .environmentObject(Progress())
-            .environmentObject(Layout())
+            .environmentObject(AppLayout())
     }
 }
 #endif

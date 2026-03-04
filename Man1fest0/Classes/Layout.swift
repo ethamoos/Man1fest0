@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 
-class Layout: ObservableObject {
+class AppLayout: ObservableObject {
     
     @EnvironmentObject var networkController: NetBrain
     
@@ -372,5 +372,6 @@ class Layout: ObservableObject {
     }
     
 }
-    
-//}
+
+// Backwards-compatibility alias: many files used `Layout` previously; keep that name as an alias to AppLayout.
+typealias Layout = AppLayout

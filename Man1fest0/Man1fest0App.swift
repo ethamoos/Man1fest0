@@ -130,7 +130,7 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
 #if os(macOS)
 fileprivate struct AppPolicyDelayPreferencesView: View {
     @EnvironmentObject var networkController: NetBrain
-    @State private var delayValue: Double = 0.0
+    @State private var delayValue: Double = 3.0
     @State private var showSavedToast = false
 
     var body: some View {
@@ -215,7 +215,7 @@ struct Man1fest0App: App {
 #if os(macOS)
     let basher = Basher()
 #endif
-    let layout = Layout()
+    let layout = AppLayout()
 //    let jamfController: JamfController
     let scopingController: ScopingBrain
     let policyController: PolicyBrain

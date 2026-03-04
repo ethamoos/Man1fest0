@@ -23,7 +23,7 @@ struct PolicyScopeTabView: View {
     
     @EnvironmentObject var progress: Progress
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     
     @EnvironmentObject var scopingController: ScopingBrain
     

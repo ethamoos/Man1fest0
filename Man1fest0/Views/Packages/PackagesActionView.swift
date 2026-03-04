@@ -17,7 +17,7 @@ struct PackagesActionView: View {
     //  ########################################################################################
     
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     @EnvironmentObject var networkController: NetBrain
     
     //  ########################################################################################
@@ -47,7 +47,7 @@ struct PackagesActionView: View {
                 
                 Section(header: Text("All Packages").bold().padding(.leading)) {
                     
-                    List(searchResults, selection: $selection) { package in
+                    List(searchResults, id: \.self, selection: $selection) { package in
                         
                         HStack {
                             Image(systemName: "suitcase.fill")
@@ -145,7 +145,7 @@ struct PackagesActionView: View {
                     
                     Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
                         Text("No category selected").tag(nil as Int?)
-                        ForEach(networkController.categories) { category in
+                        ForEach(networkController.categories, id: \.self) { category in
                             Text(String(describing: category.name))
                                 .tag(category.jamfId as Int?)
                         }
@@ -181,7 +181,7 @@ struct PackagesActionView: View {
         .padding()
 
 
-        List(Array(selection)) { package in
+        List(Array(selection), id: \.self) { package in
             
             Text(package.name )
             

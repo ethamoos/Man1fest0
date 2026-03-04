@@ -1,4 +1,4 @@
-//  PolicyRemoveItemsView.swift
+0//  PolicyRemoveItemsView.swift
 //  Man1fest0
 //
 //  Created by Amos Deane on 18/08/2025.
@@ -21,7 +21,7 @@ struct PolicyRemoveItemsTabView: View {
     
     @EnvironmentObject var scopingController: ScopingBrain
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: AppLayout
     
     var policyID: Int
     var server: String

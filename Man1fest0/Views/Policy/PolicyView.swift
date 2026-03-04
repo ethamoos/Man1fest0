@@ -29,7 +29,7 @@ struct PolicyView: View {
     
     @EnvironmentObject var progress: Progress
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: AppLayout
     
     @EnvironmentObject var networkController: NetBrain
     
@@ -58,7 +58,7 @@ struct PolicyView: View {
                     NavigationView {
                         
 #if os(macOS)
-                        List(searchResults, selection: $selection) { policy in
+                        List(searchResults, id: \.self, selection: $selection) { policy in
                             NavigationLink(destination: PolicyDetailView(server: server, policy: policy, policyID: policy.jamfId ?? 1)) {
                                 
                                 HStack {

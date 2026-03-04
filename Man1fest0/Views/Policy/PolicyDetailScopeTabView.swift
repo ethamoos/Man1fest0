@@ -22,7 +22,7 @@ struct PolicyDetailScopeTabView: View {
     @EnvironmentObject var scopingController: ScopingBrain
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     
     @State private var showingWarningClearScope = false
     @State private var showingWarningClearLimit = false
@@ -100,7 +100,7 @@ struct PolicyDetailScopeTabView: View {
                     Picker(selection: $computerGroupSelection, label:Label("Groups", systemImage: "person.3")
                     ) {
                         //                        Text("").tag("")
-                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)})) { group in
+                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
                             Text(String(describing: group.name))
                                 .tag(group as ComputerGroup?)
                         }

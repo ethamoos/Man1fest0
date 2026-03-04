@@ -18,7 +18,7 @@ struct PolicySearchView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     @EnvironmentObject var xmlController: XmlBrain
     
     
@@ -552,7 +552,7 @@ enum SearchField: String, CaseIterable {
     // New scope-related fields
     case scopeAllComputers
     case scopeAllJSSUsers
-    case scopeComputers 
+    case scopeComputers
     case scopeComputerGroups
     case scopeBuildings
     case scopeDepartments

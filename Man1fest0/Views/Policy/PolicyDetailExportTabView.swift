@@ -14,7 +14,7 @@ struct PolicyDetailExportTabView: View {
     @EnvironmentObject var scopingController: ScopingBrain
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     
     var server: String
     var selectedPoliciesInt: [Int?]

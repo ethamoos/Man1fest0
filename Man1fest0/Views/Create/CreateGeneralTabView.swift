@@ -18,7 +18,7 @@ struct CreateGeneralTabView: View {
     @EnvironmentObject var networkController: NetBrain
     // @EnvironmentObject var controller: JamfController
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: AppLayout
     @EnvironmentObject var importExportController: ImportExportBrain
     @Binding var selectedFilename: String
 
@@ -367,7 +367,7 @@ struct CreateGeneralTabView: View {
                     TextField("Filter", text: $packageFilter)
                     Picker(selection: $selectedPackageId, label: Text("").bold()) {
                         Text("No package selected").tag(nil as Int?)
-                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)})) { package in
+                        ForEach(networkController.packages.filter({packageFilter == "" ? true : $0.name.contains(packageFilter)}), id: \.self) { package in
                             Text(String(describing: package.name))
                                 .tag(package.jamfId as Int?)
                         }

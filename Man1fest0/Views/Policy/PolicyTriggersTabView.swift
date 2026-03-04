@@ -21,7 +21,7 @@ struct PolicyTriggersTabView: View {
     
     @EnvironmentObject var xmlController: XmlBrain
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     
     
     //  ################################################################################
