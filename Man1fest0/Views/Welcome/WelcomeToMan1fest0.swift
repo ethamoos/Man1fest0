@@ -124,7 +124,7 @@ struct WelcomeToMan1fest0: View {
 //            quickActionsSection
             Spacer()
             // Getting started section
-            gettingStartedSection
+//            gettingStartedSection
             
             Spacer()
         }
