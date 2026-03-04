@@ -1,4 +1,4 @@
-import SwiftUI
+aimport SwiftUI
 import Foundation
 
 // MARK: - Policy Cache Manager
@@ -151,8 +151,8 @@ class PolicyPreloader: ObservableObject {
         let start = max(0, currentIndex - prefetchRadius)
         let end = min(policies.count - 1, currentIndex + prefetchRadius)
         
-        for i in start...end {
-            let policyID = String(describing: policies[i].jamfId)
+        for index in start...end {
+            let policyID = String(describing: policies[index].jamfId)
             
             // Skip if already cached or preloading
             if cacheManager.getCachedPolicy(for: policyID) != nil || preloadingQueue[policyID] != nil || preloadedPolicies.contains(policyID) {

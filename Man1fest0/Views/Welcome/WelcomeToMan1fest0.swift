@@ -124,7 +124,7 @@ struct WelcomeToMan1fest0: View {
 //            quickActionsSection
             Spacer()
             // Getting started section
-//            gettingStartedSection
+            gettingStartedSection
             
             Spacer()
         }
@@ -799,11 +799,11 @@ class AppUserPreferences: ObservableObject {
 // Summarize helper moved into this file so we can reference AppFeature without circular imports
 func summarizeAppFeatures(_ features: [AppFeature]) -> String {
     var lines: [String] = []
-    for f in features {
-        lines.append("- \(f.title): \(f.description)")
-        if let subs = f.subFeatures, !subs.isEmpty {
-            for s in subs {
-                lines.append("    • \(s.title)")
+    for feature in features {
+        lines.append("- \(feature.title): \(feature.description)")
+        if let subs = feature.subFeatures, !subs.isEmpty {
+            for subFeature in subs {
+                lines.append("    • \(subFeature.title)")
             }
         }
     }

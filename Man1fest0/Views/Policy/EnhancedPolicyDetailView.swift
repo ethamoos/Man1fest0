@@ -397,8 +397,8 @@ struct EnhancedPolicyDetailView: View {
         
         print("🔄 Incremental loading: policies \(start)...\(end) around current policy \(policyID)")
         
-        for i in start...end {
-            let policy = allPolicies[i]
+        for index in start...end {
+            let policy = allPolicies[index]
             let policyIDString = String(describing: policy.jamfId)
             
             // Check cache first
@@ -412,7 +412,7 @@ struct EnhancedPolicyDetailView: View {
                     }
                     
                     // Update progress
-                    let progress = Double(i - start + 1) / Double(end - start + 1)
+                    let progress = Double(index - start + 1) / Double(end - start + 1)
                     cacheManager.loadingProgress = progress
                     
                     // Check if this is our target policy

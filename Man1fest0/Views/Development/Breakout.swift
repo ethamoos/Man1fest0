@@ -321,7 +321,7 @@ struct BreakoutGameView: View {
             words = []
         } else {
             words = networkController.policies.map { $0.name }.shuffled()
-//            print("Words are:\(words)")
+            print("Words are:\(words)")
         }
         // Rebuild bricks so the new words are applied to brick.word
         DispatchQueue.main.async {
@@ -442,10 +442,10 @@ struct BreakoutGameView: View {
         }
         
         // Brick collisions
-        for i in bricks.indices {
-            if bricks[i].isHit { continue }
-            if ballRect.intersects(bricks[i].rect) {
-                bricks[i].isHit = true
+        for index in bricks.indices {
+            if bricks[index].isHit { continue }
+            if ballRect.intersects(bricks[index].rect) {
+                bricks[index].isHit = true
                 score += 10
                 ball.velocity.dy *= -1
                 break
