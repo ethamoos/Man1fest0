@@ -241,7 +241,14 @@ struct Man1fest0App: App {
         self.scopingController = ScopingBrain()
         self.policyController = PolicyBrain()
         self.exportController = ImportExportBrain()
+        // Initialize global security settings and inactivity monitor
+        self.securitySettings = SecuritySettingsManager()
+        self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)
     }
+    
+    // Global security objects provided to the environment
+    let securitySettings: SecuritySettingsManager
+    let inactivityMonitor: InactivityMonitor
     
     var body: some Scene {
         WindowGroup {
@@ -267,6 +274,9 @@ struct Man1fest0App: App {
                 .environmentObject(scopingController)
                 .environmentObject(policyController)
                 .environmentObject(exportController)
+                // Provide global security objects
+                .environmentObject(securitySettings)
+                .environmentObject(inactivityMonitor)
         }.commands {
             SidebarCommands()
         }

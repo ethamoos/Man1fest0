@@ -8,17 +8,13 @@ struct SecureAppWrapper<Content: View>: View {
     // Binding to control preferences sheet visibility (provided by App)
     private let showingPreferences: Binding<Bool>
     
-    // MARK: - Environment Objects
-    @StateObject private var securitySettings: SecuritySettingsManager
-    @StateObject private var inactivityMonitor: InactivityMonitor
+    // MARK: - Environment Objects (provided by App)
+    @EnvironmentObject var securitySettings: SecuritySettingsManager
+    @EnvironmentObject var inactivityMonitor: InactivityMonitor
     @EnvironmentObject var networkController: NetBrain
     
     // MARK: - Initialization
     init(showPreferences: Binding<Bool>, @ViewBuilder content: () -> Content) {
-        // Create a local settings instance so we can initialize both StateObjects
-        let settings = SecuritySettingsManager()
-        self._securitySettings = StateObject(wrappedValue: settings)
-        self._inactivityMonitor = StateObject(wrappedValue: InactivityMonitor(securitySettings: settings))
         self.content = content()
         self.showingPreferences = showPreferences
     }

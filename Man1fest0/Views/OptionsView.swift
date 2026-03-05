@@ -7,6 +7,8 @@ struct OptionsView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var prestageController: PrestageBrain
     @EnvironmentObject var progress: Progress
+    @EnvironmentObject var securitySettings: SecuritySettingsManager
+    @EnvironmentObject var inactivityMonitor: InactivityMonitor
     
     @State var prestageID = ""
     @State var serial = ""
@@ -55,7 +57,7 @@ struct OptionsView: View {
                     .padding(.vertical, 6)
                     
 //                    Divider()
-//                    
+//
 //                    Text("manage Jamf policies and more ")
 //                        .fontWeight(.black)
 //                        .padding(.vertical, 6)
@@ -233,15 +235,30 @@ struct OptionsView: View {
                             }
                         }
                         
-                        // Preferences
-//                        Group {
-//                            Divider()
-//                            DisclosureGroup("Preferences") {
-//                                NavigationLink(destination: PolicyDelayInlineView()) {
-//                                    Text("Policy fetch delay")
-//                                }
-//                            }
-//                        }
+                        Group {
+                            Divider()
+                            DisclosureGroup("Preferences") {
+                                // Security preferences (auto-lock, password requirement, keychain)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Picker("Auto-lock after:", selection: $securitySettings.inactivityTimeout) {
+                                        ForEach(SecuritySettingsManager.InactivityTimeout.allCases) { t in
+                                            Text(t.displayName).tag(t)
+                                        }
+                                    }
+                                    .pickerStyle(.menu)
+                                    
+                                    Toggle("Require password on wake", isOn: $securitySettings.requirePasswordOnWake)
+                                    Toggle("Use keychain for password", isOn: $securitySettings.useKeychainForPassword)
+                                    Button("Force lock now") {
+                                        inactivityMonitor.lockApp()
+                                    }
+                                    Divider()
+                                    NavigationLink(destination: PolicyDelayInlineView()) {
+                                        Text("Policy fetch delay")
+                                    }
+                                }
+                            }
+                        }
                         
 //                            NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
 //                                Text("Prestages")
