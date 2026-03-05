@@ -5,18 +5,22 @@ struct SecureAppWrapper<Content: View>: View {
     
     // MARK: - Content
     let content: Content
+    // Binding to control preferences sheet visibility (provided by App)
+    private let showingPreferences: Binding<Bool>
     
     // MARK: - Environment Objects
     @StateObject private var securitySettings: SecuritySettingsManager
     @StateObject private var inactivityMonitor: InactivityMonitor
+    @EnvironmentObject var networkController: NetBrain
     
     // MARK: - Initialization
-    init(@ViewBuilder content: () -> Content) {
+    init(showPreferences: Binding<Bool>, @ViewBuilder content: () -> Content) {
         // Create a local settings instance so we can initialize both StateObjects
         let settings = SecuritySettingsManager()
         self._securitySettings = StateObject(wrappedValue: settings)
         self._inactivityMonitor = StateObject(wrappedValue: InactivityMonitor(securitySettings: settings))
         self.content = content()
+        self.showingPreferences = showPreferences
     }
     
     // MARK: - Body
@@ -36,11 +40,43 @@ struct SecureAppWrapper<Content: View>: View {
                 LockScreenView()
                     .environmentObject(securitySettings)
                     .environmentObject(inactivityMonitor)
-                    .environmentObject(NetBrain()) // You'll need to pass the actual networkController
+                    .environmentObject(networkController)
                     .transition(.opacity)
                     .zIndex(1000)
             }
         }
+        // Preferences sheet (macOS only)
+        #if os(macOS)
+        .sheet(isPresented: showingPreferences) {
+            // Inline preferences UI to ensure compilation and avoid symbol-scope issues
+            NavigationView {
+                Form {
+                    Section(header: Text("Security")) {
+                        Picker("Auto-lock after:", selection: $securitySettings.inactivityTimeout) {
+                            ForEach(SecuritySettingsManager.InactivityTimeout.allCases) { t in
+                                Text(t.displayName).tag(t)
+                            }
+                        }
+                        Toggle("Require password on wake", isOn: $securitySettings.requirePasswordOnWake)
+                        Toggle("Use keychain for password", isOn: $securitySettings.useKeychainForPassword)
+                        Button("Force lock now") { inactivityMonitor.lockApp() }
+                    }
+                    Section(header: Text("Policy Fetch")) {
+                        // Inlined Policy Delay controls
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Policy fetch delay (seconds)")
+                                .font(.headline)
+                            // local state via transient view
+                            PolicyDelayInlineViewLocal()
+                                .environmentObject(networkController)
+                        }
+                     }
+                }
+                .navigationTitle("Preferences")
+                .frame(minWidth: 420, minHeight: 260)
+            }
+         }
+        #endif
         .onAppear {
             // Start monitoring when app appears
             inactivityMonitor.resetInactivityTimer()
@@ -95,6 +131,29 @@ struct SecureActivityModifier: ViewModifier {
         #endif
         
         return view
+    }
+}
+
+// MARK: - Local Inline Views used by the SecureAppWrapper
+fileprivate struct PolicyDelayInlineViewLocal: View {
+    @EnvironmentObject var networkController: NetBrain
+    @State private var delayValue: Double = 0.0
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Slider(value: $delayValue, in: 0...60, step: 0.1)
+            HStack {
+                Button("Save") {
+                    networkController.setPolicyRequestDelay(delayValue)
+                }
+                Button("Reset") {
+                    delayValue = networkController.getPolicyRequestDelay()
+                }
+                Spacer()
+                Text(networkController.humanReadableDuration(delayValue))
+            }
+            .onAppear { delayValue = networkController.getPolicyRequestDelay() }
+        }
     }
 }
 

@@ -245,9 +245,10 @@ struct Man1fest0App: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-            
-//                .environmentObject(photoController)
+            SecureAppWrapper(showPreferences: $showingPreferences) {
+                ContentView()
+            }
+            // Preserve existing environment objects for the app and pass them to the wrapped content
                 .environmentObject(coreDataStack)
                 .environment(\.managedObjectContext,
                              coreDataStack.managedObjectContext)
@@ -263,17 +264,9 @@ struct Man1fest0App: App {
 
                 .environmentObject(layout)
                 .environmentObject(backgroundTasks)
-//                .environmentObject(jamfcontroller)
                 .environmentObject(scopingController)
                 .environmentObject(policyController)
                 .environmentObject(exportController)
-                // Present the preferences view as a sheet on macOS when requested from the menu
-                #if os(macOS)
-                .sheet(isPresented: $showingPreferences) {
-                    AppPolicyDelayPreferencesView()
-                        .environmentObject(networkController)
-                }
-                #endif
         }.commands {
             SidebarCommands()
         }
