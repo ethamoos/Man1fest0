@@ -61,10 +61,8 @@ struct  IconsView: View {
                                 HStack {
                                     Image(systemName: "photo.circle")
                                     Text(String(describing: icon.name)).font(.system(size: 12.0))
-                                    AsyncImage(url: URL(string: icon.url )) { image in
-                                        image.resizable().frame(width: 25, height: 25)
-                                    } placeholder: {
-                                    }
+                                    IconView(urlString: icon.url, size: 25)
+                                        .frame(width: 25, height: 25)
                                 }
                             }
                             .cornerRadius(8)

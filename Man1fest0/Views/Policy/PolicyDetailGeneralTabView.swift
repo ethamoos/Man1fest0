@@ -14,7 +14,7 @@ struct PolicyDetailGeneralTabView: View {
     @EnvironmentObject var scopingController: ScopingBrain
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     
     var server: String
     var selectedPoliciesInt: [Int?]
@@ -200,16 +200,9 @@ struct PolicyDetailGeneralTabView: View {
                                     Circle()
                                         .fill(Color.gray.opacity(0.15))
                                         .frame(width: 32, height: 32)
-                                    AsyncImage(url: URL(string: icon.url ))  { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 20, height: 20)
-                                            .clipped()
-                                    } placeholder: {
-                                        ProgressView()
-                                            .frame(width: 20, height: 20)
-                                    }
+                                    IconView(urlString: icon.url, size: 20)
+                                        .frame(width: 20, height: 20)
+                                        .clipped()
                                 }
                                 Text(String(describing: icon.name))
                                     .font(.system(size: 14, weight: .medium))

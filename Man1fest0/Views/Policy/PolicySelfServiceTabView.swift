@@ -30,7 +30,7 @@ struct PolicySelfServiceTabView: View {
     
     @EnvironmentObject var progress: Progress
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: Man1fest0.Layout
     
     @EnvironmentObject var scopingController: ScopingBrain
     
@@ -129,23 +129,17 @@ struct PolicySelfServiceTabView: View {
                     
                     Text("Icons").bold()
                     
-                    AsyncImage(url: URL(string: networkController.policyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
-                        image.resizable()
-                    } placeholder: {
-                        Color.red.opacity(0.1)
-                    }
-                    .frame(width: 50, height: 50)
-                    .clipShape(.rect(cornerRadius: 25))
-                    
+                    IconView(urlString: networkController.policyDetailed?.self_service?.selfServiceIcon?.uri ?? "", size: 50, cornerRadius: 25)
+                        .frame(width: 50, height: 50)
+                        .clipShape(RoundedRectangle(cornerRadius: 25))
+
 #if os(macOS)
-                    List(networkController.allIconsDetailed, selection: $selectedIcon) { icon in
+                    List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
                             Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon.url)) { image in
-                                image.resizable().frame(width: 15, height: 15)
-                            } placeholder: {
-                            }
+                            IconView(urlString: icon.url, size: 15)
+                                .frame(width: 15, height: 15)
                         }
                         .foregroundColor(.gray)
                         .listRowBackground(selectedIconString == icon.name
@@ -156,15 +150,12 @@ struct PolicySelfServiceTabView: View {
                     .cornerRadius(8)
                     .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
 #else
-                    
-                    List(networkController.allIconsDetailed) { icon in
+                    List(networkController.allIconsDetailed, id: \.self) { icon in
                         HStack {
                             Image(systemName: "photo.circle")
                             Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-                            AsyncImage(url: URL(string: icon.url)) { image in
-                                image.resizable().frame(width: 15, height: 15)
-                            } placeholder: {
-                            }
+                            IconView(urlString: icon.url, size: 15)
+                                .frame(width: 15, height: 15)
                         }
                     }
 #endif
@@ -182,20 +173,13 @@ struct PolicySelfServiceTabView: View {
                         TextField("Filter", text: $iconFilter)
                         Picker(selection: $selectedIcon, label: Text("").bold()) {
                                 
-                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter.lowercased())})) { icon in
+                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter.lowercased())}), id: \.self) { icon in
                                 HStack {
                                     Text(String(describing: icon.name))
-                                    AsyncImage(url: URL(string: icon.url))  { image in
-                                        image.resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(maxWidth: 30, maxHeight: 30)
-
-                                    } placeholder: {
-                                        ProgressView()
-                                    }
-                                    .frame(width: 30, height: 30)
-                                    .background(Color.gray)
-                                    .clipShape(Circle())
+                                    IconView(urlString: icon.url, size: 30)
+                                        .frame(width: 30, height: 30)
+                                        .background(Color.gray)
+                                        .clipShape(Circle())
                                 }
                                 // Tag must match the Picker selection type (Icon?) so provide the optional Icon as tag
                                 .tag(icon as Icon?)
