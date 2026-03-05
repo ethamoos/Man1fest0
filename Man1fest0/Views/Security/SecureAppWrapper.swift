@@ -48,14 +48,7 @@ struct SecureAppWrapper<Content: View>: View {
             NavigationView {
                 Form {
                     Section(header: Text("Security")) {
-                        Picker("Auto-lock after:", selection: $securitySettings.inactivityTimeout) {
-                            ForEach(SecuritySettingsManager.InactivityTimeout.allCases) { t in
-                                Text(t.displayName).tag(t)
-                            }
-                        }
-                        Toggle("Require password on wake", isOn: $securitySettings.requirePasswordOnWake)
-                        Toggle("Use keychain for password", isOn: $securitySettings.useKeychainForPassword)
-                        Button("Force lock now") { inactivityMonitor.lockApp() }
+                        PreferencesSecuritySection()
                     }
                     Section(header: Text("Policy Fetch")) {
                         // Inlined Policy Delay controls
@@ -150,6 +143,32 @@ fileprivate struct PolicyDelayInlineViewLocal: View {
             }
             .onAppear { delayValue = networkController.getPolicyRequestDelay() }
         }
+    }
+}
+
+// MARK: - Preferences Security Section
+struct PreferencesSecuritySection: View {
+    @EnvironmentObject var securitySettings: SecuritySettingsManager
+    @EnvironmentObject var inactivityMonitor: InactivityMonitor
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Picker("Auto-lock after:", selection: $securitySettings.inactivityTimeout) {
+                ForEach(SecuritySettingsManager.InactivityTimeout.allCases) { t in
+                    Text(t.displayName).tag(t)
+                }
+            }
+            .pickerStyle(RadioGroupPickerStyle())
+            
+            Toggle("Require password on wake", isOn: $securitySettings.requirePasswordOnWake)
+            Toggle("Use keychain for password", isOn: $securitySettings.useKeychainForPassword)
+            
+            Button("Force lock now") {
+                inactivityMonitor.lockApp()
+            }
+            .buttonStyle(BorderlessButtonStyle())
+        }
+        .padding(.vertical, 8)
     }
 }
 

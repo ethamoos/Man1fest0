@@ -8,16 +8,7 @@ struct PreferencesView: View {
         NavigationView {
             Form {
                 Section(header: Text("Security")) {
-                    Picker("Auto-lock after:", selection: $securitySettings.inactivityTimeout) {
-                        ForEach(SecuritySettingsManager.InactivityTimeout.allCases) { t in
-                            Text(t.displayName).tag(t)
-                        }
-                    }
-                    Toggle("Require password on wake", isOn: $securitySettings.requirePasswordOnWake)
-                    Toggle("Use keychain for password", isOn: $securitySettings.useKeychainForPassword)
-                    Button("Force lock now") {
-                        inactivityMonitor.lockApp()
-                    }
+                    PreferencesSecuritySection()
                 }
 
                 Section(header: Text("Policy Fetch")) {
