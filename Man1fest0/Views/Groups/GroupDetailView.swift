@@ -11,6 +11,7 @@ struct GroupDetailView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var layout: Layout
     
 //    @State var selection: ComputerGroup
     @State var group: ComputerGroup
@@ -33,6 +34,34 @@ struct GroupDetailView: View {
                         Text(String(describing: computer.name))
                     }
                 }
+
+                // Open in Browser button (matches style used in ScriptsDetailView & ComputerExtAttDetailView)
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                        var base = trimmedServer
+                        if base.hasSuffix("/") { base.removeLast() }
+                        // Construct Jamf UI URL for this group
+                        let uiURL =
+                        "\(base)/staticComputerGroups.html?id=\(group.id)&o=r"
+//                       https://ual.jamfcloud.com/staticComputerGroups.html?id=1487&o=r "\(base)/view/settings/computer-management/groups/\(group.id)?tab=general"
+                        print("Opening group UI URL: \(uiURL)")
+                        layout.openURL(urlString: uiURL)
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "safari")
+                            Text("Open in Browser")
+                        }
+                    }
+                    .help("Open this group in the Jamf web interface in your default browser.")
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .padding(.top, 6)
+                    Spacer()
+                }
+                .padding()
+                .textSelection(.enabled)
                 
             } else {
                 Text("No members found")
