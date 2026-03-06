@@ -21,6 +21,7 @@ struct ComputerExtAttDetailView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var extensionAttributeController: EaBrain
+    @EnvironmentObject var layout: Layout
     
     var body: some View {
         
@@ -62,6 +63,33 @@ struct ComputerExtAttDetailView: View {
             .tint(.red)
             .shadow(color: .gray, radius: 2, x: 0, y: 2)
 
+            // Open in Browser button (match PolicyDetailView / ScriptsDetailView style)
+            HStack {
+                Spacer()
+                Button(action: {
+                    let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                    var base = trimmedServer
+                    if base.hasSuffix("/") { base.removeLast() }
+                    // Jamf UI path for extension attributes
+                    let eaID = computerEA.id
+                    let uiURL = "\(base)/view/settings/computer-management/computer-extension-attributes/\(eaID)"
+                    print("Opening extension attribute UI URL: \(uiURL)")
+                    layout.openURL(urlString: uiURL)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari")
+                        Text("Open in Browser")
+                    }
+                }
+                .help("Open this extension attribute in the Jamf web interface in your default browser.")
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .padding(.top, 6)
+                Spacer()
+            }
+            .padding()
+            .textSelection(.enabled)
+
             
             
             
@@ -73,7 +101,6 @@ struct ComputerExtAttDetailView: View {
                     Text("Name:\t\t\(computerEA.name)")
                     Text("ID:\t\t\t\(String(computerEA.id))")
                     Text("Status:\t\t\(currentCompExtAttDet.enabled)")
-
                 }
             }
             
