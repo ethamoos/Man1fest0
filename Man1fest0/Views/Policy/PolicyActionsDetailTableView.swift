@@ -35,7 +35,8 @@ struct PolicyActionsDetailTableView: View {
     @State private var selectedIDs = []
     @State private var policiesSelection = Set<Policy>()
     @State var searchText = ""
-
+    // explicit tab selection for the detail TabView
+    @State private var selectedDetailTab: Int = 0
 
     
     //  ########################################################################################
@@ -180,30 +181,52 @@ struct PolicyActionsDetailTableView: View {
         .onChange(of: sortOrder) { newOrder in
             networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
         }
+        // When user selects policies in the table, auto-switch to the Scope tab to expose scope controls
+        .onChange(of: selectedPolicyIDs) { newSelection in
+            if newSelection.isEmpty {
+                // keep current tab
+            } else {
+                selectedDetailTab = 2 // Scope tab
+            }
+        }
         
 #if os(macOS)
         
         VStack(alignment: .leading) {
-            
-            TabView {
-                
-                PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                    .tabItem {
-                        Label("General", systemImage: "square.and.pencil")
-                    }
-                PolicyDetailClearItemsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                    .tabItem {
-                        Label("Clear Items", systemImage: "square.and.pencil")
-                    }
-                PolicyDetailScopeTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                    .tabItem {
-                        Label("Scope", systemImage: "square.and.pencil")
-                    }
-                PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                    .tabItem {
-                        Label("Export", systemImage: "square.and.pencil")
-                    }
+
+            // Segmented picker to explicitly switch detail tabs (helps when native Tab bar is not interactive)
+            HStack {
+                Picker(selection: $selectedDetailTab, label: Text("Details")) {
+                    Text("General").tag(0)
+                    Text("Clear Items").tag(1)
+                    Text("Scope").tag(2)
+                    Text("Export").tag(3)
+                }
+                .pickerStyle(.segmented)
+                .padding(.bottom, 6)
+                Spacer()
             }
+
+            // Use a simple switch to show the selected detail view. We avoid TabView here
+            // to prevent macOS from drawing a native tab bar (we use the segmented Picker above).
+            Group {
+                switch selectedDetailTab {
+                case 0:
+                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                case 1:
+                    PolicyDetailClearItemsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                case 2:
+                    PolicyDetailScopeTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                case 3:
+                    PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                default:
+                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                }
+            }
+            // Ensure the TabView has a visible area (avoid being collapsed)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 340, maxHeight: 800)
+            .padding()
         }
         .background(Color.blue.opacity(0.0))
         //        .border(Color.yellow)
