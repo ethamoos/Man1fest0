@@ -1,70 +1,15 @@
 import SwiftUI
 
-struct AppPolicyDelayPreferencesView: View {
-    @EnvironmentObject var networkController: NetBrain
-    @State private var delayValue: Double = 0.0
-    @State private var showSavedToast = false
-
+// Deprecated duplicate file retained for compatibility — use `PolicyDelayPreferencesView` in `Views/PolicyDelayPreferencesView.swift`.
+// Provide a thin alias wrapper to avoid duplicate symbol definitions.
+struct PolicyDelayPreferencesView_PrefAlias: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Policy fetch delay (seconds)")
-                .font(.headline)
-
-            HStack {
-                Slider(value: $delayValue, in: 0...60, step: 0.1)
-                Stepper(value: $delayValue, in: 0...600, step: 1) {
-                    Text("\(Int(delayValue)) s")
-                        .frame(minWidth: 60)
-                }
-            }
-
-            HStack(spacing: 12) {
-                Button(action: {
-                    networkController.setPolicyRequestDelay(delayValue)
-                    showSavedToast = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        showSavedToast = false
-                    }
-                }) {
-                    Text("Save")
-                }
-
-                Button(action: {
-                    delayValue = networkController.getPolicyRequestDelay()
-                }) {
-                    Text("Reset to current")
-                }
-
-                Spacer()
-
-                Text(networkController.policyDelayStatus)
-                    .foregroundColor(.secondary)
-            }
-
-            if showSavedToast {
-                Text("Saved")
-                    .foregroundColor(.green)
-            }
-
-            Divider()
-
-            Text("Human readable: \(networkController.humanReadableDuration(delayValue))")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-
-            Spacer()
-        }
-        .padding()
-        .onAppear {
-            delayValue = networkController.getPolicyRequestDelay()
-        }
-        .frame(minWidth: 420, minHeight: 180)
+        PolicyDelayPreferencesView()
     }
 }
 
-struct AppPolicyDelayPreferencesView_Previews: PreviewProvider {
+struct PolicyDelayPreferencesView_PrefAlias_Previews: PreviewProvider {
     static var previews: some View {
-        AppPolicyDelayPreferencesView()
-            .environmentObject(NetBrain())
+        PolicyDelayPreferencesView_PrefAlias().environmentObject(NetBrain())
     }
 }

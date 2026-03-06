@@ -12,7 +12,7 @@ struct PreferencesView: View {
                 }
 
                 Section(header: Text("Policy Fetch")) {
-                    NavigationLink("Policy Delay…", destination: AppPolicyDelayPreferencesView())
+                    NavigationLink("Policy Delay…", destination: PolicyDelayPreferencesView())
                 }
             }
             .navigationTitle("Preferences")
