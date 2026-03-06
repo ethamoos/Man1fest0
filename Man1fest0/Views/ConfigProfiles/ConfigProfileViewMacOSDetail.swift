@@ -209,6 +209,36 @@ struct ConfigProfileViewMacOSDetail: View {
             .tint(.red)
             .shadow(color: .gray, radius: 2, x: 0, y: 2)
 
+            // Open in Browser button (same style as PolicyDetailView & ScriptsDetailView)
+            HStack {
+                Spacer()
+                Button(action: {
+                    // Build Jamf UI URL for the configuration profile and open it in the default browser
+                    let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                    var base = trimmedServer
+                    if base.hasSuffix("/") { base.removeLast() }
+                    // Construct a UI path using the API resource name; this mirrors the pattern used for scripts
+                    let profileID = selection.jamfId ?? 0
+                    let uiURL = "\(base)/OSXConfigurationProfiles.html?id=\(profileID)&o=r&side-tabs=General"
+                    print("Opening config profile UI URL: \(uiURL)")
+                    layout.openURL(urlString: uiURL)
+                    print("Open in Browser - URL: \(uiURL)")
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari")
+                        Text("Open in Browser")
+                    }
+                    
+                }
+                .help("Open this configuration profile in the Jamf web interface in your default browser.")
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .padding(.top, 6)
+                Spacer()
+            }
+            .padding()
+            .textSelection(.enabled)
+
             Spacer()
         }
   

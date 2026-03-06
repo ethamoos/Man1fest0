@@ -336,6 +336,7 @@ class Layout: ObservableObject {
     func openURL(urlString: String, requestType: String? = nil) {
         
         print("Running openURL")
+print("Input URL string: \(urlString)")
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             alertMessage = "Please enter a URL."
