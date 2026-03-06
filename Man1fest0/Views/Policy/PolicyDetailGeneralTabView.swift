@@ -18,6 +18,7 @@ struct PolicyDetailGeneralTabView: View {
     
     var server: String
     var selectedPoliciesInt: [Int?]
+    @Binding var policiesSelection: Set<Policy>
     @State var iconFilter = ""
     
     

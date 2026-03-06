@@ -131,7 +131,7 @@ struct OptionsView: View {
                                 }
                                 
                                 NavigationLink(destination: PackagesView(server: server, selectedResourceType: ResourceType.package )) {
-                                    Text("Packages (sorted)")
+                                    Text("Packages (sorted - beta)")
                                 }
                                 
                                 NavigationLink(destination: PackagesActionView(selectedResourceType: ResourceType.package, server: server )) {
@@ -158,12 +158,12 @@ struct OptionsView: View {
                                     Text("Policies")
                                 }
 #if os(macOS)
-                                NavigationLink(destination: PoliciesActionView(server: server, selectedResourceType: ResourceType.policy )) {
-                                    Text("Policy Actions")
-                                }
+//                                NavigationLink(destination: PoliciesActionView(server: server, selectedResourceType: ResourceType.policy )) {
+//                                    Text("Policy Actions - OLD")
+//                                }
                                 
                                 NavigationLink(destination: PolicyActionsDetailTableView(server: server)) {
-                                    Text("Policy Actions - Detailed")
+                                    Text("Policy Actions")
                                 }
                                 
                                 NavigationLink(destination: PolicySearchView(server: server)) {
@@ -241,16 +241,17 @@ struct OptionsView: View {
                             }
                         }
                         
-                        Group {
-                            Divider()
-                            DisclosureGroup("Preferences") {
-                                PreferencesSecuritySection()
-                                Divider()
-                                NavigationLink(destination: PolicyDelayInlineView()) {
-                                    Text("Policy fetch delay")
-                                }
-                            }
-                        }
+//                        DISABLED FOR NOW - TOO MUCH TO MAINTAIN WITH LIMITED TIME
+//                        Group {
+//                            Divider()
+//                            DisclosureGroup("Preferences") {
+//                                PreferencesSecuritySection()
+//                                Divider()
+//                                NavigationLink(destination: PolicyDelayInlineView()) {
+//                                    Text("Policy fetch delay")
+//                                }
+//                            }
+//                        }
                         
 //                            NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
 //                                Text("Prestages")

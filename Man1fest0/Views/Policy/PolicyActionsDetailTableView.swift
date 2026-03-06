@@ -79,59 +79,71 @@ struct PolicyActionsDetailTableView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                // Header area
-                LazyVGrid(columns: layout.fiveColumns, spacing: 5) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Total Policies:\t\(networkController.allPoliciesConverted.count)")
-                            .fontWeight(.bold)
-                        Text("Policies fetched:\t\(networkController.allPoliciesDetailed.count)")
-                            .fontWeight(.bold)
-                    }
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 12)
+        VStack(alignment: .leading, spacing: 12) {
+            // Header area
+            LazyVGrid(columns: layout.fiveColumns, spacing: 5) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Total Policies:\t\(networkController.allPoliciesConverted.count)")
+                        .fontWeight(.bold)
+                    Text("Policies fetched:\t\(networkController.allPoliciesDetailed.count)")
+                        .fontWeight(.bold)
                 }
-
-                // Policy table
-                policyTableView()
-                    .searchable(text: $searchText)
-                    .toolbar { tableToolbar }
-                    .onChange(of: sortOrder) { newOrder in
-                        networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
-                    }
-                    .onChange(of: selectedPolicyIDs) { newSelection in
-                        if newSelection.isEmpty {
-                            policiesSelection.removeAll()
-                        } else {
-                            let matched = networkController.policies.filter { p in
-                                if let gid = (p as? General)?.id {
-                                    return newSelection.contains(gid)
-                                }
-                                return newSelection.contains(where: { selId in
-                                    return String(describing: p.jamfId ?? 0) == String(describing: selId)
-                                })
-                            }
-                            policiesSelection = Set(matched)
-                            selectedDetailTab = 2
-                        }
-                    }
-
-                // Detail segmented area
-                detailArea()
-
-                Divider()
-
-                if progress.showProgressView {
-                    ProgressView { Text("Loading").font(.title).progressViewStyle(.horizontal) }
-                        .padding()
-                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
             }
-            .padding()
+
+            // Table fixed at the top
+            policyTableView()
+                .frame(minHeight: 320)
+                .layoutPriority(1)
+                .onAppear {
+                    convertToallPoliciesDetailedGeneral()
+                }
+                .searchable(text: $searchText)
+                .toolbar { tableToolbar }
+                .onChange(of: sortOrder) { newOrder in
+                    networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
+                }
+                .onChange(of: selectedPolicyIDs) { newSelection in
+                    if newSelection.isEmpty {
+                        policiesSelection.removeAll()
+                    } else {
+                        // Map selectedPolicyIDs to jamfIds and match policies by jamfId
+                        let selectedJamfIds = Set(selectedPoliciesInt.compactMap { $0 })
+                        let matched = networkController.policies.filter { p in
+                            if let jamf = p.jamfId { return selectedJamfIds.contains(jamf) }
+                            return false
+                        }
+                        policiesSelection = Set(matched)
+                        selectedDetailTab = 2
+                    }
+                }
+
+            Divider()
+
+            // Make only the detail area scrollable so the table stays visible on top
+            ScrollView {
+                detailArea()
+                    .padding(.top, 6)
+            }
+
+            if progress.showProgressView {
+                ProgressView { Text("Loading").font(.title).progressViewStyle(.horizontal) }
+                    .padding()
+            }
         }
+        .padding()
         .onAppear {
             print("PolicyActionsDetailTableView - getting primary data")
             fetchData()
+        }
+        // When detailed policies are updated, rebuild the simplified general list so the table fills
+        .onReceive(networkController.$allPoliciesDetailed) { _ in
+            convertToallPoliciesDetailedGeneral()
+        }
+        // Also log when the simplified general array changes so we can diagnose why the Table may be empty
+        .onReceive(networkController.$allPoliciesDetailedGeneral) { newList in
+            print("allPoliciesDetailedGeneral changed: count=\(newList.count)")
         }
     }
 
@@ -191,7 +203,7 @@ struct PolicyActionsDetailTableView: View {
             Group {
                 switch selectedDetailTab {
                 case 0:
-                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt, policiesSelection: $policiesSelection)
                 case 1:
                     PolicyDetailClearItemsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                 case 2:
@@ -213,7 +225,7 @@ struct PolicyActionsDetailTableView: View {
                 case 3:
                     PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                 default:
-                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt, policiesSelection: $policiesSelection)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -226,30 +238,47 @@ struct PolicyActionsDetailTableView: View {
 
     @ViewBuilder
     private func policyTableView() -> some View {
-        Table(searchResults, selection: $selectedPolicyIDs, sortOrder: $sortOrder) {
-            TableColumn("Name", value: \.nameForSort) { policy in
-                let name = policy.name ?? ""
-                Text(name).textSelection(.enabled)
+        // If there are no search results yet, show a helpful placeholder so the user can tell data is loading
+        if searchResults.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("No policies to display yet")
+                        .font(.headline)
+                    Spacer()
+                }
+                Text("Policies are being fetched. If this message persists, try Refresh or check connection settings.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                ProgressView()
             }
-            TableColumn("Category", value: \.categoryNameForSort) { policy in
-                let category = policy.category?.name ?? ""
-                Text(category).textSelection(.enabled)
-            }
-            TableColumn("Enabled", value: \.enabledInt) { policy in
-                let enabledText = policy.enabled == true ? "true" : "false"
-                Text(enabledText)
-            }
-            TableColumn("ID", value: \.jamfIdForSort) { policy in
-                let idText = String(policy.jamfId ?? 0)
-                Text(idText).textSelection(.enabled)
-            }
-            TableColumn("Trigger", value: \.triggerOtherForSort) { policy in
-                let triggerText = policy.triggerOther ?? ""
-                Text(triggerText).textSelection(.enabled)
+            .padding()
+            .frame(maxWidth: .infinity, minHeight: 200)
+        } else {
+            Table(searchResults, selection: $selectedPolicyIDs, sortOrder: $sortOrder) {
+                TableColumn("Name", value: \.nameForSort) { policy in
+                    let name = policy.name ?? ""
+                    Text(name).textSelection(.enabled)
+                }
+                TableColumn("Category", value: \.categoryNameForSort) { policy in
+                    let category = policy.category?.name ?? ""
+                    Text(category).textSelection(.enabled)
+                }
+                TableColumn("Enabled", value: \.enabledInt) { policy in
+                    let enabledText = policy.enabled == true ? "true" : "false"
+                    Text(enabledText)
+                }
+                TableColumn("ID", value: \.jamfIdForSort) { policy in
+                    let idText = String(policy.jamfId ?? 0)
+                    Text(idText).textSelection(.enabled)
+                }
+                TableColumn("Trigger", value: \.triggerOtherForSort) { policy in
+                    let triggerText = policy.triggerOther ?? ""
+                    Text(triggerText).textSelection(.enabled)
+                }
             }
         }
-    }
-
+     }
+ 
     //  ################################################################################
     //  END
     //  ################################################################################
@@ -257,17 +286,21 @@ struct PolicyActionsDetailTableView: View {
     func convertToallPoliciesDetailedGeneral() {
         
         print("Reset allPoliciesDetailedGeneral and re-add")
-        
-        networkController.allPoliciesDetailedGeneral.removeAll()
-        
-        if networkController.allPoliciesDetailed.isEmpty != true {
-            for eachPolicy in networkController.allPoliciesDetailed {
-                if let eachPolicyGeneral = eachPolicy?.general {
-                    networkController.allPoliciesDetailedGeneral.insert((eachPolicyGeneral), at: 0)
-                }
-            }
-        }
-    }
+ 
+         // Always update published/UI-state on the main thread
+         DispatchQueue.main.async {
+             networkController.allPoliciesDetailedGeneral.removeAll()
+ 
+             if networkController.allPoliciesDetailed.isEmpty != true {
+                 for eachPolicy in networkController.allPoliciesDetailed {
+                     if let eachPolicyGeneral = eachPolicy?.general {
+                         networkController.allPoliciesDetailedGeneral.insert(eachPolicyGeneral, at: 0)
+                     }
+                 }
+             }
+            print("convertToallPoliciesDetailedGeneral completed - new count=\(networkController.allPoliciesDetailedGeneral.count) | allPoliciesDetailed.count=\(networkController.allPoliciesDetailed.count)")
+         }
+     }
     
     func refreshDetailedPolicySelections(selectedPolicies: [Int?], authToken: String, server: String) async {
         
