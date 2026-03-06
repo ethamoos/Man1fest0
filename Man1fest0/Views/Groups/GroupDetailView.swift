@@ -16,8 +16,6 @@ struct GroupDetailView: View {
 //    @State var selection: ComputerGroup
     @State var group: ComputerGroup
     @State var server: String
-//    var username: String
-//    var password: String
     
     var body: some View {
         
@@ -45,7 +43,6 @@ struct GroupDetailView: View {
                         // Construct Jamf UI URL for this group
                         let uiURL =
                         "\(base)/staticComputerGroups.html?id=\(group.id)&o=r"
-//                       https://ual.jamfcloud.com/staticComputerGroups.html?id=1487&o=r "\(base)/view/settings/computer-management/groups/\(group.id)?tab=general"
                         print("Opening group UI URL: \(uiURL)")
                         layout.openURL(urlString: uiURL)
                     }) {
@@ -90,9 +87,7 @@ struct GroupDetailView: View {
             print("Error getting GroupMembers")
             print(error)
         }
-        
         xmlController.getGroupMembersXML(server: server, groupId: selection.id, authToken: networkController.authToken)
-        
     }
 }
 
