@@ -254,35 +254,10 @@ struct PoliciesActionView: View {
                     
                     HStack(spacing:20) {
                         
-                        Button(action: {
-                            
-                            showingWarning = true
-                            progress.showProgressView = true
-                            print("Set showProgressView to true")
-                            print(progress.showProgressView)
-                            progress.waitForABit()
-                            print("Check processingComplete")
-                            print(String(describing: networkController.processingComplete))
-                            
-                        }) {
-                            Text("Delete")
-                        }
-                        
-                        .alert(isPresented: $showingWarning) {
-                            Alert(
-                                title: Text("Caution!"),
-                                message: Text("This action will delete data.\n Always ensure that you have a backup!"),
-                                primaryButton: .destructive(Text("I understand!")) {
-                                    // Code to execute when "Yes" is tapped
-                                    networkController.processDeletePolicies(selection: policiesSelection, server: server, resourceType: ResourceType.policies, authToken: networkController.authToken)
-                                    print("Yes tapped")
-                                },
-                                secondaryButton: .cancel()
-                            )
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                        // Delete action moved to General tab
+                        Text("Delete moved to General tab")
+                            .foregroundColor(.secondary)
+                            .help("Delete selected policies from the General tab")
                         
 //              ################################################################################
 //              Update Category
