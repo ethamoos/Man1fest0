@@ -79,6 +79,13 @@ struct PackageDetailView: View {
                         }
                         .buttonStyle(.bordered)
                     }
+                    // Open in Browser button (consistent with other detail views)
+                    HStack {
+                        Spacer()
+                  
+                    }
+                    .padding()
+                    .textSelection(.enabled)
                 }
                 .padding([.bottom], 6)
 
@@ -195,7 +202,29 @@ struct PackageDetailView: View {
                     }
                     .padding(8)
                 }
-
+                
+                Button(action: {
+                    // Build Jamf Pro UI URL for package detail
+                    let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                    var base = trimmedServer
+                    if base.hasSuffix("/") { base.removeLast() }
+//                            let uiURL = "\(base)/packages.html?id=\(package.jamfId)&o=r"
+                    
+                    let uiURL = "\(base)/view/settings/computer-management/packages/\(package.jamfId)?tab=general"
+                    
+                    print("Opening package UI URL: \(uiURL)")
+                    layout.openURL(urlString: uiURL)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "safari")
+                        Text("Open in Browser")
+                    }
+                }
+                .help("Open this package in the Jamf web interface in your default browser.")
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .padding(.top, 6)
+//                Spacer()
                 Spacer()
             }
             .padding(20)

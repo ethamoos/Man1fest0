@@ -269,6 +269,10 @@ class Layout: ObservableObject {
                 // Example: https://server/view/settings/computer-management/scripts/15?tab=general
                 newComponents.path = "/view/settings/computer-management/scripts/\(idValue)"
                 newComponents.queryItems = [ URLQueryItem(name: "tab", value: "general") ]
+//            if resource == "packages" {
+//                // Example: https://server/view/settings/computer-management/packages/15?tab=general
+//                newComponents.path = "/view/settings/computer-management/packages/\(idValue)"
+//                newComponents.queryItems = [ URLQueryItem(name: "tab", value: "general") ]
             } else {
                 newComponents.path = "/\(resource).html"
                 newComponents.queryItems = [

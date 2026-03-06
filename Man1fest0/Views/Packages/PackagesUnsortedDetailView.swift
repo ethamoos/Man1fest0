@@ -4,6 +4,11 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 
 struct PackagesUnsortedDetailView: View {
 
@@ -260,6 +265,29 @@ struct PackagesUnsortedDetailView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        
+                        // Open in Browser for package (use platform API directly)
+                        Button(action: {
+                            let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                            var base = trimmedServer
+                            if base.hasSuffix("/") { base.removeLast() }
+                            let uiURLString = "\(base)/packages.html?id=\(package.jamfId)&o=r"
+                            print("Opening package UI URL: \(uiURLString)")
+                            if let uiURL = URL(string: uiURLString) {
+                                #if os(macOS)
+                                NSWorkspace.shared.open(uiURL)
+                                #else
+                                UIApplication.shared.open(uiURL, options: [:], completionHandler: nil)
+                                #endif
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "safari")
+                                Text("Open in Browser")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
                     }
                 }
             }
