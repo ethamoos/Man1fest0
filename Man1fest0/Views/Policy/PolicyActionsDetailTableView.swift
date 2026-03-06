@@ -33,7 +33,16 @@ struct PolicyActionsDetailTableView: View {
     @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
     @State private var selectedIDs = []
+    // policiesSelection mirrors selectedPolicyIDs (used by PoliciesActionScopeTab)
     @State private var policiesSelection = Set<Policy>()
+    // Additional state required for scope controls (moved from PoliciesActionView)
+    @State var computerGroupFilter: String = ""
+    @State private var allComputersStaticEnable = false
+    @State private var allComputersSmartEnable = false
+    @State var ldapSearchCustomGroupSelection = LDAPCustomGroup(uuid: "", ldapServerID: 0, id: "", name: "", distinguishedName: "")
+    @State var ldapServerSelection: LDAPServer? = nil
+    @State var ldapSearch: String = ""
+
     @State var searchText = ""
     // explicit tab selection for the detail TabView
     @State private var selectedDetailTab: Int = 0
@@ -44,6 +53,8 @@ struct PolicyActionsDetailTableView: View {
     //  ########################################################################################
     
     @State var computerGroupSelection = ComputerGroup(id: 0, name: "", isSmart: false)
+    // Use an optional ComputerGroup binding for pickers
+    @State var computerGroupSelectionOptional: ComputerGroup? = nil
     
     @State var iconMultiSelection = Set<String>()
     
@@ -62,139 +73,109 @@ struct PolicyActionsDetailTableView: View {
         KeyPathComparator(\General.jamfIdForSort, order: .forward),
         KeyPathComparator(\General.triggerOtherForSort, order: .forward)
     ]
+    // Move this computed mapping out of the body to ease compiler type checking
+    var selectedPoliciesInt: [Int?] {
+        networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }.map { $0.jamfId }
+    }
 
-    
     var body: some View {
-        
-        //  ########################################################################################
-        //  This variable is a mapping of the ID to the jamfId property in the selection so that although you select the id you actually return the jamfID - meaning that you can do stuff with this
-        
-        //  networkController.allPoliciesDetailedGeneral is the list of policies that is being selected from that we want to access properties
-        
-        //  selectedPolicyIDs is a set (as the selection can be multiplw) this by default is populated by the ID only
-        
-        //  selectedPoliciesInt is an array of the jamf ids from the mapping
-        
-        let filteredPolicies = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
-        
-        // Move selectedPoliciesInt logic to a computed property
-        var selectedPoliciesInt: [Int?] {
-            networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }.map { $0.jamfId }
-        }
-        
-        LazyVGrid(columns: layout.fiveColumns, spacing: 5) {
-            
-            VStack(alignment: .leading, spacing: 5) {
-                
-                Text("Total Policies:\t\(networkController.allPoliciesConverted.count)")
-                    .fontWeight(.bold)
-                
-                Text("Policies fetched:\t\(networkController.allPoliciesDetailed.count)")
-                    .fontWeight(.bold)
-            }
-            .padding(.top, 8)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 12)
-            .padding(Edge.Set.vertical, 20)
-        }
-        
-        
-        Table(searchResults, selection: $selectedPolicyIDs, sortOrder: $sortOrder) {
-            TableColumn("Name", value: \ .nameForSort) { policy in
-                let name = policy.name ?? ""
-                Text(name)
-                    .textSelection(.enabled)
-            }
-            TableColumn("Category", value: \ .categoryNameForSort) { policy in
-                let category = policy.category?.name ?? ""
-                Text(category)
-                    .textSelection(.enabled)
-            }
-            TableColumn("Enabled", value: \ .enabledInt) { policy in
-                let enabledText = policy.enabled == true ? "true" : "false"
-                Text(enabledText)
-            }
-            TableColumn("ID", value: \ .jamfIdForSort) { policy in
-                let idText = String(policy.jamfId ?? 0)
-                Text(idText)
-                    .textSelection(.enabled)
-            }
-            TableColumn("Trigger", value: \ .triggerOtherForSort) { policy in
-                let triggerText = policy.triggerOther ?? ""
-                Text(triggerText)
-                    .textSelection(.enabled)
-            }
-        }
-        .searchable(text: $searchText)
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                Button(action: {
-                    print("convertToallPoliciesDetailedGeneral")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    Task {
-                        await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                // Header area
+                LazyVGrid(columns: layout.fiveColumns, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Total Policies:\t\(networkController.allPoliciesConverted.count)")
+                            .fontWeight(.bold)
+                        Text("Policies fetched:\t\(networkController.allPoliciesDetailed.count)")
+                            .fontWeight(.bold)
                     }
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Refresh")
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 12)
                 }
-                .buttonStyle(.borderedProminent)
-                
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    print("Clearing allPoliciesDetailed")
-                    networkController.allPoliciesDetailed.removeAll()
-                    print("Fetching allPoliciesDetailed")
-                    Task {
-                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                    }
-                    convertToallPoliciesDetailedGeneral()
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Reset")
-                }
-                .buttonStyle(.bordered)
-                
-                Button(action: {
-                    let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
-                    let rowsString = selectedRows.map { policy in
-                        let name = String(policy.name ?? "")
-                        let category = policy.category?.name ?? ""
-                        let enabled = String(policy.enabled ?? true)
-                        let jamfId = String(policy.jamfId ?? 0)
-                        let triggerOther = policy.triggerOther ?? ""
-                        return [name, category, enabled, jamfId, triggerOther].joined(separator: "\t")
-                    }.joined(separator: "\n")
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setString(rowsString, forType: .string)
-                }) {
-                    Image(systemName: "doc.on.doc")
-                    Text("Copy Selected")
-                }
-                .buttonStyle(.bordered)
-                .disabled(selectedPolicyIDs.isEmpty)
-            }
-        }
-        .onChange(of: sortOrder) { newOrder in
-            networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
-        }
-        // When user selects policies in the table, auto-switch to the Scope tab to expose scope controls
-        .onChange(of: selectedPolicyIDs) { newSelection in
-            if newSelection.isEmpty {
-                // keep current tab
-            } else {
-                selectedDetailTab = 2 // Scope tab
-            }
-        }
-        
-#if os(macOS)
-        
-        VStack(alignment: .leading) {
 
-            // Segmented picker to explicitly switch detail tabs (helps when native Tab bar is not interactive)
+                // Policy table
+                policyTableView()
+                    .searchable(text: $searchText)
+                    .toolbar { tableToolbar }
+                    .onChange(of: sortOrder) { newOrder in
+                        networkController.allPoliciesDetailedGeneral.sort(using: newOrder)
+                    }
+                    .onChange(of: selectedPolicyIDs) { newSelection in
+                        if newSelection.isEmpty {
+                            policiesSelection.removeAll()
+                        } else {
+                            let matched = networkController.policies.filter { p in
+                                if let gid = (p as? General)?.id {
+                                    return newSelection.contains(gid)
+                                }
+                                return newSelection.contains(where: { selId in
+                                    return String(describing: p.jamfId ?? 0) == String(describing: selId)
+                                })
+                            }
+                            policiesSelection = Set(matched)
+                            selectedDetailTab = 2
+                        }
+                    }
+
+                // Detail segmented area
+                detailArea()
+
+                Divider()
+
+                if progress.showProgressView {
+                    ProgressView { Text("Loading").font(.title).progressViewStyle(.horizontal) }
+                        .padding()
+                }
+            }
+            .padding()
+        }
+        .onAppear {
+            print("PolicyActionsDetailTableView - getting primary data")
+            fetchData()
+        }
+    }
+
+    // toolbar contents separated for readability
+    private var tableToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .automatic) {
+            Button(action: {
+                print("convertToallPoliciesDetailedGeneral")
+                progress.showProgress()
+                progress.waitForABit()
+                Task { await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server) }
+            }) { Image(systemName: "arrow.clockwise"); Text("Refresh") }
+            .buttonStyle(.borderedProminent)
+
+            Button(action: {
+                progress.showProgress(); progress.waitForABit(); print("Clearing allPoliciesDetailed")
+                networkController.allPoliciesDetailed.removeAll()
+                Task { try? await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted) }
+                convertToallPoliciesDetailedGeneral()
+            }) { Image(systemName: "arrow.clockwise"); Text("Reset") }
+            .buttonStyle(.bordered)
+
+            Button(action: {
+                let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
+                let rowsString = selectedRows.map { policy in
+                    let name = String(policy.name ?? "")
+                    let category = policy.category?.name ?? ""
+                    let enabled = String(policy.enabled ?? true)
+                    let jamfId = String(policy.jamfId ?? 0)
+                    let triggerOther = policy.triggerOther ?? ""
+                    return [name, category, enabled, jamfId, triggerOther].joined(separator: "\t")
+                }.joined(separator: "\n")
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents(); pasteboard.setString(rowsString, forType: .string)
+            }) { Image(systemName: "doc.on.doc"); Text("Copy Selected") }
+            .buttonStyle(.bordered)
+            .disabled(selectedPolicyIDs.isEmpty)
+        }
+    }
+
+    @ViewBuilder
+    private func detailArea() -> some View {
+        #if os(macOS)
+        VStack(alignment: .leading) {
             HStack {
                 Picker(selection: $selectedDetailTab, label: Text("Details")) {
                     Text("General").tag(0)
@@ -207,8 +188,6 @@ struct PolicyActionsDetailTableView: View {
                 Spacer()
             }
 
-            // Use a simple switch to show the selected detail view. We avoid TabView here
-            // to prevent macOS from drawing a native tab bar (we use the segmented Picker above).
             Group {
                 switch selectedDetailTab {
                 case 0:
@@ -216,52 +195,64 @@ struct PolicyActionsDetailTableView: View {
                 case 1:
                     PolicyDetailClearItemsTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                 case 2:
-                    PolicyDetailScopeTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
+                    PoliciesActionScopeTab(
+                        policiesSelection: $policiesSelection,
+                        server: server,
+                        computerGroupSelection: $computerGroupSelectionOptional,
+                        computerGroupFilter: $computerGroupFilter,
+                        allComputersStaticEnable: $allComputersStaticEnable,
+                        allComputersSmartEnable: $allComputersSmartEnable,
+                        ldapSearchCustomGroupSelection: $ldapSearchCustomGroupSelection,
+                        ldapServerSelection: $ldapServerSelection,
+                        ldapSearch: $ldapSearch,
+                        onUpdateScopeCompGroupSet: { group, _, _ in Task { await xmlController.updateScopeCompGroupSetAsync(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: selectedPoliciesInt) } },
+                        onUpdatePolicyScopeLimitationsAuto: { group, policyID in Task { await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID) } },
+                        onClearLimitations: { policyID in Task { do { let pidInt = Int(policyID) ?? 0; let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: pidInt, authToken: networkController.authToken); xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID, currentPolicyAsXML: policyAsXML) } catch { print("Fetching detailed policy as xml failed: \(error)") } } },
+                        onClearExclusions: { for eachItem in selectedPoliciesInt { let pid = (eachItem ?? 0); xmlController.removeExclusions(server: server, policyID: String(describing: pid), authToken: networkController.authToken) } }
+                    )
                 case 3:
                     PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                 default:
                     PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
                 }
             }
-            // Ensure the TabView has a visible area (avoid being collapsed)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 340, maxHeight: 800)
             .padding()
         }
         .background(Color.blue.opacity(0.0))
-        //        .border(Color.yellow)
-        //        .frame(minWidth: 300, minHeight: 100, alignment: .leading)
-        
         #endif
-        
-        //        Text("")
-        Divider()
-        
-        
-        //  ################################################################################
-        //  END
-        //  ################################################################################
-        
-            .onAppear() {
-                
-                print("PolicyActionsDetailTableView - getting primary data")
-                fetchData()
-                
+    }
+
+    @ViewBuilder
+    private func policyTableView() -> some View {
+        Table(searchResults, selection: $selectedPolicyIDs, sortOrder: $sortOrder) {
+            TableColumn("Name", value: \.nameForSort) { policy in
+                let name = policy.name ?? ""
+                Text(name).textSelection(.enabled)
             }
-            .padding()
-        
-        
-        if progress.showProgressView == true {
-            
-            ProgressView {
-                Text("Loading")
-                    .font(.title)
-                    .progressViewStyle(.horizontal)
+            TableColumn("Category", value: \.categoryNameForSort) { policy in
+                let category = policy.category?.name ?? ""
+                Text(category).textSelection(.enabled)
             }
-            .padding()
-            Spacer()
+            TableColumn("Enabled", value: \.enabledInt) { policy in
+                let enabledText = policy.enabled == true ? "true" : "false"
+                Text(enabledText)
+            }
+            TableColumn("ID", value: \.jamfIdForSort) { policy in
+                let idText = String(policy.jamfId ?? 0)
+                Text(idText).textSelection(.enabled)
+            }
+            TableColumn("Trigger", value: \.triggerOtherForSort) { policy in
+                let triggerText = policy.triggerOther ?? ""
+                Text(triggerText).textSelection(.enabled)
+            }
         }
     }
+
+    //  ################################################################################
+    //  END
+    //  ################################################################################
     
     func convertToallPoliciesDetailedGeneral() {
         
@@ -404,7 +395,6 @@ struct PolicyActionsDetailTableView: View {
         return filtered
     }
 }
-
 
 
 //struct PolicyActionsDetailTableView_Previews: PreviewProvider {
