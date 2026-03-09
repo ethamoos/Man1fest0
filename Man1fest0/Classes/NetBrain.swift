@@ -454,9 +454,9 @@ actor AsyncSemaphore {
         }
         
         //        DEBUG
-        separationLine()
-        print("processDetail getGroupMembers Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+//        separationLine()
+//        print("processDetail getGroupMembers Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
         let compGroupData = try JSONDecoder().decode(computerGroupResponse.self, from: data)
         
         DispatchQueue.main.async {

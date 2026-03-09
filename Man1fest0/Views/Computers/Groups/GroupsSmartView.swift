@@ -34,9 +34,11 @@ struct GroupsSmartView: View {
     
     @State var mySelection: String = ""
     
-    // Keep a selection set for batch operations (delete). We also use NavigationLink for per-row navigation.
+    // Keep a selection set for batch operations (delete).
     @State var selection = Set<ComputerGroup>()
-
+    
+    // Single selected group for the detail pane
+    @State private var selectedGroup: ComputerGroup? = nil
     
     //  ########################################################################################
     //  Filters
@@ -57,35 +59,40 @@ struct GroupsSmartView: View {
             
             Section(header: Text("Smart Groups:").bold().padding()) {
                 
-                // Use a NavigationStack + List with per-row NavigationLink so users can tap a group to see details.
-                NavigationStack {
-                    // Master list
+                // NavigationSplitView shows a persistent master list on the left and a detail pane on the right.
+                NavigationSplitView {
+                    // Master list (supports multi-selection for batch delete via `selection`)
                     List(selection: $selection) {
                         ForEach(networkController.allComputerGroups.filter({ computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter) })) { group in
-                            // Only show smart groups in this view
                             if group.isSmart == true {
-                                NavigationLink(value: group) {
-                                    HStack {
-                                        Text(group.name)
-                                        Spacer()
-                                        Text("ID: \(group.id)")
-                                            .foregroundColor(.secondary)
-                                    }
+                                HStack {
+                                    Text(group.name)
+                                    Spacer()
+                                    Text("ID: \(group.id)")
+                                        .foregroundColor(.secondary)
                                 }
                                 .tag(group)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    // Update the single-selection used by the detail pane
+                                    selectedGroup = group
+                                }
                             }
                         }
                     }
                     .listStyle(SidebarListStyle())
                     .foregroundColor(.blue)
-                    .navigationDestination(for: ComputerGroup.self) { group in
+                    .frame(minWidth: 260)
+                } detail: {
+                    // Detail pane - show selected group's detail view, or a placeholder
+                    if let group = selectedGroup {
                         GroupsSmartDetailView(server: server, group: group)
                             .environmentObject(networkController)
+                            .environmentObject(xmlController)
+                    } else {
+                        Text("Select a Smart Group to view details")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-
-                    // Default detail placeholder when nothing selected
-                    Text("Select a Smart Group to view details")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             
@@ -162,10 +169,10 @@ struct GroupsSmartView: View {
         Divider()
   
             .onAppear() {
-                Task {
-                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                }
-            }
+             Task {
+                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+             }
+         }
         
         if progress.showProgressView == true {
             
