@@ -126,6 +126,124 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
 }
 #endif
 
+// Lightweight inline preferences view to ensure it's always in-scope for the App
+#if os(macOS)
+fileprivate struct AppPolicyDelayPreferencesView: View {
+    @EnvironmentObject var networkController: NetBrain
+    @State private var delayValue: Double = 3.0
+    @State private var showSavedToast = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Policy fetch delay (seconds)")
+                .font(.headline)
+
+            HStack {
+                Slider(value: $delayValue, in: 0...60, step: 0.1)
+                Stepper(value: $delayValue, in: 0...600, step: 1) {
+                    Text("\(Int(delayValue)) s")
+                        .frame(minWidth: 60)
+                }
+            }
+
+            HStack(spacing: 12) {
+                Button(action: {
+                    networkController.setPolicyRequestDelay(delayValue)
+                    showSavedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showSavedToast = false
+                    }
+                }) {
+                    Text("Save")
+                }
+
+                Button(action: {
+                    delayValue = networkController.getPolicyRequestDelay()
+                }) {
+                    Text("Reset to current")
+                }
+
+                Spacer()
+
+                Text(networkController.policyDelayStatus)
+                    .foregroundColor(.secondary)
+            }
+
+            if showSavedToast {
+                Text("Saved")
+                    .foregroundColor(.green)
+            }
+
+            Divider()
+
+            Text("Human readable: \(networkController.humanReadableDuration(delayValue))")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Spacer()
+        }
+        .padding()
+        .onAppear {
+            delayValue = networkController.getPolicyRequestDelay()
+        }
+        .frame(minWidth: 420, minHeight: 180)
+    }
+}
+
+// Inline small view for policy delay used by the App's sheet to avoid cross-file symbol lookups during build
+fileprivate struct PolicyDelayInlineView: View {
+    @EnvironmentObject var networkController: NetBrain
+    @State private var delayValue: Double = 3.0
+    @State private var showSavedToast = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Policy fetch delay (seconds)")
+                .font(.headline)
+
+            HStack {
+                Slider(value: $delayValue, in: 0...60, step: 0.1)
+                Stepper(value: $delayValue, in: 0...600, step: 1) {
+                    Text("\(Int(delayValue)) s")
+                        .frame(minWidth: 60)
+                }
+            }
+
+            HStack(spacing: 12) {
+                Button(action: {
+                    networkController.setPolicyRequestDelay(delayValue)
+                    showSavedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showSavedToast = false
+                    }
+                }) { Text("Save") }
+
+                Button(action: { delayValue = networkController.getPolicyRequestDelay() }) { Text("Reset to current") }
+
+                Spacer()
+
+                Text(networkController.policyDelayStatus)
+                    .foregroundColor(.secondary)
+            }
+
+            if showSavedToast { Text("Saved").foregroundColor(.green) }
+
+            Divider()
+
+            Text("Human readable: \(networkController.humanReadableDuration(delayValue))")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Spacer()
+        }
+        .padding()
+        .onAppear { delayValue = networkController.getPolicyRequestDelay() }
+        .frame(minWidth: 400, minHeight: 160)
+    }
+}
+#endif
+
+
 @main
 struct Man1fest0App: App {
     
@@ -161,14 +279,20 @@ struct Man1fest0App: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     #endif
     
-    init() {
-        self.photoController = PhotoViewModel()
-        self.pushController = PushBrain()
-        self.extensionAttributeController = EaBrain()
+    // Global security objects provided to the environment
+    let securitySettings: SecuritySettingsManager
+    let inactivityMonitor: InactivityMonitor
+
+     init() {
+         self.photoController = PhotoViewModel()
+         self.pushController = PushBrain()
+         self.extensionAttributeController = EaBrain()
 //        self.jamfController = JamfController()
         self.networkController = NetBrain()
         self.prestageController = PrestageBrain()
         self.xmlController = XmlBrain()
+        // Wire cross-controller reference so NetBrain can call XmlBrain helpers
+        self.networkController.xmlController = self.xmlController
         self.progress = Progress()
 //        self.basher = Basher()
         self.backgroundTasks = BackgroundTasks()
@@ -178,18 +302,13 @@ struct Man1fest0App: App {
         // Initialize global security settings and inactivity monitor
         self.securitySettings = SecuritySettingsManager()
         self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)
-    }
-    
-    // Global security objects provided to the environment
-    let securitySettings: SecuritySettingsManager
-    let inactivityMonitor: InactivityMonitor
-    
-    var body: some Scene {
+     }
+     
+     var body: some Scene {
         WindowGroup {
-            SecureAppWrapper(showPreferences: $showingPreferences) {
-                ContentView()
-            }
-            // Preserve existing environment objects for the app and pass them to the wrapped content
+            ContentView()
+            
+//                .environmentObject(photoController)
                 .environmentObject(coreDataStack)
                 .environment(\.managedObjectContext,
                              coreDataStack.managedObjectContext)
@@ -205,12 +324,35 @@ struct Man1fest0App: App {
 
                 .environmentObject(layout)
                 .environmentObject(backgroundTasks)
+//                .environmentObject(jamfcontroller)
                 .environmentObject(scopingController)
                 .environmentObject(policyController)
                 .environmentObject(exportController)
-                // Provide global security objects
+                // Inject security objects so PreferencesView and other views can access them
                 .environmentObject(securitySettings)
                 .environmentObject(inactivityMonitor)
+                // Present the unified preferences view as a sheet on macOS when requested from the menu
+                #if os(macOS)
+                .sheet(isPresented: $showingPreferences) {
+                    NavigationView {
+                        Form {
+                            Section(header: Text("Security")) {
+                                PreferencesSecuritySection()
+                            }
+                            Section(header: Text("Policy Fetch")) {
+                                NavigationLink("Policy Delay…", destination: PolicyDelayInlineView())
+                            }
+                        }
+                        .navigationTitle("Preferences")
+                        .frame(minWidth: 420, minHeight: 260)
+                    }
+                    .environmentObject(securitySettings)
+                    .environmentObject(inactivityMonitor)
+                    .environmentObject(networkController)
+                    .environmentObject(progress)
+                    .environmentObject(layout)
+                 }
+                 #endif
         }.commands {
             SidebarCommands()
         }
