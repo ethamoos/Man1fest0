@@ -118,6 +118,9 @@ struct PolicyDetailView: View {
     
     @State var selectedResourceType = ResourceType.policyDetail
     
+    // Explicit TabView selection (ensures tab clicks reliably switch tabs on macOS)
+    @State private var selectedPolicyDetailTab: Int = 0
+ 
     @State var selection: Package? = nil
     
     @State var packageSelection = Set<Package>()
@@ -563,38 +566,44 @@ struct PolicyDetailView: View {
             //  ##########################################################################
             
 #if os(macOS)
-            TabView {
-                
-                PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
-                    .tabItem {
-                        Label("Packages", systemImage: "square.and.pencil")
+            // Replace TabView with a segmented Picker + switched content to ensure clicks reliably switch tabs on macOS
+            VStack(alignment: .leading, spacing: 8) {
+                // Use explicit buttons to avoid segmented Picker quirks on macOS
+                HStack(spacing: 6) {
+                    ForEach(Array([(0, "Packages"), (1, "Scoping"), (2, "Scripts"), (3, "Self Service"), (4, "Triggers"), (5, "Clear Items")]), id: \.0) { idx, label in
+                        Button(action: { selectedPolicyDetailTab = idx }) {
+                            Text(label)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(selectedPolicyDetailTab == idx ? .blue : .secondary)
+                        .controlSize(.small)
                     }
+                    Spacer()
+                }
+                .padding(.bottom, 6)
                 
-                PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                    .tabItem {
-                        Label("Scoping", systemImage: "square.and.pencil")
+                // Switched content
+                Group {
+                    switch selectedPolicyDetailTab {
+                    case 0:
+                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
+                    case 1:
+                        PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                    case 2:
+                        PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                    case 3:
+                        PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
+                    case 4:
+                        PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
+                    case 5:
+                        PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
+                    default:
+                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
                     }
-                
-                PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
-                    .tabItem {
-                        Label("Scripts", systemImage: "square.and.pencil")
-                    }
-                
-                
-                PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
-                    .tabItem {
-                        Label("Self Service", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
-                    .tabItem {
-                        Label("Triggers", systemImage: "square.and.pencil")
-                    }
-                
-                PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
-                    .tabItem {
-                        Label("Clear Items", systemImage: "square.and.pencil")
-                    }
+                }
+                .frame(minHeight: 300)
             }
             
             // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
@@ -661,7 +670,8 @@ struct PolicyDetailView: View {
             
             Task {
                 print("getPolicyAsXML - running get policy as xml function")
-                _ = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                 print("Fetched policy XML length: \(policyAsXML.count)")
                  xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
             }
 
@@ -712,15 +722,13 @@ struct PolicyDetailView: View {
         .onChange(of: xmlController.currentPolicyAsXML) { _ in
             Task {
                 do {
-                    try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-              
-                    print("Refreshed detailed policy after XML change")
+                    let refreshedXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                    print("Refreshed detailed policy after XML change (len: \(refreshedXML.count))")
                 } catch {
                     print("Failed to refresh detailed policy after XML change: \(error)")
                 }
                 print("Refreshing AEXML to reflect currentPolicyAsXML changes")
                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-                
             }
         }
         // Whenever the aexmlDoc representation of the current policy changes (children often edit XML),
