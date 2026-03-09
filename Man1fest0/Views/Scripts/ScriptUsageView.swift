@@ -80,6 +80,8 @@ struct ScriptUsageView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
+                    .disabled(!networkController.fetchedDetailedPolicies)
+                    .help(networkController.fetchedDetailedPolicies ? "Run analysis" : "Detailed policy data is required — press Refresh to load policies before analysing.")
 
                     Button(action: {
                         networkController.allPoliciesDetailed.removeAll()
@@ -257,6 +259,8 @@ struct ScriptUsageView: View {
                                 Label("Analyse Data", systemImage: "wand.and.stars")
                             }
                             .buttonStyle(.bordered)
+                            .disabled(!networkController.fetchedDetailedPolicies)
+                            .help(networkController.fetchedDetailedPolicies ? "Run analysis" : "Detailed policy data is required — press Refresh Policy Data to load policies before analysing.")
 
                             Button(action: {
                                 networkController.allPoliciesDetailed.removeAll()
@@ -291,13 +295,23 @@ struct ScriptUsageView: View {
             if networkController.fetchedDetailedPolicies == false {
                 
                 Task {
-                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    do {
+                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                        // Only mark as fetched after successful completion
+                        DispatchQueue.main.async {
+                            networkController.fetchedDetailedPolicies = true
+                        }
+                    } catch {
+                        print("Failed to fetch detailed policies on appear: \(error)")
+                        // Ensure flag remains false so UI stays disabled
+                        DispatchQueue.main.async {
+                            networkController.fetchedDetailedPolicies = false
+                        }
+                    }
                 }
-                print("Setting: fetchedPolicies to true")
-                networkController.fetchedDetailedPolicies = true
-            } else {
-                print("Fetched detailed policies has run - ignoring")
-            }
+             } else {
+                 print("Fetched detailed policies has run - ignoring")
+             }
             
             if networkController.scripts.count == 0 {
                 print("Fetching scripts")
