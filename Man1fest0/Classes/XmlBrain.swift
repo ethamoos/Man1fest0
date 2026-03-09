@@ -751,9 +751,9 @@ class XmlBrain: ObservableObject {
     //    #############################################################################
     
     func getGroupMembersXML(server: String, groupId: Int, authToken: String ) {
-        
+
         //        Runs in view to get the members for the selected group as xml
-        
+
         let groupIdString = String(describing: groupId )
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupIdString)"
         let url = URL(string: jamfURLQuery)!
@@ -766,7 +766,7 @@ class XmlBrain: ObservableObject {
         print("Running: getGroupMembersXML - xmlcontroller")
         print("groupId set as: \(groupId)")
         print("jamfURLQuery set as: \(jamfURLQuery)")
-        
+
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data else {
                 self.separationLine()
@@ -776,10 +776,44 @@ class XmlBrain: ObservableObject {
             }
             self.separationLine()
             print("getGroupMembersXML succeeded")
-//            print("getGroupMembersXML data is:")
-//            print(String(data: data, encoding: .utf8)!)
+ //            print("getGroupMembersXML data is:")
+ //            print(String(data: data, encoding: .utf8)!)
             DispatchQueue.main.async {
-                self.computerGroupMembersXML = (String(data: data, encoding: .utf8)!)
+                let xmlString = String(data: data, encoding: .utf8) ?? ""
+                self.computerGroupMembersXML = xmlString
+
+                // Try parsing the XML and populate compGroupComputers so UI can list members
+                do {
+                    let doc = try AEXMLDocument(xml: data)
+                    var computersArray: [computerGroupResponse.Computer] = []
+
+                    // Handle possible root shapes: <computer_group> or root containing <computer_group>
+                    var computersNodes: [AEXMLElement] = []
+                    if doc.root.name == "computer_group" {
+                        computersNodes = doc.root["computers"].children
+                    } else if doc.root["computer_group"].children.count > 0 {
+                        computersNodes = doc.root["computer_group"]["computers"].children
+                    } else if doc.root["computers"].children.count > 0 {
+                        computersNodes = doc.root["computers"].children
+                    }
+
+                    for node in computersNodes {
+                        // Extract fields (use empty string defaults)
+                        let idInt = Int(node["id"].string) ?? 0
+                        let name = node["name"].string
+                        let mac = node["mac_address"].string
+                        let altMac = node["alt_mac_address"].string
+                        let serial = node["serial_number"].string
+
+                        let comp = computerGroupResponse.Computer(id: idInt, name: name, macAddress: mac, altMACAddress: altMac, serialNumber: serial)
+                        computersArray.append(comp)
+                    }
+
+                    // Update published array so views refresh
+                    self.compGroupComputers = computersArray
+                } catch {
+                    print("Failed to parse group members XML: \(error)")
+                }
             }
         }
         task.resume()

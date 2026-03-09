@@ -84,8 +84,7 @@ struct GroupsSmartDetailView: View {
                         var base = trimmedServer
                         if base.hasSuffix("/") { base.removeLast() }
                         // Construct Jamf UI URL for this group
-               
-                        let uiURL = "\(base)/smartComputerGroups.html?id=\(group.id)&o=r"
+                        let uiURL = "\(base)/staticComputerGroups.html?id=\(group.id)&o=r"
                         print("Opening group UI URL: \(uiURL)")
                         layout.openURL(urlString: uiURL)
                     }) {
@@ -123,7 +122,7 @@ struct GroupsSmartDetailView: View {
     func openInBrowser() {
         // Compose a Jamf web console URL for the group (assumes classic JSS path)
         let base = server.hasSuffix("/") ? String(server.dropLast()) : server
-        let urlString = "\(base)/smartComputerGroups.html?id=\(group.id)"
+        let urlString = "\(base)/computergroups.html?id=\(group.id)"
 
 
         guard let url = URL(string: urlString) else { return }
@@ -136,17 +135,24 @@ struct GroupsSmartDetailView: View {
     }
 
     func runGetGroupMembers(selection: ComputerGroup, authToken: String) async {
-        // Ensure we fetch members via NetBrain (JSON) first, then parse any XML members if needed.
-        let mySelection = String(describing: selection.name)
+        // Prefer calling XmlBrain's async JSON loader which populates xmlController.compGroupComputers
+        let groupName = selection.name
 
         do {
-            try await networkController.getGroupMembers(server: server, name: mySelection)
+            try await xmlController.getGroupMembers(server: server, name: groupName, authToken: authToken)
         } catch {
-            print("Error getting GroupMembers from NetBrain: \(error)")
+            print("XmlBrain.getGroupMembers failed: \(error). Falling back to NetBrain JSON and XML fetch")
+            // Fallback to networkController and raw XML fetch
+            do {
+                try await networkController.getGroupMembers(server: server, name: groupName)
+            } catch {
+                print("networkController.getGroupMembers also failed: \(error)")
+            }
+            // Also fetch XML string (used by other flows)
+            xmlController.getGroupMembersXML(server: server, groupId: selection.id, authToken: authToken)
         }
-
-        // Also ask the XML controller to load group members (keeps compatibility with other views).
-        xmlController.getGroupMembersXML(server: server, groupId: selection.id, authToken: networkController.authToken)
+        // If the async XmlBrain call succeeded, compGroupComputers will already be populated.
+        // Only use the XML endpoint as a fallback (handled in the catch block above).
     }
 }
 
