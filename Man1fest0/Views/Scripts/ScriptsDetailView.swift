@@ -77,6 +77,7 @@ struct ScriptsDetailView: View {
                         // Save: only network update (upload changes to server)
                         progress.showProgress()
                         Task {
+                            print("Updating script")
                             do {
                                 try await networkController.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing: scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes)
                                 // indicate saved

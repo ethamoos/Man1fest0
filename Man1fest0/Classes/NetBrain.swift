@@ -2091,45 +2091,86 @@ actor AsyncSemaphore {
     
     
   
-    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String,category: String,filename: String,info: String, notes: String) async throws {
-        
-        let xml = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <script>
-            <name>\(scriptName)</name>
-            <category>No category assigned</category>
-            <filename>\(filename)</filename>
-            <info>\(info)</info>
-            <notes>\(notes)</notes>
-        </script>
-        """
+func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String,category: String,filename: String,info: String, notes: String) async throws {
 
-
-        
-        separationLine()
-        print("Running func: updateScript")
-        print("scriptName is set to:\(scriptName)")
-        print("scriptID is set to:\(scriptId)")
-        separationLine()
-        print("scriptContent is\(scriptContent)")
-        
-//        let scriptData = Data(scriptContent.utf8)
-        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
-//        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: URL(string: jamfURLQuery)!)
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/xml", forHTTPHeaderField: "Accept")
-        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.httpMethod = "PUT"
-        request.httpBody = xml.data(using: .utf8)
-
-//
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
-        }
+    // Helper: escape XML reserved characters for element content
+    func escapeXML(_ s: String) -> String {
+        var out = s
+        out = out.replacingOccurrences(of: "&", with: "&amp;")
+        out = out.replacingOccurrences(of: "<", with: "&lt;")
+        out = out.replacingOccurrences(of: ">", with: "&gt;")
+        out = out.replacingOccurrences(of: "\'", with: "&apos;")
+        out = out.replacingOccurrences(of: "\"", with: "&quot;")
+        return out
     }
+
+    // Ensure any occurrence of the CDATA terminator inside the script is safely handled
+    let safeScriptContent = scriptContent.replacingOccurrences(of: "]]>", with: "]]]]><![CDATA[>")
+
+    let xml = """
+    <?xml version="1.0" encoding="utf-8"?>
+    <script>
+        <name>
+        \(escapeXML(scriptName))
+        </name>
+        <category>\(escapeXML(category.isEmpty ? "No category assigned" : category))</category>
+        <filename>\(escapeXML(filename))</filename>
+        <info>\(escapeXML(info))</info>
+        <notes>\(escapeXML(notes))</notes>
+        <script_contents><![CDATA[\(safeScriptContent)]]></script_contents>
+    </script>
+    """
+
+    separationLine()
+    print("Running func: updateScript")
+    print("scriptName is set to:\(scriptName)")
+    print("scriptID is set to:\(scriptId)")
+
+    let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
+    self.currentURL = jamfURLQuery
+    guard let url = URL(string: jamfURLQuery) else {
+        print("Invalid URL for updateScript: \(jamfURLQuery)")
+        throw JamfAPIError.badURL
+    }
+    var request = URLRequest(url: url)
+    request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+    request.addValue("application/xml", forHTTPHeaderField: "Accept")
+    request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+    // Provide a helpful User-Agent (matches other requests)
+    request.addValue("\(String(describing: product_name ?? "Man1fest0"))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+    request.httpMethod = "PUT"
+    request.httpBody = xml.data(using: .utf8)
+
+    do {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        self.separationLine()
+        print("updateScript response status: \(status)")
+        if status == 200 || status == 201 {
+            print("updateScript succeeded for id: \(scriptId)")
+            // Optionally refresh the detailed script cache
+            Task {
+                try? await self.getDetailedScript(server: server, scriptID: Int(scriptId) ?? 0, authToken: authToken)
+            }
+            return
+        } else {
+            // Try to show the server response for debugging
+            if let body = String(data: data, encoding: .utf8) {
+                print("updateScript failed - response body:\n\(body)")
+            } else {
+                print("updateScript failed - no response body available")
+            }
+            print("updateScript failed - HTTP status: \(status)")
+            throw JamfAPIError.http(status)
+        }
+    } catch let urlError as URLError {
+        print("updateScript network request failed: \(urlError)")
+        throw JamfAPIError.requestFailed
+    } catch {
+        print("updateScript unexpected error: \(error)")
+        throw JamfAPIError.unknown
+    }
+}
     
     
     
