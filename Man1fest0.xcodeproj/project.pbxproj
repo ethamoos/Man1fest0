@@ -307,7 +307,6 @@
 				E48D59D92C5A452D00E1E35B /* Create */,
 				A86AF37F2C3FE2C2009349C4 /* Computers */,
 				A83D00DA2D774FC30091B794 /* ErrorView.swift */,
-				A885D1532F5ABF21002CB073 /* Groups */,
 				E48D59D42C5961B800E1E35B /* Packages */,
 				E48D59D32C5961A200E1E35B /* Policy */,
 				E45E132C2C53B5FB007C175F /* ReportsView.swift */,
@@ -334,6 +333,7 @@
 		A86AF37F2C3FE2C2009349C4 /* Computers */ = {
 			isa = PBXGroup;
 			children = (
+				A885D1532F5ABF21002CB073 /* Groups */,
 				A861F25629D7447A0075D622 /* ComputersBasicView.swift */,
 				A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */,
 				A8DD6B3A2A13CA890098563C /* ComputerActionView.swift */,

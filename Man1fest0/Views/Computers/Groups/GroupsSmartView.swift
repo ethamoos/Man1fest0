@@ -34,6 +34,7 @@ struct GroupsSmartView: View {
     
     @State var mySelection: String = ""
     
+    // Keep a selection set for batch operations (delete). We also use NavigationLink for per-row navigation.
     @State var selection = Set<ComputerGroup>()
 
     
@@ -56,34 +57,35 @@ struct GroupsSmartView: View {
             
             Section(header: Text("Smart Groups:").bold().padding()) {
                 
-                NavigationView {
-                    
-                    if searchResults.count > 0 {
-                        
-#if os(macOS)
-                        
-                        List(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , selection: $selection) { group in
+                // Use a NavigationStack + List with per-row NavigationLink so users can tap a group to see details.
+                NavigationStack {
+                    // Master list
+                    List(selection: $selection) {
+                        ForEach(networkController.allComputerGroups.filter({ computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter) })) { group in
+                            // Only show smart groups in this view
                             if group.isSmart == true {
-                                Text(String(describing: group.name))
-                            }
-                        }
-                        .foregroundColor(.blue)
-                        
-                        
-                        
-                        
-                        
-#else
-                        List(searchResults) { group in
-                            if group.isSmart != true {
-                                NavigationLink(destination: GroupDetailView( group: group, server: server)) {
-                                    Text(String(describing: group.name))
+                                NavigationLink(value: group) {
+                                    HStack {
+                                        Text(group.name)
+                                        Spacer()
+                                        Text("ID: \(group.id)")
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
+                                .tag(group)
                             }
                         }
-                        .foregroundColor(.blue)
-#endif
                     }
+                    .listStyle(SidebarListStyle())
+                    .foregroundColor(.blue)
+                    .navigationDestination(for: ComputerGroup.self) { group in
+                        GroupsSmartDetailView(server: server, group: group)
+                            .environmentObject(networkController)
+                    }
+
+                    // Default detail placeholder when nothing selected
+                    Text("Select a Smart Group to view details")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             
