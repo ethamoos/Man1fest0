@@ -52,6 +52,31 @@ struct ScriptUsageView: View {
         return Color.gray.opacity(0.08)
         #endif
     }
+
+    // Policy fetch status text shown in the UI
+    private var policyFetchStatusText: String {
+        if networkController.isFetchingDetailedPolicies {
+            return "Fetching detailed policies…"
+        } else if networkController.fetchedDetailedPolicies && networkController.retryFailedDetailedPolicyCalls.count == 0 {
+            return "Detailed policies: Done"
+        } else if networkController.fetchedDetailedPolicies && networkController.retryFailedDetailedPolicyCalls.count > 0 {
+            return "Detailed policies: Failed (\(networkController.retryFailedDetailedPolicyCalls.count))"
+        } else {
+            return "Detailed policies: Idle"
+        }
+    }
+
+    private var policyFetchStatusColor: Color {
+        if networkController.isFetchingDetailedPolicies {
+            return .red
+        } else if networkController.fetchedDetailedPolicies && networkController.retryFailedDetailedPolicyCalls.isEmpty {
+            return .green
+        } else if networkController.fetchedDetailedPolicies && !networkController.retryFailedDetailedPolicyCalls.isEmpty {
+            return .blue
+        } else {
+            return .secondary
+        }
+    }
         
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -68,37 +93,12 @@ struct ScriptUsageView: View {
 
                 Spacer()
 
-                // Quick action buttons grouped on the right
-                HStack(spacing: 10) {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        getScriptsInUse()
-                        getScriptValues()
-                    }) {
-                        Label("Analyse", systemImage: "chart.bar.doc.horizontal")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .disabled(!networkController.fetchedDetailedPolicies)
-                    .help(networkController.fetchedDetailedPolicies ? "Run analysis" : "Detailed policy data is required — press Refresh to load policies before analysing.")
-
-                    Button(action: {
-                        networkController.allPoliciesDetailed.removeAll()
-                        Task {
-                            try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                        }
-                    }) {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                    .buttonStyle(.bordered)
-
-                }
-            }
+                // Note: Analyse/Refresh controls moved to bottom toolbar to keep UI consistent (one set of controls)
+             }
             .padding([.top, .horizontal])
 
             if networkController.scripts.count == 0 {
-                VStack(alignment: .center) {
+                    VStack(alignment: .center) {
                     Spacer()
                     Text("No scripts available yet — fetching from server...")
                         .foregroundColor(.secondary)
@@ -177,7 +177,8 @@ struct ScriptUsageView: View {
                             Text("Assigned Scripts")
                                 .font(.headline)
                                 .padding(.horizontal)
-
+                                .sectionHeading(style: .boxed)
+                            
                             List(selection: $selection) {
                                 ForEach(assignedScriptsByNameDict.keys.sorted(), id: \ .self) { script in
                                     HStack {
@@ -198,7 +199,10 @@ struct ScriptUsageView: View {
 
                         // Unassigned Scripts card
                         VStack(alignment: .leading, spacing: 8) {
+                            
+                            
                             Text("Scripts not in use")
+                                .sectionHeading(style: .boxed)
                                 .font(.headline)
                                 .padding(.horizontal)
 
@@ -250,30 +254,50 @@ struct ScriptUsageView: View {
 
                             Spacer()
 
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                getScriptsInUse()
-                                getScriptValues()
-                            }) {
-                                Label("Analyse Data", systemImage: "wand.and.stars")
-                            }
-                            .buttonStyle(.bordered)
-                            .disabled(!networkController.fetchedDetailedPolicies)
-                            .help(networkController.fetchedDetailedPolicies ? "Run analysis" : "Detailed policy data is required — press Refresh Policy Data to load policies before analysing.")
-
-                            Button(action: {
-                                networkController.allPoliciesDetailed.removeAll()
-                                Task {
-                                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                            // Moved Analyse/Refresh controls here (right side)
+                            HStack(spacing: 10) {
+                                Button(action: {
+                                    progress.showProgress()
+                                    progress.waitForABit()
+                                    getScriptsInUse()
+                                    getScriptValues()
+                                }) {
+                                    Label("Analyse", systemImage: "chart.bar.doc.horizontal")
                                 }
-                            }) {
-                                Label("Refresh Policy Data", systemImage: "arrow.triangle.2.circlepath")
+                                .buttonStyle(.borderedProminent)
+                                .tint(.blue)
+                                .disabled(!networkController.fetchedDetailedPolicies)
+                                .help(networkController.fetchedDetailedPolicies ? "Run analysis" : "Detailed policy data is required — press Refresh to load policies before analysing.")
+
+                                Button(action: {
+                                    networkController.allPoliciesDetailed.removeAll()
+                                    Task {
+                                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                                    }
+                                }) {
+                                    Label("Refresh", systemImage: "arrow.clockwise")
+                                }
+                                .buttonStyle(.bordered)
+
+                                // Status area: spinner + short textual status to explain whether detailed policies are being fetched
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    if networkController.isFetchingDetailedPolicies {
+                                        ProgressView()
+                                            .scaleEffect(0.7)
+                                            .controlSize(.small)
+                                    }
+                                    Text(policyFetchStatusText)
+                                        .font(.caption)
+                                        .foregroundColor(policyFetchStatusColor)
+                                        .lineLimit(1)
+                                    Text("\(networkController.allPoliciesDetailed.count)")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(policyFetchStatusColor)
+                                }
                             }
-                            .buttonStyle(.bordered)
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom)
+                         }
+                         .padding(.horizontal)
+                         .padding(.bottom)
 
                         if progress.showProgressView == true {
                             ProgressView("Loading…")
