@@ -100,12 +100,25 @@ struct DepartmentsView: View {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
         networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
     }
-    
-    
-    //struct DepartmentsView_Previews: PreviewProvider {
-    //    static var previews: some View {
-    //        DepartmentsView()
-    //    }
-    
-    
 }
+
+#if DEBUG
+struct DepartmentsView_Previews: PreviewProvider {
+    static var previews: some View {
+        // Create a NetBrain and populate with mock departments for preview
+        let net = NetBrain()
+        net.departments = [
+            Department(jamfId: 1, name: "HR"),
+            Department(jamfId: 2, name: "IT"),
+            Department(jamfId: 3, name: "Finance"),
+            Department(jamfId: nil, name: "Unassigned")
+        ]
+        let progress = Progress()
+
+        return DepartmentsView(selectedResourceType: .department, server: "preview.server")
+            .environmentObject(net)
+            .environmentObject(progress)
+            .frame(minWidth: 400, minHeight: 300)
+    }
+}
+#endif
