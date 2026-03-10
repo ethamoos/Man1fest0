@@ -93,7 +93,7 @@ struct PolicyScriptsTabView: View {
             
             VStack(alignment: .leading) {
                 
-                Group {
+                VStack {
                     
                     // ################################################################################
                     //              SCRIPTS
@@ -192,8 +192,9 @@ struct PolicyScriptsTabView: View {
                             
                             // Refresh detailed policy to reflect script parameter changes
                             Task {
+                                let nc = networkController
                                 do {
-                                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                    try await nc.getDetailedPolicy(server: server, authToken: nc.authToken, policyID: String(describing: policyID))
                                 } catch {
                                     print("Failed to refresh detailed policy after replacing script parameter: \(error)")
                                 }
@@ -496,8 +497,9 @@ struct PolicyScriptsTabViewDetail: View {
                         xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: selectedScriptNumber, parameter4: parameter4, parameter5: parameter5, parameter6: parameter6, parameter7: parameter7, parameter8: parameter8, parameter9: parameter9, parameter10: parameter10, priority: priority)
 
                         Task {
+                            let nc = networkController
                             do {
-                                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                try await nc.getDetailedPolicy(server: server, authToken: nc.authToken, policyID: String(describing: policyID))
                             } catch {
                                 print("Failed to refresh detailed policy after replacing script parameter: \(error)")
                             }

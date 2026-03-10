@@ -208,6 +208,8 @@ actor AsyncSemaphore {
 
     @Published var policies: [Policy] = []
     @Published var fetchedDetailedPolicies: Bool = false
+    @Published var isFetchingDetailedPolicies: Bool = false
+    @Published var retryFailedDetailedPolicyCalls: [String] = []
     @Published var currentPolicyID: Int = 0
     @Published var currentPolicyName: String = ""
     @Published var currentPolicyIDIString: String = ""
