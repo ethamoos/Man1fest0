@@ -1,4 +1,4 @@
-import SwiftUI
+ - import SwiftUI
 
 // A compact, aligned security preferences section reused across preferences screens
 struct PreferencesSecuritySection: View {

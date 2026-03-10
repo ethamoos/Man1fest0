@@ -432,144 +432,168 @@ class XmlBrain: ObservableObject {
     //    createPolicyViaAEXML
     //    ##################################################
     
-    func createNewPolicyViaAEXML(authToken: String, server: String, policyName: String, policyID: String, scriptName: String, scriptID: String, packageName: String, packageID: String, SelfServiceEnabled: Bool, department: String, category: String, enabledStatus: Bool, iconId: String, iconName: String, iconUrl: String, selectedPackageIds: Set<Package>? = nil, packages: [Package]? = nil) {
+    // ...existing code...
+    func createNewPolicyViaAEXML(authToken: String, server: String, policyName: String, policyID: String, scriptName: String, scriptID: String, packageName: String, packageID: String, SelfServiceEnabled: Bool, department: String, category: String, enabledStatus: Bool, iconId: String, iconName: String, iconUrl: String, selectedPackageIds: Set<Int> = Set<Int>(),packages: [Package]) {
 
-        let jamfURLQuery = server + "/JSSResource/policies/id/0"
-        let url = URL(string: jamfURLQuery)!
+            let jamfURLQuery = server + "/JSSResource/policies/id/0"
+            let url = URL(string: jamfURLQuery)!
 
-        //        <?xml version="1.0" encoding="utf-8"?>
-
-
-        let xml = """
-        <policy>
-        </policy>
-        """
+            //        <?xml version="1.0" encoding="utf-8"?>
 
 
-        self.readXMLDataFromStringXmlBrain(xmlContent: xml)
-
-        // If caller provided a specific set of packages to add, log/count them and optionally
-        // incorporate them into the AEXML document here. Currently we only log for debugging.
-        if let sel = selectedPackageIds {
-            print("createNewPolicyViaAEXML: selectedPackageIds count = \(sel.count)")
-        }
-        if let pkgs = packages {
-            print("createNewPolicyViaAEXML: packages array count = \(pkgs.count)")
-        }
-        self.separationLine()
-        print("Select the script and attribute")
-        let policy = self.aexmlDoc.root
-        print("Add policy children")
-
-        //    ##################################################
-        //    CREATE NODES
-        //    ##################################################
-
-        print("Adding: general node")
-        self.aexmlDoc.root.addChild(name: "general")
-        print("Adding: package_configuration node")
-        self.aexmlDoc.root.addChild(name: "package_configuration")
-        print("Adding: scripts node")
-        self.aexmlDoc.root.addChild(name: "scripts")
-        print("Adding: self_service node")
-        self.aexmlDoc.root.addChild(name: "self_service")
-        print("Adding: scope node")
-        self.aexmlDoc.root.addChild(name: "scope")
-
-        let general = self.aexmlDoc.root["general"]
-        let scripts = self.aexmlDoc.root["policy"]["scripts"]
-        let packageConfiguration = self.aexmlDoc.root["package_configuration"]
-        let selfService = self.aexmlDoc.root["self_service"]
-        let scope = self.aexmlDoc.root["scope"]
-
-        self.separationLine()
-        print("Read main XML doc - initial")
-        print(self.aexmlDoc.xml)
+            let xml = """
+            <policy>
+            </policy>
+            """
 
 
-        //    ##################################################
-        //    GENERAL
-        //    ##################################################
-
-        self.separationLine()
-
-        general.addChild(name: "id", value: "0")
-        print("Add policy name:\(policyName)")
-        general.addChild(name: "name", value: policyName)
-        let policyName = general.name
-
-        self.separationLine()
-        print("Enable policy")
-
-        if enabledStatus == true {
-            general.addChild(name: "enabled", value: "true")
-        } else {
-            general.addChild(name: "enabled", value: "false")
-        }
-
-        //    ##################################################
-        //    SCRIPTS
-        //    ##################################################
-
-        if scriptName.isEmpty != true {
+            self.readXMLDataFromStringXmlBrain(xmlContent: xml)
             self.separationLine()
-            print("Adding script")
-            scripts.addChild(name: "name", value: scriptName)
-            let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
-            _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
-        } else {
-            print("No scripts specified - remove this node")
-            scripts.removeFromParent()
-        }
+            print("Select the script and attribute")
+            let policy = self.aexmlDoc.root
+            print("Add policy children")
 
-        //    ##################################################
-        //    Packages
-        //    ##################################################
+            //    ##################################################
+            //    CREATE NODES
+            //    ##################################################
 
-        if packageName.isEmpty != true {
+            print("Adding: general node")
+            self.aexmlDoc.root.addChild(name: "general")
+            print("Adding: package_configuration node")
+            self.aexmlDoc.root.addChild(name: "package_configuration")
+            print("Adding: scripts node")
+            self.aexmlDoc.root.addChild(name: "scripts")
+            print("Adding: self_service node")
+            self.aexmlDoc.root.addChild(name: "self_service")
+            print("Adding: scope node")
+            self.aexmlDoc.root.addChild(name: "scope")
+
+            let general = self.aexmlDoc.root["general"]
+            let scripts = self.aexmlDoc.root["policy"]["scripts"]
+            let packageConfiguration = self.aexmlDoc.root["package_configuration"]
+            let selfService = self.aexmlDoc.root["self_service"]
+            let scope = self.aexmlDoc.root["scope"]
+
             self.separationLine()
-            print("Adding script")
-            scripts.addChild(name: "name", value: scriptName)
-            let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
-            _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
-        } else {
-            print("No scripts specified - remove this node")
-            scripts.removeFromParent()
-        }
+            print("Read main XML doc - initial")
+            print(self.aexmlDoc.xml)
 
-        //    ##################################################
-        //    selfService
-        //    ##################################################
 
-        if SelfServiceEnabled != false {
+            //    ##################################################
+            //    GENERAL
+            //    ##################################################
+
             self.separationLine()
-            print("Adding script")
-            selfService.addChild(name: "use_for_self_service", value: String(describing: SelfServiceEnabled))
-            selfService.addChild(name: "self_service_icon", value: String(describing: SelfServiceEnabled))
-            let selfServiceEnabled = self.aexmlDoc.root["policy"]["self_service"]["use_for_self_service"]
 
-            if iconName != "" {
+            general.addChild(name: "id", value: "0")
+            print("Add policy name:\(policyName)")
+            general.addChild(name: "name", value: policyName)
+            let policyName = general.name
 
-                let selfServiceIcon = self.aexmlDoc.root["policy"]["self_service"]["self_service_icon"]
-                selfServiceIcon.addChild(name: "filename", value: "")
-                selfServiceIcon.addChild(name: "id", value: iconId)
-                selfServiceIcon.addChild(name: "uri", value: "")
+            self.separationLine()
+            print("Enable policy")
 
+            if enabledStatus == true {
+                general.addChild(name: "enabled", value: "true")
             } else {
-                print("No SelfServiceEnabled specified - remove this node")
-                selfService.removeFromParent()
+                general.addChild(name: "enabled", value: "false")
             }
 
+            //    ##################################################
+            //    SCRIPTS
+            //    ##################################################
+
+            if scriptName.isEmpty != true {
+                self.separationLine()
+                print("Adding script")
+                scripts.addChild(name: "name", value: scriptName)
+                let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
+                _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
+            } else {
+                print("No scripts specified - remove this node")
+                scripts.removeFromParent()
+            }
+
+            //    ##################################################
+            //    Packages
+            //    ##################################################
+
+            // If a single packageName/packageID were passed (legacy), add that too
+            if packageName.isEmpty != true {
+                // Ensure package_configuration and packages parent exist
+                if self.aexmlDoc.root["package_configuration"].children.isEmpty {
+                    _ = self.aexmlDoc.root.addChild(name: "package_configuration")
+                }
+                if self.aexmlDoc.root["package_configuration"]["packages"].children.isEmpty {
+                    _ = self.aexmlDoc.root["package_configuration"].addChild(name: "packages")
+                }
+                let pkg = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "package")
+                pkg.addChild(name: "id", value: packageID)
+                pkg.addChild(name: "name", value: packageName)
+                pkg.addChild(name: "action", value: "Install")
+                pkg.addChild(name: "fut", value: "false")
+                pkg.addChild(name: "feu", value: "false")
+                pkg.addChild(name: "update_autorun", value: "false")
+            }
+
+            // If a set of selected package IDs were provided, add them too
+            if selectedPackageIds.isEmpty == false {
+                if self.aexmlDoc.root["package_configuration"].children.isEmpty {
+                    _ = self.aexmlDoc.root.addChild(name: "package_configuration")
+                }
+                if self.aexmlDoc.root["package_configuration"]["packages"].children.isEmpty {
+                    _ = self.aexmlDoc.root["package_configuration"].addChild(name: "packages")
+                }
+                for pkgId in selectedPackageIds {
+                    // Try to look up the package name from the networkController if available
+                    let pkgName = packages.first(where: { $0.jamfId == pkgId })?.name ?? ""
+                    let pkg = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "package")
+                    pkg.addChild(name: "id", value: String(pkgId))
+                    pkg.addChild(name: "name", value: pkgName)
+                    pkg.addChild(name: "action", value: "Install")
+                    pkg.addChild(name: "fut", value: "false")
+                    pkg.addChild(name: "feu", value: "false")
+                    pkg.addChild(name: "update_autorun", value: "false")
+                }
+                // Add size element
+                let packageCount = selectedPackageIds.count
+                _ = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "size", value: String(describing: packageCount))
+            }
+
+            //    ##################################################
+            //    selfService
+            //    ##################################################
+
+            if SelfServiceEnabled != false {
+                self.separationLine()
+                print("Adding script")
+                selfService.addChild(name: "use_for_self_service", value: String(describing: SelfServiceEnabled))
+                selfService.addChild(name: "self_service_icon", value: String(describing: SelfServiceEnabled))
+                let selfServiceEnabled = self.aexmlDoc.root["policy"]["self_service"]["use_for_self_service"]
+
+                if iconName != "" {
+
+                    let selfServiceIcon = self.aexmlDoc.root["policy"]["self_service"]["self_service_icon"]
+                    selfServiceIcon.addChild(name: "filename", value: "")
+                    selfServiceIcon.addChild(name: "id", value: iconId)
+                    selfServiceIcon.addChild(name: "uri", value: "")
+
+                } else {
+                    print("No SelfServiceEnabled specified - remove this node")
+                    selfService.removeFromParent()
+                }
+
+            }
+            self.newPolicyAsXML = self.aexmlDoc.xml
+            self.separationLine()
+            print("Read main XML doc - updated")
+            print(self.aexmlDoc.xml)
+            separationLine()
+            print("Submit updated doc")
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: self.aexmlDoc.root.xml, httpMethod: "POST")
+            print("The string is not empty")
         }
-        self.newPolicyAsXML = self.aexmlDoc.xml
-        self.separationLine()
-        print("Read main XML doc - updated")
-        print(self.aexmlDoc.xml)
-        separationLine()
-        print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: ResourceType.policyDetail, xml: self.aexmlDoc.root.xml, httpMethod: "POST")
-        print("The string is not empty")
-    }
+    // ...existing code...
     
     
     
@@ -843,10 +867,10 @@ class XmlBrain: ObservableObject {
 #if os(macOS)
         let document = try! XMLDocument(xmlString: xmlString) //Change this to a suitable init
         let nodes = try! document.nodes(forXPath: "/policy/scope/computer_groups/computer_group")
-        
+
         for node in nodes {
             if let item = node as? XMLElement {
-                
+
                 print("---------------------------------------------")
                 print("Node is:\(node)")
                 element = XMLNode.element(withName: "name", stringValue: groupName) as! XMLNode
@@ -855,7 +879,7 @@ class XmlBrain: ObservableObject {
                 item.addChild(element2)
             }
         }
-        
+
         print("---------------------------------------------")
         print("element is:\(element)")
         print("---------------------------------------------")
@@ -867,9 +891,9 @@ class XmlBrain: ObservableObject {
         print("---------------------------------------------")
         print(String(describing: document))
         return String(describing: document)
-        
-#endif
+#else
         return("")
+#endif
     }
     
     
@@ -884,11 +908,11 @@ class XmlBrain: ObservableObject {
 //            self.separationLine()
 //            print("xmlContent is:\(xmlContent)")
         }
-        guard let data = try? Data(xmlContent.utf8)
-        else {
-            print("Sample XML Data error.")
+        guard !xmlContent.isEmpty else {
+            print("Sample XML Data error - empty string.")
             return
         }
+        let data = Data(xmlContent.utf8)
         do {
             self.aexmlDoc = try AEXMLDocument(xml: data)
         }
@@ -954,12 +978,11 @@ class XmlBrain: ObservableObject {
         //        self.separationLine()
         print("Running readXMLDataFromString - XmlBrain")
         //        print("xmlContent is:\(xmlContent)")
-        guard let data = try? Data(xmlContent.utf8)
-                
-        else {
-            print("Sample XML Data error.")
+        guard !xmlContent.isEmpty else {
+            print("Sample XML Data error - empty string.")
             return
         }
+        let data = Data(xmlContent.utf8)
         do {
             self.aexmlDoc = try AEXMLDocument(xml: data)
         }
@@ -987,82 +1010,28 @@ class XmlBrain: ObservableObject {
             "Content-Type": "application/xml",
             "Authorization": "Bearer \(authToken)"
         ]
-
+        
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.allHTTPHeaderFields = headers
         request.httpMethod = httpMethod
         request.httpBody = xmldata
-
+        
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data, let response = response {
                 self.doubleSeparationLine()
                 print("Doing processing of sendRequestAsXML:\(httpMethod)")
                 print("Data is:\(data)")
                 print("Data is:\(response)")
-
+                
                 if resourceType == ResourceType.computer {
                     print("Resource type is:\(resourceType)")
                 } else if resourceType == ResourceType.policy {
                     print("Resource type is:\(resourceType)")
-
+                    
                 } else {
                     print("Resource type is:\(resourceType)")
                 }
-
-                // If this was a successful update to a policy resource, refresh local XML and JSON representations
-                if let httpResponse = response as? HTTPURLResponse,
-                   (200...299).contains(httpResponse.statusCode) {
-
-                    // Attempt to extract policy ID and server base from the URL so we can refresh the canonical server state
-                    func extractPolicyID(from url: URL) -> Int? {
-                        let s = url.absoluteString
-                        if let range = s.range(of: "/policies/id/") {
-                            let after = s[range.upperBound...]
-                            let idStr = after.split(separator: "/").first.map(String.init) ?? ""
-                            return Int(idStr)
-                        }
-                        return nil
-                    }
-
-                    func extractServerBase(from url: URL) -> String? {
-                        let s = url.absoluteString
-                        if let range = s.range(of: "/JSSResource") {
-                            return String(s[..<range.lowerBound])
-                        }
-                        return nil
-                    }
-
-                    if resourceType == .policy || resourceType == .policyDetail {
-                        if let policyId = extractPolicyID(from: url), let serverBase = extractServerBase(from: url) {
-                            print("Detected policy endpoint; scheduling refresh for policy id: \(policyId)")
-
-                            Task { @MainActor in
-                                do {
-                                    // Fetch latest XML from server and update local XML model
-                                    let refreshedXML = try await self.getPolicyAsXMLaSync(server: serverBase, policyID: policyId, authToken: authToken)
-                                    print("Refreshed XML after PUT/POST (len: \(refreshedXML.count))")
-
-                                    // Update published property and AEXML document so UI bindings update
-                                    self.currentPolicyAsXML = refreshedXML
-                                    self.readXMLDataFromString(xmlContent: refreshedXML)
-
-                                    // Also refresh the JSON detailed policy so any UI that reads policyDetailed sees updated state
-                                    do {
-                                        try await self.networkController.getDetailedPolicy(server: serverBase, authToken: authToken, policyID: String(describing: policyId))
-                                        print("Refreshed networkController.policyDetailed for policy id: \(policyId)")
-                                    } catch {
-                                        print("Failed to refresh JSON detailed policy: \(error)")
-                                    }
-                                } catch {
-                                    print("Failed to refresh detailed policy after XML change: \(error)")
-                                }
-                            }
-                        } else {
-                            print("Could not extract server or policy id from URL; skipping automatic refresh")
-                        }
-                    }
-                }
-
+                
             } else {
                 print("Error encountered")
                 var text = "\n\nFailed."
@@ -1763,33 +1732,36 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     
     func addPackageToPolicyXML (xmlString: String, packageName: String, packageId: String) -> String {
         
-        let document = try! XMLDocument(xmlString: xmlString) //Change this to a suitable init
-        let nodes = try! document.nodes(forXPath: "/policy/package_configuration/packages/package")
-        
-        for node in nodes {
-            if let item = node as? XMLElement {
-                self.separationLine()
-                print("Node is:\(node)")
-                element = XMLNode.element(withName: "name", stringValue: packageName) as! XMLNode
-                item.addChild(element)
-                element2 = XMLNode.element(withName: "id", stringValue: packageId) as! XMLNode
-                item.addChild(element2)
+    #if os(macOS)
+            let document = try! XMLDocument(xmlString: xmlString) //Change this to a suitable init
+            let nodes = try! document.nodes(forXPath: "/policy/package_configuration/packages/package")
+
+            for node in nodes {
+                if let item = node as? XMLElement {
+                    self.separationLine()
+                    print("Node is:\(node)")
+                    element = XMLNode.element(withName: "name", stringValue: packageName) as! XMLNode
+                    item.addChild(element)
+                    element2 = XMLNode.element(withName: "id", stringValue: packageId) as! XMLNode
+                    item.addChild(element2)
+                }
             }
+
+            self.separationLine()
+            print("element is:\(element)")
+            self.separationLine()
+            print("all nodes are:\(nodes)")
+            self.separationLine()
+            print("Updated document is:")
+            self.separationLine()
+            print((document))
+            self.separationLine()
+            print(String(describing: document))
+            return String(describing: document)
+    #else
+            return("")
+    #endif
         }
-        
-        self.separationLine()
-        print("element is:\(element)")
-        self.separationLine()
-        print("all nodes are:\(nodes)")
-        self.separationLine()
-        print("Updated document is:")
-        self.separationLine()
-        print((document))
-        self.separationLine()
-        print(String(describing: document))
-        return String(describing: document)
-        
-    }
     
     
     //   #################################################################################
@@ -2094,11 +2066,11 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         }
         self.separationLine()
         print("Adding to: AEXMLDocument")
-        guard let data = try? Data(xmlContent.utf8)
-        else {
-            print("Sample XML Data error.")
+        guard !xmlContent.isEmpty else {
+            print("Sample XML Data error - empty string.")
             return
         }
+        let data = Data(xmlContent.utf8)
         do {
             self.aexmlDoc = try AEXMLDocument(xml: data)
         }
