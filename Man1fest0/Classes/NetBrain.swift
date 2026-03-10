@@ -208,6 +208,8 @@ actor AsyncSemaphore {
 
     @Published var policies: [Policy] = []
     @Published var fetchedDetailedPolicies: Bool = false
+    @Published var isFetchingDetailedPolicies: Bool = false
+    @Published var retryFailedDetailedPolicyCalls: [String] = []
     @Published var currentPolicyID: Int = 0
     @Published var currentPolicyName: String = ""
     @Published var currentPolicyIDIString: String = ""
@@ -918,6 +920,12 @@ actor AsyncSemaphore {
         self.separationLine()
         // Log that we're running the concurrent version of this function
         print("Running func: getAllPoliciesDetailed (bounded concurrency)")
+        
+        // Mark that we're currently fetching detailed policies
+        await MainActor.run {
+            self.isFetchingDetailedPolicies = true
+            self.retryFailedDetailedPolicyCalls = []
+        }
 
         // Filter out policies without a valid jamfId (must be > 0 to be fetchable)
         let validPolicies = policies.filter { ($0.jamfId ?? 0) > 0 }
@@ -1026,11 +1034,14 @@ actor AsyncSemaphore {
         if !failedCalls.isEmpty {
             // Log the failed policy IDs for debugging
             print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
-            // Future enhancement: store failed calls for retry functionality
-            // self.retryFailedDetailedPolicyCalls = failedCalls
+            // Store failed calls for retry functionality
+            await MainActor.run {
+                self.retryFailedDetailedPolicyCalls = failedCalls
+            }
             // Update UI state to indicate incomplete success (on MainActor)
             await MainActor.run {
                 self.fetchedDetailedPolicies = false
+                self.isFetchingDetailedPolicies = false
             }
         } else {
             // Log complete success for debugging
@@ -1038,6 +1049,7 @@ actor AsyncSemaphore {
             // Update UI state to indicate complete success (on MainActor)
             await MainActor.run {
                 self.fetchedDetailedPolicies = true
+                self.isFetchingDetailedPolicies = false
             }
         }
     }
@@ -5686,7 +5698,42 @@ xml = """
             self.allUsers = decoded.users
             print("Loaded \(allUsers.count) users")
         } catch {
-            publishError(error, title: "Failed to load users")
+            self.alertTitle = "Failed to load users"
+            self.alertMessage = error.localizedDescription
+            self.showAlert = true
+            throw error
+        }
+    }
+
+    // Fetch all categories
+    func getAllCategories() async throws {
+        do {
+            let request = APIRequest<AllCategories>(endpoint: "categories", method: .get)
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.categories = decoded.categories
+            print("Loaded \(categories.count) categories")
+        } catch {
+            self.alertTitle = "Failed to load categories"
+            self.alertMessage = error.localizedDescription
+            self.showAlert = true
+            throw error
+        }
+    }
+
+    // Fetch all departments
+    func getAllDepartments() async throws {
+        do {
+            struct DepartmentsResponse: Codable {
+                let departments: [Department]
+            }
+            let request = APIRequest<DepartmentsResponse>(endpoint: "departments", method: .get)
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.departments = decoded.departments
+            print("Loaded \(departments.count) departments")
+        } catch {
+            self.alertTitle = "Failed to load departments"
+            self.alertMessage = error.localizedDescription
+            self.showAlert = true
             throw error
         }
     }

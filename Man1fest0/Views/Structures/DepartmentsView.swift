@@ -17,7 +17,8 @@ struct DepartmentsView: View {
     var selectedResourceType: ResourceType
     @State var server: String
     @State var computers: [Computer] = []
-    @State var selection: Computer = Computer(id: 0, name: "")
+    // Selection should be a Department (optional) to match the List of departments.
+    @State var selection: Department? = nil
     @State var departments: [Department] = []
     @State private var searchText = ""
     
@@ -32,7 +33,7 @@ struct DepartmentsView: View {
                 NavigationView {
                     
 #if os(macOS)
-                    List(searchResults, id: \.self, selection: $selection) { department in
+                    List(searchResults, selection: $selection) { department in
                         NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
                             
                             HStack {
@@ -52,7 +53,9 @@ struct DepartmentsView: View {
                     Text("\(networkController.departments.count) total departments")
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
+#if !os(macOS)
                 .searchable(text: $searchText)
+#endif
 
             } else {
                 ProgressView {
@@ -68,10 +71,13 @@ struct DepartmentsView: View {
         .frame(minWidth: 300, minHeight: 100, alignment: .leading)
 
         .onAppear {
-            print("Departments View appeared. Running onAppear")
-            print("\(selectedResourceType) View appeared - connecting")
-            print("Searching for \(selectedResourceType)")
-            handleConnect(resourceType: ResourceType.department)
+            print("Departments View appeared. Running getAllDepartments")
+            
+                    Task {
+                        try await networkController.getAllDepartments()
+                    }
+             
+             
         }
     }
     
