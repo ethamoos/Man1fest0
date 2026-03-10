@@ -68,10 +68,14 @@ struct DepartmentsView: View {
         .frame(minWidth: 300, minHeight: 100, alignment: .leading)
 
         .onAppear {
-            print("Departments View appeared. Running onAppear")
-            print("\(selectedResourceType) View appeared - connecting")
-            print("Searching for \(selectedResourceType)")
-            handleConnect(resourceType: ResourceType.department)
+            print("Departments View appeared. Running getDepartments")
+//            print("\(selectedResourceType) View appeared - connecting")
+//            print("Searching for \(selectedResourceType)")
+//            handleConnect(resourceType: ResourceType.department)
+            
+            Task {
+                try await networkController.getDepartments(server: server)
+            }
         }
     }
     

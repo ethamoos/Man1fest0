@@ -262,7 +262,8 @@ struct PolicySelfServiceTabView: View {
                             
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: newSelfServiceName, policyID: String(describing: policyID))
+                            let nc = networkController
+                            nc.updateSSName(server: server, authToken: nc.authToken, resourceType: ResourceType.policyDetail, providedName: newSelfServiceName, policyID: String(describing: policyID))
                             
                             networkController.separationLine()
                             print("Name Self-Service to:\(newSelfServiceName)")
