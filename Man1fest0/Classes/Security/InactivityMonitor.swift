@@ -48,8 +48,12 @@ class InactivityMonitor: ObservableObject {
             .store(in: &cancellables)
         #endif
         
-        // Check lock status on initialization
-        checkLockStatus()
+        // NOTE: Do NOT run checkLockStatus() here synchronously; postpone the initial
+        // lock state decision until after the app has had a chance to restore or
+        // obtain credentials and perform initial connection (see ContentView.task).
+        // This prevents the lock screen from appearing immediately on launch when
+        // credentials may still be loaded from the keychain.
+        // checkLockStatus()
     }
     
     // MARK: - Public Methods

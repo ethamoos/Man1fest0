@@ -10,6 +10,7 @@ struct ContentView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
+    @EnvironmentObject var inactivityMonitor: InactivityMonitor
 
     //  #######################################################################
     //  Login
@@ -70,11 +71,22 @@ struct ContentView: View {
             await networkController.load()
             
             Task {
-                
                 try await networkController.getAllPackages(server: server)
-                
                 try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
-                
+            }
+
+            // Capture environment object locally for use in this async closure
+            let monitor = inactivityMonitor
+
+            // After performing initial load/connect, decide whether to show connect sheet
+            // If connected, reset inactivity timer so lock screen doesn't appear immediately
+            if networkController.connected {
+                // Ensure any previously-set locked flag is cleared and restart inactivity timer
+                monitor.unlockApp()
+                monitor.resetInactivityTimer()
+            } else {
+                // If not connected, ask NetBrain to present the connect sheet
+                networkController.needsCredentials = true
             }
         }
         #if os(macOS)
