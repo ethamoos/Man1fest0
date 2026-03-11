@@ -73,9 +73,7 @@ struct CategoriesView: View {
         .onAppear {
             print("Categories View appeared. Running onAppear")
             Task {
-//                try await networkController.getCategories(server: server, authToken: networkController.authToken)
                 try await networkController.getAllCategories()
-
             }
         }
     }

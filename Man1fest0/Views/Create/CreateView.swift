@@ -113,8 +113,15 @@ struct CreateView: View {
                     HStack(spacing: 8) {
                         Button(action: {
                             // quick refresh
-                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+//                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+//                            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                            
+                            Task {
+                                try await networkController.getAllCategories()
+                                try await networkController.getAllDepartments()
+                            }
+                            
+                            
                         }) {
                             Image(systemName: "arrow.clockwise")
                         }
@@ -174,6 +181,9 @@ struct CreateView: View {
             print("CreateView appeared - connecting")
             networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
             networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+            
+            
+            
             networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
             networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
         }

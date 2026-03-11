@@ -16,8 +16,6 @@ struct DepartmentsView: View {
     
     var selectedResourceType: ResourceType
     @State var server: String
-    @State var computers: [Computer] = []
-//    @State var selection: Computer = Computer(id: 0, name: "")
     @State var selection: Department? = nil
 
     @State var departments: [Department] = []
@@ -62,7 +60,9 @@ struct DepartmentsView: View {
                     Text("\(networkController.departments.count) total departments")
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
-                .searchable(text: $searchText)
+#if os(macOS)
+//                .searchable(text: $searchText)
+#endif
 
             } else {
                 ProgressView {
@@ -79,9 +79,16 @@ struct DepartmentsView: View {
 
         .onAppear {
             print("Departments View appeared. Running onAppear")
-            print("\(selectedResourceType) View appeared - connecting")
-            print("Searching for \(selectedResourceType)")
-            handleConnect(resourceType: ResourceType.department)
+//            print("\(selectedResourceType) View appeared - connecting")
+//            print("Searching for \(selectedResourceType)")
+//            handleConnect(resourceType: ResourceType.department)
+            
+            print("Departments View appeared. Running getAllDepartments")
+                    
+                            Task {
+                                try await networkController.getAllDepartments()
+                            }
+            
         }
     }
     
@@ -100,10 +107,10 @@ struct DepartmentsView: View {
     }
  
     
-    func handleConnect(resourceType: ResourceType) {
-        print("Running handleConnect. resourceType is set as:\(resourceType)")
-        networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-    }
+//    func handleConnect(resourceType: ResourceType) {
+//        print("Running handleConnect. resourceType is set as:\(resourceType)")
+//        networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+//    }
     
     
     //struct DepartmentsView_Previews: PreviewProvider {
