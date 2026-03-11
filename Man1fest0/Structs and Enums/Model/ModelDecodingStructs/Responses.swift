@@ -19,7 +19,7 @@ struct ConfigProfileSummary: Codable, Identifiable, Hashable {
     var id = UUID()
     var jamfId: Int?
     var name: String
-
+    
     enum CodingKeys: String, CodingKey {
         case jamfId = "id"
         case name = "name"
@@ -51,7 +51,7 @@ struct ConfigurationProfile: Codable, Hashable {
 struct OSXConfigProfileDetailedResponse: Codable {
     
     let osxConfigurationProfile: OSXConfigProfileDetailed
-
+    
     enum CodingKeys: String, CodingKey {
         case osxConfigurationProfile = "os_x_configuration_profile"
     }
@@ -62,7 +62,7 @@ struct OSXConfigProfileDetailed: Codable, Hashable {
     let general: ConfigProfileGeneral?
     let scope: ConfigScope?
     let selfService: ConfigSelfService?
-
+    
     enum CodingKeys: String, CodingKey {
         case general
         case scope
@@ -83,7 +83,7 @@ struct ConfigProfileGeneral: Codable, Hashable {
     let uuid: String?
     let redeployOnUpdate: String?
     let payloads: String?
-
+    
     enum CodingKeys: String, CodingKey {
         case id
         case name
@@ -117,7 +117,7 @@ struct ConfigScope: Codable, Hashable {
     let jssUserGroups: [String: ConfigCategoryElement]?
     let limitations: ConfigLimitations?
     let exclusions: ConfigExclusions?
-
+    
     enum CodingKeys: String, CodingKey {
         case allComputers = "all_computers"
         case allJssUsers = "all_jss_users"
@@ -144,7 +144,7 @@ struct ConfigExclusions: Codable, Hashable {
     let ibeacons: [ConfigCategoryElement]?
     let jssUsers: [ConfigCategoryElement]?
     let jssUserGroups: [ConfigCategoryElement]?
-
+    
     enum CodingKeys: String, CodingKey {
         case computers
         case buildings
@@ -162,7 +162,7 @@ struct ConfigExclusions: Codable, Hashable {
 // MARK: - ComputerGroups
 struct ConfigComputerGroups: Codable, Hashable {
     let computerGroup: [ConfigCategoryElement]?
-
+    
     enum CodingKeys: String, CodingKey {
         case computerGroup = "computer_group"
     }
@@ -174,7 +174,7 @@ struct ConfigLimitations: Codable, Hashable {
     let userGroups: [ConfigCategoryElement]?
     let networkSegments: [ConfigCategoryElement]?
     let ibeacons: [ConfigCategoryElement]?
-
+    
     enum CodingKeys: String, CodingKey {
         case users
         case userGroups = "user_groups"
@@ -196,7 +196,7 @@ struct ConfigSelfService: Codable, Hashable {
     let notification: String?
     let notificationSubject: String?
     let notificationMessage: String?
-
+    
     enum CodingKeys: String, CodingKey {
         case selfServiceDisplayName = "self_service_display_name"
         case installButtonText = "install_button_text"
@@ -220,7 +220,7 @@ struct ConfigSelfServiceIcon: Codable, Hashable {
 // MARK: - Security
 struct ConfigSecurity: Codable, Hashable {
     let removalDisallowed: String?
-
+    
     enum CodingKeys: String, CodingKey {
         case removalDisallowed = "removal_disallowed"
     }
@@ -232,7 +232,7 @@ struct ConfigSelfServiceCategory: Codable, Hashable {
     let name: String?
     let displayIn: Bool?
     let featureIn: Bool?
-
+    
     enum CodingKeys: String, CodingKey {
         case id, name
         case displayIn = "display_in"
@@ -274,7 +274,6 @@ struct Departments: Codable, Hashable {
 
 // MARK: - DEPARTMENT
 struct Department: Codable, Hashable, Identifiable {
-    
     var id = UUID()
     let jamfId: Int?
     let name: String
@@ -337,7 +336,7 @@ struct OverrideDefaultSettings: Codable, Hashable, Identifiable {
     let forceAFPSMB: Bool?
     let sus: String?
     let netbootServer: String?
-
+    
     enum CodingKeys: String, CodingKey {
         case targetDrive = "target_drive"
         case distributionPoint = "distribution_point"
@@ -479,7 +478,7 @@ struct computerGroupResponse: Codable {
         let priority: Int
         let andOr, searchType, value: String
         let openingParen, closingParen: Bool
-
+        
         enum CodingKeys: String, CodingKey {
             case name, priority
             case andOr = "and_or"
@@ -488,7 +487,7 @@ struct computerGroupResponse: Codable {
             case openingParen = "opening_paren"
             case closingParen = "closing_paren"
         }
-
+        
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.name = try container.decode(String.self, forKey: .name)
@@ -499,7 +498,7 @@ struct computerGroupResponse: Codable {
             self.openingParen = try container.decode(Bool.self, forKey: .openingParen)
             self.closingParen = try container.decode(Bool.self, forKey: .closingParen)
         }
-
+        
         func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(name, forKey: .name)

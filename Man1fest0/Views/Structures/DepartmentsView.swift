@@ -32,8 +32,11 @@ struct DepartmentsView: View {
                 NavigationView {
                     
 #if os(macOS)
-                    List(searchResults, id: \.self, selection: $selection) { department in
-                        NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
+//                    List(searchResults, id: \.self, selection: $selection) { department in
+//                        NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
+                            
+                            List(searchResults, selection: $selection) { department in
+                                                     NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
                             
                             HStack {
                                 Image(systemName: "rectangle.3.group")
@@ -49,6 +52,11 @@ struct DepartmentsView: View {
                     }
                         .frame(minWidth: 300, maxWidth: .infinity)
 #endif
+                #if !os(macOS)
+                    .searchable(text: $searchText)
+                #endif
+                    
+                    
                     Text("\(networkController.departments.count) total departments")
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
