@@ -218,9 +218,9 @@ actor AsyncSemaphore {
     var singlePolicyDetailedGeneral: General? = nil
 
     // New: track whether we're actively fetching detailed policies to avoid concurrent/repeat runs
-//    @Published var isFetchingDetailedPolicies: Bool = false
+    @Published var isFetchingDetailedPolicies: Bool = false
     // Store failed policy IDs so callers can inspect and retry if needed
-//    @Published var retryFailedDetailedPolicyCalls: [String] = []
+    @Published var retryFailedDetailedPolicyCalls: [String] = []
 
     //    var imageA1: UIImage? = nil
     //    var imageA2: UIImage!
