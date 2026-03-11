@@ -79,7 +79,8 @@ struct ScriptsDetailView: View {
                         Task {
                             print("Updating script")
                             do {
-                                try await networkController.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing: scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes)
+                                let nc = networkController
+                                try await nc.updateScript(server: server, scriptName: scriptName, scriptContent: bodyText, scriptId: String(describing: scriptID), authToken: nc.authToken, category: category, filename: filename, info: info, notes: notes)
                                 // indicate saved
                                 showSavedToast = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { showSavedToast = false }
@@ -135,7 +136,8 @@ struct ScriptsDetailView: View {
                         Button("Toggle read-only view") { showReadOnly.toggle(); isEditing = false }
                         Button("Refresh from server") {
                             Task {
-                                try? await networkController.getDetailedScript(server: server, scriptID: scriptID, authToken: networkController.authToken)
+                                let nc = networkController
+                                try? await nc.getDetailedScript(server: server, scriptID: scriptID, authToken: nc.authToken)
                                 bodyText = networkController.scriptDetailed.scriptContents
                                 scriptName = networkController.scriptDetailed.name
                             }

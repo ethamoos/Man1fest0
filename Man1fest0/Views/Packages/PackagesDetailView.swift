@@ -72,7 +72,8 @@ struct PackageDetailView: View {
 
                         Button(action: {
                             Task {
-                                try await networkController.getDetailedPackage(server: server, authToken: networkController.authToken, packageID: String(describing: package.jamfId))
+                                let nc = networkController
+                                try await nc.getDetailedPackage(server: server, authToken: nc.authToken, packageID: String(describing: package.jamfId))
                             }
                         }) {
                             Label("Refresh", systemImage: "arrow.clockwise")
@@ -232,7 +233,8 @@ struct PackageDetailView: View {
         }
         .onAppear() {
             Task {
-                try await networkController.getDetailedPackage(server: server, authToken: networkController.authToken, packageID: String(describing: package.jamfId))
+                let nc = networkController
+                try await nc.getDetailedPackage(server: server, authToken: nc.authToken, packageID: String(describing: package.jamfId))
             }
             if networkController.categories.count <= 1 {
                 networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)

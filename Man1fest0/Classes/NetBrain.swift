@@ -220,15 +220,14 @@ actor AsyncSemaphore {
     var singlePolicyDetailedGeneral: General? = nil
 
     // New: track whether we're actively fetching detailed policies to avoid concurrent/repeat runs
-    @Published var isFetchingDetailedPolicies: Bool = false
+//    @Published var isFetchingDetailedPolicies: Bool = false
     // Store failed policy IDs so callers can inspect and retry if needed
-    @Published var retryFailedDetailedPolicyCalls: [String] = []
-
+//
     //    var imageA1: UIImage? = nil
     //    var imageA2: UIImage!
     //    var imageA3: UIImage = UIImage()
     //    var imageA4: UIImage? = UIImage()
-    
+
     //  #############################################################################
     //    XML data
     //  #############################################################################
@@ -3942,9 +3941,9 @@ xml = """
     //    #################################################################################
     //    enableSelfService - enable SelfService
     //    #################################################################################
-    
+
     func enableSelfService(server: String, authToken: String, resourceType: ResourceType, itemID: Int, selfServiceToggle: Bool) {
-        
+
         let resourcePath = getURLFormat(data: (resourceType))
         let itemIDString = String(itemID)
         var xml: String
@@ -3957,6 +3956,27 @@ xml = """
                 print("resourceType is set as:\(resourceType)")
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
                 appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+
+    // Convenience overload: accept itemID as String (some views pass String IDs).
+    // Converts to Int and forwards to the existing Int-based implementation.
+    func enableSelfService(server: String, authToken: String, resourceType: ResourceType, itemID: String, selfServiceToggle: Bool) {
+        if let id = Int(itemID) {
+            enableSelfService(server: server, authToken: authToken, resourceType: resourceType, itemID: id, selfServiceToggle: selfServiceToggle)
+        } else {
+            // If itemID is not numeric, attempt to call the endpoint directly using the string form
+            let resourcePath = getURLFormat(data: (resourceType))
+            var xml: String
+            print("Running enableSelfService (string id) for id: \(itemID)")
+            xml = "<policy><self_service><use_for_self_service>true</use_for_self_service></self_service></policy>"
+            if URL(string: server) != nil {
+                if let serverURL = URL(string: server) {
+                    let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+                    sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                    appendStatus("Connecting to \(url)...")
+                }
             }
         }
     }

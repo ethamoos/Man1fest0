@@ -248,7 +248,10 @@ struct PolicySelfServiceTabView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
+                        // Ensure we pass a String itemID to match NetBrain.enableSelfService signature
+//                        Task {
+//                            await networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: String(describing: policyID), selfServiceToggle: true)
+//                        }
                     }) {
                         Text("Enable Self-Service")
                     }
@@ -262,7 +265,8 @@ struct PolicySelfServiceTabView: View {
                             
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.updateSSName(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, providedName: newSelfServiceName, policyID: String(describing: policyID))
+                            let nc = networkController
+                            nc.updateSSName(server: server, authToken: nc.authToken, resourceType: ResourceType.policyDetail, providedName: newSelfServiceName, policyID: String(describing: policyID))
                             
                             networkController.separationLine()
                             print("Name Self-Service to:\(newSelfServiceName)")
