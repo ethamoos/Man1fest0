@@ -274,14 +274,11 @@ struct Departments: Codable, Hashable {
 
 // MARK: - DEPARTMENT
 struct Department: Codable, Hashable, Identifiable {
-    // Use jamfId as the stable identifier when available. This makes
-    // selection stable across reloads of data that keep jamf IDs.
-    // `id` is computed from jamfId and therefore matches other code
-    // that relies on Identifiable for selection.
-    var id: Int? { jamfId }
+    
+    var id = UUID()
     let jamfId: Int?
     let name: String
-
+    
     enum CodingKeys: String, CodingKey {
         case jamfId = "id"
         case name = "name"
