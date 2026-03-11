@@ -270,19 +270,22 @@ struct DateTimeLimitations: Codable, Hashable, Identifiable {
 struct Departments: Codable, Hashable {
     let size: String
     let department: [Department]
+    
+    // MARK: - DEPARTMENT
+    struct Department: Codable, Hashable, Identifiable {
+        var id = UUID()
+        let jamfId: Int?
+        let name: String
+        
+        enum CodingKeys: String, CodingKey {
+            case jamfId = "id"
+            case name = "name"
+        }
+    }
+
+    
 }
 
-// MARK: - DEPARTMENT
-struct Department: Codable, Hashable, Identifiable {
-    var id = UUID()
-    let jamfId: Int?
-    let name: String
-    
-    enum CodingKeys: String, CodingKey {
-        case jamfId = "id"
-        case name = "name"
-    }
-}
 
 
 

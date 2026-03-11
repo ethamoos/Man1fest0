@@ -17,7 +17,9 @@ struct DepartmentsView: View {
     var selectedResourceType: ResourceType
     @State var server: String
     @State var computers: [Computer] = []
-    @State var selection: Computer = Computer(id: 0, name: "")
+//    @State var selection: Computer = Computer(id: 0, name: "")
+    @State var selection: Department? = nil
+
     @State var departments: [Department] = []
     @State private var searchText = ""
     
