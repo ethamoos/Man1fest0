@@ -690,7 +690,9 @@ struct PolicyDetailView: View {
 
             if networkController.departments.count <= 1 {
                 Task {
-                    networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                      Task {
+                        try await networkController.getAllDepartments()
+                    }
                 }
             }
 

@@ -71,7 +71,10 @@ struct CategoriesDetailedView: View {
                             print("Refresh Categories")
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+//                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                            Task {
+                                try await networkController.getAllCategories()
+                            }
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "arrow.clockwise")

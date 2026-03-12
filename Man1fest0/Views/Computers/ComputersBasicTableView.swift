@@ -374,7 +374,9 @@ struct ComputersBasicTableView: View {
             
         .onAppear {
             
-            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+              Task {
+                        try await networkController.getAllDepartments()
+                    }
             handleConnect(resourceType: ResourceType.computerBasic)
             
             

@@ -150,7 +150,9 @@ struct CreatePolicyView: View {
                     print("Icon selection id is:\(String(describing: selectedIconId))")
                     Task {
                         networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                        networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                          Task {
+                        try await networkController.getAllDepartments()
+                    }
                         networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
                         networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
                     }

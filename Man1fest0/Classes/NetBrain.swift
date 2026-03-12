@@ -216,11 +216,12 @@ actor AsyncSemaphore {
     @Published var allPoliciesDetailedGeneral: [General] = []
 
     var singlePolicyDetailedGeneral: General? = nil
-
-    // New: track whether we're actively fetching detailed policies to avoid concurrent/repeat runs
     @Published var isFetchingDetailedPolicies: Bool = false
-    // Store failed policy IDs so callers can inspect and retry if needed
     @Published var retryFailedDetailedPolicyCalls: [String] = []
+    // New: track whether we're actively fetching detailed policies to avoid concurrent/repeat runs
+//    @Published var isFetchingDetailedPolicies: Bool = false
+    // Store failed policy IDs so callers can inspect and retry if needed
+//    @Published var retryFailedDetailedPolicyCalls: [String] = []
 
     //    var imageA1: UIImage? = nil
     //    var imageA2: UIImage!
@@ -5622,9 +5623,38 @@ xml = """
             }
         }
     }
-    
-    
-    
+    // Fetch all categories
+      func getAllCategories() async throws {
+          do {
+              let request = APIRequest<AllCategories>(endpoint: "categories", method: .get)
+              let decoded = try await requestSender.resultFor(apiRequest: request)
+              self.categories = decoded.categories
+              print("Loaded \(categories.count) categories")
+          } catch {
+              self.alertTitle = "Failed to load categories"
+              self.alertMessage = error.localizedDescription
+              self.showAlert = true
+              throw error
+          }
+      }
+
+      // Fetch all departments
+    func getAllDepartments() async throws {
+        do {
+            struct DepartmentsResponse: Codable {
+                let departments: [Department]
+            }
+            let request = APIRequest<DepartmentsResponse>(endpoint: "departments", method: .get)
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.departments = decoded.departments
+            print("Loaded \(departments.count) departments")
+        } catch {
+            self.alertTitle = "Failed to load departments"
+            self.alertMessage = error.localizedDescription
+            self.showAlert = true
+            
+        }
+    }
     
 }
 

@@ -71,7 +71,12 @@ struct DepartmentsDetailedView: View {
                             print("Refresh Departments")
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+//                            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+                            
+                            Task {
+                                try await networkController.getAllDepartments()
+                            }
+                            
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "arrow.clockwise")

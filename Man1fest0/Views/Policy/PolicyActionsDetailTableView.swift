@@ -376,7 +376,9 @@ struct PolicyActionsDetailTableView: View {
             // 3) Other data fetches
             if networkController.categories.isEmpty {
                 print("No category data - fetching")
-                networkController.connect(server: effectiveServer,resourceType: ResourceType.category, authToken: networkController.authToken)
+                Task {
+                try await networkController.getAllCategories()
+            }
             } else {
                 print("category data is available")
             }
