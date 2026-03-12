@@ -113,10 +113,8 @@ struct CreateView: View {
                     HStack(spacing: 8) {
                         Button(action: {
                             // quick refresh
-//                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-//                            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-                            
-                            Task {
+                          Task {
+          
                                 try await networkController.getAllCategories()
                                 try await networkController.getAllDepartments()
                             }
@@ -179,18 +177,15 @@ struct CreateView: View {
         .onAppear {
             
             print("CreateView appeared - connecting")
-            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-            
-            
-            
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-            networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+            Task {
+                try await networkController.getAllCategories()
+                try await networkController.getAllDepartments()
+                try await networkController.getAllPackages(server: server)
+                try await networkController.getAllScripts(server: server, authToken: networkController.authToken)
+            }
         }
         .padding()
-        
-        
-        
+                
     }
 }
 //}

@@ -586,7 +586,10 @@ struct PackageTableView: View {
         
         if  networkController.categories.isEmpty {
             print("No category data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+          Task {
+                try await networkController.getAllCategories()
+            }
+
             
         } else {
             print("category data is available")
@@ -594,7 +597,7 @@ struct PackageTableView: View {
         
         if  networkController.packages.isEmpty {
             print("No package data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+            Task { try await networkController.getAllPackages(server: server) }
             
         } else {
             print("package data is available")

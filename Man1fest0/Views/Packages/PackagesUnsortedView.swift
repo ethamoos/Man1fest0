@@ -65,7 +65,7 @@ struct PackagesUnsortedView: View {
         
         func handleConnect(resourceType: ResourceType) {
             print("Running handleConnect. resourceType is set as:\(resourceType)")
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+            Task { try await networkController.getAllPackages(server: server) }
         }
         
         var searchResults: [Package] {

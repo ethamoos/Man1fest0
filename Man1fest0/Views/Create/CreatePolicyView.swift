@@ -148,13 +148,12 @@ struct CreatePolicyView: View {
                     progress.waitForABit()
                     print("Refresh")
                     print("Icon selection id is:\(String(describing: selectedIconId))")
+                      
                     Task {
-                        networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                          Task {
+                        try await networkController.getAllCategories()
                         try await networkController.getAllDepartments()
-                    }
-                        networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-                        networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                        try await networkController.getAllPackages(server: server)
+                        try await networkController.getAllScripts(server: server, authToken: networkController.authToken)
                     }
                 }) {
                     Label("Refresh", systemImage: "arrow.clockwise")

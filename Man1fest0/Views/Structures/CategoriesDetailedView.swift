@@ -71,8 +71,8 @@ struct CategoriesDetailedView: View {
                             print("Refresh Categories")
                             progress.showProgress()
                             progress.waitForABit()
-//                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-                            Task {
+                          Task {
+
                                 try await networkController.getAllCategories()
                             }
                         }) {

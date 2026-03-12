@@ -310,7 +310,10 @@ struct PackagesUnsortedDetailView: View {
                 }
                 if networkController.categories.count <= 1 {
                     print("No categories - fetching")
-                    networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                  Task {
+                try await networkController.getAllCategories()
+            }
+
                 }
             }
             // When the detailed package is updated, populate the edit state if it's currently empty

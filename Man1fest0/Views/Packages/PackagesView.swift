@@ -40,15 +40,16 @@ struct PackagesView: View {
         }
         .onAppear {
             // ensure packages are loaded when view appears
-            handleConnect(resourceType: .packages)
+//            handleConnect(resourceType: .packages)
+            Task { try await networkController.getAllPackages(server: server) }
         }
     }
 
     // Local helper to trigger network loads - matches other views' behavior
-    func handleConnect(resourceType: ResourceType) {
-        print("PackagesView.handleConnect: \(resourceType)")
-        networkController.connect(server: server,resourceType: resourceType, authToken: networkController.authToken)
-    }
+//    func handleConnect(resourceType: ResourceType) {
+//        print("PackagesView.handleConnect: \(resourceType)")
+//        networkController.connect(server: server,resourceType: resourceType, authToken: networkController.authToken)
+//    }
 
     // Extracted subviews to help the compiler type-check large SwiftUI bodies
     private var headerView: some View {

@@ -378,7 +378,7 @@ struct PolicyActionsDetailTableView: View {
                 print("No category data - fetching")
                 Task {
                 try await networkController.getAllCategories()
-            }
+                }
             } else {
                 print("category data is available")
             }
