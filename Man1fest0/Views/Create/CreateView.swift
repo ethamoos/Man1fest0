@@ -169,7 +169,7 @@ struct CreateView: View {
             
             Task {
                 try await networkController.getAllPackages()
-                try await networkController.getAllScripts(server: server, authToken: networkController.authToken)
+                try await networkController.getAllScripts()
                 try await networkController.getAllDepartments()
                 try await networkController.getAllCategories()
             }

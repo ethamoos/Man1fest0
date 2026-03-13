@@ -1,3 +1,4 @@
+
 import Foundation
 
 // MARK: - RequestSender
@@ -78,8 +79,22 @@ final class RequestSender {
         httpMethod: HTTPMethod,
         as modelType: APIModel.Type
     ) async throws -> APIModel {
-        // make a URL request and configure
-        let jamfURLQuery = normalizedServer + "/JSSResource/\(endpoint)"
+        // Build the concrete URL depending on the endpoint pattern.
+        // If the endpoint is a full URL (starts with http:// or https://), use it as-is.
+        // If the endpoint starts with "/" or "api/" assume it's an API path under the server root (e.g. /api/v1/...).
+        // Otherwise default to the legacy /JSSResource/ prefix.
+        let jamfURLQuery: String
+        let trimmedEndpoint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedEndpoint.lowercased().hasPrefix("http://") || trimmedEndpoint.lowercased().hasPrefix("https://") {
+            jamfURLQuery = trimmedEndpoint
+        } else if trimmedEndpoint.hasPrefix("/") {
+            jamfURLQuery = normalizedServer + trimmedEndpoint
+        } else if trimmedEndpoint.hasPrefix("api/") {
+            jamfURLQuery = normalizedServer + "/" + trimmedEndpoint
+        } else {
+            jamfURLQuery = normalizedServer + "/JSSResource/" + trimmedEndpoint
+        }
+
         guard let url = URL(string: jamfURLQuery) else {
             print("Invalid URL constructed: \(jamfURLQuery)")
             throw RequestError.invalidURL(jamfURLQuery)

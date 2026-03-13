@@ -2019,7 +2019,7 @@ actor AsyncSemaphore {
         
     }
     
-    func getAllScripts(server: String, authToken: String) async throws {
+    func getAllScriptsOld(server: String, authToken: String) async throws {
         
         print("Running func: getAllScripts")
         
@@ -5568,6 +5568,33 @@ xml = """
             throw error
         }
     }
+    
+    
+    
+    func getAllScripts() async throws {
+        do {
+            // Use the API v1 scripts endpoint (page 0, page-size 500). RequestSender handles
+            // endpoints that start with "/api/" or "/" as full API paths.
+            let request = APIRequest<ScriptResults>(endpoint: "/api/v1/scripts?page=0&page-size=500", method: .get)
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+
+            // decoded.results is [Script] (JamfObjects.Script)
+            self.allScriptsDetailed = decoded.results
+
+            // Map to the lightweight ScriptClassic used elsewhere in the UI
+            self.scripts = decoded.results.map { s in
+                let jamfId = Int(s.id) ?? 0
+                return ScriptClassic(name: s.name, jamfId: jamfId)
+            }
+
+            print("Loaded \(scripts.count) scripts")
+        } catch {
+            publishError(error, title: "Failed to load scripts")
+            throw error
+        }
+    }
+    
+    
     
 
     // Fetch detailed user by id
