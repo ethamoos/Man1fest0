@@ -71,7 +71,7 @@ struct ContentView: View {
             await networkController.load()
             
             Task {
-                try await networkController.getAllPackages(server: server)
+                try await networkController.getAllPackages()
                 try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
             }
 

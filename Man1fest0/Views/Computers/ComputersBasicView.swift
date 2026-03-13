@@ -2,8 +2,6 @@ import SwiftUI
 
 struct ComputersBasicView: View {
     
-    //    var selectedResourceType = ResourceType.computerBasic
-    
     @State var server: String
     @State var computersBasic: [ComputerBasicRecord] = []
     @State private var searchText = ""
@@ -26,10 +24,7 @@ struct ComputersBasicView: View {
     //  ########################################################################################
     
     @State private var selectionCompGroup: ComputerGroup? = nil
-    
     @State var selection = Set<ComputerBasicRecord>()
-    //    @State var selection: ComputerBasicRecord
-    
     
     var body: some View {
         
@@ -116,7 +111,6 @@ struct ComputersBasicView: View {
                     Task {
                         xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
                         
-                        // wait for the xmlController to populate computerGroupMembersXML (timeout after ~3s)
                         var attempts = 0
                         while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
                             try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
@@ -130,11 +124,11 @@ struct ComputersBasicView: View {
                         }
                         
                         xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
-                                                                   computers: selection,
-                                                                   authToken: networkController.authToken,
-                                                                   groupId: String(compGroup.id),
-                                                                   resourceType: ResourceType.computerGroup,
-                                                                   server: server)
+                                                                  computers: selection,
+                                                                  authToken: networkController.authToken,
+                                                                  groupId: String(compGroup.id),
+                                                                  resourceType: ResourceType.computerGroup,
+                                                                  server: server)
                     }
                     
                 }) {
@@ -194,32 +188,7 @@ struct ComputersBasicView: View {
         }
         .padding()
     }
-    
-    
-    //        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
-    
-    //        .onAppear {
-    //
-    //            networkController.refreshComputers()
-    //
-    //            //            if networkController.computers.count < 0 {
-    //            //                print("Fetching computers")
-    //            //                networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-    //            //            }
-    //            //            if networkController.computers.count < 0 {
-    //            //                print("Fetching basic computers")
-    //            //                //                networkController.allComputersBasic.computers
-    //            //            }
-    //        }
-    //}
-    
-    //}
-    
-    func handleConnect(resourceType: ResourceType) async {
-        print("Running handleConnect. resourceType is set as:\(resourceType)")
-    }
-    
-    
+
     var searchResults: [ComputerBasicRecord] {
         
         let allComputers = networkController.allComputersBasic.computers

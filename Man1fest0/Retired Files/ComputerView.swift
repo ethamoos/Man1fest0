@@ -31,10 +31,8 @@ struct ComputerView: View {
                                 Text(computer.name).font(.system(size: 12.0))
                             }
                             .foregroundColor(.blue)
-
                     }
                     .searchable(text: $searchText)
-                    
 
 #else
                         List(searchResults, id: \.self) { computer in
@@ -55,7 +53,6 @@ struct ComputerView: View {
                         .font(.title)
                         .progressViewStyle(.horizontal)
                 }
-//                .padding()
                 Spacer()
             }
         }
@@ -70,10 +67,10 @@ struct ComputerView: View {
 
         .onAppear {
             print("ComputerView appeared. Running onAppear")
-            print("\(selectedResourceType) View appeared - connecting")
-            print("Searching for \(selectedResourceType)")
+
+                        
+            Task { try await networkController.getAllComputers() }
             
-            handleConnect(resourceType: ResourceType.computer)
             computers = networkController.computers
             
 //            ##########################################################
@@ -97,11 +94,6 @@ struct ComputerView: View {
             print("ComputerView Search Added")
             return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
-    }
-    
-    func handleConnect(resourceType: ResourceType) {
-        print("Running handleConnect. resourceType is set as:\(resourceType)")
-        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
     }
 }
 

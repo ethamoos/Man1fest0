@@ -327,11 +327,11 @@ struct PackageUsageView: View {
             progress.waitForABit()
             
             Task {
-                try await networkController.getAllPackages(server: server)
+                
+                try await networkController.getAllPackages()
                 
                 try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
             }
-
             
             if networkController.fetchedDetailedPolicies == false {
                 
@@ -373,7 +373,6 @@ struct PackageUsageView: View {
         } else {
             print("Search Added")
             return allPackagesArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
-            
         }
     }
 }

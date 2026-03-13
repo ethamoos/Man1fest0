@@ -56,7 +56,7 @@ struct ScriptsView: View {
                                 progress.showProgress()
                                 progress.waitForABit()
                                 print("Refresh")
-                                networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                                Task { try await networkController.getAllScripts(server: server, authToken: networkController.authToken) }
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "arrow.clockwise")
@@ -106,7 +106,9 @@ struct ScriptsView: View {
             
             if networkController.scripts.count == 0 {
                       print("Fetching scripts")
-                networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                Task {
+                    try await networkController.getAllPolicies(server: server)
+                }
             }
         }
         

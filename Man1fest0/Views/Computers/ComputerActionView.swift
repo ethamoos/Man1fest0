@@ -48,7 +48,7 @@ struct ComputerActionView: View {
                 Spacer()
                 HStack(spacing: 8) {
                     Button(action: {
-                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+                        Task { try await networkController.getAllComputers() }
                         progress.showProgress()
                         progress.waitForABit()
                     }) {

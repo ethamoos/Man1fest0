@@ -339,7 +339,7 @@ struct ScriptUsageView: View {
             
             if networkController.scripts.count == 0 {
                 print("Fetching scripts")
-                networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                Task { try await networkController.getAllScripts(server: server, authToken: networkController.authToken) }
             }
         }
     }

@@ -69,10 +69,11 @@ struct PackagesActionView: View {
         }
 
         .onAppear {
-            handleConnect(resourceType: ResourceType.packages)
+            Task { try await networkController.getAllPackages() }
+            
             if networkController.categories.count <= 1 {
                 print("No categories - fetching")
-                networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                  Task { try await networkController.getAllCategories() }
             }
             
             
@@ -121,7 +122,7 @@ struct PackagesActionView: View {
                 
                 Button(action: {
                     
-                    networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                     Task { try await networkController.getAllPackages() }
                     print("Refresh")
                     progress.showProgress()
                     progress.waitForABit()
@@ -198,10 +199,7 @@ struct PackagesActionView: View {
         }
     }
     
-    func handleConnect(resourceType: ResourceType) {
-        print("Running handleConnect. resourceType is set as:\(resourceType)")
-        networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-    }
+//
     
     var searchResults: [Package] {
         

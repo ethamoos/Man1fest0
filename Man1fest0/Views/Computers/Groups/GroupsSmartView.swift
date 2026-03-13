@@ -98,7 +98,6 @@ struct GroupsSmartView: View {
             
             VStack() {
                 
-                
                 Button(action: {
                     
                     progress.showProgress()
@@ -107,7 +106,6 @@ struct GroupsSmartView: View {
                     Task {
                         try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
                     }
- 
                     
                 }) {
 #if os(macOS)
@@ -129,8 +127,6 @@ struct GroupsSmartView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     showingWarning = true
-                    
-                  
                     
                 }) {
 #if os(macOS)
@@ -161,7 +157,6 @@ struct GroupsSmartView: View {
                         secondaryButton: .cancel()
                     )
                 }
-                
             }
             .padding()
         }

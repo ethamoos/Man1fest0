@@ -218,7 +218,7 @@ struct PoliciesActionView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         
-                        networkController.connect(server: server,resourceType:  ResourceType.policies, authToken: networkController.authToken)
+                      Task { try await networkController.getAllPackages() }
                         
                         getDetailedPolicies(policiesSelection: policiesSelection)
                         print("Refresh button clicked on PoliciesAction View")

@@ -264,7 +264,7 @@ struct PolicyPackageTabView: View {
                         networkController.separationLine()
                         print("Refresh packages")
 
-                         networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                          Task { try await networkController.getAllPackages() }
                         
                     }) {
                         HStack(spacing: 10) {
@@ -296,7 +296,7 @@ struct PolicyPackageTabView: View {
             print("No package data - fetching")
             print("Count is:\(networkController.packages.count))")
 //            print(networkController.packages.count)
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+             Task { try await networkController.getAllPackages() }
 
         } else {
             

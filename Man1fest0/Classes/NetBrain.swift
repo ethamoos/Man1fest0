@@ -672,7 +672,7 @@ actor AsyncSemaphore {
 //
 //
 //
-//    func getAllPackages(server: String) async throws {
+//    func getPackages(server: String) async throws {
 //        let jamfURLQuery = server + "/JSSResource/packages"
 //        let url = URL(string: jamfURLQuery)!
 //        var request = URLRequest(url: url)
@@ -682,7 +682,7 @@ actor AsyncSemaphore {
 //
 //        request.setValue("application/json", forHTTPHeaderField: "Accept")
 //        separationLine()
-//        print("Running func: getAllPackages")
+//        print("Running func: getPackages")
 //
 //        let (data, response) = try await URLSession.shared.data(for: request)
 //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -1861,9 +1861,6 @@ actor AsyncSemaphore {
 //    }
 //
     
-    
-    
-    
     //    #################################################################################
     //    Connect functions and handleConnect function
     //    #################################################################################
@@ -1887,9 +1884,6 @@ actor AsyncSemaphore {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
         self.connect(server: server,resourceType: resourceType, authToken: authToken)
     }
-    
-    
-    
     
     
     //    #################################################################################
@@ -1974,11 +1968,6 @@ actor AsyncSemaphore {
         }
     }
     
- 
-    
-    
-    
-//<<<<<<< HEAD
     
     
     func getBuildings(server: String, authToken: String) async throws {
@@ -2006,7 +1995,7 @@ actor AsyncSemaphore {
     
     
     
-    func getAllPackages(server: String) async throws {
+    func getPackages(server: String) async throws {
         let jamfURLQuery = server + "/JSSResource/packages"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
@@ -2016,7 +2005,7 @@ actor AsyncSemaphore {
   
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
-        print("Running func: getAllPackages")
+        print("Running func: getPackages")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -5564,6 +5553,22 @@ xml = """
             throw error
         }
     }
+    
+    
+    
+    
+    func getAllPackages() async throws {
+        do {
+            let request = APIRequest<Packages>(endpoint: "packages", method: .get)
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.packages = decoded.packages
+            print("Loaded \(packages.count) packages")
+        } catch {
+            publishError(error, title: "Failed to load packages")
+            throw error
+        }
+    }
+    
 
     // Fetch detailed user by id
     func getDetailUser(userID: String) async throws {
@@ -5655,6 +5660,24 @@ xml = """
             
         }
     }
+    
+    // Fetch all computers
+  func getAllComputers() async throws {
+      do {
+          struct ComputersResponse: Codable {
+              let computers: [Computer]
+          }
+          let request = APIRequest<ComputersResponse>(endpoint: "computers", method: .get)
+          let decoded = try await requestSender.resultFor(apiRequest: request)
+          self.computers = decoded.computers
+          print("Loaded \(computers.count) computers")
+      } catch {
+          self.alertTitle = "Failed to load computers"
+          self.alertMessage = error.localizedDescription
+          self.showAlert = true
+          
+      }
+  }
     
 }
 

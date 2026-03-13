@@ -472,16 +472,16 @@
 //            
 //            if networkController.categories.count <= 1 {
 //                print("No categories - fetching")
-//                networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+//                  Task { try await networkController.getAllCategories() }
 //            }
 //            
 //            if networkController.packages.count <= 1 {
-//                networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+//                 Task { try await networkController.getAllPackages() }
 //            }
 //            
 //            if networkController.departments.count <= 1 {
 //                
-//                networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
+//               Task { try await networkController.getAllDepartments() }
 //            }
 //
 //            xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
@@ -523,7 +523,7 @@
 //        
 //        if  networkController.packages.isEmpty {
 //            print("No package data - fetching")
-//            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+//             Task { try await networkController.getAllPackages() }
 //
 //        } else {
 //            print("package data is available")

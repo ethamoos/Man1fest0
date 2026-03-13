@@ -235,7 +235,7 @@ struct PackageDetailView: View {
                 try await networkController.getDetailedPackage(server: server, authToken: networkController.authToken, packageID: String(describing: package.jamfId))
             }
             if networkController.categories.count <= 1 {
-                networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                  Task { try await networkController.getAllCategories() }
             }
         }
         // When the detailed package is updated, populate the edit state if it's currently empty

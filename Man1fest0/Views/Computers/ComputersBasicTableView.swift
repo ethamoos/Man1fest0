@@ -56,7 +56,11 @@ struct ComputersBasicTableView: View {
                 // Inline refresh button (removed ambiguous .toolbar usage)
                 HStack {
                     Button(action: {
-                        handleConnect(resourceType: ResourceType.computerBasic)
+                        
+                        Task {
+                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                        }
+                        
                         progress.showProgress()
                         progress.waitForABit()
                         print("Refresh")
@@ -147,7 +151,11 @@ struct ComputersBasicTableView: View {
                     
                     
                     Button(action: {
-                        handleConnect(resourceType: ResourceType.computerBasic)
+                        
+                        Task {
+                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                        }
+                        
                         print("Refresh")
                         progress.showProgress()
                         progress.waitForABit()
@@ -375,11 +383,10 @@ struct ComputersBasicTableView: View {
         .onAppear {
             
               Task {
-                        try await networkController.getAllDepartments()
+                  try await networkController.getAllDepartments()
+                  try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
                     }
-            handleConnect(resourceType: ResourceType.computerBasic)
-            
-            
+        
             if networkController.allComputerGroups.count <= 1 {
                 Task {
                     try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
@@ -408,17 +415,6 @@ struct ComputersBasicTableView: View {
         } else {
             return networkController.departments.filter { $0.name.lowercased().contains(departmentFilterText.lowercased()) }
         }
-    }
-    
-  
-    
-    func handleConnect(resourceType: ResourceType) {
-        print("Running handleConnect. resourceType is set as:\(resourceType)")
-        
-        Task {
-            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
-        }
-        
     }
 }
 

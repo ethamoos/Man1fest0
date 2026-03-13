@@ -501,7 +501,7 @@ struct FeatureCategoryCard: View {
         case "PackageView", "PackagesView":
             Task {
                 print("Prefetching packages data")
-                try? await networkController.getAllPackages(server: networkController.server)
+                try? await networkController.getPackages(server: networkController.server)
             }
         case "ScriptsView", "ScriptUsageView":
             Task {

@@ -949,7 +949,7 @@ struct PolicyScopeTabView: View {
                                         
                                         if networkController.computers.count == 0 {
                                             print("Fetching computers for policy scope view")
-                                            networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+                                            Task { try await networkController.getAllComputers() }
                                         }
                                         
                                     }
@@ -969,7 +969,7 @@ struct PolicyScopeTabView: View {
             
             if networkController.computers.count < 0 {
                 print("Fetching computers for policy scope view")
-                networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+                Task { try await networkController.getAllComputers() }
             }
 
         }

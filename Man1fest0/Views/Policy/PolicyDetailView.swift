@@ -678,13 +678,13 @@ struct PolicyDetailView: View {
             if networkController.categories.count <= 1 {
                 print("No categories - fetching")
                 Task {
-                    networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
+                      Task { try await networkController.getAllCategories() }
                 }
             }
 
             if networkController.packages.count <= 1 {
                 Task {
-                    networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                     Task { try await networkController.getAllPackages() }
                 }
             }
 
@@ -770,7 +770,7 @@ struct PolicyDetailView: View {
         
         if  networkController.packages.isEmpty {
             print("No package data - fetching")
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
+             Task { try await networkController.getAllPackages() }
             
         } else {
             print("package data is available")

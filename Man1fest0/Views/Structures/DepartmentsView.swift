@@ -70,8 +70,6 @@ struct DepartmentsView: View {
                         .font(.title)
                         .progressViewStyle(.horizontal)
                 }
-//                .padding()
-//                Spacer()
             }
         }
 
@@ -79,9 +77,7 @@ struct DepartmentsView: View {
 
         .onAppear {
             print("Departments View appeared. Running onAppear")
-//            print("\(selectedResourceType) View appeared - connecting")
-//            print("Searching for \(selectedResourceType)")
-//            handleConnect(resourceType: ResourceType.department)
+
             
             print("Departments View appeared. Running getAllDepartments")
                     
@@ -106,12 +102,6 @@ struct DepartmentsView: View {
         }
     }
  
-    
-//    func handleConnect(resourceType: ResourceType) {
-//        print("Running handleConnect. resourceType is set as:\(resourceType)")
-//        networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-//    }
-    
     
     //struct DepartmentsView_Previews: PreviewProvider {
     //    static var previews: some View {

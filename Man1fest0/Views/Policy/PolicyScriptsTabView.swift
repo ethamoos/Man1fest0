@@ -426,7 +426,7 @@ struct PolicyScriptsTabView: View {
                 if  networkController.scripts.count <= 1 {
                     print("Fetching scripts")
                     print("Script count is:\(networkController.scripts.count))")
-                    networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+                    Task { try await networkController.getAllScripts(server: server, authToken: networkController.authToken) }
                 } else {
                     print("script data is available")
                 }

@@ -80,9 +80,7 @@ struct CreateView: View {
     @State  var tempUUID = (UUID(uuidString: "") ?? UUID())
     
     @State private var showingWarning = false
-    
-//    @State private var showProgressView = false
-    
+        
     let columns = [
         GridItem(.fixed(200)),
         GridItem(.flexible()),
@@ -112,15 +110,10 @@ struct CreateView: View {
                     Spacer()
                     HStack(spacing: 8) {
                         Button(action: {
-                            // quick refresh
-//                            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-//                            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
-                            
                             Task {
                                 try await networkController.getAllCategories()
                                 try await networkController.getAllDepartments()
                             }
-                            
                             
                         }) {
                             Image(systemName: "arrow.clockwise")
@@ -149,7 +142,6 @@ struct CreateView: View {
                         
                         CreateGeneralTabView(selectedFilename: $importExportController.selectedFilename)
                             .tabItem {
-                                //                                Text("Scoping")
                                 Label("General", systemImage: "square.and.pencil")
                             }
                     }
@@ -163,7 +155,6 @@ struct CreateView: View {
             if progress.showProgressView {
                 
                 ProgressView {
-                    
                     Text("Processing")
                         .padding()
                 }
@@ -171,30 +162,22 @@ struct CreateView: View {
             } else {
                 Text("")
             }
-
         }
-        //    }
-        //}
-        
         .onAppear {
             
             print("CreateView appeared - connecting")
-            networkController.connect(server: server,resourceType: ResourceType.category, authToken: networkController.authToken)
-            networkController.connect(server: server,resourceType: ResourceType.department, authToken: networkController.authToken)
             
-            
-            
-            networkController.connect(server: server,resourceType: ResourceType.packages, authToken: networkController.authToken)
-            networkController.connect(server: server,resourceType: ResourceType.scripts, authToken: networkController.authToken)
+            Task {
+                try await networkController.getAllPackages()
+                try await networkController.getAllScripts(server: server, authToken: networkController.authToken)
+                try await networkController.getAllDepartments()
+                try await networkController.getAllCategories()
+            }
         }
         .padding()
         
-        
-        
     }
 }
-//}
-
 
 
 
