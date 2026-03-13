@@ -403,7 +403,9 @@ struct PolicyActionsDetailTableView: View {
 
             if networkController.packages.isEmpty {
                 print("No package data - fetching")
-                networkController.connect(server: effectiveServer,resourceType: ResourceType.packages, authToken: networkController.authToken)
+                
+                Task { try await networkController.getAllPackages() }
+                
             } else {
                 print("package data is available")
             }
