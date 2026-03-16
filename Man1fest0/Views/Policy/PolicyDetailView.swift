@@ -112,6 +112,8 @@ struct PolicyDetailView: View {
     
     @State private var exporting = false
     
+
+    
     //    ########################################################################################
     //    Selections
     //    ########################################################################################
@@ -174,7 +176,13 @@ struct PolicyDetailView: View {
     var body: some View {
         
         let text = String(describing: xmlController.currentPolicyAsXML)
-        
+                
+        let currentDateString = layout.date
+        // Prepare a safe filename for export (replace characters that are not allowed in filenames)
+        let safeDateComponent = currentDateString.replacingOccurrences(of: ":", with: "-").replacingOccurrences(of: " ", with: "_")
+
+        let exportFilename = "\(policyName)\(safeDateComponent).txt"
+
         let document = TextDocument(text: text)
         
         VStack(alignment: .leading) {
@@ -306,7 +314,8 @@ struct PolicyDetailView: View {
                 .fileExporter(
                     isPresented: $exporting,
                     document: document,
-                    contentType: .xml
+                    contentType: .xml,
+                    defaultFilename: exportFilename
                 ) { result in
                     switch result {
                     case .success(let file):

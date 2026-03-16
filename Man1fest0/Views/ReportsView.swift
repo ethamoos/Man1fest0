@@ -61,6 +61,9 @@ struct ReportsView: View {
         let assignedScriptsCount = policyController.assignedScriptsByNameDict.count
         let unassignedScriptsCount = policyController.unassignedScriptsArray.count
         let currentDateString = layout.date
+        // Prepare a safe filename for export (replace characters that are not allowed in filenames)
+        let safeDateComponent = currentDateString.replacingOccurrences(of: ":", with: "-").replacingOccurrences(of: " ", with: "_")
+        let exportFilename = "Man1fest0_report_\(safeDateComponent).txt"
 
         let text = String(describing: networkController.allPackages)
         let document = TextDocument(text: text)
@@ -94,7 +97,8 @@ struct ReportsView: View {
         .fileExporter(
             isPresented: $exporting,
             document: document,
-            contentType: .plainText
+            contentType: .plainText,
+            defaultFilename: exportFilename
         ) { result in
             switch result {
             case .success(let file):
