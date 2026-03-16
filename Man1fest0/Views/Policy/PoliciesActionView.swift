@@ -119,6 +119,11 @@ struct PoliciesActionView: View {
     //    ########################################################################################
     
     @State var xmlData = ""
+
+    // Small protocol-typed accessor to allow views to use the service protocol
+    private var networkService: NetworkServiceProtocol {
+        return networkController as NetworkServiceProtocol
+    }
     
     // Helper handlers to wrap async/Task calls used as closure arguments in the TabView
     private func handleUpdateScopeCompGroupSet(_ group: ComputerGroup, _ smartStatus: String, _ allComp: Bool) {
@@ -136,8 +141,9 @@ struct PoliciesActionView: View {
     private func handleClearLimitations(_ policyID: String) {
         Task {
             do {
-                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkController.authToken)
-                xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
+                // Use the protocol-typed accessor for auth token (single-site change)
+                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkService.authToken)
+                xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkService.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
             } catch {
                 print("Error clearing limitations: \(error)")
             }
