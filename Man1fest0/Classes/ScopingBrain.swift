@@ -240,41 +240,159 @@ import AEXML
     
             
             func updateScopeExclusions (xmlString: String, groupName: String, groupId: String) -> String {
-                // Use AEXML to manipulate the policy XML to avoid Foundation placeholder node issues
+                 // Use AEXML to manipulate the policy XML to avoid Foundation placeholder node issues
+                 guard !xmlString.isEmpty else { return "" }
+                 do {
+                     let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+
+                     // Ensure /policy/scope/exclusions exists, creating missing intermediate nodes as needed
+                     var scopeElem = doc.root["scope"]
+                     if scopeElem.name == "" {
+                         scopeElem = doc.root.addChild(name: "scope")
+                     }
+
+                     var exclusionsElem = scopeElem["exclusions"]
+                     if exclusionsElem.name == "" {
+                         exclusionsElem = scopeElem.addChild(name: "exclusions")
+                     }
+
+                     // Ensure <computer_groups> exists under exclusions
+                     var compGroupsElem = exclusionsElem["computer_groups"]
+                     if compGroupsElem.name == "" {
+                         compGroupsElem = exclusionsElem.addChild(name: "computer_groups")
+                     }
+
+                     // Append a new <computer_group> with <id> and <name>
+                     let newGroup = compGroupsElem.addChild(name: "computer_group")
+                     newGroup.addChild(name: "id", value: groupId)
+                     newGroup.addChild(name: "name", value: groupName)
+
+                     // Return the updated XML string
+                     return doc.xml
+                 } catch {
+                     print("updateScopeExclusions failed to parse XML: \(error)")
+                     return xmlString
+                 }
+              }
+            
+            // Add an exclusion entry for an individual computer
+            func updateScopeExclusionsAddComputer(xmlString: String, computerName: String, computerId: String) -> String {
                 guard !xmlString.isEmpty else { return "" }
                 do {
                     let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
-
-                    // Ensure /policy/scope/exclusions exists, creating missing intermediate nodes as needed
                     var scopeElem = doc.root["scope"]
-                    if scopeElem.name == "" {
-                        scopeElem = doc.root.addChild(name: "scope")
-                    }
-
+                    if scopeElem.name == "" { scopeElem = doc.root.addChild(name: "scope") }
                     var exclusionsElem = scopeElem["exclusions"]
-                    if exclusionsElem.name == "" {
-                        exclusionsElem = scopeElem.addChild(name: "exclusions")
-                    }
-
-                    // Ensure <computer_groups> exists under exclusions
-                    var compGroupsElem = exclusionsElem["computer_groups"]
-                    if compGroupsElem.name == "" {
-                        compGroupsElem = exclusionsElem.addChild(name: "computer_groups")
-                    }
-
-                    // Append a new <computer_group> with <id> and <name>
-                    let newGroup = compGroupsElem.addChild(name: "computer_group")
-                    newGroup.addChild(name: "id", value: groupId)
-                    newGroup.addChild(name: "name", value: groupName)
-
-                    // Return the updated XML string
-                    return doc.xml
-                } catch {
-                    print("updateScopeExclusions failed to parse XML: \(error)")
-                    return xmlString
+                    if exclusionsElem.name == "" { exclusionsElem = scopeElem.addChild(name: "exclusions") }
+                    var comps = exclusionsElem["computers"]
+                    if comps.name == "" { comps = exclusionsElem.addChild(name: "computers") }
+ 
+                // dedupe by id if possible
+                for child in comps.children {
+                    if child["id"].value == computerId || child["name"].value == computerName { return doc.xml }
                 }
-             }
-            
+ 
+                let newItem = comps.addChild(name: "computer")
+                newItem.addChild(name: "id", value: computerId)
+                newItem.addChild(name: "name", value: computerName)
+                return doc.xml
+            } catch {
+                print("updateScopeExclusionsAddComputer failed: \(error)")
+                return xmlString
+            }
+        }
+ 
+        func updateScopeExclusionsAddBuilding(xmlString: String, buildingName: String, buildingId: String) -> String {
+            guard !xmlString.isEmpty else { return "" }
+            do {
+                let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+                var scopeElem = doc.root["scope"]
+                if scopeElem.name == "" { scopeElem = doc.root.addChild(name: "scope") }
+                var exclusionsElem = scopeElem["exclusions"]
+                if exclusionsElem.name == "" { exclusionsElem = scopeElem.addChild(name: "exclusions") }
+                var builds = exclusionsElem["buildings"]
+                if builds.name == "" { builds = exclusionsElem.addChild(name: "buildings") }
+                for child in builds.children {
+                    if child["id"].value == buildingId || child["name"].value == buildingName { return doc.xml }
+                }
+                let newItem = builds.addChild(name: "building")
+                newItem.addChild(name: "id", value: buildingId)
+                newItem.addChild(name: "name", value: buildingName)
+                return doc.xml
+            } catch {
+                print("updateScopeExclusionsAddBuilding failed: \(error)")
+                return xmlString
+            }
+        }
+
+        func updateScopeExclusionsAddDepartment(xmlString: String, departmentName: String, departmentId: String) -> String {
+            guard !xmlString.isEmpty else { return "" }
+            do {
+                let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+                var scopeElem = doc.root["scope"]
+                if scopeElem.name == "" { scopeElem = doc.root.addChild(name: "scope") }
+                var exclusionsElem = scopeElem["exclusions"]
+                if exclusionsElem.name == "" { exclusionsElem = scopeElem.addChild(name: "exclusions") }
+                var deps = exclusionsElem["departments"]
+                if deps.name == "" { deps = exclusionsElem.addChild(name: "departments") }
+                for child in deps.children {
+                    if child["id"].value == departmentId || child["name"].value == departmentName { return doc.xml }
+                }
+                let newItem = deps.addChild(name: "department")
+                newItem.addChild(name: "id", value: departmentId)
+                newItem.addChild(name: "name", value: departmentName)
+                return doc.xml
+            } catch {
+                print("updateScopeExclusionsAddDepartment failed: \(error)")
+                return xmlString
+            }
+        }
+
+        func updateScopeExclusionsAddUser(xmlString: String, userName: String, userId: String) -> String {
+            guard !xmlString.isEmpty else { return "" }
+            do {
+                let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+                var scopeElem = doc.root["scope"]
+                if scopeElem.name == "" { scopeElem = doc.root.addChild(name: "scope") }
+                var exclusionsElem = scopeElem["exclusions"]
+                if exclusionsElem.name == "" { exclusionsElem = scopeElem.addChild(name: "exclusions") }
+                var users = exclusionsElem["users"]
+                if users.name == "" { users = exclusionsElem.addChild(name: "users") }
+                for child in users.children {
+                    if child["id"].value == userId || child["name"].value == userName { return doc.xml }
+                }
+                let newItem = users.addChild(name: "user")
+                newItem.addChild(name: "id", value: userId)
+                newItem.addChild(name: "name", value: userName)
+                return doc.xml
+            } catch {
+                print("updateScopeExclusionsAddUser failed: \(error)")
+                return xmlString
+            }
+        }
+
+        func updateScopeExclusionsAddUserGroup(xmlString: String, groupName: String, groupId: String) -> String {
+            guard !xmlString.isEmpty else { return "" }
+            do {
+                let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+                var scopeElem = doc.root["scope"]
+                if scopeElem.name == "" { scopeElem = doc.root.addChild(name: "scope") }
+                var exclusionsElem = scopeElem["exclusions"]
+                if exclusionsElem.name == "" { exclusionsElem = scopeElem.addChild(name: "exclusions") }
+                var groups = exclusionsElem["user_groups"]
+                if groups.name == "" { groups = exclusionsElem.addChild(name: "user_groups") }
+                for child in groups.children {
+                    if child["id"].value == groupId || child["name"].value == groupName { return doc.xml }
+                }
+                let newItem = groups.addChild(name: "user_group")
+                newItem.addChild(name: "id", value: groupId)
+                newItem.addChild(name: "name", value: groupName)
+                return doc.xml
+            } catch {
+                print("updateScopeExclusionsAddUserGroup failed: \(error)")
+                return xmlString
+            }
+        }
     
     //    #################################################################################
     //    updatePolicyScopeGroup
@@ -412,7 +530,7 @@ import AEXML
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
                 print("Running updateSSName name function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
             }
         }
         else {
@@ -439,7 +557,7 @@ import AEXML
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
                 print("Running updateSSName name function - url is set as:\(url)")
                 print("resourceType is set as:\(resourceType)")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
             }
         }
         else {
