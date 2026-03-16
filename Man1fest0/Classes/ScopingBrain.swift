@@ -88,11 +88,13 @@ import AEXML
         //        Request in XML format
         let xml = xml
         let xmldata = xml.data(using: .utf8)
-        self.separationLine()
+        // separationLine is MainActor-isolated; ensure we call it on the MainActor from this (possibly background) caller
+        Task { await MainActor.run { self.separationLine() } }
         print("Running sendRequestAsXML Scoping Brain function - resourceType is set as:\(resourceType)")
         //        DEBUG
         print("url is:\(url)")
-        self.separationLine()
+        // separationLine is MainActor-isolated; ensure we call it on the MainActor from this (possibly background) caller
+        Task { await MainActor.run { self.separationLine() } }
         print("httpMethod is:\(httpMethod)")
         
         let headers = [
@@ -108,7 +110,11 @@ import AEXML
         
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data, let response = response {
-                self.separationLine()
+                //                self.separationLine()
+                //                print("Doing processing of sendRequestAsXML:\(httpMethod)")
+                //                print("Data is:\(data)")
+                //                print("Data is:\(response)")
+                Task { await MainActor.run { self.separationLine() } }
                 print("Doing processing of sendRequestAsXML:\(httpMethod)")
                 print("Data is:\(data)")
                 print("Data is:\(response)")
@@ -234,38 +240,40 @@ import AEXML
     
             
             func updateScopeExclusions (xmlString: String, groupName: String, groupId: String) -> String {
-                
-        #if os(macOS)
-                let document = try! XMLDocument(xmlString: xmlString) //Change this to a suitable init
-                let nodes = try! document.nodes(forXPath: "/policy/scope/exclusions")
-                
-                for node in nodes {
-                    if let item = node as? XMLElement {
-                        
-                        print("---------------------------------------------")
-                        print("Node is:\(node)")
-                        element = XMLNode.element(withName: "name", stringValue: groupName) as! XMLNode
-                        item.addChild(element)
-                        element2 = XMLNode.element(withName: "id", stringValue: groupId) as! XMLNode
-                        item.addChild(element2)
-                    }
-                }
-                          
-                print("---------------------------------------------")
-                print("element is:\(element)")
-                print("---------------------------------------------")
-                print("all nodes are:\(nodes)")
-                print("---------------------------------------------")
-                print("Updated document is:")
-                print("---------------------------------------------")
-                print((document))
-                print("---------------------------------------------")
-                print(String(describing: document))
-                return String(describing: document)
+                // Use AEXML to manipulate the policy XML to avoid Foundation placeholder node issues
+                guard !xmlString.isEmpty else { return "" }
+                do {
+                    let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
 
-        #endif
-                return("")
-            }
+                    // Ensure /policy/scope/exclusions exists, creating missing intermediate nodes as needed
+                    var scopeElem = doc.root["scope"]
+                    if scopeElem.name == "" {
+                        scopeElem = doc.root.addChild(name: "scope")
+                    }
+
+                    var exclusionsElem = scopeElem["exclusions"]
+                    if exclusionsElem.name == "" {
+                        exclusionsElem = scopeElem.addChild(name: "exclusions")
+                    }
+
+                    // Ensure <computer_groups> exists under exclusions
+                    var compGroupsElem = exclusionsElem["computer_groups"]
+                    if compGroupsElem.name == "" {
+                        compGroupsElem = exclusionsElem.addChild(name: "computer_groups")
+                    }
+
+                    // Append a new <computer_group> with <id> and <name>
+                    let newGroup = compGroupsElem.addChild(name: "computer_group")
+                    newGroup.addChild(name: "id", value: groupId)
+                    newGroup.addChild(name: "name", value: groupName)
+
+                    // Return the updated XML string
+                    return doc.xml
+                } catch {
+                    print("updateScopeExclusions failed to parse XML: \(error)")
+                    return xmlString
+                }
+             }
             
     
     //    #################################################################################

@@ -2955,6 +2955,7 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     
     func removeExclusions(server: String, policyID: String, authToken: String) {
         
+        print("Running removeExclusions")
         let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
         
         var xml: String
