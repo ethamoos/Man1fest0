@@ -56,7 +56,7 @@ struct ScriptsView: View {
                                 progress.showProgress()
                                 progress.waitForABit()
                                 print("Refresh")
-                                Task { try await networkController.getAllScripts(server: server, authToken: networkController.authToken) }
+                 Task { try? await networkController.getAllScripts() }
                             }) {
                                 HStack(spacing: 10) {
                                     Image(systemName: "arrow.clockwise")

@@ -48,7 +48,7 @@ struct ScriptsActionView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         print("Refresh")
-                        Task { try await networkController.getAllScripts(server: server, authToken: networkController.authToken) }
+         Task { try? await networkController.getAllScripts() }
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "arrow.clockwise")
@@ -129,7 +129,7 @@ struct ScriptsActionView: View {
             print(networkController.scripts.count)
             if networkController.scripts.count == 0 {
                       print("Fetching scripts")
-                Task { try await networkController.getAllScripts(server: server, authToken: networkController.authToken) }
+                Task { try await networkController.getAllScripts() }
             }
         }
         

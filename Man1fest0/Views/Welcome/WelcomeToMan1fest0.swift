@@ -506,7 +506,7 @@ struct FeatureCategoryCard: View {
         case "ScriptsView", "ScriptUsageView":
             Task {
                 print("Prefetching scripts data")
-                try? await networkController.getAllScripts(server: networkController.server, authToken: networkController.authToken)
+                try? await networkController.getAllScripts()
             }
         default:
             break
