@@ -14,6 +14,8 @@ import AEXML
     
     @State var authToken = ""
     
+    @EnvironmentObject var xmlController: XmlBrain
+    
 //    #################################################################################
 //    XML data
 //    #################################################################################
@@ -503,41 +505,7 @@ import AEXML
     
     
     func sendRequestAsXML(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) {
-                
-        let xml = xml
-        let xmldata = xml.data(using: .utf8)
-        print("Running sendRequestAsXML Pushbrain function - resourceType is set as:\(resourceType)")
-        print("url is:\(url)")
-        print("xml is:\(xml)")
-        print("httpMethod is:\(httpMethod)")
-
-        let headers = [
-            "Accept": "application/xml",
-            "Content-Type": "application/xml",
-            "Authorization": "Bearer \(authToken)"
-        ]
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = httpMethod
-        request.httpBody = xmldata
-        
-        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let data = data, let response = response {
-                print("Doing processing of sendRequestAsXML:\(httpMethod)")
-                print("Data is:\(data)")
-                print("Data is:\(response)")
-                
-            } else {
-                print("Error encountered")
-                var text = "\n\nFailed."
-                if let error = error {
-                    text += " \(error)."
-                }
-                print(text)
-            }
-        }
-        dataTask.resume()
+        XMLNetworking.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: httpMethod)
     }
     
     //    #################################################################################

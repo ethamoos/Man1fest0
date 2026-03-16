@@ -40,10 +40,10 @@ public func logDebug(_ items: Any..., separator: String = " ", terminator: Strin
 
 /// Convenience wrapper so callers can use `Debug.separationLine()` from inside classes without ambiguity.
 public enum Debug {
-    public static func separationLine() { Man1fest0.separationLine() }
-    public static func doubleSeparationLine() { Man1fest0.doubleSeparationLine() }
-    public static func asteriskSeparationLine() { Man1fest0.asteriskSeparationLine() }
-    public static func atSeparationLine() { Man1fest0.atSeparationLine() }
+    public static func separationLine() { separationLine() }
+    public static func doubleSeparationLine() { doubleSeparationLine() }
+    public static func asteriskSeparationLine() { asteriskSeparationLine() }
+    public static func atSeparationLine() { atSeparationLine() }
     public static func log(_ items: Any..., separator: String = " ", terminator: String = "\n") {
         logDebug(items.map { "\($0)" }.joined(separator: separator), separator: "", terminator: terminator)
     }

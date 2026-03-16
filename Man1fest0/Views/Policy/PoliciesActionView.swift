@@ -119,6 +119,11 @@ struct PoliciesActionView: View {
     //    ########################################################################################
     
     @State var xmlData = ""
+
+    // Small protocol-typed accessor to allow views to use the service protocol
+    private var networkService: NetworkServiceProtocol {
+        return networkController as NetworkServiceProtocol
+    }
     
     // Helper handlers to wrap async/Task calls used as closure arguments in the TabView
     private func handleUpdateScopeCompGroupSet(_ group: ComputerGroup, _ smartStatus: String, _ allComp: Bool) {
@@ -136,8 +141,9 @@ struct PoliciesActionView: View {
     private func handleClearLimitations(_ policyID: String) {
         Task {
             do {
-                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkController.authToken)
-                xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
+                // Use the protocol-typed accessor for auth token (single-site change)
+                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkService.authToken)
+                xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkService.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
             } catch {
                 print("Error clearing limitations: \(error)")
             }
@@ -510,7 +516,7 @@ struct PoliciesActionView: View {
              print("Processing policy id:\(eachPolicyId)")
             let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(eachPolicyId)"
             let url = URL(string: jamfURLQuery)!
-            
+
 //    #################################################################################
 //            Get policy as xml data
 //    #################################################################################
@@ -520,18 +526,18 @@ struct PoliciesActionView: View {
 //            Read data back
 //    #################################################################################
                 Debug.separationLine()
-                 print("Reading current policy and storing in: networkController.aexmlDoc")
+                 print("Reading current policy and storing in: xmlController.aexmlDoc")
                  xmlController.readXMLDataFromString(xmlContent: currentPolicy)
                 Debug.separationLine()
                  print("Remove old scope for all_computers")
-                let scope = networkController.aexmlDoc.root["scope"]
-                let currentSettingsAllComps = networkController.aexmlDoc.root["scope"]["all_computers"]
+                let scope = xmlController.aexmlDoc.root["scope"]
+                let currentSettingsAllComps = xmlController.aexmlDoc.root["scope"]["all_computers"]
                 currentSettingsAllComps.removeFromParent()
                  print("Add new scope for all_computers")
                 scope.addChild(name: "all_computers", value: String(describing: all_computersStatus))
                 print("Add new scope for computer_groups")
 
-                let currentComputerGroups = networkController.aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
+                let currentComputerGroups = xmlController.aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
                 currentComputerGroups.addChild(name: "name", value: groupName)
                 currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
                 currentComputerGroups.addChild(name: "isSmart", value: String(describing: smartStatus))
@@ -539,11 +545,11 @@ struct PoliciesActionView: View {
                 print("all_computersStatus is set as:\(all_computersStatus)")
                 Debug.separationLine()
                  print("Read main aeXML doc - updated for:\(eachPolicyId)")
-                 print(networkController.aexmlDoc.xml)
+                 print(xmlController.aexmlDoc.xml)
                  print("Submit updated doc")
                 
                 Task {
-                    try await networkController.sendRequestAsXMLAsyncID(url: url, authToken: authToken, resourceType: resourceType, xml: networkController.aexmlDoc.root.xml, httpMethod: "PUT", policyID: String(describing: eachPolicyId) )
+                    try await XMLNetworking.sendRequestAsXMLAsync(url: url, authToken: authToken, resourceType: resourceType, xml: xmlController.aexmlDoc.root.xml, httpMethod: "PUT")
                 }
                 
             } catch {
@@ -574,16 +580,16 @@ struct PoliciesActionView: View {
 //                print("policyAsXML is:\(policyAsXML)")
                 xmlController.readXMLDataFromString(xmlContent: policyAsXML)
                 print("Adding limit_to_users")
-                let currentLdapGroups = networkController.aexmlDoc.root["scope"]["limit_to_users"]["user_groups"]
+                let currentLdapGroups = xmlController.aexmlDoc.root["scope"]["limit_to_users"]["user_groups"]
                 currentLdapGroups.addChild(name: "user_group", value: ldapUserGroupName)
-                let currentLdapGroupsLimitations = networkController.aexmlDoc.root["scope"]["limitations"]["user_groups"].addChild(name: "user_group")
+                let currentLdapGroupsLimitations = xmlController.aexmlDoc.root["scope"]["limitations"]["user_groups"].addChild(name: "user_group")
                 currentLdapGroupsLimitations.addChild(name: "id", value: String(describing: ldapUserGroupID))
                 currentLdapGroupsLimitations.addChild(name: "name", value: String(describing: ldapUserGroupName))
                 Debug.separationLine()
                  print("Read main XML doc - updated")
-                 print(networkController.aexmlDoc.xml)
+                 print(xmlController.aexmlDoc.xml)
                  print("Submit updated doc")
-                try await networkController.sendRequestAsXMLAsyncID(url: url, authToken: authToken,resourceType: resourceType, xml: networkController.aexmlDoc.root.xml, httpMethod: "PUT", policyID: policyID)
+                try await XMLNetworking.sendRequestAsXMLAsync(url: url, authToken: authToken, resourceType: resourceType, xml: xmlController.aexmlDoc.root.xml, httpMethod: "PUT")
             } catch {
                 print("Fetching detailed policy as xml failed: \(error)")
             }

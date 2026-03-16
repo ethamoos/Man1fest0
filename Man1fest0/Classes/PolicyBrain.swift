@@ -14,6 +14,7 @@ class PolicyBrain: ObservableObject {
 //    @EnvironmentObject var layout: Layout
 //    @EnvironmentObject var xmlBrain: XmlBrain
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var xmlController: XmlBrain
     
     @State var debugStatus = true
     
@@ -69,12 +70,31 @@ class PolicyBrain: ObservableObject {
     //    XML data
     //    #################################################################################
     
-    var aexmlDoc: AEXMLDocument = AEXMLDocument()
-    var computerGroupMembersXML: String = ""
-    var policyAsXMLScope: String = ""
-    var currentPolicyAsXML: String = ""
-    var newPolicyAsXML: String = ""
-    var updateXML: Bool = false
+    // Forward XML state to centralized XmlBrain
+    var aexmlDoc: AEXMLDocument {
+        get { xmlController.aexmlDoc }
+        set { xmlController.aexmlDoc = newValue }
+    }
+    var computerGroupMembersXML: String {
+        get { xmlController.computerGroupMembersXML }
+        set { xmlController.computerGroupMembersXML = newValue }
+    }
+    var policyAsXMLScope: String {
+        get { xmlController.policyAsXMLScope }
+        set { xmlController.policyAsXMLScope = newValue }
+    }
+    var currentPolicyAsXML: String {
+        get { xmlController.currentPolicyAsXML }
+        set { xmlController.currentPolicyAsXML = newValue }
+    }
+    var newPolicyAsXML: String {
+        get { xmlController.newPolicyAsXML }
+        set { xmlController.newPolicyAsXML = newValue }
+    }
+    var updateXML: Bool {
+        get { xmlController.updateXML }
+        set { xmlController.updateXML = newValue }
+    }
 
 #if os(macOS)
     @State var element: XMLNode = XMLNode()
@@ -145,76 +165,78 @@ class PolicyBrain: ObservableObject {
     //    #################################################################################
 
     func sendRequestAsXML(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) {
-        //        Request in XML format
-        let xml = xml
-        let xmldata = xml.data(using: .utf8)
-        self.separationLine()
-        print("Running sendRequestAsXML Policy Brain function - resourceType is set as:\(resourceType)")
-        //        DEBUG
-        print("url is:\(url)")
-//        print("username is:\(username)")
-        //        print("password is:\(password)")
-        //            self.separationLine()
-        print("xml as a string is:")
-        print(xml)
-        self.separationLine()
-        print("xmldata is:\(String(describing: xmldata))")
-        print(String(describing: xmldata))
-        self.separationLine()
-        
-        print("httpMethod is:\(httpMethod)")
-        //      //  print("authToken is:\(authToken)")
-        
-        let headers = [
-            "Accept": "application/xml",
-            "Content-Type": "application/xml",
-            "Authorization": "Bearer \(authToken)"
-        ]
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = httpMethod
-        request.httpBody = xmldata
-        
-        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let data = data, let response = response {
-                self.separationLine()
-                //                print("Posting so response is not necessarily important!")
-                print("Doing processing of sendRequestAsXML:\(httpMethod)")
-                print("Data is:\(data)")
-                print("Data is:\(response)")
-                
-                if resourceType == ResourceType.computer {
-                    print("Resource type is:\(resourceType)")
-                } else if resourceType == ResourceType.policy {
-                    print("Resource type is:\(resourceType)")
-                    
-                } else {
-                    print("Resource type is:\(resourceType)")
-                }
-                
-            } else {
-                print("Error encountered")
-                var text = "\n\nFailed."
-                if let error = error {
-                    text += " \(error)."
-                }
-                //                self.appendStatus(text)
-                print(text)
-            }
-        }
-        dataTask.resume()
+        XMLNetworking.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: httpMethod)
     }
-//    
+//        //        Request in XML format
+//        let xml = xml
+//        let xmldata = xml.data(using: .utf8)
+//        self.separationLine()
+//        print("Running sendRequestAsXML Policy Brain function - resourceType is set as:\(resourceType)")
+//        //        DEBUG
+//        print("url is:\(url)")
+////        print("username is:\(username)")
+//        //        print("password is:\(password)")
+//        //            self.separationLine()
+//        print("xml as a string is:")
+//        print(xml)
+//        self.separationLine()
+//        print("xmldata is:\(String(describing: xmldata))")
+//        print(String(describing: xmldata))
+//        self.separationLine()
+//
+//        print("httpMethod is:\(httpMethod)")
+//        //      //  print("authToken is:\(authToken)")
+//
+//        let headers = [
+//            "Accept": "application/xml",
+//            "Content-Type": "application/xml",
+//            "Authorization": "Bearer \(authToken)"
+//        ]
+//
+//        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+//        request.allHTTPHeaderFields = headers
+//        request.httpMethod = httpMethod
+//        request.httpBody = xmldata
+//
+//        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
+//            if let data = data, let response = response {
+//                self.separationLine()
+//                //                print("Posting so response is not necessarily important!")
+//                print("Doing processing of sendRequestAsXML:\(httpMethod)")
+//                print("Data is:\(data)")
+//                print("Data is:\(response)")
+//
+//                if resourceType == ResourceType.computer {
+//                    print("Resource type is:\(resourceType)")
+//                } else if resourceType == ResourceType.policy {
+//                    print("Resource type is:\(resourceType)")
+//
+//                } else {
+//                    print("Resource type is:\(resourceType)")
+//                }
+//
+//            } else {
+//                print("Error encountered")
+//                var text = "\n\nFailed."
+//                if let error = error {
+//                    text += " \(error)."
+//                }
+//                //                self.appendStatus(text)
+//                print(text)
+//            }
+//        }
+//        dataTask.resume()
+//    }
+//
 //    //    #################################################################################
 //    //    Create Policies - via XML
 //    //    #################################################################################
-//    
+//
 //    func createNewPolicyXML(server: String, authToken: String, policyName: String, customTrigger: String, departmentID: String, notificationName: String, notificationStatus: String, iconId: String, iconName: String, iconUrl: String, selfServiceEnable: String ) {
-//        
+//
 //        var xml:String
 ////        let sem = DispatchSemaphore.init(value: 0)
-//        
+//
 //        self.separationLine()
 //        print("DEBUGGING - DISABLE IF NOT TESTING")
 //        self.separationLine()
@@ -226,11 +248,11 @@ class PolicyBrain: ObservableObject {
 //        print("policyName is set as:\(policyName)")
 //        print("notificationName is set as:\(notificationName)")
 //        print("notificationStatus is set as:\(notificationStatus)")
-//        
+//
 //        //    #################################################################################
 //        //    newPolicyXml
 //        //    #################################################################################
-//        
+//
 //        xml = """
 //        <?xml version="1.0" encoding="utf-8"?>
 //        <policy>
@@ -308,12 +330,12 @@ class PolicyBrain: ObservableObject {
 //            </self_service>
 //        </policy>
 //        """
-////        
-//        
+////
+//
 //        //              ################################################################################
 //        //              DEBUG
 //        //              ################################################################################
-//        
+//
 //        self.separationLine()
 //        print("Setting newPolicyAsXML variable - PolicyBrain")
 //        self.newPolicyAsXML = xml
@@ -324,11 +346,11 @@ class PolicyBrain: ObservableObject {
 //        print(xml)
 //        print("Reading xml data with AEXML")
 //        self.readXMLDataFromStringPolicyBrain(xmlContent: xml)
-//        
+//
 //        print("XML data is now stored in:self.aexmlDoc.root - PolicyBrain")
 //        print(self.aexmlDoc.root)
 //        self.separationLine()
-//        
+//
 //        //        if URL(string: server) != nil {
 //        //            if let serverURL = URL(string: server) {
 //        //
@@ -359,7 +381,7 @@ class PolicyBrain: ObservableObject {
 //        //            }
 //        //        }
 //    }
-//    
+//
     
     
     //    #################################################################################
@@ -457,12 +479,12 @@ class PolicyBrain: ObservableObject {
 //    // ######################################################################################
 //    // addCategoryToPolicy
 //    // ######################################################################################
-//    
-//    
+//
+//
 //    func addCategoryToPolicy(xmlContent: String,authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
-//        
+//
 //        self.readXMLDataFromStringPolicyBrain(xmlContent: xmlContent)
-//        
+//
 //        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
 //        let url = URL(string: jamfURLQuery)!
 //        self.separationLine()
@@ -477,23 +499,23 @@ class PolicyBrain: ObservableObject {
 //        //        }
 //        if categoryName != "" && categoryId != "" {
 //            category.addChild(name: "name", value: categoryName)
-//            
-//            
+//
+//
 //        print("updatedContent is:")
 //        print(xmlContent)
-//            
+//
 //            if newPolicyFlag == false {
 //                print("Posting data")
-//      
-//                
+//
+//
 //                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent, httpMethod: "PUT")
 //            }
-//            
+//
 //        } else {
 //            print("Category is not set - not updating")
 //        }
 //    }
-//    
+//
     
     
     
@@ -903,4 +925,3 @@ class PolicyBrain: ObservableObject {
     
     
 }
-

@@ -24,6 +24,7 @@ import AEXML
 //    @EnvironmentObject var xmlBrain: XmlBrain
 //    // @EnvironmentObject var controller: JamfController
 //    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var xmlController: XmlBrain
     
     //    #################################################################################
     //    Policies
@@ -49,10 +50,27 @@ import AEXML
     //    XML data
     //    #################################################################################
     
-    @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
-    @Published var currentPolicyScopeXML: String = ""
-    @Published var computerGroupMembersXML: String = ""
-    @State var currentPolicyAsXML: String = ""
+//    @Published var aexmlDoc: AEXMLDocument = AEXMLDocument()
+//    @Published var currentPolicyScopeXML: String = ""
+//    @Published var computerGroupMembersXML: String = ""
+//    @State var currentPolicyAsXML: String = ""
+    // Forward XML state to centralized XmlBrain
+    var aexmlDoc: AEXMLDocument {
+        get { xmlController.aexmlDoc }
+        set { xmlController.aexmlDoc = newValue }
+    }
+    var currentPolicyScopeXML: String {
+        get { xmlController.currentPolicyScopeXML }
+        set { xmlController.currentPolicyScopeXML = newValue }
+    }
+    var computerGroupMembersXML: String {
+        get { xmlController.computerGroupMembersXML }
+        set { xmlController.computerGroupMembersXML = newValue }
+    }
+    var currentPolicyAsXML: String {
+        get { xmlController.currentPolicyAsXML }
+        set { xmlController.currentPolicyAsXML = newValue }
+    }
     
 #if os(macOS)
     @State var element: XMLNode = XMLNode()
@@ -85,50 +103,8 @@ import AEXML
     
     
     func sendRequestAsXML(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) {
-        //        Request in XML format
-        let xml = xml
-        let xmldata = xml.data(using: .utf8)
-        self.separationLine()
-        print("Running sendRequestAsXML Scoping Brain function - resourceType is set as:\(resourceType)")
-        //        DEBUG
-        print("url is:\(url)")
-        self.separationLine()
-        print("httpMethod is:\(httpMethod)")
-        
-        let headers = [
-            "Accept": "application/xml",
-            "Content-Type": "application/xml",
-            "Authorization": "Bearer \(authToken)"
-        ]
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.allHTTPHeaderFields = headers
-        request.httpMethod = httpMethod
-        request.httpBody = xmldata
-        
-        let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let data = data, let response = response {
-                self.separationLine()
-                print("Doing processing of sendRequestAsXML:\(httpMethod)")
-                print("Data is:\(data)")
-                print("Data is:\(response)")
-                if resourceType == ResourceType.computer {
-                    print("Resource type is:\(resourceType)")
-                } else if resourceType == ResourceType.policy {
-                    print("Resource type is:\(resourceType)")
-                } else {
-                    print("Resource type is:\(resourceType)")
-                }
-            } else {
-                print("Error encountered")
-                var text = "\n\nFailed."
-                if let error = error {
-                    text += " \(error)."
-                }
-                print(text)
-            }
-        }
-        dataTask.resume()
+        // Forward to centralized XML networking helper
+        XMLNetworking.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: httpMethod)
     }
     
     //   #################################################################################
