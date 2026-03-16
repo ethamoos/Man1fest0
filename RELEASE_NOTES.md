@@ -6,7 +6,7 @@ Generated: 2026-03-13
 
 ---
 
-## Release highlights (v1.52.2 → v1.61.1)
+## Most recent first (v1.61.1 → v1.52.2)
 
 - Modernized API usage: introduced a flexible `RequestSender` capable of building requests for legacy `/JSSResource` endpoints and newer `/api/vN/` endpoints. Many network calls were converted to async/await for non-blocking behavior.
 - Policy improvements: incremental policy detail loading, bounded concurrency, rate-limiting, and policy delay/preferences UI.
@@ -16,37 +16,41 @@ Generated: 2026-03-13
 
 ---
 
-## Per-version short summaries
+## Per-version short summaries (most recent first)
 
-### v1.52.3 (2026-01-28)
-- Maintenance & usability fixes: searchable lists in Computer views, script removal bug fixes, small README revisions.
+### v1.61.1 (2026-03-13)
+- Packages async fetch & polishing: `getAllPackages()` uses async `RequestSender`; added `getAllPackagesSend` wrapper for backward compatibility; version bump to `1.61.1`.
+- Small connectivity and compatibility fixes.
 
-### v1.54 (2026-02-10)
-- Security & reliability: inactivity lock, lock screen and keychain integration; token expiration handling and automatic refresh; bounded concurrency (AsyncSemaphore) and rate-limiting for detailed policy fetches.
-
-### v1.54.1 (2026-02-16)
-- Media performance: add image caching (CachedAsyncImage) for icon/detail views.
-
-### v1.55 (2026-02-20)
-- UX polish and tweaks; policy request delay default (0s) tuned for typical installs.
-
-### v1.56.1 (2026-02-26)
-- Packages & Scripts focus: table-style package lists, selection sync, sorting controls, multi-select packages for policy creation; scripts: batch download, batch delete, and improved save/download UX.
-
-### v1.57 / v1.57.1 (2026-02-27 → 2026-03-02)
-- Project / marketing version updates and continued package/script refinements.
-
-### v1.58 / v1.58.1 (2026-03-06 → 2026-03-09)
-- Policy detail UX overhaul: incremental policy loading and new policy detail views; policy delay preferences UI. Big onboarding and Welcome view improvements. Added Open-in-Browser shortcuts across several detail views.
+### v1.60 / v1.60.1 (2026-03-13)
+- Async API modernization: replaced legacy synchronous `connect()` patterns with `async` API methods across the codebase; `RequestSender` improvements for flexible base URLs and header support.
+- Preparatory refactors to improve consistent async/await usage and reduce blocking network calls.
 
 ### v1.59 (2026-03-11)
 - Stability and data modeling: improved startup/inactivity flow, delay lock check and reset inactivity on launch; async category/department fetches added with models and previews.
 
-### v1.60 / v1.60.1 (2026-03-13)
-- Async API modernization: replaced legacy synchronous `connect()` patterns with `async` API methods; RequestSender updated to support different base URL patterns and additional headers.
+### v1.58 / v1.58.1 (2026-03-06 → 2026-03-09)
+- Policy detail UX overhaul: incremental policy loading and new policy detail views; policy delay preferences UI. Big onboarding and Welcome view improvements. Added Open-in-Browser shortcuts across several detail views.
 
-### v1.61.1 (2026-03-13)
-- Packages async fetch & polishing: `getAllPackages()` uses async RequestSender; added `getAllPackagesSend` wrapper for backward compatibility; version bump to `1.61.1`.
+### v1.57 / v1.57.1 (2026-02-27 → 2026-03-02)
+- Project / marketing version updates and continued package/script refinements.
+
+### v1.56.1 (2026-02-26)
+- Packages & Scripts focus: table-style package lists, selection sync, sorting controls, multi-select packages for policy creation; scripts: batch download, batch delete, and improved save/download UX.
+
+### v1.55 (2026-02-20)
+- UX polish and tweaks; policy request delay default (0s) tuned for typical installs.
+
+### v1.54.1 (2026-02-16)
+- Media performance: add image caching (CachedAsyncImage) for icon/detail views.
+
+### v1.54 (2026-02-10)
+- Security & reliability: inactivity lock, keychain integration and lock screen added to improve local security.
+- Token expiration tracking and automatic refresh for Jamf API authentication.
+- Bounded concurrency and rate-limited policy fetch (AsyncSemaphore); safer, predictable network behavior for large environments.
+
+### v1.52.3 (2026-01-28)
+- Maintenance & usability fixes: searchable lists in Computer views, script removal bug fixes, small README revisions.
 
 ---
 
