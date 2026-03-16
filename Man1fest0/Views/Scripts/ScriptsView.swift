@@ -107,7 +107,7 @@ struct ScriptsView: View {
             if networkController.scripts.count == 0 {
                       print("Fetching scripts")
                 Task {
-                    try await networkController.getAllPolicies(server: server)
+                    try await networkController.getAllScripts()
                 }
             }
         }
