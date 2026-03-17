@@ -48,7 +48,12 @@ struct ContentView: View {
                     return storedShouldShowWelcome
                 }()
 
-                if showWelcome {
+                // If we have cached credentials and do not need the user to authenticate,
+                // prefer showing the welcome screen by default (so users land on the friendly
+                // WelcomeToMan1fest0 view instead of the PoliciesView)
+                let shouldShowWelcomeDueToCachedCredentials = networkController.hasCachedCredentials && !networkController.needsCredentials
+
+                if showWelcome || shouldShowWelcomeDueToCachedCredentials {
                     WelcomeToMan1fest0()
                 } else {
                     Text("Select an Item")

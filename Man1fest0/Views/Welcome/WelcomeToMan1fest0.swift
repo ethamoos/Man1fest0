@@ -124,7 +124,9 @@ struct WelcomeToMan1fest0: View {
 //            quickActionsSection
             Spacer()
             // Getting started section
-            gettingStartedSection
+            
+//          Comment out as currently not relevant - may be useful later on when onboarding flow is more fleshed out and we want to highlight key steps for new users
+//            gettingStartedSection
             
             Spacer()
         }

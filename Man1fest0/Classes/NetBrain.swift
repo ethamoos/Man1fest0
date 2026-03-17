@@ -5259,12 +5259,18 @@ xml = """
     @Published var isLoading = false
     @Published var needsCredentials = false
     @Published var connected = false
+    // Indicates whether there are cached credentials available in the keychain
+    var hasCachedCredentials: Bool {
+        guard !server.isEmpty, !username.isEmpty else { return false }
+        let pw = getPassword(account: username, service: server)
+        return !pw.isEmpty
+    }
     //        @Published var hasError = false
     //        var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     //        var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
-    
+
 //    var password = ""
-    
+
     var auth: JamfAuthToken?
     
     
