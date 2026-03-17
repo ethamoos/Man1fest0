@@ -74,6 +74,8 @@ struct PolicyPackageTabView: View {
                 
                 if currentPolicyPackages.count >= 1 {
                     
+                   
+                    
                     List(currentPolicyPackages) { package in
                         
                         HStack {
@@ -81,7 +83,13 @@ struct PolicyPackageTabView: View {
                             Text(package.name )
                         }
                     }
-                    .frame(minHeight: 100)
+                    .frame(minHeight: 30)
+                    if networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
+                        
+                        Text("Distribution Point :\t\t\t\(networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
+                        
+
+                    }
                     
                 } else {
                     VStack(alignment: .leading) {

@@ -684,8 +684,9 @@ struct PolicyScopeTabView: View {
 
                         if networkController.policyDetailed?.scope?.exclusions?.departments?.count == 0 {
                             Text("No Departments Excluded").font(.subheadline).padding(.bottom,10)
+                        
                         } else {
-                            Text("Excluded Departments").font(.subheadline.bold()).padding(.bottom,10)
+                            Text("Excluded Departments").font(.headline.bold()).padding(.bottom,10)
                             ForEach(networkController.policyDetailed?.scope?.exclusions?.departments ?? []) { department in
                                 Text(department.name ?? "")
                             }
@@ -695,7 +696,7 @@ struct PolicyScopeTabView: View {
                         if networkController.policyDetailed?.scope?.exclusions?.departments?.count == 0 {
                             Text("No Buildings Excluded").font(.subheadline).padding(.bottom,10)
                         } else {
-                            Text("Excluded Buildings").font(.subheadline.bold()).padding(.bottom,10)
+                            Text("Excluded Buildings").font(.headline.bold()).padding(.bottom,10)
                             ForEach(networkController.policyDetailed?.scope?.exclusions?.buildings ?? []) { building in
                                 Text(building.name ?? "")
                             }
@@ -771,35 +772,73 @@ struct PolicyScopeTabView: View {
                             )
                         }
 
-                        // Departments and Building exclusion (simplified use of selectionDepartment)
-                        Text("Departments Computers")
-                        HStack {
-                            TextField("Search Departments", text: $computerSearchText)
-                            Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
-                                ForEach(filteredComputers, id: \.id) { comp in Text(comp.name).tag(comp) }
+                        // Departments and Building exclusion (provide pickers to exclude department or building)
+                        Divider()
+                        Text("Exclude a Department").font(.headline)
+                        LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
+                            TextField("Filter departments...", text: $departmentFilter).textFieldStyle(RoundedBorderTextFieldStyle()).padding(.bottom, 4)
+                            Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
+                                ForEach(filteredDepartments, id: \.self) { dept in
+                                    Text(dept.name).tag(dept as Department?)
+                                }
+                            }
+                            .onAppear { if let first = networkController.departments.first { selectionDepartment = first } }
+
+                            Button(action: { showingWarningExcludeScopeDept = true; progress.showProgress(); progress.waitForABit() }) {
+                                HStack(spacing:10) { Image(systemName: "plus.square.fill.on.square.fill"); Text("Exclude Department") }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .alert(isPresented: $showingWarningExcludeScopeDept) {
+                                Alert(
+                                    title: Text("Caution!"),
+                                    message: Text("This action will add the selected department to the exclusions for this policy."),
+                                    primaryButton: .destructive(Text("I understand!")) {
+                                        let deptName = String(describing: selectionDepartment.name)
+                                        let deptId = String(describing: selectionDepartment.jamfId ?? 0)
+                                        let updatedXML = scopingController.updateScopeExclusionsAddDepartment(xmlString: xmlController.currentPolicyAsXML, departmentName: deptName, departmentId: deptId)
+                                        if let url = URL(string: "\(server)/JSSResource/policies/id/\(policyID)") {
+                                            xmlController.sendRequestAsXML(url: url, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, xml: updatedXML, httpMethod: "PUT")
+                                        }
+                                        Task { do { try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID)) } catch { print("Failed to refresh detailed policy after adding department exclusion: \(error)") } }
+                                    },
+                                    secondaryButton: .cancel()
+                                )
                             }
                         }
 
-                        Button(action: { showingWarningExcludeScope = true; progress.showProgress(); progress.waitForABit() }) {
-                            HStack(spacing:10) { Image(systemName: "plus.square.fill.on.square.fill"); Text("Exclude Computer") }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .alert(isPresented: $showingWarningExcludeScope) {
-                            Alert(
-                                title: Text("Caution!"),
-                                message: Text("This action will add the selected computer  to the exclusions for this policy."),
-                                primaryButton: .destructive(Text("I understand!")) {
-                                    let deptName = String(describing: selectionDepartment.name)
-                                    let deptId = String(describing: selectionDepartment.id)
-                                    let updatedXML = scopingController.updateScopeExclusionsAddDepartment(xmlString: xmlController.currentPolicyAsXML, departmentName: deptName, departmentId: deptId)
-                                    if let url = URL(string: "\(server)/JSSResource/policies/id/\(policyID)") {
-                                        xmlController.sendRequestAsXML(url: url, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, xml: updatedXML, httpMethod: "PUT")
-                                    }
-                                    Task { do { try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID)) } catch { print("Failed to refresh detailed policy after adding exclusion: \(error)") } }
-                                },
-                                secondaryButton: .cancel()
-                            )
+                        Divider()
+                        Text("Exclude a Building").font(.headline)
+                        LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
+                            TextField("Filter buildings...", text: $buildingFilter).textFieldStyle(RoundedBorderTextFieldStyle()).padding(.bottom, 4)
+                            Picker(selection: $selectionBuilding, label: Text("Building:").bold()) {
+                                ForEach(filteredBuildings, id: \.self) { bld in
+                                    Text(bld.name).tag(bld)
+                                }
+                            }
+                            .onAppear { if let first = networkController.buildings.first { selectionBuilding = first } }
+
+                            Button(action: { showingWarningExcludeScopeBuilding = true; progress.showProgress(); progress.waitForABit() }) {
+                                HStack(spacing:10) { Image(systemName: "plus.square.fill.on.square.fill"); Text("Exclude Building") }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .alert(isPresented: $showingWarningExcludeScopeBuilding) {
+                                Alert(
+                                    title: Text("Caution!"),
+                                    message: Text("This action will add the selected building to the exclusions for this policy."),
+                                    primaryButton: .destructive(Text("I understand!")) {
+                                        let bldName = String(describing: selectionBuilding.name)
+                                        let bldId = String(describing: selectionBuilding.id)
+                                        let updatedXML = scopingController.updateScopeExclusionsAddBuilding(xmlString: xmlController.currentPolicyAsXML, buildingName: bldName, buildingId: bldId)
+                                        if let url = URL(string: "\(server)/JSSResource/policies/id/\(policyID)") {
+                                            xmlController.sendRequestAsXML(url: url, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, xml: updatedXML, httpMethod: "PUT")
+                                        }
+                                        Task { do { try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID)) } catch { print("Failed to refresh detailed policy after adding building exclusion: \(error)") } }
+                                    },
+                                    secondaryButton: .cancel()
+                                )
+                            }
                         }
 
                         Button(action: { progress.showProgress(); progress.waitForABit(); showingWarningClearLimit = true }) { Text("Clear Exclusions") }

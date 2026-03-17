@@ -210,11 +210,7 @@ struct PolicyDetailView: View {
                     }
                     .frame(width: 50, height: 50)
                     .clipShape(.rect(cornerRadius: 25))
-                    
-                    if networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
-                        
-                        Text("Distribution Point :\t\t\t\(networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
-                    }
+                
                     
                     if pushTriggerActiveWarningComputed {
                         Text("⚠️ Push Trigger Active! ⚠️\n").foregroundColor(.red)
