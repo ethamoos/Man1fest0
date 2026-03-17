@@ -742,6 +742,7 @@ struct PolicyDetailView: View {
                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
             }
         }
+        
         // Whenever the aexmlDoc representation of the current policy changes (children often edit XML),
         // refresh the detailed policy from the server so the UI reflects server-side state.
 //        .onChange(of: xmlController.aexmlDoc) { _ in
@@ -751,6 +752,7 @@ struct PolicyDetailView: View {
         
         // Also attempt to refresh after potential network-based edits by observing the packagesAssignedToPolicy
         // array which many package actions mutate; this covers some edit paths that don't go through XML.
+        
         .onChange(of: networkController.packagesAssignedToPolicy) { _ in
             Task {
                 do {
