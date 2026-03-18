@@ -10,21 +10,23 @@ import AEXML
 
 
 struct PolicyPackageTabView: View {
-    
+
     
     @EnvironmentObject var networkController: NetBrain
-    
+
     @EnvironmentObject var progress: Progress
-    
+
     @EnvironmentObject var policyController: PolicyBrain
-    
+
     @EnvironmentObject var xmlController: XmlBrain
-    
+
     @EnvironmentObject var layout: Layout
-    
+
     var policyID: Int
     var server: String
     var resourceType: ResourceType
+    // Local snapshot to avoid following the shared controller directly
+    var localPolicyDetailed: PolicyDetailed? = nil
     
     @State private var selectedResourceType = ResourceType.policyDetail
     
@@ -70,11 +72,10 @@ struct PolicyPackageTabView: View {
             //              List packages
             //              ################################################################################
             
-            if let currentPolicyPackages = networkController.policyDetailed?.package_configuration?.packages {
+            if let currentPolicyPackages = localPolicyDetailed?.package_configuration?.packages {
                 
                 if currentPolicyPackages.count >= 1 {
                     
-                   
                     
                     List(currentPolicyPackages) { package in
                         
@@ -84,11 +85,8 @@ struct PolicyPackageTabView: View {
                         }
                     }
                     .frame(minHeight: 30)
-                    if networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
-                        
-                        Text("Distribution Point :\t\t\t\(networkController.policyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
-                        
-
+                    if localPolicyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
+                        Text("Distribution Point :\t\t\t\t\(localPolicyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
                     }
                     
                 } else {
@@ -298,6 +296,8 @@ struct PolicyPackageTabView: View {
     }
     
     
+
+
     func fetchData() {
         
         if  networkController.packages.count <= 1 {

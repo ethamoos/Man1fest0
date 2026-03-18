@@ -12,6 +12,8 @@ struct PolicyTriggersTabView: View {
     var policyID: Int
     var server: String
     var resourceType: ResourceType
+    // Local snapshot to avoid following shared controller directly
+    var localPolicyDetailed: PolicyDetailed? = nil
     
     @EnvironmentObject var networkController: NetBrain
     
@@ -145,12 +147,11 @@ struct PolicyTriggersTabView: View {
         }
         .padding()
         .onAppear() {
-            trigger_other = networkController.policyDetailed?.general?.triggerOther ?? ""
-            trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
-            trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
-            trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
-            trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
-            
+            trigger_other = localPolicyDetailed?.general?.triggerOther ?? ""
+            trigger_login = localPolicyDetailed?.general?.triggerLogin ?? false
+            trigger_checkin = localPolicyDetailed?.general?.triggerCheckin ?? false
+            trigger_enrollment_complete = localPolicyDetailed?.general?.triggerEnrollmentComplete ?? false
+            trigger_startup = localPolicyDetailed?.general?.triggerStartup ?? false
         }
     }
 }

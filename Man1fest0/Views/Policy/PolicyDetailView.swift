@@ -592,19 +592,19 @@ struct PolicyDetailView: View {
                 Group {
                     switch selectedPolicyDetailTab {
                     case 0:
-                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
+                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, localPolicyDetailed: localPolicyDetailed, packageSelection: packageSelection)
                     case 1:
-                        PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                        PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, policyID: policyID, computerGroupSelection: $computerGroupSelection)
                     case 2:
-                        PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                        PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, policyID: policyID, computerGroupSelection: $computerGroupSelection)
                     case 3:
-                        PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
+                        PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, policyID: policyID )
                     case 4:
-                        PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: localPolicyDetailed?.general?.triggerLogin ?? false, trigger_checkin: localPolicyDetailed?.general?.triggerCheckin ?? false, trigger_startup: localPolicyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: localPolicyDetailed?.general?.triggerEnrollmentComplete ?? false )
+                        PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, trigger_login: localPolicyDetailed?.general?.triggerLogin ?? false, trigger_checkin: localPolicyDetailed?.general?.triggerCheckin ?? false, trigger_startup: localPolicyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: localPolicyDetailed?.general?.triggerEnrollmentComplete ?? false)
                     case 5:
                         PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
                     default:
-                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
+                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, localPolicyDetailed: localPolicyDetailed, packageSelection: packageSelection)
                     }
                 }
                 .frame(minHeight: 300)

@@ -12,6 +12,8 @@ struct PolicyScriptsTabView: View {
     
     var server: String
     var resourceType: ResourceType
+    // Local snapshot to avoid following the shared controller directly
+    var localPolicyDetailed: PolicyDetailed? = nil
     @State private var searchText = ""
 
     //    ########################################################################################
@@ -103,13 +105,13 @@ struct PolicyScriptsTabView: View {
                     //              List scripts
                     // ################################################################################
                     
-                    if networkController.policyDetailed?.scripts?.count ?? 0 > 0 {
+                    if localPolicyDetailed?.scripts?.count ?? 0 > 0 {
                         
                         Text("Assigned Scripts").bold()
 #if os(macOS)
                         
                         
-                        List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
+                        List(localPolicyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
                             NavigationLink(destination: PolicyScriptsTabViewDetail(script: script, policyID: policyID, server: server)) {
                                 HStack {
                                     
@@ -158,7 +160,7 @@ struct PolicyScriptsTabView: View {
                         .frame(minHeight: 100)
                         .frame(minWidth: 120, maxWidth: .infinity)
 #else
-                        List(networkController.policyDetailed?.scripts ?? [PolicyScripts](), id: \.self) { script in
+                        List(localPolicyDetailed?.scripts ?? [PolicyScripts](), id: \.self) { script in
                             HStack {
                                 Image(systemName: "applescript")
                                 Text(script.name ?? "" )
@@ -424,17 +426,18 @@ struct PolicyScriptsTabView: View {
             .onAppear() {
                 
                 if  networkController.scripts.count <= 1 {
-                    print("Fetching scripts")
-                    print("Script count is:\(networkController.scripts.count))")
-     Task { try? await networkController.getAllScripts() }
-                } else {
-                    print("script data is available")
-                }
-            }
-        }
-    }
+                     print("Fetching scripts")
+                     print("Script count is:\(networkController.scripts.count))")
+      Task { try? await networkController.getAllScripts() }
+                 } else {
+                     print("script data is available")
+                 }
+             }
+         }
+     }
 }
 
+// Close PolicyScriptsTabView struct
 
 // Minimal inline detail view so the NavigationLink can resolve the type without
 // requiring the file to be added to the Xcode project. This mirrors the
