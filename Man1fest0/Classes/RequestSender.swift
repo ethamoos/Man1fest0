@@ -129,6 +129,9 @@ final class RequestSender {
                     return try decoder.decode(APIModel.self, from: data)
                 } catch {
                     // provide body to help debugging
+                    print("##############################################################################")
+                    print("##############################################################################")
+                    print("##############################################################################")
                     print("Decoding error: \(error). Response body: \(bodyString ?? "<binary>")")
                     throw RequestError.decoding(error, body: bodyString)
                 }

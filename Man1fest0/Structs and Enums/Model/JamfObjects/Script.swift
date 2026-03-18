@@ -16,6 +16,26 @@ struct Script: JamfObject, Hashable {
     enum Priority: String, Codable {
         case before = "BEFORE"
         case after = "AFTER"
+        case atReboot = "AT_REBOOT"
+        // Fallback value used when an unknown raw value is encountered during decoding
+        case unknown = "UNKNOWN"
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            if let val = Priority(rawValue: raw) {
+                self = val
+            } else {
+                // Log unexpected value and default to `.after` to keep behavior conservative
+                print("Warning: unexpected Script.Priority value '\(raw)'; defaulting to .after")
+                self = .after
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(self.rawValue)
+        }
     }
     
     var id: String

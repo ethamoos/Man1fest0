@@ -11,23 +11,24 @@ struct ScriptsView: View {
     @StateObject private var searchDebouncer = Debouncer()
     // Use ID-based selection to remain stable across list refreshes
     @State var selection = Set<Int>()
-    
+
+    @State private var scriptsLoadError: String? = nil
 //    var selectedResourceType: ResourceType
-    
+
     var server: String
 
     @State var scripts: [ScriptClassic] = []
 //    @State var scripts: [Script] = []
-    
+
     var body: some View {
-        
+
         VStack(alignment: .leading) {
-            
+
             if networkController.scripts.count > 0 {
                 
                 NavigationView {
                     
-                    // Bind selection to IDs (jamfId) and use id: \ .jamfId to keep List content stable
+                    // Bind selection to IDs (jamfId) and use id: \.jamfId to keep List content stable
                     List(searchResults, id: \.jamfId, selection: $selection) { script in
                         NavigationLink(destination: ScriptsDetailView(script: script, scriptID: script.jamfId, server: server)) {
                             
@@ -41,11 +42,11 @@ struct ScriptsView: View {
                             .foregroundColor(.blue)
                         }
                     }
-                    
+
 #if os(macOS)
                         .frame(minWidth: 300, maxWidth: .infinity)
 #endif
-                    
+
                     //              ################################################################################
                     //              Toolbar
                     //              ################################################################################
@@ -90,9 +91,48 @@ struct ScriptsView: View {
                 .navigationViewStyle(DefaultNavigationViewStyle())
                 
             } else {
-                ProgressView {
-                    Text("Loading")
-                        .font(.title)
+                // If no scripts are present, show a helpful retry UI instead of only a spinner
+                if let err = scriptsLoadError {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("No scripts found")
+                            .font(.headline)
+                        Text("Error: \(err)")
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                        HStack {
+                            Button(action: {
+                                scriptsLoadError = nil
+                                progress.showProgress()
+                                Task {
+                                    do {
+                                        try await networkController.getAllScripts()
+                                        scriptsLoadError = nil
+                                    } catch {
+                                        scriptsLoadError = String(describing: error)
+                                    }
+                                    progress.endProgress()
+                                }
+                            }) {
+                                Text("Retry")
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            Button(action: {
+                                // Open Scripts view's server URL in browser for debugging
+                                if let url = URL(string: server) {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }) {
+                                Text("Open Server")
+                            }
+                        }
+                    }
+                    .padding()
+                } else {
+                    ProgressView {
+                        Text("Loading")
+                            .font(.title)
+                    }
                 }
             }
         }
@@ -107,7 +147,13 @@ struct ScriptsView: View {
             if networkController.scripts.count == 0 {
                       print("Fetching scripts")
                 Task {
-                    try await networkController.getAllScripts()
+                    do {
+                        try await networkController.getAllScripts()
+                        scriptsLoadError = nil
+                    } catch {
+                        scriptsLoadError = String(describing: error)
+                        print("getAllScripts failed: \(error)")
+                    }
                 }
             }
         }

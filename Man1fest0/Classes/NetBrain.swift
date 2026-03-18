@@ -647,119 +647,6 @@ actor AsyncSemaphore {
     
     
     
-//    func getBuildings(server: String, authToken: String) async throws {
-//        let jamfURLQuery = server + "/JSSResource/buildings"
-//        let url = URL(string: jamfURLQuery)!
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "GET"
-//        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-//        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        self.separationLine()
-//        print("Running func: getBuildings")
-//        print("url is set to:\(url)")
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        //        print("Json data is:")
-//        //        print(String(data: data, encoding: .utf8)!)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200")
-//            throw JamfAPIError.badResponseCode
-//        }
-//        let decoder = JSONDecoder()
-//        let allBuildings = try decoder.decode(Buildings.self, from: data)
-//        self.buildings = allBuildings.buildings
-//        //        print("buildings is set to:\(self.buildings)")
-//    }
-//
-//
-//
-//    func getPackages(server: String) async throws {
-//        let jamfURLQuery = server + "/JSSResource/packages"
-//        let url = URL(string: jamfURLQuery)!
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "GET"
-//          request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
-//        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-//
-//        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        separationLine()
-//        print("Running func: getPackages")
-//
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200")
-//            throw JamfAPIError.badResponseCode
-//        }
-//        let decoder = JSONDecoder()
-//        self.allPackages = try decoder.decode(Packages.self, from: data).packages
-//        allPackagesComplete = true
-//        print("allPackagesComplete status is set to:\(allPackagesComplete)")
-//
-//    }
-//
-//    func getAllScripts(server: String, authToken: String) async throws {
-//
-//        print("Running func: getAllScripts")
-//
-//        let jamfURLQuery = server + "/api/v1/scripts?page=0&page-size=500"
-//
-//        let url = URL(string: jamfURLQuery)!
-//        print("url is set to:\(url)")
-//
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "GET"
-//        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-//        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//        separationLine()
-//        print("Running func: getAllScripts")
-//
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200")
-//            throw JamfAPIError.badResponseCode
-//        }
-//        separationLine()
-//        //        print("Json data is:")
-//        //                  print(String(data: data, encoding: .utf8)!)
-//        let decoder = JSONDecoder()
-//        //        let allScriptResults = try decoder.decode(ScriptResults.self, from: data)
-//        //        let localScriptsDetailed = allScriptResults.results
-//
-//        //        print("localScriptsDetailed status is set to:\(localScriptsDetailed)")
-//        //        let allScriptsFullyDetailed = self.allScriptsVeryDetailed.results
-//
-//    }
-    
-//    func getDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
-//
-//        separationLine()
-//        print("Running func: getDetailedScript")
-//        print("scriptID is set to:\(scriptID)")
-//
-//        let jamfURLQuery = server + "/api/v1/scripts/" + String(describing: scriptID)
-//
-//        let url = URL(string: jamfURLQuery)!
-//        print("url is set to:\(url)")
-//
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "GET"
-//        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-//        request.setValue("application/json", forHTTPHeaderField: "Accept")
-//
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//            print("Code not 200")
-//            throw JamfAPIError.badResponseCode
-//        }
-//
-//        let decoder = JSONDecoder()
-//        scriptDetailed = try decoder.decode(Script.self, from: data)
-//        //        print("scriptDetailed is set to:\(scriptDetailed)")
-//    }
-//
-//
-    
-    
-    
     
     func getAllPolicies(server: String) async throws {
         let jamfURLQuery = server + "/JSSResource/policies"
@@ -5579,6 +5466,12 @@ xml = """
     
     func getAllScripts() async throws {
         do {
+            print("Running getAllScripts")
+            // Ensure we have a valid token (refresh or fetch if needed)
+            let validToken = try await getValidToken(server: server)
+            // Assign to authToken in case getValidToken refreshed it
+            self.authToken = validToken
+
             // Use the API v1 scripts endpoint (page 0, page-size 500). RequestSender handles
             // endpoints that start with "/api/" or "/" as full API paths.
             let request = APIRequest<ScriptResults>(endpoint: "/api/v1/scripts?page=0&page-size=500", method: .get)
@@ -5593,8 +5486,14 @@ xml = """
                 return ScriptClassic(name: s.name, jamfId: jamfId)
             }
 
+            // Mirror into the allScripts collection as a convenience for other views
+            self.allScripts = self.scripts
+
             print("Loaded \(scripts.count) scripts")
         } catch {
+            // Provide clearer diagnostics when script fetching fails
+            separationLine()
+            print("Failed to load scripts: \(error)")
             publishError(error, title: "Failed to load scripts")
             throw error
         }
@@ -5713,7 +5612,3 @@ xml = """
   }
     
 }
-
-    
-    
-//}
