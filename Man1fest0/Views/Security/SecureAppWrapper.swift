@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(macOS)
+import AppKit
+#endif
+
 // MARK: - Secure App Wrapper
 struct SecureAppWrapper<Content: View>: View {
     
@@ -12,6 +16,11 @@ struct SecureAppWrapper<Content: View>: View {
     @EnvironmentObject var securitySettings: SecuritySettingsManager
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
     @EnvironmentObject var networkController: NetBrain
+    
+    // MARK: - macOS Preferences Window Handle
+    #if os(macOS)
+    @State private var preferencesWindow: NSWindow?
+    #endif
     
     // MARK: - Initialization
     init(showPreferences: Binding<Bool>, @ViewBuilder content: () -> Content) {
@@ -41,8 +50,17 @@ struct SecureAppWrapper<Content: View>: View {
                     .zIndex(1000)
             }
         }
-        // Preferences sheet (macOS only)
+        // Preferences: on macOS present a separate resizable window (sheets are not user-resizable)
         #if os(macOS)
+        .onChange(of: showingPreferences.wrappedValue) { newValue in
+            if newValue {
+                openPreferencesWindow()
+            } else {
+                closePreferencesWindow()
+            }
+        }
+        #else
+        // macOS-only preferences window handled above; keep existing sheet for non-mac platforms if desired
         .sheet(isPresented: showingPreferences) {
             // Inline preferences UI to ensure compilation and avoid symbol-scope issues
             NavigationView {
@@ -80,7 +98,85 @@ struct SecureAppWrapper<Content: View>: View {
         // For macOS we can observe NSWorkspace notifications inside InactivityMonitor directly; no-op here
         #endif
     }
+
+    // MARK: - macOS helpers to open/close a separate preferences window
+    #if os(macOS)
+    private func openPreferencesWindow() {
+        guard preferencesWindow == nil else {
+            // already open
+            preferencesWindow?.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        // Build the SwiftUI content and attach environment objects
+        let prefsContent = PreferencesWindowContent()
+            .environmentObject(securitySettings)
+            .environmentObject(inactivityMonitor)
+            .environmentObject(networkController)
+
+        let hostingController = NSHostingController(rootView: prefsContent)
+        // Allow the hosting view to resize with the window
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = true
+        hostingController.view.autoresizingMask = [.width, .height]
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "Preferences"
+        window.setContentSize(NSSize(width: 560, height: 360))
+        // Ensure window is resizable
+        window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
+        // Provide a sensible minimum so the user can't shrink it too small
+        window.minSize = NSSize(width: 420, height: 260)
+        window.center()
+        window.isReleasedWhenClosed = false
+
+        // Keep a strong reference so it doesn't get deallocated
+        preferencesWindow = window
+
+        // When the user closes the window, keep the binding in sync
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
+            showingPreferences.wrappedValue = false
+            preferencesWindow = nil
+        }
+
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func closePreferencesWindow() {
+        preferencesWindow?.close()
+        preferencesWindow = nil
+    }
+    #endif
 }
+
+// MARK: - Preferences window content (reused for the custom NSWindow)
+#if os(macOS)
+fileprivate struct PreferencesWindowContent: View {
+    @EnvironmentObject var securitySettings: SecuritySettingsManager
+    @EnvironmentObject var inactivityMonitor: InactivityMonitor
+    @EnvironmentObject var networkController: NetBrain
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Security")) {
+                    PreferencesSecuritySection()
+                }
+                Section(header: Text("Policy Fetch")) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Policy fetch delay (seconds)")
+                            .font(.headline)
+                        PolicyDelayInlineViewLocal()
+                            .environmentObject(networkController)
+                    }
+                }
+            }
+            .navigationTitle("Preferences")
+            .frame(minWidth: 420, minHeight: 260)
+        }
+        .frame(minWidth: 420, minHeight: 260)
+    }
+}
+#endif
 
 // MARK: - Enhanced View Extension for User Activity Tracking
 extension View {
