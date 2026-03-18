@@ -80,7 +80,7 @@ struct SecureAppWrapper<Content: View>: View {
                      }
                 }
                 .navigationTitle("Preferences")
-                .frame(minWidth: 420, minHeight: 260)
+                .frame(minWidth: 250, minHeight: 200)
             }
          }
         #endif
@@ -123,8 +123,8 @@ struct SecureAppWrapper<Content: View>: View {
         window.setContentSize(NSSize(width: 560, height: 360))
         // Ensure window is resizable
         window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
-        // Provide a sensible minimum so the user can't shrink it too small
-        window.minSize = NSSize(width: 420, height: 260)
+        // Set a sensible minimum size so the window can't be shrunk to too small
+        window.minSize = NSSize(width: 300, height: 200)
         window.center()
         window.isReleasedWhenClosed = false
 
@@ -156,27 +156,36 @@ fileprivate struct PreferencesWindowContent: View {
     @EnvironmentObject var networkController: NetBrain
 
     var body: some View {
+        
         NavigationView {
-            Form {
-                Section(header: Text("Security")) {
-                    PreferencesSecuritySection()
-                }
-                Section(header: Text("Policy Fetch")) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Policy fetch delay (seconds)")
-                            .font(.headline)
-                        PolicyDelayInlineViewLocal()
-                            .environmentObject(networkController)
+            
+            VStack(alignment: .leading) {
+                
+                Form {
+                    Section(header: Text("Security")) {
+                        PreferencesSecuritySection()
+                    }
+                    
+                    Divider()
+                    
+                    Section(header: Text("Policy Fetch")) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Policy fetch delay (seconds)")
+                                .font(.headline)
+                            PolicyDelayInlineViewLocal()
+                                .environmentObject(networkController)
+                        }
                     }
                 }
+                .navigationTitle("Preferences")
+                .frame(minWidth: 250, minHeight: 200)
             }
-            .navigationTitle("Preferences")
-            .frame(minWidth: 420, minHeight: 260)
+            .padding()
         }
-        .frame(minWidth: 420, minHeight: 260)
-    }
-}
-#endif
+//        .frame(minWidth: 250, minHeight: 200)
+     }
+ }
+ #endif
 
 // MARK: - Enhanced View Extension for User Activity Tracking
 extension View {
@@ -248,7 +257,7 @@ struct PreferencesSecuritySection: View {
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 1) {
             Picker("Auto-lock after:", selection: $securitySettings.inactivityTimeout) {
                 ForEach(SecuritySettingsManager.InactivityTimeout.allCases) { t in
                     Text(t.displayName).tag(t)
@@ -264,7 +273,7 @@ struct PreferencesSecuritySection: View {
             }
             .buttonStyle(BorderlessButtonStyle())
         }
-        .padding(.vertical, 8)
+//        .padding(.vertical, 8)
     }
 }
 
