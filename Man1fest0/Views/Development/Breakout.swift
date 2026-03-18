@@ -7,6 +7,21 @@
 
 
 import SwiftUI
+import Foundation
+import os
+
+// Install a lightweight uncaught exception handler to log Objective-C exceptions
+func installUncaughtExceptionHandler() {
+    NSSetUncaughtExceptionHandler { exception in
+        // Log minimal exception details only (avoid heavy ObjC messaging like callStackSymbols)
+        let name = exception.name.rawValue
+        let reason = exception.reason ?? "(no reason)"
+        // Avoid calling exception.callStackSymbols here (can trigger ObjC messaging during a crash)
+        os_log("Uncaught exception: %{public}s — %{public}s", name, reason)
+        // Also print to stderr as a fallback
+        fputs("Uncaught exception: \(name) — \(reason)\n", stderr)
+    }
+}
 
 struct Ball {
     var position: CGPoint
@@ -70,13 +85,13 @@ struct BreakoutGameView: View {
                 Circle()
                     .fill(Color.white)
                     .frame(width: ball.size, height: ball.size)
-                    .position(ball.position)
+                    .position(validPosition(ball.position, in: frameSize, radius: ball.size/2))
 
                 // Paddle
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.blue)
                     .frame(width: paddle.width, height: paddle.height)
-                    .position(x: paddle.position, y: frameSize.height - 40)
+                    .position(x: clamp(paddle.position, min: paddle.width/2, max: frameSize.width - paddle.width/2), y: frameSize.height - 40)
 
                 // toolbar moved into the score layer (so it appears above the Score text)
 
@@ -85,6 +100,9 @@ struct BreakoutGameView: View {
                 overlaysLayer()
             }
             .onAppear {
+                // Install exception handler early
+                installUncaughtExceptionHandler()
+
                 // initialize frame size from geometry
                 // Set frame size and initial positions on the main queue, then build bricks/words.
                 DispatchQueue.main.async {
@@ -180,22 +198,50 @@ struct BreakoutGameView: View {
         }))
     }
 
+    // MARK: - Helpers for safety/clamping
+    private func clamp<T: Comparable>(_ value: T, min: T, max: T) -> T {
+        Swift.max(min, Swift.min(max, value))
+    }
+
+    private func validPosition(_ point: CGPoint, in size: CGSize, radius: CGFloat) -> CGPoint {
+        var x = point.x
+        var y = point.y
+        if !x.isFinite || x.isNaN { x = size.width / 2 }
+        if !y.isFinite || y.isNaN { y = size.height / 2 }
+        x = clamp(x, min: radius, max: max(radius, size.width - radius))
+        y = clamp(y, min: radius, max: max(radius, size.height - radius))
+        return CGPoint(x: x, y: y)
+    }
+
     // MARK: - Extracted subviews to reduce body complexity
     private func bricksLayer() -> AnyView {
         AnyView(
-            ForEach(bricks) { brick in
-                if !brick.isHit {
-                    Rectangle()
-                        .fill(Color.orange)
-                        .frame(width: brick.rect.width, height: brick.rect.height)
-                        .overlay(
-                            BrickContentView(brick: brick, showIcons: showIcons)
-                        )
-                        .position(x: brick.rect.midX, y: brick.rect.midY)
-                }
+            ForEach(bricks, id: \.id) { brick in
+                 if !brick.isHit {
+                     // Ensure width/height are safe and finite
+                     let rawWidth = brick.rect.width
+                     let rawHeight = brick.rect.height
+                     let safeWidth = (rawWidth.isFinite && rawWidth > 0) ? max(1, floor(rawWidth)) : -1
+                     let safeHeight = (rawHeight.isFinite && rawHeight > 0) ? max(1, floor(rawHeight)) : -1
+                     let midX = brick.rect.midX
+                     let midY = brick.rect.midY
+
+                     // Skip rendering completely invalid bricks to avoid layout crashes
+                     if !(safeWidth > 0 && safeHeight > 0 && midX.isFinite && midY.isFinite) {
+                         os_log("Skipping invalid brick rect (w=%{public}.2f h=%{public}.2f x=%{public}.2f y=%{public}.2f)", rawWidth, rawHeight, midX, midY)
+                     } else {
+                         Rectangle()
+                             .fill(Color.orange)
+                             .frame(width: safeWidth, height: safeHeight)
+                             .overlay(
+                                 BrickContentView(brick: brick, showIcons: showIcons)
+                             )
+                             .position(x: midX, y: midY)
+                     }
+                 }
             }
-        )
-    }
+         )
+     }
 
     private func scoreLayer() -> AnyView {
         AnyView(
@@ -314,7 +360,7 @@ struct BreakoutGameView: View {
              }
          )
      }
-    
+     
     private func updateWords() {
         // Map networkController.policies ([Policy]) to [String] by using the 'name' property.
         if networkController.policies.isEmpty {
@@ -353,12 +399,18 @@ struct BreakoutGameView: View {
         var wordIndex = 0
         for row in 0..<rows {
             for col in 0..<cols {
-                let rect = CGRect(
-                    x: xOffset + CGFloat(col) * brickW,
-                    y: max(40, frameSize.height * 0.06) + CGFloat(row) * brickH,
-                    width: brickW - 6,
-                    height: brickH - 6
-                )
+                // Compute components and ensure they are finite
+                var x = xOffset + CGFloat(col) * brickW
+                var y = max(40, frameSize.height * 0.06) + CGFloat(row) * brickH
+                var w = brickW - 6
+                var h = brickH - 6
+
+                if !x.isFinite { x = 0 }
+                if !y.isFinite { y = 0 }
+                if !w.isFinite || w <= 0 { w = max(28 - 6, 8) }
+                if !h.isFinite || h <= 0 { h = max(34 - 6, 8) }
+
+                let rect = CGRect(x: x, y: y, width: w, height: h)
                 if showIcons {
                     // Assign icons (cycle through available icons)
                     if networkController.allIconsDetailed.isEmpty {
@@ -402,7 +454,17 @@ struct BreakoutGameView: View {
             x: ball.position.x + ball.velocity.dx * speedMultiplier,
             y: ball.position.y + ball.velocity.dy * speedMultiplier
         )
-        
+
+        // Guard against NaN/inf velocities that might propagate
+        if !ball.velocity.dx.isFinite || !ball.velocity.dy.isFinite {
+            // Reset to known-good velocity
+            ball.velocity = CGVector(dx: 4, dy: -6)
+        }
+
+        // Ensure newPos is finite
+        if !newPos.x.isFinite { newPos.x = frameSize.width / 2 }
+        if !newPos.y.isFinite { newPos.y = frameSize.height / 2 }
+
         // Wall collisions
         if newPos.x <= ball.size/2 || newPos.x >= frameSize.width - ball.size/2 {
             ball.velocity.dx *= -1
@@ -429,8 +491,11 @@ struct BreakoutGameView: View {
         if ballRect.intersects(paddleRect) && ball.velocity.dy > 0 {
             ball.velocity.dy *= -1
             // Add a little horizontal angle based on hit location
-            let hit = (newPos.x - paddle.position) / (paddle.width/2)
-            ball.velocity.dx += hit * 2
+            let denom = (paddle.width/2)
+            if denom != 0 {
+                let hit = (newPos.x - paddle.position) / denom
+                ball.velocity.dx += hit * 2
+            }
             // Clamp speed
             let speed = sqrt(ball.velocity.dx * ball.velocity.dx + ball.velocity.dy * ball.velocity.dy)
             let maxSpeed: CGFloat = 8
@@ -451,7 +516,7 @@ struct BreakoutGameView: View {
                 break
             }
         }
-        
+
         ball.position = newPos
         
         // Lose condition
@@ -598,25 +663,36 @@ fileprivate struct BrickContentView: View {
 
     @ViewBuilder
     var body: some View {
-        if showIcons, let icon = brick.icon, let url = URL(string: icon.url) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        // Size the image to the brick's rect so icons appear larger and fill the brick.
-                        .frame(width: max(24, brick.rect.width * 0.92), height: max(24, brick.rect.height * 0.92))
-                        .padding(4)
-                case .failure(_):
-                    Image(systemName: "xmark.octagon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: max(16, brick.rect.width * 0.8), height: max(16, brick.rect.height * 0.8))
-                        .padding(8)
-                default:
-                    ProgressView()
+        if showIcons, let icon = brick.icon {
+            // Protect against invalid URL strings (spaces, unescaped characters)
+            let maybeUrlString = icon.url
+            if let encoded = maybeUrlString.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed), let url = URL(string: encoded) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            // Size the image to the brick's rect so icons appear larger and fill the brick.
+                            .frame(width: max(24, brick.rect.width * 0.92), height: max(24, brick.rect.height * 0.92))
+                            .padding(4)
+                    case .failure(_):
+                        Image(systemName: "xmark.octagon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: max(16, brick.rect.width * 0.8), height: max(16, brick.rect.height * 0.8))
+                            .padding(8)
+                    default:
+                        ProgressView()
+                    }
                 }
+            } else {
+                // Fallback icon for invalid URL
+                Image(systemName: "exclamationmark.triangle")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: max(16, brick.rect.width * 0.8), height: max(16, brick.rect.height * 0.8))
+                    .padding(8)
             }
         } else if let word = brick.word {
             Text(word)
