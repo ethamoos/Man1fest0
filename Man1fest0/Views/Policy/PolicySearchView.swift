@@ -321,101 +321,92 @@ struct PolicySearchView: View {
             // ################################################################################
             
             
-            LazyVGrid(columns: layout.columns, spacing: 10) {
-                
-                
-                HStack {
-                    TextField("Filter", text: $iconFilter)
-                    Picker(selection: $selectedIcon, label: Text("").bold()) {
-                        Text("No icon selected").tag(nil as Icon?)
-                        ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }, id: \.self) { icon in
-                            HStack(spacing: 10) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.gray.opacity(0.15))
-                                        .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
-                                    AsyncImage(url: URL(string: icon.url ))  { image in
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
-                                            .clipped()
-                                    } placeholder: {
-                                        ProgressView()
-                                            .frame(width: 32, height: 32)
-                                    }
+            HStack {
+              
+                ScrollView(.horizontal, showsIndicators: true) {
+                    HStack(spacing: 8) {
+                        ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }) { icon in
+                            AsyncImage(url: URL(string: icon.url)) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable().scaledToFill()
+                                case .failure(_):
+                                    Image(systemName: "photo").resizable().scaledToFit()
+                                default:
+                                    ProgressView()
                                 }
-                                Text(String(describing: icon.name))
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.primary)
                             }
-                            .frame(height: 36)
-                            .frame(minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32)
-                            .tag(icon as Icon?)
+                            .frame(width: 30, height: 30)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2))
+                            .onTapGesture {
+                                selectedIcon = icon
+                                selectedIconString = icon.name
+                            }
+                            .help(icon.name)
                         }
                     }
-                    .onAppear {
-                        if !networkController.allIconsDetailed.isEmpty {
-                            // Only set selectedIcon if the first icon exists
-                            selectedIcon = networkController.allIconsDetailed.first
-                        } else {
-                            selectedIcon = nil
-                        }
-                    }
-                    .onChange(of: networkController.allIconsDetailed) { newIcons in
-                        if !newIcons.isEmpty {
-                            selectedIcon = newIcons.first
-                        } else {
-                            selectedIcon = nil
-                        }
+                    .padding(.vertical, 4)
+                }
+                TextField("Filter", text: $iconFilter)
+                .onAppear {
+                    if !networkController.allIconsDetailed.isEmpty {
+                        selectedIcon = networkController.allIconsDetailed.first
+                    } else {
+                        selectedIcon = nil
                     }
                 }
-                
-                
-                //                ############################################################
-                //                Update Icon Button
-                //                ############################################################
-                
-                
-                
-                
-                HStack {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        if let icon = selectedIcon {
-                                                    xmlController.updateIconBatch(selectedPoliciesInt: policiesMatchingItems , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
-                        } else {
-                            print("No icon selected")
-                        }
-                    }) {
-                        Text("Update Icon")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                .onChange(of: networkController.allIconsDetailed) { newIcons in
+                    if !newIcons.isEmpty { selectedIcon = newIcons.first } else { selectedIcon = nil }
                 }
-                HStack {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+            }
+            
+            
+            //                ############################################################
+            //                Update Icon Button
+            //                ############################################################
+                
+                
+                
+                
+            HStack {
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    if let icon = selectedIcon {
+                                                xmlController.updateIconBatch(selectedPoliciesInt: policiesMatchingItems , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
+                    } else {
+                        print("No icon selected")
+                    }
+                }) {
+                    Text("Update Icon")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+            }
+            HStack {
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
                             Text("Refresh Icons")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                }
-                
-                
-                //  ##########################################################################
-                //  Progress view via showProgress
-                //  ##########################################################################
-                
+            }
+            
+            
+            //  ##########################################################################
+            //  Progress view via showProgress
+            //  ##########################################################################
+            
+            //  ##########################################################################
+            //  Progress view via showProgress
+            //  ##########################################################################
+            
+            Group {
                 if progress.showProgressView == true {
-                    
-                    ProgressView {
-                        Text("Processing")
-                    }
-                    .padding()
+                    ProgressView { Text("Processing") }
                 } else {
                     Text("")
                 }
@@ -552,7 +543,7 @@ enum SearchField: String, CaseIterable {
     // New scope-related fields
     case scopeAllComputers
     case scopeAllJSSUsers
-    case scopeComputers 
+    case scopeComputers
     case scopeComputerGroups
     case scopeBuildings
     case scopeDepartments

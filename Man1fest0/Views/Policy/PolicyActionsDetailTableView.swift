@@ -64,6 +64,8 @@ struct PolicyActionsDetailTableView: View {
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
     
+    @State var iconFilter: String = ""
+    
     @State private var isAscending = true
     
     @State private var sortOrder: [KeyPathComparator<General>] = [

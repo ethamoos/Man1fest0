@@ -151,7 +151,7 @@ struct CreatePolicyView: View {
                  
                     Task {
                         try await networkController.getAllPackages()
-                      try await networkController.getAllScripts() 
+                      try await networkController.getAllScripts()
                         try await networkController.getAllDepartments()
                         try await networkController.getAllCategories()
                     }
@@ -319,58 +319,64 @@ struct CreatePolicyView: View {
         //  ################################################################################
         
         // ##########################################################################################
-        //                        Icons - picker
+        //                        Icons - selector (compact horizontal strip)
         // ##########################################################################################
         
             LazyVGrid(columns: columns, spacing: 30) {
-                 VStack(alignment: .leading, spacing: 6) {
-                     // Prominent filter field for icons placed above the picker and stretched to full width
-                     //                    HStack(spacing: 8) {
- //                        TextField("Filter icons", text: $iconFilter)
- //                            .textFieldStyle(.roundedBorder)
- //                            .frame(maxWidth: .infinity)
- //
- //                        // Clear button for convenience
- //                        if !iconFilter.isEmpty {
- //                            Button(action: { iconFilter = "" }) {
- //                                Image(systemName: "xmark.circle.fill")
- //                                    .foregroundColor(.secondary)
- //                            }
- //                            .buttonStyle(.plain)
- //                        }
- //                    }
-                     
-                    Picker(selection: $selectedIconId, label: Text("Icon:")) {
-                        // Filter icons by name when iconFilter is non-empty
-                        ForEach(networkController.allIconsDetailed.filter { icon in
-                            guard !iconFilter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
-                            return icon.name.localizedCaseInsensitiveContains(iconFilter)
-                        }, id: \.id) { icon in
-                            HStack(spacing: 8) {
-                                // Fixed-size thumbnail to avoid variable icon sizes
-                                AsyncImage(url: URL(string: icon.url)) { image in
-                                    image.resizable().scaledToFit()
-                                } placeholder: {
-                                    Image(systemName: "photo")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .foregroundColor(.gray)
+                VStack(alignment: .leading, spacing: 6) {
+                    // Compact horizontal icon selector (30x30)
+                    ScrollView(.horizontal, showsIndicators: true) {
+                        HStack(spacing: 8) {
+                            ForEach(networkController.allIconsDetailed.filter { icon in
+                                let trimmed = iconFilter.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if trimmed.isEmpty { return true }
+                                return icon.name.localizedCaseInsensitiveContains(trimmed)
+                            }, id: \.id) { icon in
+                                AsyncImage(url: URL(string: icon.url)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFill()
+                                    case .failure(_):
+                                        Image(systemName: "photo").resizable().scaledToFit()
+                                    default:
+                                        ProgressView()
+                                    }
                                 }
-                                .frame(width: 24, height: 24)
+                                .frame(width: 30, height: 30)
                                 .clipShape(Circle())
-                                
-                                Text(icon.name)
+                                .overlay(Circle().stroke(selectedIconId == icon.id ? Color.blue : Color.clear, lineWidth: 2))
+                                .onTapGesture {
+                                    selectedIconId = icon.id
+                                    selectedIconString = icon.name
+                                    selectedIconList = icon
+                                }
+                                .help(icon.name)
                             }
-                            .tag(icon.id)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .onAppear {
+                        if !networkController.allIconsDetailed.isEmpty {
+                            selectedIconId = networkController.allIconsDetailed.first?.id
+                            selectedIconString = networkController.allIconsDetailed.first?.name ?? ""
+                            selectedIconList = networkController.allIconsDetailed.first ?? Icon(id: 0, url: "", name: "")
+                        } else {
+                            selectedIconId = nil
+                            selectedIconString = ""
                         }
                     }
-//                    .onChange(of: networkController.allIconsDetailed) { newIcons in
-//                        if selectedIconId == nil {
-//                            selectedIconId = newIcons.first?.id
-//                        }
-//                    }
-                }
-             }
+                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+                        if !newIcons.isEmpty {
+                            selectedIconId = newIcons.first?.id
+                            selectedIconString = newIcons.first?.name ?? ""
+                            selectedIconList = newIcons.first ?? Icon(id: 0, url: "", name: "")
+                        } else {
+                            selectedIconId = nil
+                            selectedIconString = ""
+                        }
+                    }
+                 }
+              }
             
             // ##########################################################################################
             //                        Category

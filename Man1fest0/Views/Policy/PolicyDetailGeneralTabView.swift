@@ -193,49 +193,58 @@ struct PolicyDetailGeneralTabView: View {
                 
                 HStack {
                     TextField("Filter", text: $iconFilter)
-                    Picker(selection: $selectedIcon, label: Text("").bold()) {
-                        Text("No icon selected").tag(nil as Icon?)
-                        ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }, id: \.self) { icon in
-                            HStack(spacing: 10) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.gray.opacity(0.15))
-                                        .frame(width: 32, height: 32)
-                                    AsyncImage(url: URL(string: icon.url ))  { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 20, height: 20)
-                                            .clipped()
-                                    } placeholder: {
+                    // Compact horizontal icon selector (30x30)
+                    ScrollView(.horizontal, showsIndicators: true) {
+                        HStack(spacing: 8) {
+                            ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }) { icon in
+                                AsyncImage(url: URL(string: icon.url)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFill()
+                                    case .failure(_):
+                                        Image(systemName: "photo").resizable().scaledToFit()
+                                    default:
                                         ProgressView()
-                                            .frame(width: 20, height: 20)
                                     }
                                 }
-                                Text(String(describing: icon.name))
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.primary)
-                                Spacer()
+                                .frame(width: 30, height: 30)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2))
+                                .onTapGesture {
+                                    selectedIcon = icon
+                                    selectedIconString = icon.name
+                                }
+                                .help(icon.name) // tooltip on hover
                             }
-                            .frame(height: 36)
-                            .tag(icon as Icon?)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .onAppear {
+                        if !networkController.allIconsDetailed.isEmpty {
+                            selectedIcon = networkController.allIconsDetailed.first
+                            selectedIconString = selectedIcon?.name ?? ""
+                        } else {
+                            selectedIcon = nil
+                            selectedIconString = ""
                         }
                     }
-//                    .onAppear {
-//                        if !networkController.allIconsDetailed.isEmpty {
-//                            // Only set selectedIcon if the first icon exists
-//                            selectedIcon = networkController.allIconsDetailed.first
-//                        } else {
-//                            selectedIcon = nil
-//                        }
-//                    }
-//                    .onChange(of: networkController.allIconsDetailed) { newIcons in
-//                        if !newIcons.isEmpty {
-//                            selectedIcon = newIcons.first
-//                        } else {
-//                            selectedIcon = nil
-//                        }
-//                    }
+                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+                        if !newIcons.isEmpty {
+                            selectedIcon = newIcons.first
+                            selectedIconString = selectedIcon?.name ?? ""
+                        } else {
+                            selectedIcon = nil
+                            selectedIconString = ""
+                        }
+                    }
+                }
+                // Display selected icon name (editable if you want to change text before update)
+                HStack {
+                    Text("Selected:")
+                    TextField("Selected icon", text: $selectedIconString)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(maxWidth: 300)
+                        .disabled(false)
                 }
                 //
                 //                ############################################################
