@@ -169,13 +169,13 @@ fileprivate struct PreferencesWindowContent: View {
                     Divider()
                     
                     Section(header: Text("Policy Fetch")) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Policy fetch delay (seconds)")
-                                .font(.headline)
-                            PolicyDelayInlineViewLocal()
-                                .environmentObject(networkController)
-                        }
+                        //                        VStack(alignment: .leading, spacing: 12) {
+                        Text("Policy fetch delay (seconds)")
+//                            .font(.headline)
+                        PolicyDelayInlineViewLocal()
+                            .environmentObject(networkController)
                     }
+//                }
                 }
                 .navigationTitle("Preferences")
                 .frame(minWidth: 250, minHeight: 200)
@@ -243,7 +243,7 @@ fileprivate struct PolicyDelayInlineViewLocal: View {
                 Button("Reset") {
                     delayValue = networkController.getPolicyRequestDelay()
                 }
-                Spacer()
+//                Spacer()
                 Text(networkController.humanReadableDuration(delayValue))
             }
             .onAppear { delayValue = networkController.getPolicyRequestDelay() }
