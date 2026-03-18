@@ -70,12 +70,12 @@ struct SecureAppWrapper<Content: View>: View {
                     }
                     Section(header: Text("Policy Fetch")) {
                         // Inlined Policy Delay controls
-                        VStack(alignment: .leading, spacing: 12) {
+                        HStack(alignment: .top) {
                             Text("Policy fetch delay (seconds)")
-                                .font(.headline)
-                            // local state via transient view
+                            Spacer()
                             PolicyDelayInlineViewLocal()
                                 .environmentObject(networkController)
+                                .frame(maxWidth: 360)
                         }
                      }
                 }
@@ -162,20 +162,21 @@ fileprivate struct PreferencesWindowContent: View {
             VStack(alignment: .leading) {
                 
                 Form {
-                    Section(header: Text("Security")) {
+                    Section(header: Text("Security").font(.headline)) {
                         PreferencesSecuritySection()
                     }
                     
                     Divider()
                     
-                    Section(header: Text("Policy Fetch")) {
-                        //                        VStack(alignment: .leading, spacing: 12) {
-                        Text("Policy fetch delay (seconds)")
-//                            .font(.headline)
-                        PolicyDelayInlineViewLocal()
-                            .environmentObject(networkController)
-                    }
-//                }
+                    Section(header: Text("Policy Fetch").font(.headline)) {
+                        HStack(alignment: .top) {
+                            Text("Policy fetch delay (seconds)")
+                            Spacer()
+                            PolicyDelayInlineViewLocal()
+                                .environmentObject(networkController)
+                                .frame(maxWidth: 360)
+                        }
+                 }
                 }
                 .navigationTitle("Preferences")
                 .frame(minWidth: 250, minHeight: 200)
@@ -257,7 +258,7 @@ struct PreferencesSecuritySection: View {
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading) {
             Picker("Auto-lock after:", selection: $securitySettings.inactivityTimeout) {
                 ForEach(SecuritySettingsManager.InactivityTimeout.allCases) { t in
                     Text(t.displayName).tag(t)
