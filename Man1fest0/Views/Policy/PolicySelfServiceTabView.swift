@@ -180,26 +180,38 @@ struct PolicySelfServiceTabView: View {
                     
                     HStack {
                         TextField("Filter", text: $iconFilter)
-                        Picker(selection: $selectedIcon, label: Text("").bold()) {
-                                
-                            ForEach(networkController.allIconsDetailed.filter({iconFilter == "" ? true :   $0.name.lowercased().contains(iconFilter.lowercased())})) { icon in
-                                HStack {
-                                    Text(String(describing: icon.name))
-                                    AsyncImage(url: URL(string: icon.url))  { image in
-                                        image.resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(maxWidth: 30, maxHeight: 30)
-
-                                    } placeholder: {
-                                        ProgressView()
+                        // Replace the picker with a horizontal selectable icon strip (30px high)
+                        ScrollView(.horizontal, showsIndicators: true) {
+                            HStack(spacing: 8) {
+                                ForEach(networkController.allIconsDetailed.filter({ iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) })) { icon in
+                                    AsyncImage(url: URL(string: icon.url)) { phase in
+                                        switch phase {
+                                        case .success(let image):
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        case .failure(_):
+                                            Image(systemName: "photo")
+                                                .resizable()
+                                                .scaledToFit()
+                                        default:
+                                            ProgressView()
+                                        }
                                     }
                                     .frame(width: 30, height: 30)
-                                    .background(Color.gray)
                                     .clipShape(Circle())
+                                    .overlay(
+                                        Circle()
+                                            .stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2)
+                                    )
+                                    .onTapGesture {
+                                        selectedIcon = icon
+                                        selectedIconString = icon.name
+                                    }
+                                    .help(icon.name)
                                 }
-                                // Tag must match the Picker selection type (Icon?) so provide the optional Icon as tag
-                                .tag(icon as Icon?)
                             }
+                            .padding(.vertical, 4)
                         }
                     }
 //  ################################################################################
