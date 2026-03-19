@@ -8,7 +8,9 @@
 import Foundation
 import SwiftUI
 import AEXML
+#if os(macOS)
 import AppKit
+#endif
 
 
 class ASyncFileDownloader {
@@ -23,7 +25,12 @@ class ASyncFileDownloader {
 
     // Destination helper: prefer Downloads, fall back to Documents
     static func destinationBaseURL() -> URL {
+        #if os(macOS)
         return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        #else
+        // On iOS use Documents directory
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        #endif
     }
 
     // Ensure filename ends with .xml
@@ -38,8 +45,9 @@ class ASyncFileDownloader {
     // MARK: - Sandbox / Bookmark helpers
     private static let bookmarkDefaultsKey = "ASyncFileDownloader.downloadFolderBookmark"
 
-    // Persist a security-scoped bookmark for a folder
+    // Persist a security-scoped bookmark for a folder (macOS only)
     static func storeBookmark(for folderURL: URL) -> Bool {
+        #if os(macOS)
         do {
             let bookmark = try folderURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
             UserDefaults.standard.set(bookmark, forKey: bookmarkDefaultsKey)
@@ -48,16 +56,19 @@ class ASyncFileDownloader {
             print("Failed to create bookmark: \(error)")
             return false
         }
+        #else
+        return false
+        #endif
     }
 
-    // Resolve saved bookmark to URL (starts access if security-scoped)
+    // Resolve saved bookmark to URL (macOS only)
     static func resolveSavedBookmark() -> URL? {
+        #if os(macOS)
         guard let bookmarkData = UserDefaults.standard.data(forKey: bookmarkDefaultsKey) else { return nil }
         var isStale = false
         do {
             let url = try URL(resolvingBookmarkData: bookmarkData, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &isStale)
             if isStale {
-                // Try to recreate
                 _ = storeBookmark(for: url)
             }
             return url
@@ -65,10 +76,14 @@ class ASyncFileDownloader {
             print("Failed to resolve bookmark: \(error)")
             return nil
         }
+        #else
+        return nil
+        #endif
     }
 
-    // Present an NSOpenPanel to let the user choose a downloads folder (returns the selected folder URL or nil)
+    // Present an NSOpenPanel to let the user choose a downloads folder (macOS only). Returns selected URL or nil on iOS.
     static func askUserForDownloadFolder() -> URL? {
+        #if os(macOS)
         var selectedURL: URL?
         let runPanel = {
             let panel = NSOpenPanel()
@@ -94,6 +109,9 @@ class ASyncFileDownloader {
             _ = storeBookmark(for: url)
         }
         return selectedURL
+        #else
+        return nil
+        #endif
     }
 
     // Attempt to write data to a writable folder: Downloads preferred; if not writable, try saved bookmark; if still not, present a panel and save bookmark.
@@ -110,7 +128,8 @@ class ASyncFileDownloader {
             print("Direct write to default destination failed: \(error)")
         }
 
-        // 2) Try resolved bookmark folder (security-scoped)
+        // 2) Try resolved bookmark folder (macOS only)
+        #if os(macOS)
         if let bookmarkFolder = resolveSavedBookmark() {
             var didStart = false
             if bookmarkFolder.startAccessingSecurityScopedResource() { didStart = true }
@@ -125,7 +144,7 @@ class ASyncFileDownloader {
             }
         }
 
-        // 3) Ask the user to choose a folder
+        // 3) Ask the user to choose a folder (macOS only)
         if let chosen = askUserForDownloadFolder() {
             var didStart = false
             if chosen.startAccessingSecurityScopedResource() { didStart = true }
@@ -140,6 +159,7 @@ class ASyncFileDownloader {
                 return (targetURL.path, error)
             }
         }
+        #endif
 
         // All attempts failed
         return (defaultURL.path, NSError(domain: "ASyncFileDownloader", code: 2001, userInfo: [NSLocalizedDescriptionKey: "Failed to save file to Downloads or user-selected folder"]))
@@ -459,6 +479,7 @@ class ASyncFileDownloader {
     // Show a UI alert after a successful download, offering "Open in Finder"
     static func showDownloadCompletedNotification(savedPath: String) {
         DispatchQueue.main.async {
+        #if os(macOS)
             let alert = NSAlert()
             alert.messageText = "Download Complete"
             alert.informativeText = "Saved to: \(savedPath)"
@@ -468,6 +489,10 @@ class ASyncFileDownloader {
             if response == .alertFirstButtonReturn {
                 NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: savedPath)])
             }
+        #else
+            // On iOS just log; presenting a UI alert here may not be appropriate in all contexts.
+            print("Download Complete: Saved to: \(savedPath)")
+        #endif
         }
     }
 }

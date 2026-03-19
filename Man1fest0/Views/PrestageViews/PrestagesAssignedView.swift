@@ -1,4 +1,3 @@
-//
 //  PrestagesAssignedView.swift
 //  Man1fest0
 //
@@ -49,7 +48,11 @@ struct PrestagesAssignedView: View {
                             .searchable(text: $searchText)
                         }
                         .padding()
+#if os(macOS)
                         .background(RoundedRectangle(cornerRadius: 10).fill(Color(NSColor.windowBackgroundColor)).shadow(radius: 1))
+#else
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color(UIColor.systemBackground)).shadow(radius: 1))
+#endif
                         .frame(minWidth: 400, minHeight: 120, alignment: .leading)
 
                     }

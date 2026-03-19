@@ -7,6 +7,9 @@
 
 import Foundation
 import SwiftUI
+#if !os(macOS)
+import UIKit
+#endif
 
 
 class Layout: ObservableObject {
@@ -370,12 +373,39 @@ print("Input URL string: \(urlString)")
             urlToOpen = translated
         }
 
+        if #available(iOS 14.0, *) {
+    #if os(macOS)
         if !NSWorkspace.shared.open(urlToOpen) {
             alertMessage = "Failed to open the URL in the default browser."
             showAlert = true
         }
+    #else
+        if !UIApplication.shared.open(urlToOpen, options: [:], completionHandler: { success in
+            if !success {
+                alertMessage = "Failed to open the URL in the default browser."
+                showAlert = true
+            }
+        }) {
+            // UIApplication.open returns void; using completion to detect failure above.
+        }
+    #endif
+        } else {
+    #if os(macOS)
+            if !NSWorkspace.shared.open(urlToOpen) {
+                alertMessage = "Failed to open the URL in the default browser."
+                showAlert = true
+            }
+    #else
+            UIApplication.shared.open(urlToOpen, options: [:], completionHandler: { success in
+                if !success {
+                    alertMessage = "Failed to open the URL in the default browser."
+                    showAlert = true
+                }
+            })
+    #endif
+        }
     }
     
 }
-    
+
 //}

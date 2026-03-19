@@ -493,7 +493,7 @@ struct BreakoutGameView: View {
         // Do not reset usedInitialIcons here — user wanted the first run to use the first icons fetched.
      }
 
- }
+}
 
 // --- Keyboard handling for SwiftUI on macOS ---
 
@@ -507,6 +507,7 @@ fileprivate enum KeyPress: Equatable {
     case toggleIcons
 }
 
+#if os(macOS)
 // This view modifier allows keyboard events in SwiftUI for macOS.
 fileprivate struct KeyEventsModifier: ViewModifier {
      let down: (KeyPress) -> Void
@@ -590,6 +591,21 @@ fileprivate extension KeyPress {
         }
     }
 }
+
+#else
+// Provide no-op implementations for non-macOS (iOS) so the view compiles but keyboard events are ignored.
+fileprivate struct KeyEventsModifier: ViewModifier {
+    let down: (KeyPress) -> Void
+    let up: (KeyPress) -> Void
+    func body(content: Content) -> some View { content }
+}
+
+extension View {
+    fileprivate func onKeyEvents(down: @escaping (KeyPress) -> Void, up: @escaping (KeyPress) -> Void) -> some View {
+        self.modifier(KeyEventsModifier(down: down, up: up))
+    }
+}
+#endif
 
 // New small view to render brick content (word or icon). Extracted to simplify the parent view.
 fileprivate struct BrickContentView: View {

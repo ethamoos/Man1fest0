@@ -7,7 +7,9 @@
 //
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(macOS)
 import AppKit
+#endif
 
 struct ReportsView: View {
     
@@ -61,9 +63,6 @@ struct ReportsView: View {
         let assignedScriptsCount = policyController.assignedScriptsByNameDict.count
         let unassignedScriptsCount = policyController.unassignedScriptsArray.count
         let currentDateString = layout.date
-        // Prepare a safe filename for export (replace characters that are not allowed in filenames)
-        let safeDateComponent = currentDateString.replacingOccurrences(of: ":", with: "-").replacingOccurrences(of: " ", with: "_")
-        let exportFilename = "Man1fest0_report_\(safeDateComponent).txt"
 
         let text = String(describing: networkController.allPackages)
         let document = TextDocument(text: text)
@@ -97,8 +96,7 @@ struct ReportsView: View {
         .fileExporter(
             isPresented: $exporting,
             document: document,
-            contentType: .plainText,
-            defaultFilename: exportFilename
+            contentType: .plainText
         ) { result in
             switch result {
             case .success(let file):
@@ -250,7 +248,13 @@ struct ReportsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(NSColor.controlBackgroundColor))
+                .fill({
+                    #if os(macOS)
+                    return Color(NSColor.controlBackgroundColor)
+                    #else
+                    return Color(UIColor.systemBackground)
+                    #endif
+                }())
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -271,7 +275,13 @@ struct ReportsView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(NSColor.controlBackgroundColor))
+                .fill({
+                    #if os(macOS)
+                    return Color(NSColor.controlBackgroundColor)
+                    #else
+                    return Color(UIColor.systemBackground)
+                    #endif
+                }())
         )
         .padding(.horizontal)
     }
