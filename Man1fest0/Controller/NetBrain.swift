@@ -625,7 +625,7 @@ actor AsyncSemaphore {
     
     // Fetch detailed user by id
     func getDetailOSXConfigProfile(userID: String) async throws {
-        
+
         print("Running func: getDetailOSXConfigProfile")
 
         do {
@@ -633,7 +633,7 @@ actor AsyncSemaphore {
             print("APIRequest: \(request)")
             // ensure we have an auth token
             if authToken.isEmpty {
-                try await getToken(server: server, username: username, password: password )
+                _ = try await getToken(server: server, username: username, password: password )
             }
             let decoded = try await requestSender.resultFor(apiRequest: request)
             self.OSXConfigProfileDetailed = decoded.osxConfigurationProfile
@@ -1669,24 +1669,70 @@ actor AsyncSemaphore {
         }
         return authToken
     }
-    
+
     /// Refresh the authentication token
     private func refreshToken(server: String) async throws {
         guard !refreshUsername.isEmpty && !refreshPassword.isEmpty else {
             print("Cannot refresh token: missing credentials")
             throw JamfAPIError.requestFailed
         }
-        
+
         let newAuth = try await getToken(server: server, username: refreshUsername, password: refreshPassword)
         self.authToken = newAuth.token
         self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
         print("Token refreshed successfully")
     }
-    
+
     /// Wrapper for API calls that ensures valid token
     func withValidToken<T>(server: String, operation: (String) async throws -> T) async throws -> T {
         let validToken = try await getValidToken(server: server)
         return try await operation(validToken)
+    }
+
+    // ------------------------------------------------------------------
+    // Concurrency-safe helper to ensure a valid token using stored server
+    // and stored refresh credentials. This serializes refresh attempts so
+    // multiple callers awaiting a refresh will wait for the same task.
+    // ------------------------------------------------------------------
+    private var tokenRefreshTask: Task<Void, Error>? = nil
+
+    /// Ensure the current auth token is valid. If expired, attempt a refresh
+    /// using cached credentials. Concurrent callers will await the same
+    /// refresh task so only one refresh executes at a time.
+    func ensureValidToken() async throws {
+        // Fast-path: still valid
+        if isTokenValid() { return }
+
+        // If a refresh is already in-flight, await it
+        if let existing = tokenRefreshTask {
+            try await existing.value
+            // Another task may have refreshed successfully
+            if isTokenValid() { return }
+            // Otherwise fall through to start a new attempt
+        }
+
+        // Ensure we have credentials available to refresh
+        guard !refreshUsername.isEmpty && !refreshPassword.isEmpty else {
+            print("ensureValidToken: missing stored credentials, cannot refresh")
+            throw JamfAPIError.requestFailed
+        }
+
+        // Start a single refresh task that others can await
+        let task = Task { () throws -> Void in
+            try await self.refreshToken(server: self.server)
+        }
+        tokenRefreshTask = task
+
+        do {
+            try await task.value
+        } catch {
+            // Clear the task so future calls can try again
+            tokenRefreshTask = nil
+            throw error
+        }
+
+        // Completed successfully
+        tokenRefreshTask = nil
     }
     
     // This function generates the base64 from a username name and password
@@ -4702,7 +4748,7 @@ xml = """
     
     
     func sendRequestAsXML(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String) {
-        
+
         let xml = xml
         let xmldata = xml.data(using: .utf8)
         atSeparationLine()
@@ -4714,18 +4760,18 @@ xml = """
         //        print("xmldata is:\(String(describing: xmldata))")
         atSeparationLine()
         print("httpMethod is:\(httpMethod)")
-        
+
         let headers = [
             "Accept": "application/xml",
             "Content-Type": "application/xml",
             "Authorization": "Bearer \(authToken)"
         ]
-        
+
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.allHTTPHeaderFields = headers
         request.httpMethod = httpMethod
         request.httpBody = xmldata
-        
+
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data, let response = response {
                 print("Doing processing of NetBrain sendRequestAsXML:\(httpMethod)")
@@ -4738,14 +4784,18 @@ xml = """
                     text += " \(error)."
                     print(text)
                 }
-                
-                self.hasError = true
-                //                self.appendStatus(text)
-            }
-            
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 
-            self.currentResponseCode = String(describing: statusCode)
+                DispatchQueue.main.async {
+                    self.hasError = true
+                }
+                 //                self.appendStatus(text)
+             }
+             
+             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+
+            DispatchQueue.main.async {
+                self.currentResponseCode = String(describing: statusCode)
+            }
         }
 
         dataTask.resume()
@@ -5509,7 +5559,7 @@ xml = """
             print("APIRequest: \(request)")
             // ensure we have an auth token
             if authToken.isEmpty {
-                try await getToken(server: server, username: username, password: password )
+                _ = try await getToken(server: server, username: username, password: password )
             }
             let decoded = try await requestSender.resultFor(apiRequest: request)
             self.userDetail = decoded.user

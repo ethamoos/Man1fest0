@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		A800E8452F3F25CE000250E7 /* WelcomeToMan1fest0.swift in Sources */ = {isa = PBXBuildFile; fileRef = A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */; };
-		A80DE2CB2E97D69800509F4F /* Structures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80DE2CA2E97D69800509F4F /* Structures.swift */; };
 		A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */; };
 		A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813123F29D4A7C400BB1C9F /* ScriptsView.swift */; };
 		A813124229D4B10100BB1C9F /* ScriptsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */; };
@@ -20,6 +19,7 @@
 		A813C12D2E548C3B00735884 /* PolicyDetailGeneralTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */; };
 		A813C12F2E54918600735884 /* PolicyDetailExportTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */; };
 		A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */; };
+		A8213E892F6C441600A5671C /* JamfAuthToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8213E832F6C441600A5671C /* JamfAuthToken.swift */; };
 		A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D0D432D429F8C0074E422 /* PackageTableView.swift */; };
 		A82D3C952E01CCB40051E60A /* PolicyTriggersTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */; };
 		A8359CE72AE70D2400438AFA /* PoliciesActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8359CE62AE70D2400438AFA /* PoliciesActionView.swift */; };
@@ -39,7 +39,6 @@
 		A86533F02C3E98D0002894B2 /* PolicyScopeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */; };
 		A86533F22C3E99C2002894B2 /* PolicyPackageTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */; };
 		A866AE222DBAA35600675075 /* ScriptDetailTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A866AE212DBAA35600675075 /* ScriptDetailTableView.swift */; };
-		A86AF37B2C3FE282009349C4 /* JamfAuthToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86AF3772C3FE282009349C4 /* JamfAuthToken.swift */; };
 		A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */; };
 		A86CB8612D3E596200D8F22F /* ImportExportBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB8602D3E595B00D8F22F /* ImportExportBrain.swift */; };
 		A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB8622D3E5C8100D8F22F /* TextDocument.swift */; };
@@ -86,7 +85,6 @@
 		A8FBD3502F5755FF001B8518 /* LockScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34B2F5755FF001B8518 /* LockScreenView.swift */; };
 		A8FBD3512F5755FF001B8518 /* SecuritySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34D2F5755FF001B8518 /* SecuritySettingsView.swift */; };
 		E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40161252C62A18E0054A1FF /* CreatePolicyView.swift */; };
-		E41BA0DD2C4C0E790060673C /* JamfObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41BA0D82C4C0E790060673C /* JamfObject.swift */; };
 		E41BA0DE2C4C0E790060673C /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41BA0D92C4C0E790060673C /* Keychain.swift */; };
 		E433D9DE2B58488C005727E1 /* TestOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E433D9DD2B58488C005727E1 /* TestOptionsView.swift */; };
 		E45E13272C53B22F007C175F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45E13262C53B22F007C175F /* ContentView.swift */; };
@@ -118,7 +116,6 @@
 
 /* Begin PBXFileReference section */
 		A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeToMan1fest0.swift; sourceTree = "<group>"; };
-		A80DE2CA2E97D69800509F4F /* Structures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Structures.swift; sourceTree = "<group>"; };
 		A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopingBrain.swift; sourceTree = "<group>"; };
 		A813123F29D4A7C400BB1C9F /* ScriptsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsView.swift; sourceTree = "<group>"; };
 		A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsDetailView.swift; sourceTree = "<group>"; };
@@ -130,6 +127,7 @@
 		A813C12C2E548C3B00735884 /* PolicyDetailGeneralTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailGeneralTabView.swift; sourceTree = "<group>"; };
 		A813C12E2E54918600735884 /* PolicyDetailExportTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailExportTabView.swift; sourceTree = "<group>"; };
 		A81B75292C416B72005110E0 /* PolicyScriptsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyScriptsTabView.swift; sourceTree = "<group>"; };
+		A8213E832F6C441600A5671C /* JamfAuthToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JamfAuthToken.swift; sourceTree = "<group>"; };
 		A8297EBC2CBFF4C700840E8D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A82D0D432D429F8C0074E422 /* PackageTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageTableView.swift; sourceTree = "<group>"; };
 		A82D3C942E01CC8A0051E60A /* PolicyTriggersTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyTriggersTabView.swift; sourceTree = "<group>"; };
@@ -150,7 +148,6 @@
 		A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyScopeTabView.swift; sourceTree = "<group>"; };
 		A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyPackageTabView.swift; sourceTree = "<group>"; };
 		A866AE212DBAA35600675075 /* ScriptDetailTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDetailTableView.swift; sourceTree = "<group>"; };
-		A86AF3772C3FE282009349C4 /* JamfAuthToken.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JamfAuthToken.swift; sourceTree = "<group>"; };
 		A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JamfAPIError.swift; sourceTree = "<group>"; };
 		A86CB8602D3E595B00D8F22F /* ImportExportBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportBrain.swift; sourceTree = "<group>"; };
 		A86CB8622D3E5C8100D8F22F /* TextDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextDocument.swift; sourceTree = "<group>"; };
@@ -197,7 +194,6 @@
 		A8FBD34C2F5755FF001B8518 /* SecureAppWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureAppWrapper.swift; sourceTree = "<group>"; };
 		A8FBD34D2F5755FF001B8518 /* SecuritySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsView.swift; sourceTree = "<group>"; };
 		E40161252C62A18E0054A1FF /* CreatePolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePolicyView.swift; sourceTree = "<group>"; };
-		E41BA0D82C4C0E790060673C /* JamfObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JamfObject.swift; sourceTree = "<group>"; };
 		E41BA0D92C4C0E790060673C /* Keychain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		E433D9DD2B58488C005727E1 /* TestOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestOptionsView.swift; sourceTree = "<group>"; };
 		E45E13262C53B22F007C175F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -251,7 +247,6 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A83049192EB22F3C00A28F8D /* PolicySearch */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PolicySearch; sourceTree = "<group>"; };
-		A83D011A2D7850E40091B794 /* JamfObjects */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JamfObjects; sourceTree = "<group>"; };
 		A857A3E72E1FF9A000A96F3A /* ConfigProfiles */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ConfigProfiles; sourceTree = "<group>"; };
 		A857A3E82E1FFA0B00A96F3A /* Structures */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Structures; sourceTree = "<group>"; };
 		A87BF46C2EA1530200E065BB /* Retired Files */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Retired Files"; sourceTree = "<group>"; };
@@ -315,19 +310,19 @@
 				A8A46D0C2C47C91F00EF5987 /* PrestageViews */,
 				A885D1542F5ABF36002CB073 /* Users */,
 				A800E8442F3F25CE000250E7 /* Welcome */,
+				A8F16D712C621E5C00CC0751 /* ViewModifiers */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		A86AF3762C3FE1CC009349C4 /* JamfController */ = {
+		A86AF3762C3FE1CC009349C4 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				A86AF3772C3FE282009349C4 /* JamfAuthToken.swift */,
-				E41BA0D82C4C0E790060673C /* JamfObject.swift */,
 				E41BA0D92C4C0E790060673C /* Keychain.swift */,
 				A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */,
+				A8213E832F6C441600A5671C /* JamfAuthToken.swift */,
 			);
-			path = JamfController;
+			path = Auth;
 			sourceTree = "<group>";
 		};
 		A86AF37F2C3FE2C2009349C4 /* Computers */ = {
@@ -351,8 +346,10 @@
 				A87E851E2F16916400CF42D0 /* ModelDecodingStructs */,
 				A87E84712F10F30900CF42D0 /* APIRequest.swift */,
 				A87E84732F10F34000CF42D0 /* HTTPMethod.swift */,
-				A80DE2CA2E97D69800509F4F /* Structures.swift */,
-				A83D011A2D7850E40091B794 /* JamfObjects */,
+				A877BED02E60F3390041D3C9 /* Sorting.swift */,
+				A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */,
+				A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */,
+				A83C94572D79D9B500F639A1 /* ResponseCodes.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -496,23 +493,11 @@
 			path = Create;
 			sourceTree = "<group>";
 		};
-		E49319822B642ADA00B58519 /* Structs and Enums */ = {
-			isa = PBXGroup;
-			children = (
-				A877BED02E60F3390041D3C9 /* Sorting.swift */,
-				A86AF3842C3FE64A009349C4 /* Model */,
-				A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */,
-				A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */,
-				A83C94572D79D9B500F639A1 /* ResponseCodes.swift */,
-			);
-			path = "Structs and Enums";
-			sourceTree = "<group>";
-		};
-		E4CD02852ADC3A2E00D210B2 /* Classes */ = {
+		E4CD02852ADC3A2E00D210B2 /* Controller */ = {
 			isa = PBXGroup;
 			children = (
 				A857A4292E25686600A96F3A /* NotesPersistent */,
-				A86AF3762C3FE1CC009349C4 /* JamfController */,
+				A86AF3762C3FE1CC009349C4 /* Auth */,
 				A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */,
 				A8FB5F8A2AEA59120061D5F7 /* Basher.swift */,
 				A8DECD5D2BD999AE00D79A11 /* BackgroundTasks.swift */,
@@ -533,7 +518,7 @@
 				A86533ED2C3C22DB002894B2 /* XmlBrain.swift */,
 				A8FBD3482F5755CB001B8518 /* Security */,
 			);
-			path = Classes;
+			path = Controller;
 			sourceTree = "<group>";
 		};
 		E4CE363029D1C43100533707 = {
@@ -558,11 +543,10 @@
 				E4710E7A2D4C41EA0051D980 /* Helpers */,
 				A8297EBC2CBFF4C700840E8D /* Info.plist */,
 				E4CE363C29D1C43100533707 /* Man1fest0App.swift */,
-				E49319822B642ADA00B58519 /* Structs and Enums */,
-				E4CD02852ADC3A2E00D210B2 /* Classes */,
+				A86AF3842C3FE64A009349C4 /* Model */,
+				E4CD02852ADC3A2E00D210B2 /* Controller */,
 				E4CE364029D1C43200533707 /* Assets.xcassets */,
 				A87BF46C2EA1530200E065BB /* Retired Files */,
-				A8F16D712C621E5C00CC0751 /* ViewModifiers */,
 				A8682D2529F2FA78000645BF /* Views */,
 				E4CE364229D1C43200533707 /* Man1fest0.entitlements */,
 				E4CE364329D1C43200533707 /* Preview Content */,
@@ -597,7 +581,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A83049192EB22F3C00A28F8D /* PolicySearch */,
-				A83D011A2D7850E40091B794 /* JamfObjects */,
 				A857A3E72E1FF9A000A96F3A /* ConfigProfiles */,
 				A857A3E82E1FFA0B00A96F3A /* Structures */,
 				A87BF46C2EA1530200E065BB /* Retired Files */,
@@ -696,7 +679,6 @@
 				E48D59D62C5965AA00E1E35B /* PolicyBrain.swift in Sources */,
 				E4CE369329D3372400533707 /* PolicyView.swift in Sources */,
 				A83D210D2DE6F76200D9AD2F /* ScriptsActionView.swift in Sources */,
-				A86AF37B2C3FE282009349C4 /* JamfAuthToken.swift in Sources */,
 				E48D59DB2C5A453C00E1E35B /* CreatePolicyTabView.swift in Sources */,
 				A8DECD5E2BD999AE00D79A11 /* BackgroundTasks.swift in Sources */,
 				A857A4282E2566B900A96F3A /* NotesView.swift in Sources */,
@@ -746,7 +728,6 @@
 				E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */,
 				A8EA615E2F521E130011BD56 /* PackagesUnsortedView.swift in Sources */,
 				A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */,
-				E41BA0DD2C4C0E790060673C /* JamfObject.swift in Sources */,
 				E493198F2B679E3200B58519 /* PrestagesDetailView.swift in Sources */,
 				E4CE363D29D1C43100533707 /* Man1fest0App.swift in Sources */,
 				A813124429D4B50800BB1C9F /* PackagesView.swift in Sources */,
@@ -766,11 +747,11 @@
 				A8EC41122B0277B500496EC2 /* TestView.swift in Sources */,
 				A86F4DEF2C78ED6200D5518B /* ComputerExtAttributeView.swift in Sources */,
 				A86CB8612D3E596200D8F22F /* ImportExportBrain.swift in Sources */,
+				A8213E892F6C441600A5671C /* JamfAuthToken.swift in Sources */,
 				A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */,
 				A83D210B2DE627AD00D9AD2F /* ComputerExtAttributeActionView.swift in Sources */,
 				A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */,
 				A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */,
-				A80DE2CB2E97D69800509F4F /* Structures.swift in Sources */,
 				A87445CB2E2AACFB00BCB41B /* NotesModel.xcdatamodeld in Sources */,
 				A8BAD2D52DE074D7006C9B34 /* CreateScriptView.swift in Sources */,
 				E49319872B6797B400B58519 /* PrestagesAssignedView.swift in Sources */,
@@ -909,7 +890,7 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.63.1;
+				CURRENT_PROJECT_VERSION = 1.63.2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -936,7 +917,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.63;
+				MARKETING_VERSION = 1.64;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -957,7 +938,7 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.63.1;
+				CURRENT_PROJECT_VERSION = 1.63.2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -984,7 +965,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.63;
+				MARKETING_VERSION = 1.64;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

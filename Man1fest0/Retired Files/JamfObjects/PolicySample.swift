@@ -1,8 +1,8 @@
-//
-//  PolicySample.swift
-//  Man1fest0
-//
-//  Created by Amos Deane on 20/07/2024.
+////
+////  PolicySample.swift
+////  Man1fest0
+////
+////  Created by Amos Deane on 20/07/2024.
 //
 //
 //
@@ -22,15 +22,11 @@
 //
 //
 //
-//    #################################################################################
-//    Sample Data
-//    #################################################################################
-
-////extension ComputerSample {
-////  static var samples = [
-////    ComputerSample.sampleMacBookPro,
-////    ComputerSample.sampleMacProGen3
-////  ]
+////  ##################################################################
+////    Sample Data
+////  ##################################################################
+//
+//
 //
 //// provide sample data items for previews
 //extension PolicySample {
@@ -48,13 +44,6 @@
 //            jamfId: 1,
 //            name: "Jazz Badger"
 //        )
-//        
-//        //        let sample = ComputerSample(
-//        //          id: "999991",
-//        //          general: general,
-//        //          hardware: hardware,
-//        //          operatingSystem: operatingSystem
-//        //        )
 //        
 //        return sample
 //    }
