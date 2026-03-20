@@ -82,8 +82,11 @@ struct PolicyDetailView: View {
     @State var trigger_startup: Bool = false
     @State var trigger_enrollment_complete: Bool = false
     
-    // Note: `pushTriggerActiveWarningComputed` is defined at the bottom and reads from the
-    // localPolicyDetailed snapshot to avoid following the shared controller directly.
+    // Computed property - always reflects current detailed policy triggers
+    private var pushTriggerActiveWarningComputed: Bool {
+        let gd = networkController.policyDetailed?.general
+        return (gd?.triggerLogin ?? false) || (gd?.triggerCheckin ?? false) || (gd?.triggerStartup ?? false) || (gd?.triggerEnrollmentComplete ?? false)
+    }
     
     //    ########################################################################################
     //    ########################################################################################
@@ -108,10 +111,8 @@ struct PolicyDetailView: View {
     // removed stored pushTriggerActiveWarning; view now reads computed property
     
     @State private var exporting = false
+    
 
-    // Local copy of the detailed policy to avoid view state being driven directly
-    // from the shared Network controller (prevents the selected policy flicker).
-    @State private var localPolicyDetailed: PolicyDetailed? = nil
     
     //    ########################################################################################
     //    Selections
@@ -173,10 +174,10 @@ struct PolicyDetailView: View {
     //    ########################################################################################
     
     var body: some View {
-         
+        
         let text = String(describing: xmlController.currentPolicyAsXML)
-                 
-         let currentDateString = layout.date
+                
+        let currentDateString = layout.date
         // Prepare a safe filename for export (replace characters that are not allowed in filenames)
         let safeDateComponent = currentDateString.replacingOccurrences(of: ":", with: "-").replacingOccurrences(of: " ", with: "_")
 
@@ -190,26 +191,34 @@ struct PolicyDetailView: View {
             //              Top
             //  ################################################################################
             
-            if localPolicyDetailed != nil {
+            if networkController.policyDetailed != nil {
                 
 #if os(macOS)
                 VStack(alignment: .leading) {
-                    Text("Jamf Name:\t\t\t\t\(localPolicyDetailed?.general?.name ?? "Blank")\n")
-                    Text("Enabled Status:\t\t\t\(String(describing: localPolicyDetailed?.general?.enabled ?? true))\n")
-                    Text("Self Service Name:\t\t\(String(describing: localPolicyDetailed?.self_service?.selfServiceDisplayName ?? ""))\n")
-                    Text("Self Service Status:\t\t\(String(describing: localPolicyDetailed?.self_service?.useForSelfService ?? true))\n")
-                    Text("Policy Trigger:\t\t\t\(localPolicyDetailed?.general?.triggerOther ?? "")\n")
-                    Text("Category:\t\t\t\t\(localPolicyDetailed?.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: localPolicyDetailed?.general?.jamfId ?? 0))\n" )
-                    Text("Current Icon:\t\t\t\t\(localPolicyDetailed?.self_service?.selfServiceIcon?.filename ?? "No icon set")\n")
-                    AsyncImage(url: URL(string: localPolicyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
-                        image.resizable()
-                    } placeholder: {
-                        Color.red.opacity(0.1)
+                    Text("Jamf Name:\t\t\t\t\(networkController.policyDetailed?.general?.name ?? "Blank")\n")
+                    Text("Enabled Status:\t\t\t\(String(describing: networkController.policyDetailed?.general?.enabled ?? true))\n")
+                    Text("Self Service Name:\t\t\(String(describing: networkController.policyDetailed?.self_service?.selfServiceDisplayName ?? ""))\n")
+                    Text("Self Service Status:\t\t\(String(describing: networkController.policyDetailed?.self_service?.useForSelfService ?? true))\n")
+                    Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
+                    Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
+                    Text("Jamf ID:\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
+                    // Only show the 'Current Icon' text when there is NO icon set (i.e. filename is nil or empty)
+                    if let iconFilename = networkController.policyDetailed?.self_service?.selfServiceIcon?.filename, !iconFilename.isEmpty {
+                        // If an icon filename exists, we do not show the textual "Current Icon" line here (the image below represents it).
+                    } else {
+                        Text("Current Icon:\t\t\t\tNo icon set\n")
                     }
-                    .frame(width: 50, height: 50)
-                    .clipShape(.rect(cornerRadius: 25))
-                
+                     AsyncImage(url: URL(string: networkController.policyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
+                         image.resizable()
+                     } placeholder: {
+                         Color.red.opacity(0.1)
+                     }
+                     .frame(width: 50, height: 50)
+                     .clipShape(.rect(cornerRadius: 25))
+                    // On macOS, show the icon filename as a hover tooltip for the image
+                    #if os(macOS)
+                    .help(networkController.policyDetailed?.self_service?.selfServiceIcon?.filename ?? "")
+                    #endif
                     
                     if pushTriggerActiveWarningComputed {
                         Text("⚠️ Push Trigger Active! ⚠️\n").foregroundColor(.red)
@@ -365,7 +374,7 @@ struct PolicyDetailView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     if policyNameClone == policyName {
-                        policyNameInitial = localPolicyDetailed?.general?.name ?? networkController.policyDetailed?.general?.name ?? ""
+                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
                         let newPolicyName = "\(policyNameInitial)-1"
                         print("No name provided - policy is:\(newPolicyName)")
                         policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
@@ -374,14 +383,14 @@ struct PolicyDetailView: View {
                         policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
                     }
                 }) {
-                     HStack(spacing: 10) {
-                         Image(systemName: "dog")
-                         Text("Clone")
-                     }
-                 }
-                 .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
-                 .buttonStyle(.borderedProminent)
-                 .tint(.orange)
+                    HStack(spacing: 10) {
+                        Image(systemName: "dog")
+                        Text("Clone")
+                    }
+                }
+                .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
                     TextField(policyName, text: $policyNameClone)
                         .textSelection(.enabled)
                     Spacer()
@@ -592,19 +601,19 @@ struct PolicyDetailView: View {
                 Group {
                     switch selectedPolicyDetailTab {
                     case 0:
-                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, localPolicyDetailed: localPolicyDetailed, packageSelection: packageSelection)
+                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
                     case 1:
-                        PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                        PolicyScopeTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
                     case 2:
-                        PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, policyID: policyID, computerGroupSelection: $computerGroupSelection)
+                        PolicyScriptsTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID, computerGroupSelection: $computerGroupSelection)
                     case 3:
-                        PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, policyID: policyID )
+                        PolicySelfServiceTabView(server: server, resourceType: ResourceType.policyDetail, policyID: policyID )
                     case 4:
-                        PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, localPolicyDetailed: localPolicyDetailed, trigger_login: localPolicyDetailed?.general?.triggerLogin ?? false, trigger_checkin: localPolicyDetailed?.general?.triggerCheckin ?? false, trigger_startup: localPolicyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: localPolicyDetailed?.general?.triggerEnrollmentComplete ?? false)
+                        PolicyTriggersTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail, trigger_login: networkController.policyDetailed?.general?.triggerLogin ?? false, trigger_checkin: networkController.policyDetailed?.general?.triggerCheckin ?? false, trigger_startup: networkController.policyDetailed?.general?.triggerStartup ?? false, trigger_enrollment_complete: networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false )
                     case 5:
                         PolicyRemoveItemsTabView(policyID: policyID, server: server, resourceType: ResourceType.policyDetail )
                     default:
-                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, localPolicyDetailed: localPolicyDetailed, packageSelection: packageSelection)
+                        PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
                     }
                 }
                 .frame(minHeight: 300)
@@ -660,14 +669,12 @@ struct PolicyDetailView: View {
             Task {
                 print("PolicyDetailView appeared - running getDetailedPolicy function")
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                // Copy into a local state to prevent shared-object-driven flicker in the UI
-                localPolicyDetailed = networkController.policyDetailed
-                policyName = localPolicyDetailed?.general?.name ?? ""
-                policyCustomTrigger = localPolicyDetailed?.general?.triggerOther ?? ""
-                trigger_login = localPolicyDetailed?.general?.triggerLogin ?? false
-                trigger_checkin = localPolicyDetailed?.general?.triggerCheckin ?? false
-                trigger_startup = localPolicyDetailed?.general?.triggerStartup ?? false
-                trigger_enrollment_complete = localPolicyDetailed?.general?.triggerEnrollmentComplete ?? false
+                policyName = networkController.policyDetailed?.general?.name ?? ""
+                policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
+                trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
+                trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
+                trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
+                trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
                
                // print current computed trigger status for debugging
                print("Push trigger active? \(pushTriggerActiveWarningComputed)")
@@ -720,7 +727,7 @@ struct PolicyDetailView: View {
                 Task {
                     networkController.getPackagesAssignedToPolicy()
                     networkController.addExistingPackages()
-                    self.fetchData()
+                    fetchData()
                 }
         }
     }
@@ -729,60 +736,69 @@ struct PolicyDetailView: View {
         // refresh the detailed policy from the server so the UI reflects server-side state.
         .onChange(of: xmlController.currentPolicyAsXML) { _ in
             Task {
-                 do {
-                     let refreshedXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                     print("Refreshed detailed policy after XML change (len: \(refreshedXML.count))")
-                 } catch {
-                     print("Failed to refresh detailed policy after XML change: \(error)")
-                 }
-                 print("Refreshing AEXML to reflect currentPolicyAsXML changes")
-                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-             }
-         }
-
-         // Keep local copy in sync with the network controller's shared selection to avoid
-         // the view following transient changes on the shared object directly.
-         .onAppear {
-             // Initialize local copy from the controller if present
-             if localPolicyDetailed == nil {
-                 localPolicyDetailed = networkController.policyDetailed
-             }
-         }
-         .onChange(of: networkController.policyDetailed) { newDetailed in
-             // When the shared selection changes, update the local snapshot.
-             localPolicyDetailed = newDetailed
-             // Also update commonly bound properties to reflect the change
-             policyName = localPolicyDetailed?.general?.name ?? ""
-             policyCustomTrigger = localPolicyDetailed?.general?.triggerOther ?? ""
-             trigger_login = localPolicyDetailed?.general?.triggerLogin ?? false
-             trigger_checkin = localPolicyDetailed?.general?.triggerCheckin ?? false
-             trigger_startup = localPolicyDetailed?.general?.triggerStartup ?? false
-             trigger_enrollment_complete = localPolicyDetailed?.general?.triggerEnrollmentComplete ?? false
-         }
-     }
-
-    // Small helper to refresh package-related data and keep the local detailed snapshot current.
-    private func fetchData() {
-        Task {
-            // Attempt to refresh packages (best-effort; failures are logged but do not crash)
-            do {
-                try await networkController.getAllPackages()
-            } catch {
-                print("fetchData: getAllPackages failed: \(error)")
+                do {
+                    let refreshedXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                    print("Refreshed detailed policy after XML change (len: \(refreshedXML.count))")
+                } catch {
+                    print("Failed to refresh detailed policy after XML change: \(error)")
+                }
+                print("Refreshing AEXML to reflect currentPolicyAsXML changes")
+                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
             }
+        }
+        
+        // Whenever the aexmlDoc representation of the current policy changes (children often edit XML),
+        // refresh the detailed policy from the server so the UI reflects server-side state.
+//        .onChange(of: xmlController.aexmlDoc) { _ in
+//                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+//                    print("Refreshed aexmlDoc policy after XML change")
+//        }
+        
+        // Also attempt to refresh after potential network-based edits by observing the packagesAssignedToPolicy
+        // array which many package actions mutate; this covers some edit paths that don't go through XML.
+        
+        .onChange(of: networkController.packagesAssignedToPolicy) { _ in
+            Task {
+                do {
+                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    print("Refreshed detailed policy after package assignments changed")
+                } catch {
+                    print("Failed to refresh detailed policy after package assignment change: \(error)")
+                }
+            }
+        }
 
-            // Update assigned packages and local snapshot on the main actor
-            networkController.getPackagesAssignedToPolicy()
-            networkController.addExistingPackages()
-            // Mirror shared detailed policy into the local snapshot
-            localPolicyDetailed = networkController.policyDetailed
+        // Listen for child tabs signalling that they modified the policy and request a refresh.
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("policyDidChange"))) { _ in
+            Task {
+                do {
+                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    print("Refreshed detailed policy in response to policyDidChange notification")
+                } catch {
+                    print("Failed to refresh detailed policy after policyDidChange notification: \(error)")
+                }
+            }
         }
     }
-
-     // Computed property - now reads local snapshot to avoid following global changes directly
-     private var pushTriggerActiveWarningComputed: Bool {
-         let gd = localPolicyDetailed?.general
-         return (gd?.triggerLogin ?? false) || (gd?.triggerCheckin ?? false) || (gd?.triggerStartup ?? false) || (gd?.triggerEnrollmentComplete ?? false)
-     }
-
+    
+    func fetchData() {
+        
+        if  networkController.packages.isEmpty {
+            print("No package data - fetching")
+             Task { try await networkController.getAllPackages() }
+            
+        } else {
+            print("package data is available")
+        }
+    }
+    
 }
+
+//struct PolicyDetailView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        PolicyDetailView(server: "", username: "", password: "", policy: PolicyDetailed(id:11111111-1111-1111-1111-111111111111, name: "", policyID: 1), policyID: 01)
+//
+//        //    DetailView(computer: Computer.sampleMacBookAir)
+//
+//    }
+//}
