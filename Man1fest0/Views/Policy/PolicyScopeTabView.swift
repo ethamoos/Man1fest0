@@ -83,6 +83,9 @@ struct PolicyScopeTabView: View {
     
     @State var selectionComp: Computer = Computer(id: 0, name: "", jamfId: 0)
     
+    // Use an ID-based selection for Pickers to avoid SwiftUI selection instability
+    @State private var selectedComputerID: Int = 0
+    
     @State var selectionCompGroup: ComputerGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     
     @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
@@ -145,7 +148,9 @@ struct PolicyScopeTabView: View {
     //    private var combinedInterval: String { "\(selectedIntervalNumber)+\(selectedIntervalUnit)" }
     
     @State var computerSearchText = ""
-    
+    // Control whether the Edit Scoping section is expanded (default expanded so pickers are visible)
+    @State private var editScopingExpanded: Bool = true
+
     // Computed property to filter and limit computers for Picker
     var filteredComputers: [Computer] {
         if computerSearchText.isEmpty {
@@ -164,9 +169,22 @@ struct PolicyScopeTabView: View {
             .frame(minHeight: 1)
             .padding()
             .onAppear() {
-                if networkController.computers.count < 0 {
+                // If we don't already have computers, fetch them (previously used < 0 which never ran)
+                if networkController.computers.count == 0 {
                     print("Fetching computers for policy scope view")
                     Task { try await networkController.getAllComputers() }
+                }
+                // Ensure selectionComp has a valid default when computers arrive
+                if let first = networkController.computers.first, selectionComp.id == 0 {
+                    selectionComp = first
+                    selectedComputerID = first.id
+                }
+            }
+            // Also react to changes in the published computers array so we initialize selection when it finishes loading
+            .onReceive(networkController.$computers) { newList in
+                if selectedComputerID == 0, let first = newList.first {
+                    selectedComputerID = first.id
+                    selectionComp = first
                 }
             }
         }
@@ -388,7 +406,7 @@ struct PolicyScopeTabView: View {
     private var editScopingView: some View {
         VStack(alignment: .leading) {
             Divider()
-            DisclosureGroup("Edit Scoping") {
+            DisclosureGroup("Edit Scoping", isExpanded: $editScopingExpanded) {
                 VStack(alignment: .leading, spacing: 12) {
                     computersEditorView
                     departmentEditorView
@@ -417,18 +435,54 @@ struct PolicyScopeTabView: View {
                             }
                         }
                     }
-#if os(macOS)
+                
+                // Always show the Specific/All Computers UI so the picker is visible across platforms.
                 if localPolicyDetailed?.scope?.allComputers == true {
                     Text("All Computers")
                 } else {
                     Text("Specific Computers")
                     HStack {
                         TextField("Search Computers", text: $computerSearchText)
-                        Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
-                            ForEach(filteredComputers, id: \.id) { comp in
-                                Text(comp.name).tag(comp)
+                        // Quick debug indicator to show count of available computers
+                        Text("Available computers: \(filteredComputers.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        // Always show a Menu-style Picker; disable when there are no items
+                        Picker(selection: $selectedComputerID, label: Text("Computer: ").bold()) {
+                            if filteredComputers.isEmpty {
+                                Text("No computers loaded").tag(0)
+                            } else {
+                                ForEach(filteredComputers, id: \.id) { comp in
+                                    Text(comp.name).tag(comp.id)
+                                }
                             }
                         }
+                        .pickerStyle(PopUpButtonPickerStyle())
+                        .frame(minWidth: 200)
+                        .disabled(filteredComputers.isEmpty)
+                        .help("Select a computer to add to scope")
+                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.gray.opacity(0.25)))
+                        .onAppear {
+                            // set default selection when the picker appears
+                            if selectedComputerID == 0, let first = filteredComputers.first {
+                                selectedComputerID = first.id
+                                selectionComp = first
+                            }
+                        }
+                        .onChange(of: networkController.computers) { newList in
+                            // when the computers list updates, ensure we have a valid selection
+                            if selectedComputerID == 0, let first = newList.first {
+                                selectedComputerID = first.id
+                                selectionComp = first
+                            }
+                        }
+                        .onChange(of: selectedComputerID) { newId in
+                            if let found = networkController.computers.first(where: { $0.id == newId }) {
+                                selectionComp = found
+                            }
+                        }
+
                         Button(action: {
                             progress.showProgress()
                             progress.waitForABit()
@@ -486,7 +540,6 @@ struct PolicyScopeTabView: View {
                         .tint(.red)
                     }
                 }
-#endif
             }
         }
     }
@@ -589,7 +642,7 @@ struct PolicyScopeTabView: View {
     private var editLimitationsEditorView: some View {
         DisclosureGroup("Edit Limitations") {
             VStack(alignment: .leading) {
-                LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
+                LazyVGrid(columns: layout.threeColumns, spacing: 10) {
                     HStack(spacing: 20) {
                         Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:")) {
                             Text("").tag(ldapSearchCustomGroupSelection as LDAPCustomGroup?)
@@ -748,8 +801,48 @@ struct PolicyScopeTabView: View {
                         Text("Specific Computers")
                         HStack {
                             TextField("Search Computers", text: $computerSearchText)
-                            Picker(selection: $selectionComp, label: Text("Computer:").bold()) {
-                                ForEach(filteredComputers, id: \.id) { comp in Text(comp.name).tag(comp) }
+                            // Debug count to help visibility
+                            Text("Available computers: \(filteredComputers.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            if filteredComputers.isEmpty {
+                                VStack(alignment: .leading) {
+                                    Text("No computers loaded").font(.subheadline).foregroundColor(.secondary)
+                                    Button("Reload Computers") {
+                                        progress.showProgress()
+                                        Task { try? await networkController.getAllComputers() }
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
+                            } else {
+                                VStack(alignment: .leading) {
+                                    Picker(selection: $selectedComputerID, label: Text("Computer: ").bold()) {
+                                        if filteredComputers.isEmpty {
+                                            Text("No computers loaded").tag(0)
+                                        } else {
+                                            ForEach(filteredComputers, id: \.id) { comp in
+                                                Text(comp.name).tag(comp.id)
+                                            }
+                                        }
+                                    }
+                                    .pickerStyle(PopUpButtonPickerStyle())
+                                    .frame(minWidth: 200)
+                                    .disabled(filteredComputers.isEmpty)
+                                    .help("Select a computer to exclude")
+                                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.gray.opacity(0.25)))
+                                    .onAppear {
+                                        if selectedComputerID == 0, let first = filteredComputers.first {
+                                            selectedComputerID = first.id
+                                            selectionComp = first
+                                        }
+                                    }
+                                    .onChange(of: selectedComputerID) { newId in
+                                        if let found = networkController.computers.first(where: { $0.id == newId }) {
+                                            selectionComp = found
+                                        }
+                                    }
+                                }
                             }
                         }
 
