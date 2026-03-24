@@ -164,13 +164,27 @@ struct PolicyScopeTabView: View {
             .frame(minHeight: 1)
             .padding()
             .onAppear() {
-                if networkController.computers.count < 0 {
+                // Fetch computers if none are cached
+                if networkController.computers.count == 0 {
                     print("Fetching computers for policy scope view")
-                    Task { try await networkController.getAllComputers() }
+                    Task { try? await networkController.getAllComputers() }
                 }
-            }
-        }
-    }
+                
+                // Guarded fetch for the detailed policy: only request if we don't already have one
+                // (or if the currently cached detailed policy is for a different policy id)
+                if networkController.policyDetailed == nil || ((networkController.policyDetailed?.general?.jamfId ?? 0) != policyID) {
+                    print("Fetching detailed policy for policyID: \(policyID)")
+                    Task {
+                        do {
+                            try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                        } catch {
+                            print("Failed to fetch detailed policy on appear: \(error)")
+                        }
+                    }
+                }
+             }
+         }
+     }
 
     // Split the large body into smaller computed views to help the compiler type-check more quickly.
     private var scopingOverviewView: some View {
