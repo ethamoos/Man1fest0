@@ -46,16 +46,10 @@ struct PolicyPackageTabView: View {
     
     @State var action: String = "Install"
     
-    // Represent FUT/FEU as booleans in the UI; APIs accept string "true"/"false"
     @State private var fut: Bool = false
     @State private var feu: Bool = false
     
     
-    
-//              ################################################################################
-//              Selection
-//              ################################################################################
-
 
     // Use selectedPackageId (Int?) for Picker selection to avoid UUID-based identity mismatches
     @State var selectedPackageId: Int? = nil
@@ -72,7 +66,8 @@ struct PolicyPackageTabView: View {
             //              List packages
             //              ################################################################################
             
-            if let currentPolicyPackages = localPolicyDetailed?.package_configuration?.packages {
+            // Use provided localPolicyDetailed if available; otherwise fall back to the shared controller's detailed policy
+            if let currentPolicyPackages = ((localPolicyDetailed ?? networkController.policyDetailed)?.package_configuration?.packages) {
                 
                 if currentPolicyPackages.count >= 1 {
                     
@@ -85,8 +80,8 @@ struct PolicyPackageTabView: View {
                         }
                     }
                     .frame(minHeight: 30)
-                    if localPolicyDetailed?.general?.overrideDefaultSettings?.distributionPoint != "" {
-                        Text("Distribution Point :\t\t\t\t\(localPolicyDetailed?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
+                    if (localPolicyDetailed ?? networkController.policyDetailed)?.general?.overrideDefaultSettings?.distributionPoint != "" {
+                        Text("Distribution Point :\t\t\t\t\t\((localPolicyDetailed ?? networkController.policyDetailed)?.general?.overrideDefaultSettings?.distributionPoint ?? "")\n")
                     }
                     
                 } else {
@@ -103,23 +98,8 @@ struct PolicyPackageTabView: View {
                 //              Edit package assignment to policy
                 //  ################################################################################
                 
-                //        Group {
-                //  ################################################################################
-                //              Add via multi-package to policy
-                //  ################################################################################
-                
             Divider()
 
-//            VStack(alignment: .leading) {
-//                Text("Assign Packages").font(.system(size: 12, weight: .bold, design: .default))
-//            }
-//            .padding()
-                
-                
-                //  ################################################################################
-                //  Package picker
-                //  ################################################################################
-                
             LazyVGrid(columns: layout.threeColumnsAdaptive, spacing: 20) {
                 HStack {
                     TextField("Filter", text: $packageFilter)
@@ -167,7 +147,6 @@ struct PolicyPackageTabView: View {
                         networkController.addExistingPackages()
                         print("Adding selected package to policy id:\(String(describing: selectedPackageId))")
                         let pkg = selectedPackage
-                        // Provide explicit action/fut/feu values to match XmlBrain API
                         xmlController.addPackageToPolicy(xmlContent: xmlController.aexmlDoc,
                                                          xmlContentString: xmlController.currentPolicyAsXML,
                                                          authToken: networkController.authToken,
@@ -181,7 +160,6 @@ struct PolicyPackageTabView: View {
                                                          fut: String(fut),
                                                          feu: String(feu))
 
-                        // Refresh detailed policy to reflect changes
                         Task {
                             do {
                                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
@@ -192,7 +170,6 @@ struct PolicyPackageTabView: View {
 
                     }) {
                         HStack(spacing: 10) {
-//                            Image(systemName: "plus.square.fill.on.square.fill")
                             Text("Add Package")
                         }
                   
@@ -201,10 +178,6 @@ struct PolicyPackageTabView: View {
                     .tint(.blue)
                     .help("Add the selected package to this policy with the chosen options.")
                     
-                    //  ################################################################################
-                    //              Replace package in policy
-                    //  ################################################################################
-
                     Button(action: {
                         
                         progress.showProgress()
@@ -219,7 +192,6 @@ struct PolicyPackageTabView: View {
                         
                     }) {
                         HStack(spacing: 10) {
-//                            Image(systemName: "plus.square.fill.on.square.fill")
                             Text("Replace All")
                         }
                     }
@@ -236,10 +208,6 @@ struct PolicyPackageTabView: View {
                         .toggleStyle(CheckboxToggleStyle())
                         .help("If checked, use FEU (Fill Existing Up) behavior when assigning the package.")
                     
-                    //  ################################################################################
-                    //              Replace package in policy
-                    //  ################################################################################
-                    
                     Button(action: {
                         
                         progress.showProgress()
@@ -249,12 +217,9 @@ struct PolicyPackageTabView: View {
                         print("Clearing all packages in policy:\(String(describing: policyID))")
                         
                         xmlController.removePackagesFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
-//                        xmlController.removeAllPackagesManual(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
 
-                        
                     }) {
                         HStack(spacing: 10) {
-//                            Image(systemName: "plus.square.fill.on.square.fill")
                             Text("Remove All")
                         }
                     }
@@ -274,20 +239,14 @@ struct PolicyPackageTabView: View {
                         
                     }) {
                         HStack(spacing: 10) {
-//                            Image(systemName: "plus.square.fill.on.square.fill")
                             Text("Refresh")
                         }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                     .help("Refresh the package list from the Jamf server.")
-                    
-                    
-                    
-                    
-//                }
+                }
             }
-        }
         
         .onAppear() {
             
@@ -297,13 +256,11 @@ struct PolicyPackageTabView: View {
     
     
 
-
     func fetchData() {
         
         if  networkController.packages.count <= 1 {
             print("No package data - fetching")
             print("Count is:\(networkController.packages.count))")
-//            print(networkController.packages.count)
              Task { try await networkController.getAllPackages() }
 
         } else {
