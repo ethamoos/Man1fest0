@@ -37,9 +37,9 @@ struct PolicyScriptsTabView: View {
     //    ########################################################################################
     
     @State private var selectedResourceType = ResourceType.policyDetail
-    
+
     @State var computerGroupFilter = ""
-    
+
     
     //  ########################################################################################
     //  Policy
@@ -47,7 +47,7 @@ struct PolicyScriptsTabView: View {
     
     @State var policyName = ""
     var policyID: Int
-    
+
     //  ########################################################################################
     //  Script
     //  ########################################################################################
@@ -105,13 +105,13 @@ struct PolicyScriptsTabView: View {
                     //              List scripts
                     // ################################################################################
                     
-                    if localPolicyDetailed?.scripts?.count ?? 0 > 0 {
+                    if (localPolicyDetailed ?? networkController.policyDetailed)?.scripts?.count ?? 0 > 0 {
                         
                         Text("Assigned Scripts").bold()
 #if os(macOS)
                         
                         
-                        List(localPolicyDetailed?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
+                        List((localPolicyDetailed ?? networkController.policyDetailed)?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
                             NavigationLink(destination: PolicyScriptsTabViewDetail(script: script, policyID: policyID, server: server)) {
                                 HStack {
                                     
@@ -160,7 +160,7 @@ struct PolicyScriptsTabView: View {
                         .frame(minHeight: 100)
                         .frame(minWidth: 120, maxWidth: .infinity)
 #else
-                        List(localPolicyDetailed?.scripts ?? [PolicyScripts](), id: \.self) { script in
+                        List((localPolicyDetailed ?? networkController.policyDetailed)?.scripts ?? [PolicyScripts](), id: \.self) { script in
                             HStack {
                                 Image(systemName: "applescript")
                                 Text(script.name ?? "" )
