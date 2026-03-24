@@ -147,11 +147,11 @@ struct PolicyTriggersTabView: View {
         }
         .padding()
         .onAppear() {
-            trigger_other = localPolicyDetailed?.general?.triggerOther ?? ""
-            trigger_login = localPolicyDetailed?.general?.triggerLogin ?? false
-            trigger_checkin = localPolicyDetailed?.general?.triggerCheckin ?? false
-            trigger_enrollment_complete = localPolicyDetailed?.general?.triggerEnrollmentComplete ?? false
-            trigger_startup = localPolicyDetailed?.general?.triggerStartup ?? false
+            trigger_other = (localPolicyDetailed ?? networkController.policyDetailed)?.general?.triggerOther ?? ""
+            trigger_login = (localPolicyDetailed ?? networkController.policyDetailed)?.general?.triggerLogin ?? false
+            trigger_checkin = (localPolicyDetailed ?? networkController.policyDetailed)?.general?.triggerCheckin ?? false
+            trigger_enrollment_complete = (localPolicyDetailed ?? networkController.policyDetailed)?.general?.triggerEnrollmentComplete ?? false
+            trigger_startup = (localPolicyDetailed ?? networkController.policyDetailed)?.general?.triggerStartup ?? false
         }
     }
 }

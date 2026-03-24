@@ -417,8 +417,8 @@ struct PolicyScopeTabView: View {
                             }
                         }
                     }
-#if os(macOS)
-                if localPolicyDetailed?.scope?.allComputers == true {
+    #if os(macOS)
+                if (localPolicyDetailed ?? networkController.policyDetailed)?.scope?.allComputers == true {
                     Text("All Computers")
                 } else {
                     Text("Specific Computers")
@@ -486,7 +486,7 @@ struct PolicyScopeTabView: View {
                         .tint(.red)
                     }
                 }
-#endif
+    #endif
             }
         }
     }
@@ -573,9 +573,9 @@ struct PolicyScopeTabView: View {
             VStack(alignment:.leading){
                 Text("Limitations").font(.system(size: 14, weight: .bold, design: .default))
                 Divider()
-                // Replace usages of networkController.policyDetailed with local snapshot
-                if localPolicyDetailed?.scope?.limitations?.userGroups?.count != 0 {
-                    ForEach(localPolicyDetailed?.scope?.limitations?.userGroups ?? []) { limitation in
+                // Use fallback to shared detailed policy when local snapshot is absent
+                if ((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.limitations?.userGroups?.count ?? 0) != 0 {
+                    ForEach((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.limitations?.userGroups ?? []) { limitation in
                         Text(String(limitation.name ?? "")).font(.subheadline)
                     }
                     .padding()
@@ -664,12 +664,12 @@ struct PolicyScopeTabView: View {
                 Divider()
 
                 // Excluded computers
-                if (localPolicyDetailed?.scope?.exclusions?.computers?.count ?? 0) == 0 {
+                if ((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.computers?.count ?? 0) == 0 {
                     Text("No Computers Excluded").font(.subheadline).padding(.bottom,10)
                 } else {
                     Text("Excluded Computers").font(.subheadline.bold()).padding(.bottom,10)
                     VStack(alignment:.leading) {
-                        ForEach(localPolicyDetailed?.scope?.exclusions?.computers ?? []) { computer in
+                        ForEach((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.computers ?? []) { computer in
                             Text(computer.name ?? "")
                         }
                     }
@@ -680,33 +680,33 @@ struct PolicyScopeTabView: View {
                 DisclosureGroup("Edit Exclusions") {
                     VStack(alignment: .leading) {
                         // Excluded computer groups
-                        if (localPolicyDetailed?.scope?.exclusions?.computerGroups?.count ?? 0) == 0 {
+                        if ((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.computerGroups?.count ?? 0) == 0 {
                             Text("No Computer Groups Excluded").font(.subheadline).padding(.bottom,10)
                         } else {
                             Text("Excluded Computer Groups").font(.headline.bold()).padding(.bottom,10)
-                            ForEach(localPolicyDetailed?.scope?.exclusions?.computerGroups ?? []) { computerGroup in
+                            ForEach((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.computerGroups ?? []) { computerGroup in
                                 Text(computerGroup.name ?? "")
                             }
                             .padding(.bottom,10)
                         }
 
                         // Excluded departments
-                        if (localPolicyDetailed?.scope?.exclusions?.departments?.count ?? 0) == 0 {
+                        if ((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.departments?.count ?? 0) == 0 {
                             Text("No Departments Excluded").font(.subheadline).padding(.bottom,10)
                         } else {
                             Text("Excluded Departments").font(.headline.bold()).padding(.bottom,10)
-                            ForEach(localPolicyDetailed?.scope?.exclusions?.departments ?? []) { department in
+                            ForEach((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.departments ?? []) { department in
                                 Text(department.name ?? "")
                             }
                             .padding(.bottom,10)
                         }
 
                         // Excluded buildings
-                        if (localPolicyDetailed?.scope?.exclusions?.buildings?.count ?? 0) == 0 {
+                        if ((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.buildings?.count ?? 0) == 0 {
                             Text("No Buildings Excluded").font(.subheadline).padding(.bottom,10)
                         } else {
                             Text("Excluded Buildings").font(.headline.bold()).padding(.bottom,10)
-                            ForEach(localPolicyDetailed?.scope?.exclusions?.buildings ?? []) { building in
+                            ForEach((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.buildings ?? []) { building in
                                 Text(building.name ?? "")
                             }
                             .padding(.bottom,10)
@@ -938,7 +938,6 @@ struct PolicyScopeTabView: View {
     }
 }
 
-//
 //#Preview {
 //    PolicyScopeTabView()
 //}

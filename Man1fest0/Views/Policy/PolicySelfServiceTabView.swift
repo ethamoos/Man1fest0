@@ -131,7 +131,7 @@ struct PolicySelfServiceTabView: View {
                     
                     Text("Icons").bold()
                     
-                    AsyncImage(url: URL(string: localPolicyDetailed?.self_service?.selfServiceIcon?.uri ?? "")) { image in
+                    AsyncImage(url: URL(string: (localPolicyDetailed ?? networkController.policyDetailed)?.self_service?.selfServiceIcon?.uri ?? "")) { image in
                         image.resizable()
                     } placeholder: {
                         Color.red.opacity(0.1)
@@ -270,7 +270,7 @@ struct PolicySelfServiceTabView: View {
                     .tint(.blue)
                     .help("Enable Self Service for this policy so it appears to users.")
 //                    HStack {
-                        TextField(localPolicyDetailed?.general?.name ?? policyName, text: $newSelfServiceName)
+                        TextField((localPolicyDetailed ?? networkController.policyDetailed)?.general?.name ?? policyName, text: $newSelfServiceName)
                             .textSelection(.enabled)
                         Button(action: {
                             
