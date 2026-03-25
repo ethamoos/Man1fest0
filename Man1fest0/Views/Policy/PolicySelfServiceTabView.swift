@@ -22,7 +22,7 @@ struct PolicySelfServiceTabView: View {
     // Local snapshot to avoid following shared controller directly
     var localPolicyDetailed: PolicyDetailed? = nil
     
-    //  ########################################################################################
+    //  #######u#################################################################################
     //    EnvironmentObject
     //  ########################################################################################
     
@@ -83,6 +83,10 @@ struct PolicySelfServiceTabView: View {
     
     @State var newSelfServiceName = ""
     
+    // Pan state for the horizontal icon strip
+    @State private var iconStripOffset: CGFloat = 0
+    @State private var iconStripStart: CGFloat = 0
+
     //  ########################################################################################
     //  LDAP
     //  ########################################################################################
@@ -129,15 +133,20 @@ struct PolicySelfServiceTabView: View {
                 
                 VStack(alignment: .leading) {
                     
-                    Text("Icons").bold()
-                    
-                    AsyncImage(url: URL(string: (localPolicyDetailed ?? networkController.policyDetailed)?.self_service?.selfServiceIcon?.uri ?? "")) { image in
-                        image.resizable()
-                    } placeholder: {
-                        Color.red.opacity(0.1)
+                    HStack(spacing: 6) {
+                        Text("Icons").bold()
+                        Text("(")
+                        Text(String(describing: networkController.allIconsDetailed.count)).font(.system(size: 12)).foregroundColor(.secondary)
+                        Text(")")
                     }
-                    .frame(width: 50, height: 50)
-                    .clipShape(.rect(cornerRadius: 25))
+                     
+                     AsyncImage(url: URL(string: (localPolicyDetailed ?? networkController.policyDetailed)?.self_service?.selfServiceIcon?.uri ?? "")) { image in
+                         image.resizable()
+                     } placeholder: {
+                         Color.red.opacity(0.1)
+                     }
+                     .frame(width: 50, height: 50)
+                     .clipShape(.rect(cornerRadius: 25))
                     
 #if os(macOS)
                     List(networkController.allIconsDetailed, selection: $selectedIcon) { icon in
@@ -180,82 +189,132 @@ struct PolicySelfServiceTabView: View {
                 
                 LazyVGrid(columns: layout.columns, spacing: 10) {
                     
-                    HStack {
+                    // Single row: Filter | Icon strip (flexible, clipped) | Update | Refresh
+                    HStack(alignment: .center, spacing: 8) {
                         TextField("Filter", text: $iconFilter)
-                        // Replace the picker with a horizontal selectable icon strip (30px high)
-                        ScrollView(.horizontal, showsIndicators: true) {
-                            HStack(spacing: 8) {
-                                ForEach(networkController.allIconsDetailed.filter({ iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) })) { icon in
-                                    AsyncImage(url: URL(string: icon.url)) { phase in
-                                        switch phase {
-                                        case .success(let image):
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        case .failure(_):
-                                            Image(systemName: "photo")
-                                                .resizable()
-                                                .scaledToFit()
-                                        default:
-                                            ProgressView()
+                            .frame(minWidth: 140)
+                            .padding(.trailing, 6)
+                            .zIndex(2)
+                        
+                        // Icon strip occupies flexible middle space and will be clipped so it can't draw under the buttons
+                        GeometryReader { geom in
+                            let icons = networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.localizedCaseInsensitiveContains(iconFilter) }
+                            // Larger icons and spacing for visibility
+                            let iconSize: CGFloat = 36
+                            let spacing: CGFloat = 10
+                            let horizontalPadding: CGFloat = 8
+                            let contentWidth = CGFloat(max(icons.count, 0)) * (iconSize + spacing) + horizontalPadding * 2
+                            
+                            HStack {
+                                ZStack(alignment: .leading) {
+                                    if icons.isEmpty {
+                                        // Placeholder when no icons are available
+                                        HStack {
+                                            Text(networkController.allIconsDetailed.isEmpty ? "No icons" : "No matches")
+                                                .foregroundColor(.secondary)
+                                                .font(.system(size: 12))
                                         }
+                                        .frame(height: 44)
+                                    } else {
+                                        HStack(spacing: spacing) {
+                                            ForEach(icons) { icon in
+                                                AsyncImage(url: URL(string: icon.url)) { phase in
+                                                    switch phase {
+                                                    case .success(let image):
+                                                        image
+                                                            .resizable()
+                                                            .scaledToFill()
+                                                            .transition(.opacity)
+                                                    case .failure(_):
+                                                        // Visible placeholder when image fails
+                                                        Image(systemName: "photo.fill")
+                                                            .resizable()
+                                                            .scaledToFit()
+                                                            .foregroundColor(Color.secondary)
+                                                    default:
+                                                        ProgressView()
+                                                    }
+                                                }
+                                                .frame(width: iconSize, height: iconSize)
+                                                .background(Color.clear)
+                                                .clipShape(Circle())
+                                                .overlay(Circle().stroke(selectedIcon?.id == icon.id ? Color.accentColor : Color.clear, lineWidth: 2))
+                                                .onTapGesture { selectedIcon = icon; selectedIconString = icon.name }
+                                                .help(icon.name)
+                                            }
+                                        }
+                                        .padding(.horizontal, horizontalPadding)
+                                        .frame(width: contentWidth, alignment: .leading)
+                                        .offset(x: iconStripOffset)
+                                        .gesture(DragGesture(minimumDistance: 8)
+                                            .onChanged { value in
+                                                let minOffset = min(0, geom.size.width - contentWidth)
+                                                let newOffset = iconStripStart + value.translation.width
+                                                iconStripOffset = max(min(newOffset, 0), minOffset)
+                                            }
+                                            .onEnded { _ in
+                                                let minOffset = min(0, geom.size.width - contentWidth)
+                                                iconStripStart = iconStripOffset
+                                                if iconStripStart > 0 { iconStripStart = 0 }
+                                                if iconStripStart < minOffset { iconStripStart = minOffset }
+                                            }
+                                        )
                                     }
-                                    .frame(width: 30, height: 30)
-                                    .clipShape(Circle())
-                                    .overlay(
-                                        Circle()
-                                            .stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2)
-                                    )
-                                    .onTapGesture {
-                                        selectedIcon = icon
-                                        selectedIconString = icon.name
-                                    }
-                                    .help(icon.name)
                                 }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-//  ################################################################################
-//                        //  Update Icon Button
-//                        //  ################################################################################
-//                    }
-                    HStack {
-                        Button(action: {
+                                // Constrain this strip to the GeometryReader width so content overflows are clipped
+                                .frame(width: geom.size.width, height: 52)
+                                .clipped()
+                                // Stronger background + border to improve visibility
+                                .background(Color(NSColor.controlBackgroundColor))
+                                .contentShape(Rectangle())
+                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.18)))
+                                .padding(.leading, 6)
+                                .zIndex(0)
+                             }
+                         }
+                         .frame(maxWidth: .infinity)
                         
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        xmlController.updateIcon(server: server,authToken: networkController.authToken, policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
-                    }) {
-                        Text("Update Icon")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .help("Set the selected icon as the policy's Self Service icon.")
-//                    }
-//                    HStack {
+                        // Buttons on the right (compact icon buttons)
                         Button(action: {
-                            // Show confirmation before kicking off a potentially long download
-                            showingRefreshIconsWarning = true
+                            progress.showProgress()
+                            progress.waitForABit()
+                            xmlController.updateIcon(server: server,authToken: networkController.authToken, policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
                         }) {
-                            Text("Refresh Icons")
+                            Image(systemName: "square.and.arrow.down")
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                         .tint(.blue)
+                        .frame(width: 28, height: 24)
+                         .help("Set the selected icon as the policy's Self Service icon.")
+                         .zIndex(2)
+                          
+                        Button(action: { showingRefreshIconsWarning = true }) {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .frame(width: 28, height: 24)
+                         .help("Download the latest icon set from the server (can take a long time).")
                         .alert("Warning", isPresented: $showingRefreshIconsWarning) {
                             Button("Proceed") {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                                progress.showProgress(); progress.waitForABit(); networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
                             }
                             Button("Cancel", role: .cancel) { }
-                        } message: {
-                            Text("please note downloading all the icons can take some time")
+                        } message: { Text("please note downloading all the icons can take some time") }
+                        .zIndex(2)
+                    }
+                    // Keep icons selection and offset in a sane default when the icon list updates
+                    .onChange(of: networkController.allIconsDetailed) { newIcons in
+                        if selectedIcon == nil, let first = newIcons.first {
+                            selectedIcon = first
+                            selectedIconString = first.name
                         }
-                        .help("Download the latest icon set from the server (can take a long time).")
-                     }
-                }
+                        // Reset strip offset to show start of list
+                        iconStripOffset = 0
+                        iconStripStart = 0
+                    }
+                 }
                 HStack {
                     Button(action: {
                         
@@ -317,13 +376,11 @@ struct PolicySelfServiceTabView: View {
 //        }
     }
 }
-    
-    
-    
-    
-    
-    
-    
-    //#Preview {
-    //    PolicyScopeTabView()
-    //}
+
+
+
+
+
+//#Preview {
+//    PolicyScopeTabView()
+//}
