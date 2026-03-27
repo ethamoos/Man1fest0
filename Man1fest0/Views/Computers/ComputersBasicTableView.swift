@@ -15,6 +15,7 @@ struct ComputersBasicTableView: View {
     @EnvironmentObject var layout: Layout
     @EnvironmentObject var pushController: PushBrain
     @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var extensionAttributeController: EaBrain
 
     var selectedResourceType = ResourceType.computerBasic
     
@@ -45,6 +46,9 @@ struct ComputersBasicTableView: View {
     
     @State private var sortOrder = [KeyPathComparator(\ComputerBasicRecord.id)]
     @State private var newComputerName = ""
+    
+    @State private var selectedEAName = ""
+    @State private var eaValue = ""
     
     
     var body: some View {
@@ -354,10 +358,63 @@ struct ComputersBasicTableView: View {
                
             }
             .padding()
-                      
-                                
-//        #if os(macOS)
             
+            Divider()
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Update Extension Attribute")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                HStack {
+                    Text("Extension Attribute:")
+                    Picker("", selection: $selectedEAName) {
+                        Text("Select...").tag("")
+                        ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                            Text(ea.name).tag(ea.name)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                HStack {
+                    Text("Value:")
+                    TextField("EA Value", text: $eaValue)
+                        .textFieldStyle(.roundedBorder)
+                }
+                
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    Task {
+                        do {
+                            try await extensionAttributeController.updateComputerEAValueMultipleComputers(
+                                server: server,
+                                authToken: networkController.authToken,
+                                computerIds: selection,
+                                extAttName: selectedEAName,
+                                updateValue: eaValue
+                            )
+                        } catch {
+                            print("Failed to update EA: \(error)")
+                        }
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Text("Update EA Value for \(selection.count) computers")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .disabled(selectedEAName.isEmpty || selection.isEmpty)
+            }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+                       
+//        #if os(macOS)
+         
             Divider()
             
             //              ##########################################################################
