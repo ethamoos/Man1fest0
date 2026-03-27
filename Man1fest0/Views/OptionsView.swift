@@ -83,12 +83,12 @@ struct OptionsView: View {
 //                            }
                             
                             DisclosureGroup("Computers") {
-//                                NavigationLink(destination: ComputersView( server: server )) {
-//                                                                 Text("Computers")
-//                                                             }
-//                                NavigationLink(destination: ComputerActionView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
-//                                    Text("Computers")
-//                                }
+                                NavigationLink(destination: ComputersView( server: server )) {
+                                                                 Text("Computers (beta)")
+                                                             }
+                                NavigationLink(destination: ComputerActionView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
+                                    Text("Computers")
+                                }
                                 
                                 NavigationLink(destination: ComputersBasicView( server: server )) {
                                                                  Text("Computers Basic Actions")

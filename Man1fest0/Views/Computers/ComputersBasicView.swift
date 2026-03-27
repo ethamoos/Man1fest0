@@ -15,6 +15,8 @@ struct ComputersBasicView: View {
     
     @EnvironmentObject var networkController: NetBrain
     
+    @EnvironmentObject var layout: Layout
+
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
     @EnvironmentObject var xmlController: XmlBrain
@@ -61,25 +63,35 @@ struct ComputersBasicView: View {
                 NavigationView {
 #if os(macOS)
                     List(searchResults, id: \.self, selection: $selection) { computer in
-                        HStack {
-                            Image(systemName: "desktopcomputer")
-                                .foregroundColor(.accentColor)
-                            Text(computer.name)
-                                .font(.system(size: 13.0))
+                        NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
+                                        .environmentObject(networkController)
+                                        .environmentObject(layout)
+                                        .environmentObject(progress)) {
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                     .searchable(text: $searchText)
                     .listStyle(.sidebar)
 #else
                     List(searchResults, id: \.self) { computer in
-                        HStack {
-                            Image(systemName: "desktopcomputer")
-                                .foregroundColor(.accentColor)
-                            Text(computer.name)
-                                .font(.system(size: 13.0))
+                        NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
+                                        .environmentObject(networkController)
+                                        .environmentObject(layout)
+                                        .environmentObject(progress)) {
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                     .searchable(text: $searchText)
 #endif
