@@ -235,4 +235,115 @@ import AEXML
     //    </computer_extension_attribute>
     //
     
+    func updateComputerExtensionAttribute(server: String, authToken: String, extAtId: String, extAtName: String, enabled: Bool, resourceType: ResourceType = .computerExtensionAttribute) async throws {
+        separationLine()
+        print("Running updateComputerExtensionAttribute - id: \(extAtId) enabled: \(enabled)")
+
+        guard let serverURL = URL(string: server) else {
+            print("Invalid server URL: \(server)")
+            throw JamfAPIError.badURL
+        }
+
+        // Build URL: <server>/JSSResource/computerextensionattributes/id/<id>
+        let resourcePath = getURLFormat(data: .computerExtensionAttribute)
+        let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(extAtId)
+
+        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+
+        // Minimal XML payload containing id, name and enabled flag
+        let xml = """
+        <computer_extension_attribute>
+          <id>\(extAtId)</id>
+          <name>\(extAtName)</name>
+          <enabled>\(enabled)</enabled>
+        </computer_extension_attribute>
+        """
+
+        request.httpBody = xml.data(using: .utf8)
+
+        separationLine()
+        print("Sending PUT to: \(url)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            self.hasError = true
+            self.currentResponseCode = String(describing: statusCode)
+            print("updateComputerExtensionAttribute failed with status: \(statusCode)")
+            throw JamfAPIError.http(statusCode)
+        }
+
+        separationLine()
+        if let body = String(data: data, encoding: .utf8) {
+            print("updateComputerExtensionAttribute response body:\n\(body)")
+        }
+    }
+    
+    // Update extension attribute full script/name/description using async/await
+    func updateComputerExtensionAttributeScript(server: String, authToken: String, extAtId: String, extAtName: String, enabled: Bool, description: String, scriptBody: String, resourceType: ResourceType = .computerExtensionAttribute) async throws {
+        separationLine()
+        print("Running updateComputerExtensionAttributeScript - id: \(extAtId) enabled: \(enabled)")
+
+        guard let serverURL = URL(string: server) else {
+            print("Invalid server URL: \(server)")
+            throw JamfAPIError.badURL
+        }
+
+        let resourcePath = getURLFormat(data: .computerExtensionAttribute)
+        let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(extAtId)
+
+        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+
+        // Build full XML with script input_type
+        let safeDescription = description
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+
+        // Keep script body raw inside CDATA to avoid XML escaping issues
+        let xml = """
+        <computer_extension_attribute>
+          <id>\(extAtId)</id>
+          <name>\(extAtName)</name>
+          <enabled>\(enabled)</enabled>
+          <description>\(safeDescription)</description>
+          <data_type>String</data_type>
+          <input_type>
+            <type>script</type>
+            <platform>Mac</platform>
+            <script><![CDATA[\(scriptBody)]]></script>
+          </input_type>
+          <inventory_display>Extension Attributes</inventory_display>
+        </computer_extension_attribute>
+        """
+
+        request.httpBody = xml.data(using: .utf8)
+
+        separationLine()
+        print("Sending PUT to: \(url)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            self.hasError = true
+            self.currentResponseCode = String(describing: statusCode)
+            print("updateComputerExtensionAttributeScript failed with status: \(statusCode)")
+            throw JamfAPIError.http(statusCode)
+        }
+
+        separationLine()
+        if let body = String(data: data, encoding: .utf8) {
+            print("updateComputerExtensionAttributeScript response body:\n\(body)")
+        }
+    }
 }
