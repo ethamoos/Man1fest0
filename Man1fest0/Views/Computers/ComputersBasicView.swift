@@ -15,8 +15,6 @@ struct ComputersBasicView: View {
     
     @EnvironmentObject var networkController: NetBrain
     
-    @EnvironmentObject var layout: Layout
-
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
     @EnvironmentObject var xmlController: XmlBrain
@@ -60,12 +58,9 @@ struct ComputersBasicView: View {
             
             if networkController.allComputersBasic.computers.count > 0 {
                 
+                NavigationView {
 #if os(macOS)
-                List(searchResults, id: \.self) { computer in
-                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                    .environmentObject(networkController)
-                                    .environmentObject(layout)
-                                    .environmentObject(progress)) {
+                    List(searchResults, id: \.self, selection: $selection) { computer in
                         HStack {
                             Image(systemName: "desktopcomputer")
                                 .foregroundColor(.accentColor)
@@ -74,15 +69,10 @@ struct ComputersBasicView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                }
-                .searchable(text: $searchText)
-                .listStyle(.sidebar)
+                    .searchable(text: $searchText)
+                    .listStyle(.sidebar)
 #else
-                List(searchResults, id: \.self) { computer in
-                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                    .environmentObject(networkController)
-                                    .environmentObject(layout)
-                                    .environmentObject(progress)) {
+                    List(searchResults, id: \.self) { computer in
                         HStack {
                             Image(systemName: "desktopcomputer")
                                 .foregroundColor(.accentColor)
@@ -91,9 +81,10 @@ struct ComputersBasicView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                }
-                .searchable(text: $searchText)
+                    .searchable(text: $searchText)
 #endif
+                    Text("\(networkController.computers.count) total computers")
+                }
                 
                 Text("\(networkController.computers.count) total computers")
                     .font(.footnote)

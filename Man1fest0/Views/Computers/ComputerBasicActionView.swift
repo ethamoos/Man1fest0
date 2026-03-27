@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ComputerActionView: View {
+struct ComputerBasicActionView: View {
     
     var selectedResourceType = ResourceType.computerBasic
     
