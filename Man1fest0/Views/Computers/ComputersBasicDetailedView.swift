@@ -21,11 +21,24 @@ struct ComputersBasicDetailedView: View {
     @EnvironmentObject var progress: Progress
     
     @EnvironmentObject var pushController: PushBrain
+    
+    
+    @EnvironmentObject var extensionAttributeController: EaBrain
+
+
+    
+    
+    
 
 //  Selections
     @State private var selectedDevice = ""
 
     @State private var selectedCommand = ""
+    
+    @State private var selectedEAName = ""
+    
+    @State private var eaValue = ""
+
     
     @State var computer: ComputerBasicRecord
         
@@ -139,31 +152,77 @@ struct ComputersBasicDetailedView: View {
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
 
                 // NEW: Update Extension Attribute UI
-                Divider()
-                Section(header: Text("Update Extension Attribute").bold()) {
-                    HStack(spacing: 8) {
-                        TextField("Extension Attribute Name", text: $updateExtAttName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(minWidth: 150)
-                        TextField("New Value", text: $updateExtAttValue)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(minWidth: 150)
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            // Use helper to build XML and send
-                            updateComputerEAValue(extAttName: updateExtAttName, updateValue: updateExtAttValue)
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.pencil")
-                                Text("Update EA Value")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                    }
-                }
+//                Divider()
+//                Section(header: Text("Update Extension Attribute").bold()) {
+//                    HStack(spacing: 8) {
+//                        TextField("Extension Attribute Name", text: $updateExtAttName)
+//                            .textFieldStyle(RoundedBorderTextFieldStyle())
+//                            .frame(minWidth: 150)
+//                        TextField("New Value", text: $updateExtAttValue)
+//                            .textFieldStyle(RoundedBorderTextFieldStyle())
+//                            .frame(minWidth: 150)
+//                        Button(action: {
+//                            progress.showProgress()
+//                            progress.waitForABit()
+//                            // Use helper to build XML and send
+//                            updateComputerEAValue(extAttName: updateExtAttName, updateValue: updateExtAttValue)
+//                        }) {
+//                            HStack(spacing: 8) {
+//                                Image(systemName: "square.and.pencil")
+//                                Text("Update EA Value")
+//                            }
+//                        }
+//                        .buttonStyle(.borderedProminent)
+//                        .tint(.blue)
+//                    }
+//                }
 
+                // Extension Attribute Update Section - Simple VStack instead of GroupBox
+                               VStack(alignment: .leading, spacing: 12) {
+                                   Text("Update Extension Attribute")
+                                       .font(.headline)
+                                       .foregroundColor(.primary)
+                                   
+                                   Text("DEBUG: \(extensionAttributeController.allComputerExtensionAttributesDict.count) EAs loaded")
+                                       .foregroundColor(.red)
+                                       .font(.caption)
+                                       .padding(5)
+                                       .background(Color.yellow.opacity(0.3))
+                                   
+                                   HStack {
+                                       Text("Extension Attribute:")
+                                       Picker("", selection: $selectedEAName) {
+                                           Text("Select...").tag("")
+                                           ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                                               Text(ea.name).tag(ea.name)
+                                           }
+                                       }
+                                       .pickerStyle(.menu)
+                                   }
+                                   
+                                   HStack {
+                                       Text("Value:")
+                                       TextField("EA Value", text: $eaValue)
+                                           .textFieldStyle(.roundedBorder)
+                                   }
+                                   
+                                   Button(action: {
+                                       progress.showProgress()
+                                       progress.waitForABit()
+                                       print("Updating EA: \(selectedEAName) to: \(eaValue) for computer ID: \(computer.id)")
+                                   }) {
+                                       HStack {
+                                           Image(systemName: "arrow.triangle.2.circlepath")
+                                           Text("Update EA Value")
+                                       }
+                                   }
+                                   .buttonStyle(.borderedProminent)
+                                   .tint(.blue)
+                                   .disabled(selectedEAName.isEmpty)
+                               }
+                               .padding()
+                               .background(Color.gray.opacity(0.1))
+                               .cornerRadius(8)
                 Spacer()
                 
             }

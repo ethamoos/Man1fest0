@@ -330,8 +330,8 @@
 			children = (
 				A885D1532F5ABF21002CB073 /* Groups */,
 				A861F25629D7447A0075D622 /* ComputersBasicView.swift */,
-				A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */,
 				A8DD6B3A2A13CA890098563C /* ComputerBasicActionView.swift */,
+				A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */,
 				E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */,
 				A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */,
 				A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */,
