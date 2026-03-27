@@ -30,6 +30,7 @@
 		A83D210B2DE627AD00D9AD2F /* ComputerExtAttributeActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */; };
 		A83D210D2DE6F76200D9AD2F /* ScriptsActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83D210C2DE6F76200D9AD2F /* ScriptsActionView.swift */; };
 		A840186D2D4BCA6B00C09FD3 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A840186C2D4BCA6700C09FD3 /* ImportView.swift */; };
+		A8516FC02F77054E0093F87E /* ComputersDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8516FBD2F77054E0093F87E /* ComputersDetailedView.swift */; };
 		A8533C3E2CA42EA900E6678F /* KeychainWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */; };
 		A857A4282E2566B900A96F3A /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A857A4272E2566B300A96F3A /* NotesView.swift */; };
 		A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */; };
@@ -59,8 +60,6 @@
 		A88A6A242DB793AE009A64B8 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = A88A6A232DB793A8009A64B8 /* LICENSE.txt */; };
 		A89876642D53D4FC002CC9CF /* ComputerExtAttDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */; };
 		A89B88E02C7F366100DEE54E /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = A89B88DF2C7F366100DEE54E /* Credits.rtf */; };
-		A8A0A2662F76FCA400CC4D26 /* ComputersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0A2652F76FCA400CC4D26 /* ComputersView.swift */; };
-		A8A0A2672F76FCA400CC4D26 /* ComputersDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0A2642F76FCA400CC4D26 /* ComputersDetailedView.swift */; };
 		A8AB48FB2B07D92D004C3675 /* CreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8AB48FA2B07D92D004C3675 /* CreateView.swift */; };
 		A8B276812AD733700016CEE2 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B276802AD733700016CEE2 /* DownloadsView.swift */; };
 		A8B35B102AE822FF0007B5BE /* Progress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B35B0F2AE822FF0007B5BE /* Progress.swift */; };
@@ -141,6 +140,7 @@
 		A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerExtAttributeActionView.swift; sourceTree = "<group>"; };
 		A83D210C2DE6F76200D9AD2F /* ScriptsActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsActionView.swift; sourceTree = "<group>"; };
 		A840186C2D4BCA6700C09FD3 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
+		A8516FBD2F77054E0093F87E /* ComputersDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersDetailedView.swift; sourceTree = "<group>"; };
 		A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainWrapper.swift; sourceTree = "<group>"; };
 		A857A4272E2566B300A96F3A /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicySelfServiceTabView.swift; sourceTree = "<group>"; };
@@ -169,8 +169,6 @@
 		A88768982EE2DD3E009D97B9 /* Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
 		A88A6A232DB793A8009A64B8 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		A89B88DF2C7F366100DEE54E /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
-		A8A0A2642F76FCA400CC4D26 /* ComputersDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersDetailedView.swift; sourceTree = "<group>"; };
-		A8A0A2652F76FCA400CC4D26 /* ComputersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersView.swift; sourceTree = "<group>"; };
 		A8AB48FA2B07D92D004C3675 /* CreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateView.swift; sourceTree = "<group>"; };
 		A8B276802AD733700016CEE2 /* DownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
 		A8B35B0F2AE822FF0007B5BE /* Progress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Progress.swift; sourceTree = "<group>"; };
@@ -340,8 +338,7 @@
 				A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */,
 				A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */,
 				A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */,
-				A8A0A2642F76FCA400CC4D26 /* ComputersDetailedView.swift */,
-				A8A0A2652F76FCA400CC4D26 /* ComputersView.swift */,
+				A8516FBD2F77054E0093F87E /* ComputersDetailedView.swift */,
 			);
 			path = Computers;
 			sourceTree = "<group>";
@@ -688,6 +685,7 @@
 				E48D59DB2C5A453C00E1E35B /* CreatePolicyTabView.swift in Sources */,
 				A8DECD5E2BD999AE00D79A11 /* BackgroundTasks.swift in Sources */,
 				A857A4282E2566B900A96F3A /* NotesView.swift in Sources */,
+				A8516FC02F77054E0093F87E /* ComputersDetailedView.swift in Sources */,
 				A88768992EE2DD3E009D97B9 /* Helper.swift in Sources */,
 				A86CB89E2D3E711D00D8F22F /* ReportsExportCSV.swift in Sources */,
 				A8B35B102AE822FF0007B5BE /* Progress.swift in Sources */,
@@ -748,8 +746,6 @@
 				A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */,
 				E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */,
 				A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */,
-				A8A0A2662F76FCA400CC4D26 /* ComputersView.swift in Sources */,
-				A8A0A2672F76FCA400CC4D26 /* ComputersDetailedView.swift in Sources */,
 				E45E132B2C53B2CA007C175F /* OptionsView.swift in Sources */,
 				E4D434502C7FBDF600E90BAE /* ComputersBasicTableView.swift in Sources */,
 				A8EC41122B0277B500496EC2 /* TestView.swift in Sources */,

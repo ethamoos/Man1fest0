@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ComputersBasicView: View {
+struct ComputersView: View {
     
     @State var server: String
     @State var computersBasic: [ComputerBasicRecord] = []
@@ -15,8 +15,6 @@ struct ComputersBasicView: View {
     
     @EnvironmentObject var networkController: NetBrain
     
-    @EnvironmentObject var layout: Layout
-
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
     @EnvironmentObject var xmlController: XmlBrain
@@ -27,6 +25,8 @@ struct ComputersBasicView: View {
     
     @State private var selectionCompGroup: ComputerGroup? = nil
     @State var selection = Set<ComputerBasicRecord>()
+    // single selected computer for the detail pane
+    @State private var selectedComputer: ComputerBasicRecord? = nil
     
     var body: some View {
         
@@ -60,28 +60,49 @@ struct ComputersBasicView: View {
             
             if networkController.allComputersBasic.computers.count > 0 {
                 
+                // Use a two-pane split view on macOS (master list on the left, detail pane on the right)
 #if os(macOS)
-                List(searchResults, id: \.self) { computer in
-                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                    .environmentObject(networkController)
-                                    .environmentObject(layout)
-                                    .environmentObject(progress)) {
-                        HStack {
-                            Image(systemName: "desktopcomputer")
-                                .foregroundColor(.accentColor)
-                            Text(computer.name)
-                                .font(.system(size: 13.0))
+                NavigationSplitView {
+                    // Master list (supports multi-selection via `selection` for batch operations)
+                    List(selection: $selection) {
+                        ForEach(searchResults) { computer in
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
+                            .tag(computer)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                // update the single-selection used by the detail pane
+                                selectedComputer = computer
+                            }
                         }
-                        .padding(.vertical, 4)
+                    }
+                    .listStyle(SidebarListStyle())
+                    .frame(minWidth: 300)
+                    .searchable(text: $searchText)
+                } detail: {
+                    // Detail pane - show selected computer detail or a placeholder
+                    if let comp = selectedComputer {
+                        ComputersDetailedView(server: server, computerID: String(comp.id))
+                            .environmentObject(networkController)
+                            .environmentObject(xmlController)
+                            .environmentObject(progress)
+                    } else {
+                        Text("Select a computer to view details")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
-                .searchable(text: $searchText)
-                .listStyle(.sidebar)
+                .navigationViewStyle(DefaultNavigationViewStyle())
 #else
+                // On other platforms, fall back to the existing list with NavigationLinks
                 List(searchResults, id: \.self) { computer in
                     NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
                                     .environmentObject(networkController)
-                                    .environmentObject(layout)
+                                    .environmentObject(xmlController)
                                     .environmentObject(progress)) {
                         HStack {
                             Image(systemName: "desktopcomputer")
@@ -95,6 +116,7 @@ struct ComputersBasicView: View {
                 .searchable(text: $searchText)
 #endif
                 
+                // Footer count
                 Text("\(networkController.computers.count) total computers")
                     .font(.footnote)
                     .foregroundColor(.secondary)
@@ -151,7 +173,7 @@ struct ComputersBasicView: View {
                 
                 HStack(spacing: 10) {
                     TextField("Filter", text: $computerGroupFilter)
-                        // Keep the text field to its intrinsic size and avoid stretching
+                    // Keep the text field to its intrinsic size and avoid stretching
                         .fixedSize()
                         .frame(minWidth: 160)
                     Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
@@ -163,26 +185,26 @@ struct ComputersBasicView: View {
                     // Use a compact menu-style picker so it doesn't expand to fill the HStack
                     .pickerStyle(MenuPickerStyle())
                     .fixedSize()
-                 }
-                 .onAppear {
-                     
-                         if networkController.allComputersBasic.computers.count == 0 {
-                             print("Fetching computers")
-                             Task {
-                                 try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
-                             }
-                         }
-                         
-                         Task {
-                             try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                         }
-                         
-                         if let first = networkController.allComputerGroups.first {
-                             selectionCompGroup = first
-                         } else {
-                             selectionCompGroup = nil
-                         }
-                     }
+                }
+                .onAppear {
+                    
+                    if networkController.allComputersBasic.computers.count == 0 {
+                        print("Fetching computers")
+                        Task {
+                            try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                        }
+                    }
+                    
+                    Task {
+                        try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                    }
+                    
+                    if let first = networkController.allComputerGroups.first {
+                        selectionCompGroup = first
+                    } else {
+                        selectionCompGroup = nil
+                    }
+                }
                 
             } else {
                 
@@ -197,7 +219,7 @@ struct ComputersBasicView: View {
         }
         .padding()
     }
-
+    
     var searchResults: [ComputerBasicRecord] {
         
         let allComputers = networkController.allComputersBasic.computers
@@ -212,10 +234,3 @@ struct ComputersBasicView: View {
     }
     
 }
-
-
-//struct TestView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        TestView()
-//    }
-//}

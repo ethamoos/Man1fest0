@@ -83,7 +83,9 @@ struct OptionsView: View {
 //                            }
                             
                             DisclosureGroup("Computers") {
-                                
+                                NavigationLink(destination: ComputersView( server: server )) {
+                                                                 Text("Computers (beta)")
+                                                             }
                                 NavigationLink(destination: ComputerActionView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
                                     Text("Computers")
                                 }
