@@ -25,6 +25,8 @@ struct ComputersView: View {
     
     @State private var selectionCompGroup: ComputerGroup? = nil
     @State var selection = Set<ComputerBasicRecord>()
+    // single selected computer for the detail pane
+    @State private var selectedComputer: ComputerBasicRecord? = nil
     
     var body: some View {
         
@@ -58,31 +60,50 @@ struct ComputersView: View {
             
             if networkController.allComputersBasic.computers.count > 0 {
                 
-                // NOTE: We rely on the parent view to provide the NavigationView. Each row is a NavigationLink
-                // to the ComputersDetailedView which will fetch and display the detailed computer.
+                // Use a two-pane split view on macOS (master list on the left, detail pane on the right)
 #if os(macOS)
-                List(searchResults, id: \.self) { computer in
-                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                    .environmentObject(networkController)
-                                    .environmentObject(progress)
-                                    .environmentObject(xmlController)) {
-                        HStack {
-                            Image(systemName: "desktopcomputer")
-                                .foregroundColor(.accentColor)
-                            Text(computer.name)
-                                .font(.system(size: 13.0))
+                NavigationSplitView {
+                    // Master list (supports multi-selection via `selection` for batch operations)
+                    List(selection: $selection) {
+                        ForEach(searchResults) { computer in
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
+                            .tag(computer)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                // update the single-selection used by the detail pane
+                                selectedComputer = computer
+                            }
                         }
-                        .padding(.vertical, 4)
+                    }
+                    .listStyle(SidebarListStyle())
+                    .frame(minWidth: 300)
+                    .searchable(text: $searchText)
+                } detail: {
+                    // Detail pane - show selected computer detail or a placeholder
+                    if let comp = selectedComputer {
+                        ComputersDetailedView(server: server, computerID: String(comp.id))
+                            .environmentObject(networkController)
+                            .environmentObject(xmlController)
+                            .environmentObject(progress)
+                    } else {
+                        Text("Select a computer to view details")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
-                .searchable(text: $searchText)
-                .listStyle(.sidebar)
+                .navigationViewStyle(DefaultNavigationViewStyle())
 #else
+                // On other platforms, fall back to the existing list with NavigationLinks
                 List(searchResults, id: \.self) { computer in
                     NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
                                     .environmentObject(networkController)
-                                    .environmentObject(progress)
-                                    .environmentObject(xmlController)) {
+                                    .environmentObject(xmlController)
+                                    .environmentObject(progress)) {
                         HStack {
                             Image(systemName: "desktopcomputer")
                                 .foregroundColor(.accentColor)
@@ -95,6 +116,7 @@ struct ComputersView: View {
                 .searchable(text: $searchText)
 #endif
                 
+                // Footer count
                 Text("\(networkController.computers.count) total computers")
                     .font(.footnote)
                     .foregroundColor(.secondary)
