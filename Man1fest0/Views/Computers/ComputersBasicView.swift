@@ -60,43 +60,40 @@ struct ComputersBasicView: View {
             
             if networkController.allComputersBasic.computers.count > 0 {
                 
-                NavigationView {
 #if os(macOS)
-                    List(searchResults, id: \.self, selection: $selection) { computer in
-                        NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                        .environmentObject(networkController)
-                                        .environmentObject(layout)
-                                        .environmentObject(progress)) {
-                            HStack {
-                                Image(systemName: "desktopcomputer")
-                                    .foregroundColor(.accentColor)
-                                Text(computer.name)
-                                    .font(.system(size: 13.0))
-                            }
-                            .padding(.vertical, 4)
+                List(searchResults, id: \.self) { computer in
+                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
+                                    .environmentObject(networkController)
+                                    .environmentObject(layout)
+                                    .environmentObject(progress)) {
+                        HStack {
+                            Image(systemName: "desktopcomputer")
+                                .foregroundColor(.accentColor)
+                            Text(computer.name)
+                                .font(.system(size: 13.0))
                         }
+                        .padding(.vertical, 4)
                     }
-                    .searchable(text: $searchText)
-                    .listStyle(.sidebar)
-#else
-                    List(searchResults, id: \.self) { computer in
-                        NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                        .environmentObject(networkController)
-                                        .environmentObject(layout)
-                                        .environmentObject(progress)) {
-                            HStack {
-                                Image(systemName: "desktopcomputer")
-                                    .foregroundColor(.accentColor)
-                                Text(computer.name)
-                                    .font(.system(size: 13.0))
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                    .searchable(text: $searchText)
-#endif
-                    Text("\(networkController.computers.count) total computers")
                 }
+                .searchable(text: $searchText)
+                .listStyle(.sidebar)
+#else
+                List(searchResults, id: \.self) { computer in
+                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
+                                    .environmentObject(networkController)
+                                    .environmentObject(layout)
+                                    .environmentObject(progress)) {
+                        HStack {
+                            Image(systemName: "desktopcomputer")
+                                .foregroundColor(.accentColor)
+                            Text(computer.name)
+                                .font(.system(size: 13.0))
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .searchable(text: $searchText)
+#endif
                 
                 Text("\(networkController.computers.count) total computers")
                     .font(.footnote)

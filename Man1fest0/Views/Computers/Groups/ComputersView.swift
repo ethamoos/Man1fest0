@@ -58,9 +58,14 @@ struct ComputersView: View {
             
             if networkController.allComputersBasic.computers.count > 0 {
                 
-                NavigationView {
+                // NOTE: We rely on the parent view to provide the NavigationView. Each row is a NavigationLink
+                // to the ComputersDetailedView which will fetch and display the detailed computer.
 #if os(macOS)
-                    List(searchResults, id: \.self, selection: $selection) { computer in
+                List(searchResults, id: \.self) { computer in
+                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
+                                    .environmentObject(networkController)
+                                    .environmentObject(progress)
+                                    .environmentObject(xmlController)) {
                         HStack {
                             Image(systemName: "desktopcomputer")
                                 .foregroundColor(.accentColor)
@@ -69,22 +74,26 @@ struct ComputersView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    .searchable(text: $searchText)
-                    .listStyle(.sidebar)
-#else
-                    List(searchResults, id: \.self) { computer in
-                        HStack {
-                            Image(systemName: "desktopcomputer")
-                                .foregroundColor(.accentColor)
-                            Text(computer.name)
-                                .font(.system(size: 13.0))
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .searchable(text: $searchText)
-#endif
-                    Text("\(networkController.computers.count) total computers")
                 }
+                .searchable(text: $searchText)
+                .listStyle(.sidebar)
+#else
+                List(searchResults, id: \.self) { computer in
+                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
+                                    .environmentObject(networkController)
+                                    .environmentObject(progress)
+                                    .environmentObject(xmlController)) {
+                        HStack {
+                            Image(systemName: "desktopcomputer")
+                                .foregroundColor(.accentColor)
+                            Text(computer.name)
+                                .font(.system(size: 13.0))
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .searchable(text: $searchText)
+#endif
                 
                 Text("\(networkController.computers.count) total computers")
                     .font(.footnote)
@@ -203,5 +212,3 @@ struct ComputersView: View {
     }
     
 }
-
-
