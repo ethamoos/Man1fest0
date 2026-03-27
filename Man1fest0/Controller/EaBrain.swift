@@ -284,6 +284,59 @@ import AEXML
         }
     }
     
+    func updateComputerEAValue(server: String, authToken: String, computerId: Int, extAttName: String, updateValue: String) async throws {
+        let name = extAttName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = updateValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            print("updateComputerEAValue: name empty, aborting")
+            return
+        }
+
+        guard let serverURL = URL(string: server) else {
+            throw JamfAPIError.badURL
+        }
+
+        var baseURL = serverURL
+        baseURL.appendPathComponent("JSSResource")
+        baseURL.appendPathComponent("computers")
+        baseURL.appendPathComponent("id")
+        baseURL.appendPathComponent(String(describing: computerId))
+
+        let xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <computer>
+            <extension_attributes>
+                <extension_attribute>
+                    <name>\(name)</name>
+                    <value>\(value)</value>
+                </extension_attribute>
+            </extension_attributes>
+        </computer>
+        """
+
+        var request = URLRequest(url: baseURL, timeoutInterval: Double.infinity)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpBody = xml.data(using: .utf8)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            self.hasError = true
+            self.currentResponseCode = String(describing: statusCode)
+            print("updateComputerEAValue failed with status: \(statusCode)")
+            throw JamfAPIError.http(statusCode)
+        }
+
+        separationLine()
+        if let body = String(data: data, encoding: .utf8) {
+            print("updateComputerEAValue response body:\n\(body)")
+        }
+    }
+
     // Update extension attribute full script/name/description using async/await
     func updateComputerExtensionAttributeScript(server: String, authToken: String, extAtId: String, extAtName: String, enabled: Bool, description: String, scriptBody: String, resourceType: ResourceType = .computerExtensionAttribute) async throws {
         separationLine()

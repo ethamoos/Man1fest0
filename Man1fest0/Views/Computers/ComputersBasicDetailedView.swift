@@ -151,31 +151,6 @@ struct ComputersBasicDetailedView: View {
                     .tint(.green)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
 
-                // NEW: Update Extension Attribute UI
-//                Divider()
-//                Section(header: Text("Update Extension Attribute").bold()) {
-//                    HStack(spacing: 8) {
-//                        TextField("Extension Attribute Name", text: $updateExtAttName)
-//                            .textFieldStyle(RoundedBorderTextFieldStyle())
-//                            .frame(minWidth: 150)
-//                        TextField("New Value", text: $updateExtAttValue)
-//                            .textFieldStyle(RoundedBorderTextFieldStyle())
-//                            .frame(minWidth: 150)
-//                        Button(action: {
-//                            progress.showProgress()
-//                            progress.waitForABit()
-//                            // Use helper to build XML and send
-//                            updateComputerEAValue(extAttName: updateExtAttName, updateValue: updateExtAttValue)
-//                        }) {
-//                            HStack(spacing: 8) {
-//                                Image(systemName: "square.and.pencil")
-//                                Text("Update EA Value")
-//                            }
-//                        }
-//                        .buttonStyle(.borderedProminent)
-//                        .tint(.blue)
-//                    }
-//                }
 
                 // Extension Attribute Update Section - Simple VStack instead of GroupBox
                                VStack(alignment: .leading, spacing: 12) {
@@ -206,11 +181,23 @@ struct ComputersBasicDetailedView: View {
                                            .textFieldStyle(.roundedBorder)
                                    }
                                    
-                                   Button(action: {
-                                       progress.showProgress()
-                                       progress.waitForABit()
-                                       print("Updating EA: \(selectedEAName) to: \(eaValue) for computer ID: \(computer.id)")
-                                   }) {
+                                    Button(action: {
+                                        progress.showProgress()
+                                        progress.waitForABit()
+                                        Task {
+                                            do {
+                                                try await extensionAttributeController.updateComputerEAValue(
+                                                    server: server,
+                                                    authToken: networkController.authToken,
+                                                    computerId: computer.id,
+                                                    extAttName: selectedEAName,
+                                                    updateValue: eaValue
+                                                )
+                                            } catch {
+                                                print("Failed to update EA: \(error)")
+                                            }
+                                        }
+                                    }) {
                                        HStack {
                                            Image(systemName: "arrow.triangle.2.circlepath")
                                            Text("Update EA Value")
@@ -235,38 +222,6 @@ struct ComputersBasicDetailedView: View {
                     networkController.refreshDepartments()
             }
         }
-    }
-
-    // Helper to update a computer extension attribute value by name
-    private func updateComputerEAValue(extAttName: String, updateValue: String) {
-        let name = extAttName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let value = updateValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else {
-            print("updateComputerEAValue: name empty, aborting")
-            return
-        }
-        // Build XML payload
-        let xml = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <computer>
-            <extension_attributes>
-                <extension_attribute>
-                    <name>\(name)</name>
-                    <value>\(value)</value>
-                </extension_attribute>
-            </extension_attributes>
-        </computer>
-        """
-
-        // Build URL for PUT
-        let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard var baseURL = URL(string: trimmedServer) else { return }
-        baseURL.appendPathComponent("JSSResource")
-        baseURL.appendPathComponent("computers")
-        baseURL.appendPathComponent("id")
-        baseURL.appendPathComponent(String(describing: computer.id))
-
-        networkController.sendRequestAsXML(url: baseURL, authToken: networkController.authToken, resourceType: ResourceType.computer, xml: xml, httpMethod: "PUT")
     }
 }
 
