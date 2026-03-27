@@ -22,19 +22,24 @@ struct ComputerExtAttDetailView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var extensionAttributeController: EaBrain
     @EnvironmentObject var layout: Layout
+
+    // Local state for editable fields
+    @State private var currentCompExtAttDet: ComputerExtensionAttributeDetailed = ComputerExtensionAttributeDetailed(id: 0, name: "", enabled: true, description: "", dataType: "", inputType: InputType(type: "", platform: "", script: ""), inventoryDisplay: "")
+    @State private var eaName: String = ""
+    @State private var eaDescription: String = ""
+    @State private var eaScriptBody: String = ""
+    @State private var isUpdating: Bool = false
+    @State private var showUpdateError: Bool = false
+    @State private var updateErrorMessage: String = ""
     
-    var body: some View {
-        
-        @State var currentCompExtAttDet: ComputerExtensionAttributeDetailed = extensionAttributeController.computerExtensionAttributeDetailed
-        
+     var body: some View {
         VStack(alignment: .leading) {
-  
+
+            // Delete button
             Button(action: {
-            
                 progress.showProgress()
                 progress.waitForABit()
                 showingWarningDelete = true
-
             }) {
                 HStack {
                     HStack(spacing: 10) {
@@ -90,17 +95,87 @@ struct ComputerExtAttDetailView: View {
             .padding()
             .textSelection(.enabled)
 
-            
-            
-            
-            
-            
-            
-            Section(header: Text("Script Detail").bold()) {
-                VStack(alignment: .leading) {
-                    Text("Name:\t\t\(computerEA.name)")
-                    Text("ID:\t\t\t\(String(computerEA.id))")
-                    Text("Status:\t\t\(currentCompExtAttDet.enabled)")
+            // Script Detail / Editable fields
+            Section(header: Text("Extension Attribute").bold()) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Name:")
+                        TextField("Name", text: $eaName)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    HStack {
+                        Text("ID:")
+                        Text(String(computerEA.id))
+                    }
+
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading) {
+                            Text("Description:")
+                            TextEditor(text: $eaDescription)
+                                .frame(minHeight: 80)
+                                .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.gray.opacity(0.2)))
+                        }
+                    }
+
+                    VStack(alignment: .leading) {
+                        Text("Script:")
+                        TextEditor(text: $eaScriptBody)
+                            .frame(minHeight: 160)
+                            .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.gray.opacity(0.2)))
+                    }
+
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            // Run update
+                            Task {
+                                await MainActor.run { isUpdating = true }
+                                do {
+                                    try await extensionAttributeController.updateComputerExtensionAttributeScript(server: server, authToken: networkController.authToken, extAtId: String(computerEA.id), extAtName: eaName.isEmpty ? computerEA.name : eaName, enabled: currentCompExtAttDet.enabled, description: eaDescription, scriptBody: eaScriptBody)
+                                    // refresh
+                                    try await extensionAttributeController.getComputerExtAttributeDetailed(server: server, authToken: networkController.authToken, compExtAttId: String(describing: computerEA.id))
+                                    await MainActor.run {
+                                        currentCompExtAttDet = extensionAttributeController.computerExtensionAttributeDetailed
+                                        eaName = currentCompExtAttDet.name
+                                        eaDescription = currentCompExtAttDet.description
+                                        eaScriptBody = currentCompExtAttDet.inputType.script
+                                    }
+                                } catch {
+                                    print("Failed to update EA script: \(error)")
+                                    await MainActor.run {
+                                        updateErrorMessage = String(describing: error)
+                                        showUpdateError = true
+                                    }
+                                }
+                                await MainActor.run { isUpdating = false }
+                            }
+                        }) {
+                            if isUpdating {
+                                ProgressView()
+                            } else {
+                                Text("Update")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button(action: {
+                            // reload details
+                            Task {
+                                do {
+                                    try await extensionAttributeController.getComputerExtAttributeDetailed(server: server, authToken: networkController.authToken, compExtAttId: String(describing: computerEA.id))
+                                    await MainActor.run {
+                                        currentCompExtAttDet = extensionAttributeController.computerExtensionAttributeDetailed
+                                        eaName = currentCompExtAttDet.name
+                                        eaDescription = currentCompExtAttDet.description
+                                        eaScriptBody = currentCompExtAttDet.inputType.script
+                                    }
+                                } catch {
+                                    print("Failed to reload EA detail: \(error)")
+                                }
+                            }
+                        }) {
+                            Text("Reload")
+                        }
+                    }
                 }
             }
             
@@ -176,21 +251,32 @@ struct ComputerExtAttDetailView: View {
             //            Text("Platform Type:\(currentCompExtAttDet.inputType.platform)")
             //            Text("Script:\(currentCompExtAttDet.inputType.script)")
             //
-            
         }
-        //        .multilineTextAlignment(.leading)
+        .multilineTextAlignment(.leading)
         .padding()
         .onAppear {
             print("ComputerExtAttributeView appeared. Running onAppear")
-            
+            // initialize local copy from controller and populate editable fields
+            currentCompExtAttDet = extensionAttributeController.computerExtensionAttributeDetailed
+            eaName = currentCompExtAttDet.name.isEmpty ? computerEA.name : currentCompExtAttDet.name
+            eaDescription = currentCompExtAttDet.description
+            eaScriptBody = currentCompExtAttDet.inputType.script
             Task {
-                
-                //  #######################################################################
-                //            getComputerExtAttributes
-                //  #######################################################################
-                
-                try await extensionAttributeController.getComputerExtAttributeDetailed(server: server, authToken: networkController.authToken, compExtAttId: String(describing: computerEA.id))
+                do {
+                    try await extensionAttributeController.getComputerExtAttributeDetailed(server: server, authToken: networkController.authToken, compExtAttId: String(describing: computerEA.id))
+                    await MainActor.run {
+                        currentCompExtAttDet = extensionAttributeController.computerExtensionAttributeDetailed
+                        eaName = currentCompExtAttDet.name
+                        eaDescription = currentCompExtAttDet.description
+                        eaScriptBody = currentCompExtAttDet.inputType.script
+                    }
+                } catch {
+                    print("Failed to load computer EA detail: \(error)")
+                }
             }
         }
-    }
-}
+        .alert(isPresented: $showUpdateError) {
+            Alert(title: Text("Update failed"), message: Text(updateErrorMessage), dismissButton: .default(Text("OK")))
+        }
+     }
+ }
