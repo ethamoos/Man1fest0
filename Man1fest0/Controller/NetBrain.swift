@@ -164,6 +164,8 @@ actor AsyncSemaphore {
     @Published var computersBasic: [Computers.ComputerResponse] = []
     @Published var allComputersBasic: ComputerBasic = ComputerBasic(computers: [])
     @Published var allComputersBasicDict = [ComputerBasicRecord]()
+    // Published single detailed computer mapped to ComputerBasicRecord for ComputersDetailedView
+    @Published var computerDetailed: ComputerBasicRecord? = nil
     
     //  #############################################################################
     //    ############ GROUPS
@@ -5566,6 +5568,38 @@ xml = """
             print("Loaded detail for user id: \(userID)")
         } catch {
             publishError(error, title: "Failed to load user details")
+            throw error
+        }
+    }
+
+    // Fetch detailed computer by id (lightweight decode)
+    func getDetailedComputer(userID: String) async throws {
+        do {
+            let request = APIRequest<ComputerDetailedResponse>(endpoint: "computers/id/" + userID, method: .get)
+            print("APIRequest (computer detailed): \(request)")
+            if authToken.isEmpty {
+                _ = try await getToken(server: server, username: username, password: password)
+            }
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            // Map ComputerSlim into a simple published model for UI consumption
+            let gen = decoded.computer.general
+            let jamfId = Int(gen.id) ?? 0
+            let detail = ComputerBasicRecord(id: jamfId,
+                                             name: gen.name ?? "",
+                                             managed: true,
+                                             username: gen.username ?? "",
+                                             model: gen.model ?? "",
+                                             department: gen.department ?? "",
+                                             building: gen.building ?? "",
+                                             macAddress: "",
+                                             udid: gen.udid ?? "",
+                                             serialNumber: gen.serial_number ?? "",
+                                             reportDateUTC: gen.report_date_utc ?? "",
+                                             reportDateEpoch: 0)
+            self.computerDetailed = detail
+            print("Loaded detailed computer id: \(jamfId)")
+        } catch {
+            publishError(error, title: "Failed to load computer detail")
             throw error
         }
     }
