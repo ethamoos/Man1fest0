@@ -33,13 +33,16 @@ struct ComputersBasicDetailedView: View {
 
     @State private var showingWarning = false
     
+    // New fields to update an extension attribute on this computer
+    @State private var updateExtAttName: String = ""
+    @State private var updateExtAttValue: String = ""
     
 #if os(macOS)
     
     @Binding var selection: ComputerBasicRecord
     
 #endif
-    
+
     var body: some View {
         
         LazyVGrid(columns: layout.columnsFlexAdaptive, spacing: 20) {
@@ -134,7 +137,33 @@ struct ComputersBasicDetailedView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.green)
                     .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                
+
+                // NEW: Update Extension Attribute UI
+                Divider()
+                Section(header: Text("Update Extension Attribute").bold()) {
+                    HStack(spacing: 8) {
+                        TextField("Extension Attribute Name", text: $updateExtAttName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(minWidth: 150)
+                        TextField("New Value", text: $updateExtAttValue)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(minWidth: 150)
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            // Use helper to build XML and send
+                            updateComputerEAValue(extAttName: updateExtAttName, updateValue: updateExtAttValue)
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.pencil")
+                                Text("Update EA Value")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                }
+
                 Spacer()
                 
             }
@@ -143,10 +172,42 @@ struct ComputersBasicDetailedView: View {
             .padding()
             Spacer()
 
-            .onAppear {                
+            .onAppear {
                     networkController.refreshDepartments()
             }
         }
+    }
+
+    // Helper to update a computer extension attribute value by name
+    private func updateComputerEAValue(extAttName: String, updateValue: String) {
+        let name = extAttName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = updateValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            print("updateComputerEAValue: name empty, aborting")
+            return
+        }
+        // Build XML payload
+        let xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <computer>
+            <extension_attributes>
+                <extension_attribute>
+                    <name>\(name)</name>
+                    <value>\(value)</value>
+                </extension_attribute>
+            </extension_attributes>
+        </computer>
+        """
+
+        // Build URL for PUT
+        let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var baseURL = URL(string: trimmedServer) else { return }
+        baseURL.appendPathComponent("JSSResource")
+        baseURL.appendPathComponent("computers")
+        baseURL.appendPathComponent("id")
+        baseURL.appendPathComponent(String(describing: computer.id))
+
+        networkController.sendRequestAsXML(url: baseURL, authToken: networkController.authToken, resourceType: ResourceType.computer, xml: xml, httpMethod: "PUT")
     }
 }
 
