@@ -49,6 +49,7 @@ struct ComputersBasicTableView: View {
     
     @State private var selectedEAName = ""
     @State private var eaValue = ""
+    @State private var eaFilterText = ""
     
     
     var body: some View {
@@ -367,10 +368,16 @@ struct ComputersBasicTableView: View {
                     .foregroundColor(.primary)
                 
                 HStack {
+                    VStack(alignment: .leading) {
+                        TextField("Filter Extension Attributes", text: $eaFilterText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 300)
+                    }
+                    
                     Text("Extension Attribute:")
                     Picker("", selection: $selectedEAName) {
                         Text("Select...").tag("")
-                        ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                        ForEach(filteredEAs, id: \.self) { ea in
                             Text(ea.name).tag(ea.name)
                         }
                     }
@@ -444,7 +451,7 @@ struct ComputersBasicTableView: View {
                   try await networkController.getAllDepartments()
                   try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
                   try await extensionAttributeController.getComputerExtAttributes(server: server, authToken: networkController.authToken)
-
+                  
                     }
         
             if networkController.allComputerGroups.count <= 1 {
@@ -495,6 +502,15 @@ struct ComputersBasicTableView: View {
             return networkController.departments
         } else {
             return networkController.departments.filter { $0.name.lowercased().contains(departmentFilterText.lowercased()) }
+        }
+    }
+    
+    var filteredEAs: [ComputerExtensionAttribute] {
+        if eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return extensionAttributeController.allComputerExtensionAttributesDict
+        } else {
+            let q = eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return extensionAttributeController.allComputerExtensionAttributesDict.filter { $0.name.lowercased().contains(q) }
         }
     }
 }
