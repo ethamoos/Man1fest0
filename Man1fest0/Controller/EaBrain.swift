@@ -388,7 +388,7 @@ import AEXML
 
             separationLine()
             print("updateComputerEAValueMultipleComputers: updated computer \(computerId) EA is: \(name) = \(value)")
-            print("Submitted xml is:\(xml)")
+//            print("Submitted xml is:\(xml)")
             if let body = String(data: data, encoding: .utf8) {
                 print("response body:\n\(body)")
             }

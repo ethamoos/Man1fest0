@@ -7,7 +7,9 @@
 //
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(macOS)
 import AppKit
+#endif
 
 struct ReportsView: View {
     
@@ -250,7 +252,13 @@ struct ReportsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(NSColor.controlBackgroundColor))
+                .fill({
+                    #if os(macOS)
+                    return Color(NSColor.controlBackgroundColor)
+                    #else
+                    return Color(.secondarySystemBackground)
+                    #endif
+                }())
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -271,7 +279,13 @@ struct ReportsView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(NSColor.controlBackgroundColor))
+                .fill({
+                    #if os(macOS)
+                    return Color(NSColor.controlBackgroundColor)
+                    #else
+                    return Color(.secondarySystemBackground)
+                    #endif
+                }())
         )
         .padding(.horizontal)
     }

@@ -6,9 +6,11 @@
 //
 
 import Foundation
+#if os(macOS)
+import AppKit
+#endif
 import SwiftUI
 import AEXML
-import AppKit
 
 
 class ASyncFileDownloader {
@@ -40,6 +42,7 @@ class ASyncFileDownloader {
 
     // Persist a security-scoped bookmark for a folder
     static func storeBookmark(for folderURL: URL) -> Bool {
+        #if os(macOS)
         do {
             let bookmark = try folderURL.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
             UserDefaults.standard.set(bookmark, forKey: bookmarkDefaultsKey)
@@ -48,10 +51,16 @@ class ASyncFileDownloader {
             print("Failed to create bookmark: \(error)")
             return false
         }
+        #else
+        // No security-scoped bookmarks on iOS; store the path string as a fallback (not security-scoped)
+        UserDefaults.standard.set(folderURL.path, forKey: bookmarkDefaultsKey)
+        return true
+        #endif
     }
 
     // Resolve saved bookmark to URL (starts access if security-scoped)
     static func resolveSavedBookmark() -> URL? {
+        #if os(macOS)
         guard let bookmarkData = UserDefaults.standard.data(forKey: bookmarkDefaultsKey) else { return nil }
         var isStale = false
         do {
@@ -65,10 +74,17 @@ class ASyncFileDownloader {
             print("Failed to resolve bookmark: \(error)")
             return nil
         }
+        #else
+        if let path = UserDefaults.standard.string(forKey: bookmarkDefaultsKey) {
+            return URL(fileURLWithPath: path)
+        }
+        return nil
+        #endif
     }
 
     // Present an NSOpenPanel to let the user choose a downloads folder (returns the selected folder URL or nil)
     static func askUserForDownloadFolder() -> URL? {
+        #if os(macOS)
         var selectedURL: URL?
         let runPanel = {
             let panel = NSOpenPanel()
@@ -94,6 +110,10 @@ class ASyncFileDownloader {
             _ = storeBookmark(for: url)
         }
         return selectedURL
+        #else
+        // On iOS there's no OpenPanel. Return Documents directory as a reasonable fallback.
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        #endif
     }
 
     // Attempt to write data to a writable folder: Downloads preferred; if not writable, try saved bookmark; if still not, present a panel and save bookmark.
@@ -458,6 +478,7 @@ class ASyncFileDownloader {
     
     // Show a UI alert after a successful download, offering "Open in Finder"
     static func showDownloadCompletedNotification(savedPath: String) {
+        #if os(macOS)
         DispatchQueue.main.async {
             let alert = NSAlert()
             alert.messageText = "Download Complete"
@@ -469,6 +490,12 @@ class ASyncFileDownloader {
                 NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: savedPath)])
             }
         }
+        #else
+        // On iOS, open the Files app location is not possible programmatically; simply log or consider a share sheet in future.
+        DispatchQueue.main.async {
+            print("Download complete: \(savedPath)")
+        }
+        #endif
     }
 }
 

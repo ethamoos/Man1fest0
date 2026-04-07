@@ -1,10 +1,7 @@
+import SwiftUI
 #if os(macOS)
 import AppKit
-#else
-import UIKit
 #endif
-
-import SwiftUI
 
 struct ScriptsDetailView: View {
     
@@ -211,7 +208,11 @@ struct ScriptsDetailView: View {
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    #if os(macOS)
                     .background(Color(.textBackgroundColor))
+                    #else
+                    .background(Color(.secondarySystemBackground))
+                    #endif
                     .cornerRadius(6)
                     .border(Color.gray.opacity(0.3))
                     .frame(minHeight: 240)

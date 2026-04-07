@@ -36,7 +36,7 @@ struct ComputersBasicTableView: View {
 //    @State var selectionComp = Set<Computer>()
 //    @State var selectionGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
-    @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
+    @State private var selectionDepartmentId: String = ""
    
     @State private var computerGroupFilter: String = ""
     @State private var selectionCompGroup: ComputerGroup? = nil
@@ -220,7 +220,7 @@ struct ComputersBasicTableView: View {
                                 //  processUpdateComputerDepartment
                                 //  ##########################################################################
                                 
-                                networkController.processUpdateComputerDepartmentBasic(selection: selection, server: server, authToken: networkController.authToken, resourceType: selectedResourceType, department: selectionDepartment.name)
+                                networkController.processUpdateComputerDepartmentBasic(selection: selection, server: server, authToken: networkController.authToken, resourceType: selectedResourceType, department: selectedDepartmentName)
                                 progress.showProgress()
                                 progress.waitForABit()
                                 
@@ -234,10 +234,10 @@ struct ComputersBasicTableView: View {
                             .tint(.blue)
                         }
                     
-                    Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                        Text("").tag(Department(jamfId: 0, name: ""))
+                    Picker(selection: $selectionDepartmentId, label: Text("Department:").bold()) {
+                        Text("").tag("")
                         ForEach(filteredDepartments, id: \.self) { department in
-                            Text(String(describing: department.name)).tag(department)
+                            Text(String(describing: department.name)).tag(department.id)
                         }
                     }
                     }
@@ -456,14 +456,23 @@ struct ComputersBasicTableView: View {
                     }
         
             if networkController.allComputerGroups.count <= 1 {
-                Task {
-                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                }
+                 Task {
+                     try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                 }
+             }
+            // Ensure selectionDepartmentId is set to a sensible default when departments are loaded
+            if selectionDepartmentId.isEmpty, let firstDept = networkController.departments.first {
+                selectionDepartmentId = firstDept.id
             }
-        
-        }
+         
+         }
     }
-    
+
+    // Helper to resolve the selected department's name
+    var selectedDepartmentName: String {
+        networkController.departments.first(where: { $0.id == selectionDepartmentId })?.name ?? ""
+    }
+
     var searchResults: [ComputerBasicRecord] {
         let allComputers = networkController.allComputersBasic.computers
         let allComputersArray = Array(allComputers)
@@ -521,10 +530,10 @@ struct ComputersBasicTableView: View {
 }
 
 
-
 //var body: some View {
 //    Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
 //}
+//
 //}
 
 //#Preview {

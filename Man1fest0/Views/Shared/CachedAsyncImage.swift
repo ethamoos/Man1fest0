@@ -1,4 +1,4 @@
-Mon// CachedAsyncImage.swift
+// CachedAsyncImage.swift
 // Lightweight cached async image loader with thumbnail generation
 
 import SwiftUI
@@ -6,7 +6,7 @@ import ImageIO
 
 #if os(iOS)
 import UIKit
-#else
+#elseif os(macOS)
 import AppKit
 #endif
 
