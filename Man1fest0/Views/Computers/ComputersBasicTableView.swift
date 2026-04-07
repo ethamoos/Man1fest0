@@ -439,9 +439,12 @@ struct ComputersBasicTableView: View {
             
         .onAppear {
             
+            
               Task {
                   try await networkController.getAllDepartments()
                   try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                  try await extensionAttributeController.getComputerExtAttributes(server: server, authToken: networkController.authToken)
+
                     }
         
             if networkController.allComputerGroups.count <= 1 {
@@ -457,10 +460,31 @@ struct ComputersBasicTableView: View {
         let allComputers = networkController.allComputersBasic.computers
         let allComputersArray = Array(allComputers)
         let filtered: [ComputerBasicRecord]
-        if searchText.isEmpty {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
             filtered = allComputersArray
         } else {
-            filtered = allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+            let q = trimmed.lowercased()
+            filtered = allComputersArray.filter { record in
+                // Convert fields to strings safely and compare lowercase
+                let id = String(describing: record.id).lowercased()
+                let name = String(describing: record.name).lowercased()
+                let user = String(describing: record.username).lowercased()
+                let dept = String(describing: record.department).lowercased()
+                let bld = String(describing: record.building).lowercased()
+                let model = String(describing: record.model).lowercased()
+                let serial = String(describing: record.serialNumber).lowercased()
+                let checkin = String(describing: record.reportDateUTC).lowercased()
+
+                return id.contains(q)
+                    || name.contains(q)
+                    || user.contains(q)
+                    || dept.contains(q)
+                    || bld.contains(q)
+                    || model.contains(q)
+                    || serial.contains(q)
+                    || checkin.contains(q)
+            }
         }
         return filtered.sorted(using: sortOrder)
     }

@@ -386,7 +386,7 @@ import AEXML
             }
 
             separationLine()
-            print("updateComputerEAValueMultipleComputers: updated computer \(computerId)")
+            print("updateComputerEAValueMultipleComputers: updated computer \(computerId) EA is: \(name) = \(value)")
             if let body = String(data: data, encoding: .utf8) {
                 print("response body:\n\(body)")
             }
