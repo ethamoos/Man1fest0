@@ -390,6 +390,7 @@ struct ComputersBasicTableView: View {
                         .textFieldStyle(.roundedBorder)
                 }
                 
+                
                 Button(action: {
                     progress.showProgress()
                     progress.waitForABit()
@@ -507,10 +508,14 @@ struct ComputersBasicTableView: View {
     
     var filteredEAs: [ComputerExtensionAttribute] {
         if eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return extensionAttributeController.allComputerExtensionAttributesDict
+            return extensionAttributeController.allComputerExtensionAttributesDict.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
         } else {
             let q = eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            return extensionAttributeController.allComputerExtensionAttributesDict.filter { $0.name.lowercased().contains(q) }
+            return extensionAttributeController.allComputerExtensionAttributesDict
+                .filter { $0.name.lowercased().contains(q) }
+                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         }
     }
 }
