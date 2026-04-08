@@ -1,0 +1,51 @@
+import SwiftUI
+
+struct ComputersDetailedView: View {
+    @State var server: String
+    @State var computerID: String
+    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var progress: Progress
+
+    @State private var detailed: ComputerBasicRecord? = nil
+    @State private var loading: Bool = true
+
+    var body: some View {
+        Group {
+            if loading {
+                ProgressView("Loading computer...")
+            } else if let d = detailed {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Name: \(d.name)")
+                        Text("ID: \(d.id)")
+                        Text("UDID: \(d.udid)")
+                        Text("Serial: \(d.serialNumber)")
+                        Text("Model: \(d.model)")
+                        Text("Username: \(d.username)")
+                        Text("Department: \(d.department)")
+                        Text("Building: \(d.building)")
+                        Text("Last checkin: \(d.reportDateUTC)")
+                    }
+                    .padding()
+                }
+            } else {
+                Text("No details")
+            }
+        }
+        .onAppear {
+            Task {
+                do {
+                    try await networkController.getDetailedComputer(userID: computerID)
+                    await MainActor.run {
+                        self.detailed = networkController.computerDetailed
+                        self.loading = false
+                    }
+                } catch {
+                    print("Failed to load detailed computer: \(error)")
+                    await MainActor.run { self.loading = false }
+                }
+            }
+        }
+    }
+}
