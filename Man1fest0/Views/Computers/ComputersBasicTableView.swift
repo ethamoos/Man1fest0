@@ -343,6 +343,8 @@ struct ComputersBasicTableView: View {
             HStack(spacing: 10) {
                 TextField("Filter", text: $computerGroupFilter)
                 Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
+                    // Provide an explicit nil tag so the optional selection has a matching tag
+                    Text("Select...").tag(nil as ComputerGroup?)
                     ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
                         Text(group.name)
                             .tag(group as ComputerGroup?)
@@ -376,6 +378,7 @@ struct ComputersBasicTableView: View {
                     
                     Text("Extension Attribute:")
                     Picker("", selection: $selectedEAName) {
+                        // Provide an explicit empty-string tag so the selection's initial empty string matches
                         Text("Select...").tag("")
                         ForEach(filteredEAs, id: \.self) { ea in
                             Text(ea.name).tag(ea.name)
