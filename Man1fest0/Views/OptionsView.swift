@@ -84,11 +84,11 @@ struct OptionsView: View {
                             
                             DisclosureGroup("Computers") {
                                 NavigationLink(destination: ComputersView( server: server )) {
-                                                                 Text("Computers (beta)")
+                                                                 Text("Computers")
                                                              }
-                                NavigationLink(destination: ComputerBasicActionView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
-                                    Text("Computer Actions")
-                                }
+//                                NavigationLink(destination: ComputerBasicActionView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
+//                                    Text("Computers")
+//                                }
                                 
                                 NavigationLink(destination: ComputersBasicView( server: server )) {
                                                                  Text("Computers Basic Actions")
@@ -119,14 +119,10 @@ struct OptionsView: View {
                                     }
                                 }
                             }
-                          
 #if os(macOS)
-
                             Divider()
 
                             DisclosureGroup("Packages") {
-                                
-                             
                                 
                                 NavigationLink(destination: PackagesUnsortedView(server: server, selectedResourceType: ResourceType.package )) {
                                     Text("Packages")
@@ -143,11 +139,8 @@ struct OptionsView: View {
                                     Text("Package Usage")
                                 }
                             }
-                            
 //                            Divider()
 #endif
-                            
-                            
                         }
                         
                         Group {

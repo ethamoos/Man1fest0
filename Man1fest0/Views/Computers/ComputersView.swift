@@ -123,55 +123,7 @@ struct ComputersView: View {
                     .foregroundColor(.secondary)
                     .padding(.top, 6)
                     .navigationViewStyle(DefaultNavigationViewStyle())
-                
-                //  ##########################################################################
-                //  processUpdateAddComputersToGroup
-                //  ##########################################################################
-                
-                Button(action: {
-                    
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    // Call the real update group function and show progress
-                    guard let compGroup = selectionCompGroup else {
-                        // No group selected - nothing to do
-                        return
-                    }
-                    
-                    // Request group members XML then call addMultipleComputersToGroup when the XML is available.
-                    Task {
-                        xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
-                        
-                        var attempts = 0
-                        while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
-                            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
-                            attempts += 1
-                        }
-                        
-                        if xmlController.computerGroupMembersXML.isEmpty {
-                            print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
-                        } else {
-                            print("Got groupMembers XML")
-                        }
-                        
-                        xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
-                                                                  computers: selection,
-                                                                  authToken: networkController.authToken,
-                                                                  groupId: String(compGroup.id),
-                                                                  resourceType: ResourceType.computerGroup,
-                                                                  server: server)
-                    }
-                    
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Add Selection To Group")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                
+         
                 HStack(spacing: 10) {
                     TextField("Filter", text: $computerGroupFilter)
                     // Keep the text field to its intrinsic size and avoid stretching
@@ -233,5 +185,4 @@ struct ComputersView: View {
             return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
     }
-    
 }

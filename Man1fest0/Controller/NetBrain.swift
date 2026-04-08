@@ -5588,7 +5588,7 @@ xml = """
             let decodedFull = try await requestSender.resultFor(apiRequest: request)
             // Debug: print entire decoded response so we can inspect what arrived
             separationLine()
-            print("Decoded ComputerDetailedFullResponse: \(decodedFull)")
+//            print("Decoded ComputerDetailedFullResponse: \(decodedFull)")
             // Publish the decoded full structure for detailed UI consumption
             self.computerDetailedFull = decodedFull.computer
             // record successful response code for UI

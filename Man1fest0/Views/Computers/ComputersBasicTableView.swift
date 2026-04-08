@@ -481,7 +481,7 @@ struct ComputersBasicTableView: View {
         if trimmed.isEmpty {
             filtered = allComputersArray
         } else {
-            let q = trimmed.lowercased()
+            let query = trimmed.lowercased()
             filtered = allComputersArray.filter { record in
                 // Convert fields to strings safely and compare lowercase
                 let id = String(describing: record.id).lowercased()
@@ -493,14 +493,14 @@ struct ComputersBasicTableView: View {
                 let serial = String(describing: record.serialNumber).lowercased()
                 let checkin = String(describing: record.reportDateUTC).lowercased()
 
-                return id.contains(q)
-                    || name.contains(q)
-                    || user.contains(q)
-                    || dept.contains(q)
-                    || bld.contains(q)
-                    || model.contains(q)
-                    || serial.contains(q)
-                    || checkin.contains(q)
+                return id.contains(query)
+                    || name.contains(query)
+                    || user.contains(query)
+                    || dept.contains(query)
+                    || bld.contains(query)
+                    || model.contains(query)
+                    || serial.contains(query)
+                    || checkin.contains(query)
             }
         }
         return filtered.sorted(using: sortOrder)
@@ -521,9 +521,9 @@ struct ComputersBasicTableView: View {
                 $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
             }
         } else {
-            let q = eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let eaQuery = eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             return extensionAttributeController.allComputerExtensionAttributesDict
-                .filter { $0.name.lowercased().contains(q) }
+                .filter { $0.name.lowercased().contains(eaQuery) }
                 .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         }
     }

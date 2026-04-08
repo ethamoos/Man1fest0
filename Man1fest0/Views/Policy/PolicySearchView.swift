@@ -594,16 +594,16 @@ enum SearchField: String, CaseIterable {
             return
                 match(policy.general?.name) ||
                 (policy.general?.jamfId != nil && {
-                    let idStr = String(describing: policy.general!.jamfId!)
-                    let subject = caseSensitive ? idStr : idStr.lowercased()
+                    let idString = String(describing: policy.general!.jamfId!)
+                    let subject = caseSensitive ? idString : idString.lowercased()
                     switch matchMode {
                     case .contains: return subject.contains(targetSearch)
                     case .startsWith: return subject.hasPrefix(targetSearch)
                     }
                 }()) ||
                 (policy.general?.enabled != nil && {
-                    let enabledStr = String(describing: policy.general!.enabled!)
-                    let subject = caseSensitive ? enabledStr : enabledStr.lowercased()
+                    let enabledString = String(describing: policy.general!.enabled!)
+                    let subject = caseSensitive ? enabledString : enabledString.lowercased()
                     switch matchMode {
                     case .contains: return subject.contains(targetSearch)
                     case .startsWith: return subject.hasPrefix(targetSearch)
@@ -617,21 +617,21 @@ enum SearchField: String, CaseIterable {
                     // match name
                     if match(pkg.name) { return true }
                     // match ID as string
-                    let idStr = String(describing: pkg.jamfId)
-                    let subject = caseSensitive ? idStr : idStr.lowercased()
+                    let idString = String(describing: pkg.jamfId)
+                    let subject = caseSensitive ? idString : idString.lowercased()
                     switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
                 } ?? false) ||
                 // scripts: match any script name
                 (policy.scripts?.contains { match($0.name) } ?? false) ||
                 // scope checks: match basic boolean/string forms and any names inside scope arrays
                 (policy.scope?.allComputers != nil && {
-                    let s = String(describing: policy.scope!.allComputers!)
-                    let subject = caseSensitive ? s : s.lowercased()
+                    let subjectString = String(describing: policy.scope!.allComputers!)
+                    let subject = caseSensitive ? subjectString : subjectString.lowercased()
                     switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
                 }()) ||
                 (policy.scope?.all_jss_users != nil && {
-                    let s = String(describing: policy.scope!.all_jss_users!)
-                    let subject = caseSensitive ? s : s.lowercased()
+                    let subjectString = String(describing: policy.scope!.all_jss_users!)
+                    let subject = caseSensitive ? subjectString : subjectString.lowercased()
                     switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
                 }()) ||
                 (policy.scope?.computers?.contains { match($0.name) } ?? false) ||
@@ -650,8 +650,8 @@ enum SearchField: String, CaseIterable {
         case .packages:
             return policy.package_configuration?.packages.contains { pkg in
                  if match(pkg.name) { return true }
-                 let idStr = String(describing: pkg.jamfId)
-                 let subject = caseSensitive ? idStr : idStr.lowercased()
+                 let idString = String(describing: pkg.jamfId)
+                 let subject = caseSensitive ? idString : idString.lowercased()
                  switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
             } ?? false
 
@@ -661,10 +661,10 @@ enum SearchField: String, CaseIterable {
         case .generalName:
             return match(policy.general?.name)
         case .generalID:
-            if let id = policy.general?.jamfId { let idStr = String(describing: id); return caseSensitive ? idStr.contains(search) : idStr.lowercased().contains(targetSearch) }
+            if let id = policy.general?.jamfId { let idString = String(describing: id); return caseSensitive ? idString.contains(search) : idString.lowercased().contains(targetSearch) }
             return false
         case .generalEnabled:
-            if let enabled = policy.general?.enabled { let s = String(describing: enabled); return caseSensitive ? s.contains(search) : s.lowercased().contains(targetSearch) }
+            if let enabled = policy.general?.enabled { let enabledString = String(describing: enabled); return caseSensitive ? enabledString.contains(search) : enabledString.lowercased().contains(targetSearch) }
             return false
         case .selfServiceDisplayName:
             return match(policy.self_service?.selfServiceDisplayName)
@@ -675,10 +675,10 @@ enum SearchField: String, CaseIterable {
 
         // Scope-specific cases
         case .scopeAllComputers:
-            if let val = policy.scope?.allComputers { let s = String(describing: val); let subject = caseSensitive ? s : s.lowercased(); switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) } }
+            if let val = policy.scope?.allComputers { let stringValue = String(describing: val); let subject = caseSensitive ? stringValue : stringValue.lowercased(); switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) } }
             return false
         case .scopeAllJSSUsers:
-            if let val = policy.scope?.all_jss_users { let s = String(describing: val); let subject = caseSensitive ? s : s.lowercased(); switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) } }
+            if let val = policy.scope?.all_jss_users { let stringValue = String(describing: val); let subject = caseSensitive ? stringValue : stringValue.lowercased(); switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) } }
             return false
         case .scopeComputers:
             return policy.scope?.computers?.contains { match($0.name) } ?? false

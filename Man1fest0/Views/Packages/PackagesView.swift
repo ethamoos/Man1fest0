@@ -22,12 +22,12 @@ struct PackagesView: View {
     // Snapshot of filtered results used by the List to reduce UI work
     // Use a computed property for filtering to simplify the view and help the compiler
     private var filteredPackages: [Package] {
-        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if q.isEmpty {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if query.isEmpty {
             return networkController.packages
         } else {
             return networkController.packages.filter { pkg in
-                pkg.name.lowercased().contains(q) || (pkg.udid?.lowercased().contains(q) ?? false)
+                pkg.name.lowercased().contains(query) || (pkg.udid?.lowercased().contains(query) ?? false)
             }
         }
     }
