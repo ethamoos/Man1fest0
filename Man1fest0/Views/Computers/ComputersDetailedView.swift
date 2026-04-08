@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct ComputersDetailedView: View {
-    @State var server: String
-    @State var computerID: String
+    // Accept server and computerID as regular inputs so parent changes propagate
+    let server: String
+    let computerID: String
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var layout: Layout
     @EnvironmentObject var progress: Progress
@@ -50,7 +51,7 @@ struct ComputersDetailedView: View {
 
                         // New hardware / security fields
                         Text("Hardware model: \(h?.model ?? "")")
-                        Text("Filevault Status: \(h?.diskEncryptionConfiguration ?? "")")
+                        Text("Filevault Status: \(h?.diskEncryptionConfiguration ?? "Not enabled")")
                         Text("Activation Lock Status: \(s?.activationLock ?? "")")
                     }
                     .padding()
@@ -105,11 +106,18 @@ struct ComputersDetailedView: View {
         }
         .task(id: computerID) {
             // Run fetch; set loading to false when done so the UI updates based on published value
+            print("ComputersDetailedView.task starting for computerID: \(computerID)")
             isLoading = true
+            // Clear any previously shown detail to avoid stale data while loading
+            await MainActor.run {
+                networkController.computerDetailedFull = nil
+                networkController.computerDetailed = nil
+            }
             do {
                 try await networkController.getDetailedComputer(userID: computerID)
                 // update lastUpdated when successful
                 lastUpdated = Date()
+                print("ComputersDetailedView.task completed fetch for computerID: \(computerID)")
             } catch {
                 // error already published by NetBrain.publishError; fallback to printing here
                 print("ComputersDetailedView: getDetailedComputer failed: \(error)")
@@ -117,6 +125,7 @@ struct ComputersDetailedView: View {
             // small delay to allow published value propagation before turning off loader
             try? await Task.sleep(nanoseconds: 100_000_000)
             isLoading = false
+            print("ComputersDetailedView.task finished for computerID: \(computerID), isLoading=\(isLoading)")
         }
     }
 }
