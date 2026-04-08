@@ -164,8 +164,10 @@ actor AsyncSemaphore {
     @Published var computersBasic: [Computers.ComputerResponse] = []
     @Published var allComputersBasic: ComputerBasic = ComputerBasic(computers: [])
     @Published var allComputersBasicDict = [ComputerBasicRecord]()
-    // Published single detailed computer mapped to ComputerBasicRecord for ComputersDetailedView
+    // Published single detailed computer mapped to ComputerBasicRecord for legacy UI
     @Published var computerDetailed: ComputerBasicRecord? = nil
+    // Full decoded ComputerFull published for detailed UI views
+    @Published var computerDetailedFull: ComputerFull? = nil
     
     //  #############################################################################
     //    ############ GROUPS
@@ -5575,29 +5577,55 @@ xml = """
     // Fetch detailed computer by id (lightweight decode)
     func getDetailedComputer(userID: String) async throws {
         do {
-            let request = APIRequest<ComputerDetailedResponse>(endpoint: "computers/id/" + userID, method: .get)
-            print("APIRequest (computer detailed): \(request)")
+            // Decode the full detailed response (includes hardware/security)
+            let request = APIRequest<ComputerDetailedFullResponse>(endpoint: "computers/id/" + userID, method: .get)
+            print("APIRequest (computer detailed full): \(request)")
             if authToken.isEmpty {
                 _ = try await getToken(server: server, username: username, password: password)
             }
-            let decoded = try await requestSender.resultFor(apiRequest: request)
-            // Map ComputerSlim into a simple published model for UI consumption
-            let gen = decoded.computer.general
-            let jamfId = Int(gen.id) ?? 0
-            let detail = ComputerBasicRecord(id: jamfId,
-                                             name: gen.name ?? "",
-                                             managed: true,
-                                             username: gen.username ?? "",
-                                             model: gen.model ?? "",
-                                             department: gen.department ?? "",
-                                             building: gen.building ?? "",
-                                             macAddress: "",
-                                             udid: gen.udid ?? "",
-                                             serialNumber: gen.serial_number ?? "",
-                                             reportDateUTC: gen.report_date_utc ?? "",
-                                             reportDateEpoch: 0)
-            self.computerDetailed = detail
-            print("Loaded detailed computer id: \(jamfId)")
+            // record the current URL for debugging (RequestSender builds the final URL similarly)
+            self.currentURL = server + "/JSSResource/computers/id/" + userID
+            let decodedFull = try await requestSender.resultFor(apiRequest: request)
+            // Debug: print entire decoded response so we can inspect what arrived
+            separationLine()
+            print("Decoded ComputerDetailedFullResponse: \(decodedFull)")
+            // Publish the decoded full structure for detailed UI consumption
+            self.computerDetailedFull = decodedFull.computer
+            // record successful response code for UI
+            self.currentResponseCode = "200"
+            // clear any previous error message
+            self.lastErrorMessage = nil
+            // Also keep the slim ComputerDetailedResponse if other code relies on it.
+            // Attempt to map a lightweight ComputerSlim.General-like structure into computerDetailedResponse
+            do {
+                // Map fields available in the full response into the slim response shape
+                let gen = decodedFull.computer.general
+                // build a ComputerDetailedResponse-compatible minimal wrapper if possible
+                // Note: ComputerDetailedResponse expects `computer.general` with certain keys; we can construct a ComputerSlim.General via JSON decoding round-trip
+                // But for safety, we still map the minimal ComputerBasicRecord below for backward compatibility.
+                if let gen = gen {
+                    // Map to ComputerBasicRecord for existing UI
+                    let jamfId = Int(gen.id) ?? 0
+                    let detail = ComputerBasicRecord(id: jamfId,
+                                                     name: gen.name ?? "",
+                                                     managed: true,
+                                                     username: gen.username ?? "",
+                                                     model: gen.model ?? "",
+                                                     department: gen.department ?? "",
+                                                     building: gen.building ?? "",
+                                                     macAddress: "",
+                                                     udid: gen.udid ?? "",
+                                                     serialNumber: gen.serial_number ?? "",
+                                                     reportDateUTC: gen.report_date_utc ?? "",
+                                                     reportDateEpoch: 0)
+                    self.computerDetailed = detail
+                    print("Loaded detailed computer id: \(jamfId)")
+                } else {
+                    print("Decoded full response had no general section")
+                }
+            } catch {
+                print("Warning: failed to map full decoded response to legacy slim - \(error)")
+            }
         } catch {
             publishError(error, title: "Failed to load computer detail")
             throw error
