@@ -36,7 +36,7 @@ struct ComputersBasicTableView: View {
 //    @State var selectionComp = Set<Computer>()
 //    @State var selectionGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     @State  var selectionCategory: Category = Category(jamfId: 0, name: "")
-    @State  var selectionDepartment: Department = Department(jamfId: 0, name: "")
+    @State private var selectionDepartmentId: String = ""
    
     @State private var computerGroupFilter: String = ""
     @State private var selectionCompGroup: ComputerGroup? = nil
@@ -49,6 +49,7 @@ struct ComputersBasicTableView: View {
     
     @State private var selectedEAName = ""
     @State private var eaValue = ""
+    @State private var eaFilterText = ""
     
     
     var body: some View {
@@ -219,7 +220,7 @@ struct ComputersBasicTableView: View {
                                 //  processUpdateComputerDepartment
                                 //  ##########################################################################
                                 
-                                networkController.processUpdateComputerDepartmentBasic(selection: selection, server: server, authToken: networkController.authToken, resourceType: selectedResourceType, department: selectionDepartment.name)
+                                networkController.processUpdateComputerDepartmentBasic(selection: selection, server: server, authToken: networkController.authToken, resourceType: selectedResourceType, department: selectedDepartmentName)
                                 progress.showProgress()
                                 progress.waitForABit()
                                 
@@ -233,10 +234,10 @@ struct ComputersBasicTableView: View {
                             .tint(.blue)
                         }
                     
-                    Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                        Text("").tag(Department(jamfId: 0, name: ""))
+                    Picker(selection: $selectionDepartmentId, label: Text("Department:").bold()) {
+                        Text("").tag("")
                         ForEach(filteredDepartments, id: \.self) { department in
-                            Text(String(describing: department.name)).tag(department)
+                            Text(String(describing: department.name)).tag(department.id)
                         }
                     }
                     }
@@ -367,10 +368,16 @@ struct ComputersBasicTableView: View {
                     .foregroundColor(.primary)
                 
                 HStack {
+                    VStack(alignment: .leading) {
+                        TextField("Filter Extension Attributes", text: $eaFilterText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 300)
+                    }
+                    
                     Text("Extension Attribute:")
                     Picker("", selection: $selectedEAName) {
                         Text("Select...").tag("")
-                        ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                        ForEach(filteredEAs, id: \.self) { ea in
                             Text(ea.name).tag(ea.name)
                         }
                     }
@@ -382,6 +389,7 @@ struct ComputersBasicTableView: View {
                     TextField("EA Value", text: $eaValue)
                         .textFieldStyle(.roundedBorder)
                 }
+                
                 
                 Button(action: {
                     progress.showProgress()
@@ -439,28 +447,61 @@ struct ComputersBasicTableView: View {
             
         .onAppear {
             
+            
               Task {
                   try await networkController.getAllDepartments()
                   try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                  try await extensionAttributeController.getComputerExtAttributes(server: server, authToken: networkController.authToken)
+                  
                     }
         
             if networkController.allComputerGroups.count <= 1 {
-                Task {
-                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                }
+                 Task {
+                     try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                 }
+             }
+            // Ensure selectionDepartmentId is set to a sensible default when departments are loaded
+            if selectionDepartmentId.isEmpty, let firstDept = networkController.departments.first {
+                selectionDepartmentId = firstDept.id
             }
-        
-        }
+         
+         }
     }
-    
+
+    // Helper to resolve the selected department's name
+    var selectedDepartmentName: String {
+        networkController.departments.first(where: { $0.id == selectionDepartmentId })?.name ?? ""
+    }
+
     var searchResults: [ComputerBasicRecord] {
         let allComputers = networkController.allComputersBasic.computers
         let allComputersArray = Array(allComputers)
         let filtered: [ComputerBasicRecord]
-        if searchText.isEmpty {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
             filtered = allComputersArray
         } else {
-            filtered = allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+            let query = trimmed.lowercased()
+            filtered = allComputersArray.filter { record in
+                // Convert fields to strings safely and compare lowercase
+                let id = String(describing: record.id).lowercased()
+                let name = String(describing: record.name).lowercased()
+                let user = String(describing: record.username).lowercased()
+                let dept = String(describing: record.department).lowercased()
+                let bld = String(describing: record.building).lowercased()
+                let model = String(describing: record.model).lowercased()
+                let serial = String(describing: record.serialNumber).lowercased()
+                let checkin = String(describing: record.reportDateUTC).lowercased()
+
+                return id.contains(query)
+                    || name.contains(query)
+                    || user.contains(query)
+                    || dept.contains(query)
+                    || bld.contains(query)
+                    || model.contains(query)
+                    || serial.contains(query)
+                    || checkin.contains(query)
+            }
         }
         return filtered.sorted(using: sortOrder)
     }
@@ -473,13 +514,26 @@ struct ComputersBasicTableView: View {
             return networkController.departments.filter { $0.name.lowercased().contains(departmentFilterText.lowercased()) }
         }
     }
+    
+    var filteredEAs: [ComputerExtensionAttribute] {
+        if eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return extensionAttributeController.allComputerExtensionAttributesDict.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        } else {
+            let eaQuery = eaFilterText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return extensionAttributeController.allComputerExtensionAttributesDict
+                .filter { $0.name.lowercased().contains(eaQuery) }
+                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        }
+    }
 }
-
 
 
 //var body: some View {
 //    Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
 //}
+//
 //}
 
 //#Preview {

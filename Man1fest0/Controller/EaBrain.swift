@@ -61,9 +61,9 @@ import AEXML
             throw JamfAPIError.http(statusCode)
         }
 
-        separationLine()
-        print("getComputerExtAttributes - Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+//        separationLine()
+//        print("getComputerExtAttributes - Json data as text is:")
+//        print(String(data: data, encoding: .utf8)!)
         let decoder = JSONDecoder()
         separationLine()
         do {
@@ -360,6 +360,7 @@ import AEXML
             </extension_attributes>
         </computer>
         """
+        
 
         for computerId in computerIds {
             var baseURL = serverURL
@@ -386,7 +387,8 @@ import AEXML
             }
 
             separationLine()
-            print("updateComputerEAValueMultipleComputers: updated computer \(computerId)")
+            print("updateComputerEAValueMultipleComputers: updated computer \(computerId) EA is: \(name) = \(value)")
+//            print("Submitted xml is:\(xml)")
             if let body = String(data: data, encoding: .utf8) {
                 print("response body:\n\(body)")
             }
