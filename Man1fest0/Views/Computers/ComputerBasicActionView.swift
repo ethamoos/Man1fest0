@@ -70,7 +70,7 @@ struct ComputerBasicActionView: View {
                             // card-like list
                             VStack {
                                 List(searchResults, id: \.self, selection: $selection) { computer in
-                                    NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer, selection: $selection)) {
+                                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))) {
                                         HStack {
                                             Image(systemName: "desktopcomputer")
                                             Text(computer.name ).font(.system(size: 12.0)).foregroundColor(.blue)
@@ -87,7 +87,7 @@ struct ComputerBasicActionView: View {
 #else
                         VStack {
                             List(searchResults, id: \.self) { computer in
-                                NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer)) {
+                                NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))) {
                                     HStack {
                                         Image(systemName: "desktopcomputer")
                                         Text(computer.name ).font(.system(size: 12.0)).foregroundColor(.blue)

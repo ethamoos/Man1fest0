@@ -33,8 +33,8 @@
         A8533C3E2CA42EA900E6678F /* KeychainWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */; };
         A857A4282E2566B900A96F3A /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A857A4272E2566B300A96F3A /* NotesView.swift */; };
         A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */; };
-        A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25629D7447A0075D622 /* ComputersBasicView.swift */; };
-        A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */; };
+        A861F25729D7447A0075D622 /* ComputersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25629D7447A0075D622 /* ComputersView.swift */; };
+        A861F25929D7448E0075D622 /* ComputersDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25829D7448E0075D622 /* ComputersDetailedView.swift */; };
         A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533ED2C3C22DB002894B2 /* XmlBrain.swift */; };
         A86533F02C3E98D0002894B2 /* PolicyScopeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */; };
         A86533F22C3E99C2002894B2 /* PolicyPackageTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */; };
@@ -329,9 +329,9 @@
             isa = PBXGroup;
             children = (
                 A885D1532F5ABF21002CB073 /* Groups */,
-                A861F25629D7447A0075D622 /* ComputersBasicView.swift */,
+                A861F25629D7447A0075D622 /* ComputersView.swift */,
                 A8DD6B3A2A13CA890098563C /* ComputerBasicActionView.swift */,
-                A861F25829D7448E0075D622 /* ComputersBasicDetailedView.swift */,
+                A861F25829D7448E0075D622 /* ComputersDetailedView.swift */,
                 E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */,
                 A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */,
                 A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */,
@@ -687,7 +687,7 @@
                 A8B35B102AE822FF0007B5BE /* Progress.swift in Sources */,
                 E477727F2B5B6C43009FC571 /* ScriptUsageView.swift in Sources */,
                 E433D9DE2B58488C005727E1 /* TestOptionsView.swift in Sources */,
-                A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */,
+                A861F25929D7448E0075D622 /* ComputersDetailedView.swift in Sources */,
                 A813C12B2E54873000735884 /* PolicyDetailScopeTabView.swift in Sources */,
                 A813C12D2E548C3B00735884 /* PolicyDetailGeneralTabView.swift in Sources */,
                 E45E13292C53B27F007C175F /* ConnectSheet.swift in Sources */,
@@ -714,85 +714,50 @@
                 A86533F22C3E99C2002894B2 /* PolicyPackageTabView.swift in Sources */,
                 A87E84702F10F2B200CF42D0 /* RequestSender.swift in Sources */,
                 A87BF5C62EB13CD000E065BB /* PolicySearchView.swift in Sources */,
-                A861F25729D7447A0075D622 /* ComputersBasicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25629D7447A0075D622 /* ComputersView.swift */; };
-        A861F25929D7448E0075D622 /* ComputersBasicDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A861F25829D7448E0075D622 /* ComputersDetailedView.swift */; };
-        A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533ED2C3C22DB002894B2 /* XmlBrain.swift */; };
-        A86533F02C3E98D0002894B2 /* PolicyScopeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533EF2C3E98D0002894B2 /* PolicyScopeTabView.swift */; };
-        A86533F22C3E99C2002894B2 /* PolicyPackageTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86533F12C3E99C2002894B2 /* PolicyPackageTabView.swift */; };
-        A866AE222DBAA35600675075 /* ScriptDetailTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A866AE212DBAA35600675075 /* ScriptDetailTableView.swift */; };
-        A86AF37E2C3FE282009349C4 /* JamfAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86AF37A2C3FE282009349C4 /* JamfAPIError.swift */; };
-        A86CB8612D3E596200D8F22F /* ImportExportBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB8602D3E595B00D8F22F /* ImportExportBrain.swift */; };
-        A86CB8632D3E5C8900D8F22F /* TextDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB8622D3E5C8100D8F22F /* TextDocument.swift */; };
-        A86CB8652D3E618000D8F22F /* ReportsExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB8642D3E617A00D8F22F /* ReportsExport.swift */; };
-        A86CB89E2D3E711D00D8F22F /* ReportsExportCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86CB89D2D3E711100D8F22F /* ReportsExportCSV.swift */; };
-        A86F4DEF2C78ED6200D5518B /* ComputerExtAttributeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */; };
-        A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87004352C81C48700C1AB97 /* PolicyActionsDetailTableView.swift */; };
-        A87445CB2E2AACFB00BCB41B /* NotesModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A87445C82E2AACFB00BCB41B /* NotesModel.xcdatamodeld */; };
-        A87445CD2E2AAD3500BCB41B /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87445CC2E2AAD3500BCB41B /* CoreDataStack.swift */; };
-        A877BED12E60F3400041D3C9 /* Sorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = A877BED02E60F3390041D3C9 /* Sorting.swift */; };
-        A87BF5C62EB13CD000E065BB /* PolicySearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87BF5C52EB13CD000E065BB /* PolicySearchView.swift */; };
-        A87BF5C82EB13CDC00E065BB /* PolicyRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87BF5C72EB13CDC00E065BB /* PolicyRowView.swift */; };
-        A87E84702F10F2B200CF42D0 /* RequestSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */; };
-        A87E84722F10F31400CF42D0 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84712F10F30900CF42D0 /* APIRequest.swift */; };
-        A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84732F10F34000CF42D0 /* HTTPMethod.swift */; };
-        A886701D2AA8E5C0009DA6AA /* PackagesActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A886701C2AA8E5C0009DA6AA /* PackagesActionView.swift */; };
-        A88768992EE2DD3E009D97B9 /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88768982EE2DD3E009D97B9 /* Helper.swift */; };
-        A88A6A242DB793AE009A64B8 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = A88A6A232DB793A8009A64B8 /* LICENSE.txt */; };
-        A89876642D53D4FC002CC9CF /* ComputerExtAttDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */; };
-        A89B88E02C7F366100DEE54E /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = A89B88DF2C7F366100DEE54E /* Credits.rtf */; };
-        A8AB48FB2B07D92D004C3675 /* CreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8AB48FA2B07D92D004C3675 /* CreateView.swift */; };
-        A8B276812AD733700016CEE2 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B276802AD733700016CEE2 /* DownloadsView.swift */; };
-        A8B35B102AE822FF0007B5BE /* Progress.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B35B0F2AE822FF0007B5BE /* Progress.swift */; };
-        A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B4EA6D2B04E473000F059F /* ResourceTypeEnums.swift */; };
-        A8BAD2D52DE074D7006C9B34 /* CreateScriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BAD2D42DE074CF006C9B34 /* CreateScriptView.swift */; };
-        A8BC96A62E6822520078AF53 /* PhotoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BC96A52E68224A0078AF53 /* PhotoViewModel.swift */; };
-        A8BCADC02F4DCFB8005C2186 /* Untitled.swift */ = {isa = PBXBuildFile; fileRef = A8BCADC02F4DCFB8005C2186 /* Untitled.swift */; };
-        A8C1E2612EC3AB6800DEDBF8 /* Breakout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8C1E2612EC3AB6800DEDBF8 /* Breakout.swift */; };
-        A8C4EAC92D53BDDA0022E0ED /* EaBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8C4EAC82D53BDD10022E0ED /* EaBrain.swift */; };
-        A8DD6B3A2A13CA890098563C /* ComputerBasicActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8DD6B3A2A13CA890098563C /* ComputerBasicActionView.swift */; };
-        A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8DECD592BD7FA2700D79A11 /* Layout.swift */; };
-        A8DECD5D2BD999AE00D79A11 /* BackgroundTasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8DECD5D2BD999AE00D79A11 /* BackgroundTasks.swift */; };
-        A8EA615B2F521D760011BD56 /* PackagesUnsortedDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EA615B2F521D760011BD56 /* PackagesUnsortedDetailView.swift */; };
-        A8EA615D2F521E130011BD56 /* PackagesUnsortedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EA615D2F521E130011BD56 /* PackagesUnsortedView.swift */; };
-        A8EC41112B0277B500496EC2 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EC41112B0277B500496EC2 /* TestView.swift */; };
-        A8ECB7BE2C88478600FAFDC2 /* CommandBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8ECB7BE2C88478600FAFDC2 /* CommandBrain.swift */; };
-        A8ECB7C02C88492700FAFDC2 /* PushBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8ECB7C02C88492700FAFDC2 /* PushBrain.swift */; };
-        A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F16D6F2C621E5700CC0751 /* ViewModifiers.swift */; };
-        A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F8A2AEA59120061D5F7 /* Basher.swift */; };
-        A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */; };
-        A8FBD3492F5755CB001B8518 /* InactivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD3462F5755CB001B8518 /* InactivityMonitor.swift */; };
-        A8FBD34A2F5755CB001B8518 /* SecuritySettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD3472F5755CB001B8518 /* SecuritySettingsManager.swift */; };
-        A8FBD34F2F5755FF001B8518 /* SecureAppWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34C2F5755FF001B8518 /* SecureAppWrapper.swift */; };
-        A8FBD3502F5755FF001B8518 /* LockScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34B2F5755FF001B8518 /* LockScreenView.swift */; };
-        A8FBD3512F5755FF001B8518 /* SecuritySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD34D2F5755FF001B8518 /* SecuritySettingsView.swift */; };
-        E40161262C62A18E0054A1FF /* CreatePolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40161252C62A18E0054A1FF /* CreatePolicyView.swift */; };
-        E41BA0DE2C4C0E790060673C /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41BA0D92C4C0E790060673C /* Keychain.swift */; };
-        E433D9DE2B58488C005727E1 /* TestOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E433D9DD2B58488C005727E1 /* TestOptionsView.swift */; };
-        E45E13272C53B22F007C175F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45E13262C53B22F007C175F /* ContentView.swift */; };
-        E45E13292C53B27F007C175F /* ConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45E13282C53B27F007C175F /* ConnectSheet.swift */; };
-        E45E132B2C53B2CA007C175F /* OptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45E132A2C53B2CA007C175F /* OptionsView.swift */; };
-        E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45E132C2C53B5FB007C175F /* ReportsView.swift */; };
-        E477727F2B5B6C43009FC571 /* ScriptUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E477727E2B5B6C43009FC571 /* ScriptUsageView.swift */; };
-        E485CCA42C9CC24400B4CBE4 /* PolicyDetailView_iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = E485CCA32C9CC24400B4CBE4 /* PolicyDetailView_iOS.swift */; };
-        E48D59D62C5965AA00E1E35B /* PolicyBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48D59D52C5965AA00E1E35B /* PolicyBrain.swift */; };
-        E48D59D72C5A403B00E1E35B /* CreatePushPackageTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48D59D72C5A403B00E1E35B /* CreatePushPackageTabView.swift */; };
-        E48D59DA2C5A453C00E1E35B /* CreatePolicyTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48D59DA2C5A453C00E1E35B /* CreatePolicyTabView.swift */; };
-        E48D59DD2C5A457D00E1E35B /* CreateGeneralTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48D59DC2C5A457D00E1E35B /* CreateGeneralTabView.swift */; };
-        E493197F2B6429C300B58519 /* PrestageBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E493197E2B6429C300B58519 /* PrestageBrain.swift */; };
-        E49319842B67976C00B58519 /* PrestagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E49319842B67976C00B58519 /* PrestagesView.swift */; };
-        E49319862B6797B400B58519 /* PrestagesAssignedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E49319862B6797B400B58519 /* PrestagesAssignedView.swift */; };
-        E49319892B6797D800B58519 /* PrestagesEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E49319882B6797D800B58519 /* PrestagesEditView.swift */; };
-        E493198B2B67990A00B58519 /* PrestageDetailView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E493198A2B67990A00B58519 /* PrestageDetailView2.swift */; };
-        E493198D2B679BE400B58519 /* PrestageRemoveDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E493198C2B679BE400B58519 /* PrestageRemoveDeviceView.swift */; };
-        E493198E2B679E3200B58519 /* PrestagesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E493198E2B679E3200B58519 /* PrestagesDetailView.swift */; };
-        E4CE363D29D1C43100533707 /* Man1fest0App.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE363C29D1C43100533707 /* Man1fest0App.swift */; };
-        E4CE364129D1C43200533707 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4CE364029D1C43200533707 /* Assets.xcassets */; };
-        E4CE364529D1C43200533707 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4CE364429D1C43200533707 /* Preview Assets.xcassets */; };
-        E4CE368529D336C100533707 /* NetBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368429D336C100533707 /* NetBrain.swift */; };
-        E4CE369229D3372400533707 /* PolicyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368E29D3372400533707 /* PolicyDetailView.swift */; };
-        E4CE369329D3372400533707 /* PolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368D29D3372400533707 /* PolicyView.swift */; };
-        E4CE57C62AD9AF680038A88A /* PackageUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */; };
-        E4D434502C7FBDF600E90BAE /* ComputersBasicTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */; };
+                A861F25729D7447A0075D622 /* ComputersView.swift in Sources */,
+                E4CE368529D336C100533707 /* NetBrain.swift in Sources */,
+                A82D0D442D429F940074E422 /* PackageTableView.swift in Sources */,
+                A8BC96A62E6822520078AF53 /* PhotoViewModel.swift in Sources */,
+                A86533EE2C3C22DB002894B2 /* XmlBrain.swift in Sources */,
+                E41BA0DE2C4C0E790060673C /* Keychain.swift in Sources */,
+                E49319852B67976C00B58519 /* PrestagesView.swift in Sources */,
+                A8FBD34F2F5755FF001B8518 /* SecureAppWrapper.swift in Sources */,
+                A8FBD3502F5755FF001B8518 /* LockScreenView.swift in Sources */,
+                A8FBD3512F5755FF001B8518 /* SecuritySettingsView.swift in Sources */,
+                A8DD6B3B2A13CA890098563C /* ComputerBasicActionView.swift in Sources */,
+                E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */,
+                A8EA615E2F521E130011BD56 /* PackagesUnsortedView.swift in Sources */,
+                A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */,
+                E493198F2B679E3200B58519 /* PrestagesDetailView.swift in Sources */,
+                E4CE363D29D1C43100533707 /* Man1fest0App.swift in Sources */,
+                A813124429D4B50800BB1C9F /* PackagesView.swift in Sources */,
+                A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */,
+                A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */,
+                E493198D2B679BE400B58519 /* PrestageRemoveDeviceView.swift in Sources */,
+                A8FBD3492F5755CB001B8518 /* InactivityMonitor.swift in Sources */,
+                A8FBD34A2F5755CB001B8518 /* SecuritySettingsManager.swift in Sources */,
+                A87004362C81C48700C1AB97 /* PolicyActionsDetailTableView.swift in Sources */,
+                A8ECB7C12C88492700FAFDC2 /* PushBrain.swift in Sources */,
+                A87BF5C82EB13CDC00E065BB /* PolicyRowView.swift in Sources */,
+                A813C01F2E53083F00735884 /* PolicyRemoveItemsTabView.swift in Sources */,
+                E45E132D2C53B5FB007C175F /* ReportsView.swift in Sources */,
+                A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */,
+                E45E132B2C53B2CA007C175F /* OptionsView.swift in Sources */,
+                E4D434502C7FBDF600E90BAE /* ComputersBasicTableView.swift in Sources */,
+                A8EC41122B0277B500496EC2 /* TestView.swift in Sources */,
+                A86F4DEF2C78ED6200D5518B /* ComputerExtAttributeView.swift in Sources */,
+                A86CB8612D3E596200D8F22F /* ImportExportBrain.swift in Sources */,
+                A8213E892F6C441600A5671C /* JamfAuthToken.swift in Sources */,
+                A81B752A2C416B72005110E0 /* PolicyScriptsTabView.swift in Sources */,
+                A83D210B2DE627AD00D9AD2F /* ComputerExtAttributeActionView.swift in Sources */,
+                A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */,
+                A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */,
+                A87445CB2E2AACFB00BCB41B /* NotesModel.xcdatamodeld in Sources */,
+                A8BAD2D52DE074D7006C9B34 /* CreateScriptView.swift in Sources */,
+                E49319872B6797B400B58519 /* PrestagesAssignedView.swift in Sources */,
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
