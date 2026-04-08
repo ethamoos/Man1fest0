@@ -23,7 +23,7 @@ struct ComputersView: View {
     //  Selections
     //  ########################################################################################
     
-    @State var selection = Set<ComputerBasicRecord>()
+    @State var selection = Set<ComputerBasicRecord.ID>()
     // single selected computer for the detail pane
     @State private var selectedComputer: ComputerBasicRecord? = nil
     
@@ -72,17 +72,28 @@ struct ComputersView: View {
                                     .font(.system(size: 13.0))
                             }
                             .padding(.vertical, 4)
-                            .tag(computer)
+                            .tag(computer.id)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 // update the single-selection used by the detail pane
                                 selectedComputer = computer
+                                // also update the List's selection set so the row is highlighted
+                                selection = [computer.id]
                             }
                         }
                     }
                     .listStyle(SidebarListStyle())
                     .frame(minWidth: 300)
                     .searchable(text: $searchText)
+                    // Keep the selectedComputer in sync if the list selection changes via keyboard/other interactions
+                    .onChange(of: selection) { newSelection in
+                        if let firstId = newSelection.first,
+                           let found = networkController.allComputersBasic.computers.first(where: { $0.id == firstId }) {
+                            selectedComputer = found
+                        } else {
+                            selectedComputer = nil
+                        }
+                    }
                 } detail: {
                     // Detail pane - show selected computer detail or a placeholder
                     if let comp = selectedComputer {
@@ -122,24 +133,6 @@ struct ComputersView: View {
                     .foregroundColor(.secondary)
                     .padding(.top, 6)
                     .navigationViewStyle(DefaultNavigationViewStyle())
-         
-//                HStack(spacing: 10) {
-//                    TextField("Filter", text: $computerGroupFilter)
-//                    // Keep the text field to its intrinsic size and avoid stretching
-//                        .fixedSize()
-//                        .frame(minWidth: 160)
-//                    Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
-//                        ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
-//                            Text(group.name)
-//                                .tag(group as ComputerGroup?)
-//                        }
-//                    }
-//                    // Use a compact menu-style picker so it doesn't expand to fill the HStack
-//                    .pickerStyle(MenuPickerStyle())
-//                    .fixedSize()
-//                }
-                
-                    
                 
             } else {
                 
@@ -152,31 +145,23 @@ struct ComputersView: View {
                 Spacer()
                 
                     .onAppear {
-                        
-                        //                    if networkController.allComputersBasic.computers.count == 0 {
                         print("Fetching computers")
                         Task {
                             try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
                         }
-                        
                     }
-                
             }
-            
         }
         .padding()
     }
     
     var searchResults: [ComputerBasicRecord] {
-        
         let allComputers = networkController.allComputersBasic.computers
-        let allComputersArray = Array (allComputers)
-        
+        let allComputersArray = Array(allComputers)
         if searchText.isEmpty {
             return networkController.allComputersBasic.computers.sorted { $0.name < $1.name }
         } else {
-            print("Search Added")
-            return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
+            return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased()) }
         }
     }
 }
