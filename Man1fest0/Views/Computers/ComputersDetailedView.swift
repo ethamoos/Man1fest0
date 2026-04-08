@@ -38,8 +38,24 @@ struct ComputersDetailedView: View {
                             }
                             .disabled(isDeleting)
                             .help("Delete this computer record from the server")
+
+                            // Open in browser button
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                layout.openURL(urlString: "\(server)/computers.html?id=\(computerID)&o=r", requestType: "computers")
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "safari")
+                                    Text("Open In Browser")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+                            .help("Open this computer in the Jamf web UI")
                         }
 
+//                        DISABLE Below debug
                         // Raw debug dump so it's obvious when data arrives and what's inside
 //                        Text("Raw detail: \(String(describing: detail))")
 //                            .font(.caption)
@@ -66,7 +82,7 @@ struct ComputersDetailedView: View {
                         Text("Department: \(general?.department ?? "")")
                         Text("Building: \(general?.building ?? "")")
                         Text("Last checkin: \(general?.report_date_utc ?? "")")
-
+Divider()
                         // New hardware / security fields
                         Text("Hardware model: \(hardware?.model ?? "")")
                         Text("Filevault Status: \(hardware?.diskEncryptionConfiguration ?? "Not enabled")")

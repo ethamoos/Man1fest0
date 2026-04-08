@@ -23,7 +23,6 @@ struct ComputersView: View {
     //  Selections
     //  ########################################################################################
     
-    @State private var selectionCompGroup: ComputerGroup? = nil
     @State var selection = Set<ComputerBasicRecord>()
     // single selected computer for the detail pane
     @State private var selectedComputer: ComputerBasicRecord? = nil
@@ -124,40 +123,23 @@ struct ComputersView: View {
                     .padding(.top, 6)
                     .navigationViewStyle(DefaultNavigationViewStyle())
          
-                HStack(spacing: 10) {
-                    TextField("Filter", text: $computerGroupFilter)
-                    // Keep the text field to its intrinsic size and avoid stretching
-                        .fixedSize()
-                        .frame(minWidth: 160)
-                    Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
-                        ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
-                            Text(group.name)
-                                .tag(group as ComputerGroup?)
-                        }
-                    }
-                    // Use a compact menu-style picker so it doesn't expand to fill the HStack
-                    .pickerStyle(MenuPickerStyle())
-                    .fixedSize()
-                }
-                .onAppear {
+//                HStack(spacing: 10) {
+//                    TextField("Filter", text: $computerGroupFilter)
+//                    // Keep the text field to its intrinsic size and avoid stretching
+//                        .fixedSize()
+//                        .frame(minWidth: 160)
+//                    Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
+//                        ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
+//                            Text(group.name)
+//                                .tag(group as ComputerGroup?)
+//                        }
+//                    }
+//                    // Use a compact menu-style picker so it doesn't expand to fill the HStack
+//                    .pickerStyle(MenuPickerStyle())
+//                    .fixedSize()
+//                }
+                
                     
-                    if networkController.allComputersBasic.computers.count == 0 {
-                        print("Fetching computers")
-                        Task {
-                            try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
-                        }
-                    }
-                    
-                    Task {
-                        try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                    }
-                    
-                    if let first = networkController.allComputerGroups.first {
-                        selectionCompGroup = first
-                    } else {
-                        selectionCompGroup = nil
-                    }
-                }
                 
             } else {
                 
@@ -168,7 +150,19 @@ struct ComputersView: View {
                 }
                 .padding()
                 Spacer()
+                
+                    .onAppear {
+                        
+                        //                    if networkController.allComputersBasic.computers.count == 0 {
+                        print("Fetching computers")
+                        Task {
+                            try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                        }
+                        
+                    }
+                
             }
+            
         }
         .padding()
     }
