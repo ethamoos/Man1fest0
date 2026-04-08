@@ -1,3 +1,4 @@
+#if false
 import SwiftUI
 
 struct ComputersView: View {
@@ -16,3 +17,11 @@ struct ComputersView: View {
         }
     }
 }
+
+// The contents of this file have been intentionally disabled because a primary
+// implementation of `ComputersView` lives in `Views/Computers/ComputersView.swift`.
+// Keeping this file in-place but disabled makes it easy to restore later if needed.
+
+// Original file retained here for reference.
+
+#endif

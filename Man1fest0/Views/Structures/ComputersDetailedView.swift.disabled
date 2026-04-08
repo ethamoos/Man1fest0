@@ -1,3 +1,4 @@
+#if false
 import SwiftUI
 
 struct ComputersDetailedView: View {
@@ -49,3 +50,7 @@ struct ComputersDetailedView: View {
         }
     }
 }
+
+// Disabled duplicate ComputersDetailedView (primary exists at Views/Computers/ComputersDetailedView.swift)
+
+#endif
