@@ -124,6 +124,12 @@ struct OptionsView: View {
                                         Text("Computer Extension Attributes Actions")
                                     }
                                 }
+                                
+//                                DisclosureGroup("Advanced Searches") {
+//                                    NavigationLink(destination: ComputerSearchesView(server: server)) {
+//                                        Text("Computer Advanced Searches")
+//                                    }
+//                                }
                             }
 #if os(macOS)
                             Divider()
