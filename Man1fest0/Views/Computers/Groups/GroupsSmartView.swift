@@ -63,26 +63,29 @@ struct GroupsSmartView: View {
                 NavigationSplitView {
                     // Master list (supports multi-selection for batch delete via `selection`)
                     List(selection: $selection) {
-                        ForEach(networkController.allComputerGroups.filter({ computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter) })) { group in
-                            if group.isSmart == true {
-                                HStack {
-                                    Text(group.name)
-                                    Spacer()
-                                    Text("ID: \(group.id)")
-                                        .foregroundColor(.secondary)
-                                }
-                                .tag(group)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    // Update the single-selection used by the detail pane
-                                    selectedGroup = group
-                                }
+                        ForEach(searchResults) { group in
+                            HStack {
+                                Text(group.name)
+                                Spacer()
+                                Text("ID: \(group.id)")
+                                    .foregroundColor(.secondary)
                             }
+                            .tag(group)
+                            .contentShape(Rectangle())
+                        }
+                    }
+                    .onChange(of: selection) { newSelection in
+                        // Keep the detail pane in sync with the list selection
+                        if let first = newSelection.first {
+                            selectedGroup = first
+                        } else {
+                            selectedGroup = nil
                         }
                     }
                     .listStyle(SidebarListStyle())
                     .foregroundColor(.blue)
                     .frame(minWidth: 260)
+                    .searchable(text: $searchText, placement: .sidebar)
                 } detail: {
                     // Detail pane - show selected group's detail view, or a placeholder
                     if let group = selectedGroup {
@@ -98,6 +101,7 @@ struct GroupsSmartView: View {
             
             VStack() {
                 
+                
                 Button(action: {
                     
                     progress.showProgress()
@@ -106,6 +110,7 @@ struct GroupsSmartView: View {
                     Task {
                         try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
                     }
+ 
                     
                 }) {
 #if os(macOS)
@@ -127,6 +132,8 @@ struct GroupsSmartView: View {
                     progress.showProgress()
                     progress.waitForABit()
                     showingWarning = true
+                    
+                  
                     
                 }) {
 #if os(macOS)
@@ -157,6 +164,7 @@ struct GroupsSmartView: View {
                         secondaryButton: .cancel()
                     )
                 }
+                
             }
             .padding()
         }
@@ -196,11 +204,11 @@ struct GroupsSmartView: View {
     
     var searchResults: [ComputerGroup] {
         
-        if searchText.isEmpty {
-            return networkController.allComputerGroups
+        let groups = networkController.allComputerGroups.filter { $0.isSmart }
+        if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return groups
         } else {
-            print("Search ComputerGroup Added - item is:\(searchText)")
-            return networkController.allComputerGroups.filter { $0.name.lowercased().contains(searchText.lowercased())}
+            return groups.filter { $0.name.localizedCaseInsensitiveContains(searchText) || String(describing: $0.id).localizedCaseInsensitiveContains(searchText) }
         }
     }
 }
