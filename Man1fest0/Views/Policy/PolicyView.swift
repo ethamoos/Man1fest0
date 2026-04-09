@@ -29,7 +29,7 @@ struct PolicyView: View {
     
     @EnvironmentObject var progress: Progress
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     @EnvironmentObject var networkController: NetBrain
     

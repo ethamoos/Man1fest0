@@ -15,7 +15,7 @@ struct PackageTableView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var scopingController: ScopingBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     var server: String
 

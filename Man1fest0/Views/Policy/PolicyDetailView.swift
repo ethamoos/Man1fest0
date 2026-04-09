@@ -22,7 +22,7 @@ struct PolicyDetailView: View {
     
     @EnvironmentObject var progress: Progress
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     //  ########################################################################################
     

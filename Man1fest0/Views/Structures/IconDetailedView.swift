@@ -17,7 +17,7 @@ struct IconDetailedView: View {
 
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     @StateObject private var viewModel = PhotoViewModel()
 
     var body: some View {

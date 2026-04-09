@@ -5,6 +5,8 @@
 //  From SwiftAPITutorial by Armin Briegel
 //  https://github.com/scriptingosx/SwiftAPITutorial
 
+// Retired file - excluded from compilation. Kept for reference.
+#if false
 import Foundation
 
 protocol JamfObject: Codable, Identifiable {
@@ -124,3 +126,4 @@ struct JamfResults<T: JamfObject>: Codable {
 //    var size: Int
 //    var buildings: [T]
 //}
+#endif

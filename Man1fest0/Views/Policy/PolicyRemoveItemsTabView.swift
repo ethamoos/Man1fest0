@@ -21,7 +21,7 @@ struct PolicyRemoveItemsTabView: View {
     
     @EnvironmentObject var scopingController: ScopingBrain
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     var policyID: Int
     var server: String

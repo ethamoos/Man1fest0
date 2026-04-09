@@ -20,7 +20,7 @@ struct PolicyPackageTabView: View {
 
     @EnvironmentObject var xmlController: XmlBrain
 
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
 
     var policyID: Int
     var server: String

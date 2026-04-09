@@ -14,7 +14,7 @@ struct CategoriesDetailedView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     
     @State private var selection: Category? = nil

@@ -22,7 +22,7 @@ struct PrestagesEditView: View {
     @EnvironmentObject var prestageController: PrestageBrain
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
 
     
     @State var initialPrestageID: String

@@ -21,7 +21,7 @@ struct CreatePolicyView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var policyController: PolicyBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     @EnvironmentObject var importExportBrain: ImportExportBrain
     @EnvironmentObject var networkController: NetBrain
     

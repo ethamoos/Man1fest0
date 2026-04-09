@@ -9,7 +9,7 @@ import UIKit
 struct GroupsSmartDetailView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     @State var server: String
     var group: ComputerGroup
 

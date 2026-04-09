@@ -149,7 +149,7 @@ struct Man1fest0App: App {
 #if os(macOS)
     let basher = Basher()
 #endif
-    let layout = Layout()
+    let layout = LayoutManager()
 //    let jamfController: JamfController
     let scopingController: ScopingBrain
     let policyController: PolicyBrain

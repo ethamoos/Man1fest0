@@ -7,11 +7,17 @@
 
 import Foundation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
 
 
-class Layout: ObservableObject {
-    
-    @EnvironmentObject var networkController: NetBrain
+class LayoutManager: ObservableObject {
+    // Note: this is not a SwiftUI View, so property wrappers like @EnvironmentObject
+    // cannot be used here. Inject the needed controllers from the environment in Views
+    // (see App struct where LayoutManager is provided via .environmentObject).
     
     let date = String(DateFormatter.localizedString(from: NSDate() as Date, dateStyle: .short, timeStyle: .short))
 
@@ -370,10 +376,24 @@ print("Input URL string: \(urlString)")
             urlToOpen = translated
         }
 
+        #if os(macOS)
         if !NSWorkspace.shared.open(urlToOpen) {
             alertMessage = "Failed to open the URL in the default browser."
             showAlert = true
         }
+        #elseif os(iOS)
+        UIApplication.shared.open(urlToOpen, options: [:]) { success in
+            if !success {
+                alertMessage = "Failed to open the URL."
+                showAlert = true
+            }
+        }
+        #else
+        // Fallback: attempt to open via NSWorkspace if available
+        if let workspace = NSClassFromString("NSWorkspace") as? NSObjectProtocol {
+            _ = workspace // best-effort only
+        }
+        #endif
     }
     
 }

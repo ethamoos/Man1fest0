@@ -22,7 +22,7 @@ struct PolicyDetailScopeTabView: View {
     @EnvironmentObject var scopingController: ScopingBrain
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     @State private var showingWarningClearScope = false
     @State private var showingWarningClearLimit = false

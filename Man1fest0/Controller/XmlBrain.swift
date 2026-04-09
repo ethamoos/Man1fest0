@@ -13,18 +13,21 @@ import SwiftUI
 import AEXML
 
 class XmlBrain: ObservableObject {
-    
-    @EnvironmentObject var layout: Layout
-    @EnvironmentObject var networkController: NetBrain
-    @EnvironmentObject var progress: Progress
-    @EnvironmentObject var xmlController: XmlBrain
-    @EnvironmentObject var policyController: PolicyBrain
-    @EnvironmentObject var importExportBrain: ImportExportBrain
-    
-    //    #################################################################################
-    //    DEBUG STATUS
-    //    #################################################################################
-    @State var debugStatus = true
+    // NOTE: This is an ObservableObject (not a SwiftUI View). Property wrappers like
+    // @EnvironmentObject and @State are intended for use inside View types. Views
+    // that create or have these controllers in their environment should inject
+    // references into this controller (for example, in the App initialization).
+
+    // Dependencies that can be injected by the App or by the owner of XmlBrain
+    weak var layout: LayoutManager?
+    var networkController: NetBrain?
+    var progress: Progress?
+    weak var xmlController: XmlBrain?
+    var policyController: PolicyBrain?
+    var importExportBrain: ImportExportBrain?
+
+    // Debug status for the XmlBrain observable object
+    @Published var debugStatus = true
     //    #################################################################################
     
 #if os(macOS)

@@ -12,7 +12,7 @@ struct ConfigProfileViewMacOSTable: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var pushController: PushBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     @State var server: String
     @State private var searchText = ""

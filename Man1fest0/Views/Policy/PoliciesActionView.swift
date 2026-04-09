@@ -19,7 +19,7 @@ struct PoliciesActionView: View {
     
     @EnvironmentObject var progress: Progress
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     @EnvironmentObject var networkController: NetBrain
     
@@ -603,7 +603,7 @@ struct PoliciesActionScopeTab: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var scopingController: ScopingBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     @EnvironmentObject var progress: Progress
 
     @Binding var policiesSelection: Set<Policy>
@@ -812,7 +812,7 @@ struct PoliciesActionScopeTab: View {
 
 struct PoliciesActionPackagesTab: View {
     @EnvironmentObject var networkController: NetBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var xmlController: XmlBrain
     

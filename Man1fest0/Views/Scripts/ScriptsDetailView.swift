@@ -23,7 +23,7 @@ struct ScriptsDetailView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     var body: some View {
         let currentScript = networkController.scriptDetailed

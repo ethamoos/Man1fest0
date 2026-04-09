@@ -14,7 +14,7 @@ struct PolicyDetailGeneralTabView: View {
     @EnvironmentObject var scopingController: ScopingBrain
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     var server: String
     var selectedPoliciesInt: [Int?]

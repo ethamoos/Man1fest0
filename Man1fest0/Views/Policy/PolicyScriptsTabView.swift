@@ -30,7 +30,7 @@ struct PolicyScriptsTabView: View {
     
     @EnvironmentObject var progress: Progress
     
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     //    ########################################################################################
     //    EnvironmentObject - end
@@ -452,7 +452,7 @@ struct PolicyScriptsTabViewDetail: View {
     @EnvironmentObject var xmlController: XmlBrain
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
 
     @State private var parameter4: String = ""
     @State private var parameter5: String = ""

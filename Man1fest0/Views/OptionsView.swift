@@ -123,6 +123,10 @@ struct OptionsView: View {
                                     NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
                                         Text("Computer Extension Attributes Actions")
                                     }
+                                        // NavigationLink to Advanced Computer Searches (placed below 'Computer Extension Attributes Actions')
+                                        NavigationLink(destination: ComputerSearchesView(server: server)) {
+                                            Text("Computer Advanced Searches")
+                                        }
                                 }
                                 
 //                                DisclosureGroup("Advanced Searches") {

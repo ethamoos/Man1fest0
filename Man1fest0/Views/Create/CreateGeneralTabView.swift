@@ -18,7 +18,7 @@ struct CreateGeneralTabView: View {
     @EnvironmentObject var networkController: NetBrain
     // @EnvironmentObject var controller: JamfController
     @EnvironmentObject var progress: Progress
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     @EnvironmentObject var importExportController: ImportExportBrain
     @Binding var selectedFilename: String
 

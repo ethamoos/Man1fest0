@@ -10,7 +10,7 @@ import SwiftUI
 struct DownloadsView: View {
     
     @EnvironmentObject var networkController: NetBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
     var authToken: String
     var server: String

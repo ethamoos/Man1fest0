@@ -1,9 +1,8 @@
-
-
+// Retired file — excluded from compilation. Kept for reference.
+#if false
 import SwiftUI
 
 struct ComputerView: View {
-    
     var selectedResourceType: ResourceType
     
     @State var server: String
@@ -108,3 +107,4 @@ struct ComputerView: View {
 //        TestView()
 //    }
 //}
+#endif

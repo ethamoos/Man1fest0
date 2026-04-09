@@ -5,7 +5,7 @@ struct ComputersDetailedView: View {
     let server: String
     let computerID: String
     @EnvironmentObject var networkController: NetBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     @EnvironmentObject var progress: Progress
 
     // Use the published full decoded ComputerFull from NetBrain directly

@@ -21,7 +21,7 @@ struct ComputerExtAttDetailView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var extensionAttributeController: EaBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
 
     // Local state for editable fields
     @State private var currentCompExtAttDet: ComputerExtensionAttributeDetailed = ComputerExtensionAttributeDetailed(id: 0, name: "", enabled: true, description: "", dataType: "", inputType: InputType(type: "", platform: "", script: ""), inventoryDisplay: "")

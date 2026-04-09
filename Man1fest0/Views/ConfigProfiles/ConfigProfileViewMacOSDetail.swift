@@ -12,7 +12,7 @@ struct ConfigProfileViewMacOSDetail: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var pushController: PushBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
 
     // selection is a lightweight summary (ConfigProfileSummary)
     @State var selection: ConfigProfileSummary

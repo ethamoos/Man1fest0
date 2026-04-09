@@ -11,7 +11,7 @@ struct GroupDetailView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
-    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var layout: LayoutManager
     
 //    @State var selection: ComputerGroup
     @State var group: ComputerGroup
