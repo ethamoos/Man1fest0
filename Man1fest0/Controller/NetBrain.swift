@@ -187,6 +187,9 @@ actor AsyncSemaphore {
     //        Groups in policy scope
     @Published var allComputerGroupsScope: [ComputerGroup] = []
     
+    @Published var advancedComputerSearches: [AdvancedComputerSearch] = []
+    @Published var allAdvancedComputerSearches: [AdvancedComputerSearch] = []
+    
     //  #############################################################################
     //    ############ Packages
     //  #############################################################################
@@ -431,6 +434,34 @@ actor AsyncSemaphore {
         //        DispatchQueue.main.async {
         self.allComputerGroups = try decoder.decode(Man1fest0.allComputerGroups.self, from: data).computerGroups
         //        }
+    }
+    
+    func getAdvancedComputerSearch(_ userID: String) async throws {
+        let jamfURLQuery = server + "/JSSResource/advancedcomputersearches"
+        guard let url = URL(string: jamfURLQuery) else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        
+        separationLine()
+        print("Running func: getAdvancedComputerSearch")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            print("Code not 200")
+            throw JamfAPIError.badResponseCode
+        }
+        
+        let decoder = JSONDecoder()
+        let searchesResponse = try decoder.decode(ComputerSearches.self, from: data)
+        
+        await MainActor.run {
+            self.advancedComputerSearches = searchesResponse.advancedComputerSearches.advancedComputerSearch
+            self.allAdvancedComputerSearches = searchesResponse.advancedComputerSearches.advancedComputerSearch
+        }
     }
     
     //    #################################################################################
@@ -1868,6 +1899,28 @@ actor AsyncSemaphore {
         } else {
             self.separationLine()
             print("No addExistingPackages response yet")
+        }
+    }
+    
+    func batchDeleteAdvancedComputerSearch(selection: Set<AdvancedComputerSearch>, server: String, authToken: String, resourceType: ResourceType) async throws {
+        for eachItem in selection {
+            let jamfID: String = String(eachItem.id)
+            let jamfURLQuery = server + "/JSSResource/advancedcomputersearches/id/" + jamfID
+            guard let url = URL(string: jamfURLQuery) else { return }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "DELETE"
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                print("Delete failed for advanced computer search \(jamfID)")
+                throw JamfAPIError.badResponseCode
+            }
+            
+            await MainActor.run {
+                self.allAdvancedComputerSearches.removeAll { $0.id == eachItem.id }
+            }
         }
     }
     

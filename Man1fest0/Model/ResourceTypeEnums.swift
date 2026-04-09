@@ -28,6 +28,7 @@ import Foundation
 
 
 enum ResourceType {
+    case advancedComputerSearch
     case building
     case buildingDetailed
     case category
@@ -56,6 +57,8 @@ enum ResourceType {
 func getURLFormat(data: ResourceType) -> String {
     print("Getting URL format")
     switch data {
+    case .advancedComputerSearch:
+        return "advancedcomputersearches"
     case .building:
         return "v1/buildings"
     case .buildingDetailed:
@@ -111,6 +114,8 @@ func getURLFormat(data: ResourceType) -> String {
 func getProcessFormat(data: ResourceType) -> String {
     print("Getting process format")
     switch data {
+    case .advancedComputerSearch:
+        return "process"
     case .building:
         return "process"
     case .buildingDetailed:
@@ -167,6 +172,8 @@ func getProcessFormat(data: ResourceType) -> String {
 func getReplyString(data: ResourceType) -> String {
     print("Getting reply format")
     switch data {
+    case .advancedComputerSearch:
+        return "ComputerSearchesReply"
     case .building:
         return "BuildingReply"
     case .buildingDetailed:
@@ -239,6 +246,8 @@ func getReplyString(data: ResourceType) -> String {
 func getSingleInstanceString(data: ResourceType) -> String {
     print("Getting single instance format")
     switch data {
+    case .advancedComputerSearch:
+        return "ComputerSearchesReply"
     case .building:
         return "BuildingReply"
     case .buildingDetailed:
@@ -291,6 +300,8 @@ func getSingleInstanceString(data: ResourceType) -> String {
 func getViewString(data: ResourceType) -> String {
     print("Getting view string format")
     switch data {
+    case .advancedComputerSearch:
+        return "ComputerSearchesView"
     case .building:
         return "BuildingView"
     case .buildingDetailed:
@@ -344,6 +355,8 @@ func getViewString(data: ResourceType) -> String {
 func getReceivedString(data: ResourceType) -> String {
     print("Getting received format")
     switch data {
+    case .advancedComputerSearch:
+        return "receivedAdvancedComputerSearches"
     case .building:
         return "receivedBuilding"
     case .buildingDetailed:

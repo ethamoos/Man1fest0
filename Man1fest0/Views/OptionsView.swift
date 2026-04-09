@@ -125,11 +125,11 @@ struct OptionsView: View {
                                     }
                                 }
                                 
-//                                DisclosureGroup("Advanced Searches") {
-//                                    NavigationLink(destination: ComputerSearchesView(server: server)) {
-//                                        Text("Computer Advanced Searches")
-//                                    }
-//                                }
+                                DisclosureGroup("Advanced Searches") {
+                                    NavigationLink(destination: ComputerSearchesView(server: server)) {
+                                        Text("Computer Advanced Searches")
+                                    }
+                                }
                             }
 #if os(macOS)
                             Divider()

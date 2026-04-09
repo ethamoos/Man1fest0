@@ -124,7 +124,7 @@ struct ComputerSearchesView: View {
                             let token = networkController.authToken
                             let sel = selection
                             Task {
-                                try await nc.batchDeleteAdvancedComputerSearch(selection: sel, server: srv, authToken: token)
+                                try await nc.batchDeleteAdvancedComputerSearch(selection: sel, server: srv, authToken: token, resourceType: .advancedComputerSearch)
                             }
                             print("Yes tapped")
                         },
