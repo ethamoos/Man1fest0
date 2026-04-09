@@ -123,6 +123,11 @@ struct OptionsView: View {
                                     NavigationLink(destination: ComputerExtAttributeActionView(server: server)) {
                                         Text("Computer Extension Attributes Actions")
                                     }
+                                }             
+                                DisclosureGroup("Advanced Searches") {
+                                    NavigationLink(destination: ComputerSearchesView(server: server) ) {
+                                        Text("Computer Searches")
+                                    }
                                 }
                             }
 #if os(macOS)

@@ -1,24 +1,19 @@
 //
-//  GroupsSmartView.swift
+//  ComputerSearchesView.swift
 //  Man1fest0
 //
-//  Created by Amos Deane on 27/05/2025.
+//  Created by Amos Deane on 09/04/2026.
 //
-
-
-
 
 import SwiftUI
 
-struct GroupsSmartView: View {
+struct ComputerSearchesView: View {
     
     var selectedResourceType = ResourceType.computerBasic
     
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var xmlController: XmlBrain
-    
-    
     
     @State var server: String
     @State private var showingWarning = false
@@ -28,25 +23,14 @@ struct GroupsSmartView: View {
     //  ################################################################################
     
     @State private var searchText = ""
-    @State private var searchTextComp = ""
-    @State var selectionGroup = ComputerGroup(id: 0, name: "", isSmart: false)
-    @State var selectionComp = ComputerBasicRecord(id: 0, name: "", managed: false, username: "", model: "", department: "", building: "", macAddress: "", udid: "", serialNumber: "", reportDateUTC: "", reportDateEpoch: 0)
-    
+    @State var selectionSearch = AdvancedComputerSearch(id: "0", name: "")
     @State var mySelection: String = ""
     
     // Keep a selection set for batch operations (delete).
-    @State var selection = Set<ComputerGroup>()
+    @State var selection = Set<AdvancedComputerSearch>()
     
-    // Single selected group for the detail pane
-    @State private var selectedGroup: ComputerGroup? = nil
-    
-    //  ########################################################################################
-    //  Filters
-    //  ########################################################################################
-    
-    @State var computerGroupFilter = ""
-    @State var allLdapServersFilter = ""
-    
+    // Single selected search for the detail pane
+    @State private var selectedSearch: AdvancedComputerSearch? = nil
     
     let columns = [
         GridItem(.fixed (170)),
@@ -57,29 +41,29 @@ struct GroupsSmartView: View {
         
         VStack(alignment: .leading) {
             
-            Section(header: Text("Smart Groups:").bold().padding()) {
+            Section(header: Text("Advanced Searches:").bold().padding()) {
                 
                 // NavigationSplitView shows a persistent master list on the left and a detail pane on the right.
                 NavigationSplitView {
                     // Master list (supports multi-selection for batch delete via `selection`)
                     List(selection: $selection) {
-                        ForEach(searchResults) { group in
+                        ForEach(searchResults) { search in
                             HStack {
-                                Text(group.name)
+                                Text(search.name)
                                 Spacer()
-                                Text("ID: \(group.id)")
+                                Text("ID: \(search.id)")
                                     .foregroundColor(.secondary)
                             }
-                            .tag(group)
+                            .tag(search)
                             .contentShape(Rectangle())
                         }
                     }
                     .onChange(of: selection) { newSelection in
                         // Keep the detail pane in sync with the list selection
                         if let first = newSelection.first {
-                            selectedGroup = first
+                            selectedSearch = first
                         } else {
-                            selectedGroup = nil
+                            selectedSearch = nil
                         }
                     }
                     .listStyle(SidebarListStyle())
@@ -87,13 +71,13 @@ struct GroupsSmartView: View {
                     .frame(minWidth: 260)
                     .searchable(text: $searchText, placement: .sidebar)
                 } detail: {
-                    // Detail pane - show selected group's detail view, or a placeholder
-                    if let group = selectedGroup {
-                        GroupsSmartDetailView(server: server, group: group)
+                    // Detail pane - show selected search's detail view, or a placeholder
+                    if let search = selectedSearch {
+                        ComputerSearchesDetailView(server: server, search: search)
                             .environmentObject(networkController)
                             .environmentObject(xmlController)
                     } else {
-                        Text("Select a Smart Group to view details")
+                        Text("Select an Advanced Search to view details")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
@@ -101,16 +85,14 @@ struct GroupsSmartView: View {
             
             VStack() {
                 
-                
                 Button(action: {
                     
                     progress.showProgress()
                     progress.waitForABit()
                     
                     Task {
-                        try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                        try await networkController.getAdvancedComputerSearch(userID: "")
                     }
- 
                     
                 }) {
 #if os(macOS)
@@ -133,8 +115,6 @@ struct GroupsSmartView: View {
                     progress.waitForABit()
                     showingWarning = true
                     
-                  
-                    
                 }) {
 #if os(macOS)
                     HStack(spacing: 10) {
@@ -156,12 +136,8 @@ struct GroupsSmartView: View {
                         message: Text("This action will delete data.\n Always ensure that you have a backup!"),
                         primaryButton: .destructive(Text("I understand!")) {
                             // Code to execute when "Yes" is tapped
-                            let nc = networkController
-                            let srv = server
-                            let token = networkController.authToken
-                            let sel = selection
                             Task {
-                                try await nc.batchDeleteGroup(selection: sel, server: srv, authToken: token, resourceType: ResourceType.computerGroup)
+                                try await networkController.batchDeleteAdvancedComputerSearch(selection: selection, server: server, authToken: networkController.authToken)
                             }
                             print("Yes tapped")
                         },
@@ -174,12 +150,12 @@ struct GroupsSmartView: View {
         }
         
         Divider()
-  
-            .onAppear() {
-             Task {
-                 try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-             }
-         }
+        
+        .onAppear() {
+            Task {
+                try await networkController.getAdvancedComputerSearch(userID: "")
+            }
+        }
         
         if progress.showProgressView == true {
             
@@ -193,26 +169,13 @@ struct GroupsSmartView: View {
         }
     }
     
-    func runGetGroupMembers(selection: ComputerGroup, authToken: String) async {
+    var searchResults: [AdvancedComputerSearch] {
         
-        let mySelection = String(describing: selection.name)
-        
-        do {
-            try await networkController.getGroupMembers(server: server, name: mySelection)
-        } catch {
-            print("Error getting GroupMembers")
-            print(error)
-        }
-        xmlController.getGroupMembersXML(server: server, groupId: selection.id, authToken: networkController.authToken)
-    }
-    
-    var searchResults: [ComputerGroup] {
-        
-        let groups = networkController.allComputerGroups.filter { $0.isSmart }
+        let searches = networkController.allAdvancedComputerSearches
         if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return groups
+            return searches
         } else {
-            return groups.filter { $0.name.localizedCaseInsensitiveContains(searchText) || String(describing: $0.id).localizedCaseInsensitiveContains(searchText) }
+            return searches.filter { $0.name.localizedCaseInsensitiveContains(searchText) || $0.id.localizedCaseInsensitiveContains(searchText) }
         }
     }
 }
