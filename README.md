@@ -11,7 +11,7 @@ Manifesto is an all-purpose "toolbox" app for working with Jamf.
 
 For a full list of the features and the introductory movie see the man1festo Wiki here: https://ethamoos.co.uk/manifesto-wiki/
 
-Some Feature Hightlights:
+Some Feature Highlights:
 
 * Enable and disable policies
 * Edit the content (packages and scripts) of policies
