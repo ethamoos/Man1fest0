@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ComputerBasicActionView: View {
+struct ComputersActionView: View {
     
     var selectedResourceType = ResourceType.computerBasic
     
@@ -48,7 +48,7 @@ struct ComputerBasicActionView: View {
                 Spacer()
                 HStack(spacing: 8) {
                     Button(action: {
-                        Task { try await networkController.getAllComputers() }
+                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
                         progress.showProgress()
                         progress.waitForABit()
                     }) {
@@ -70,7 +70,7 @@ struct ComputerBasicActionView: View {
                             // card-like list
                             VStack {
                                 List(searchResults, id: \.self, selection: $selection) { computer in
-                                    NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))) {
+                                    NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer, selection: $selection)) {
                                         HStack {
                                             Image(systemName: "desktopcomputer")
                                             Text(computer.name ).font(.system(size: 12.0)).foregroundColor(.blue)
@@ -87,7 +87,7 @@ struct ComputerBasicActionView: View {
 #else
                         VStack {
                             List(searchResults, id: \.self) { computer in
-                                NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))) {
+                                NavigationLink(destination: ComputersBasicDetailedView(server: server, computer: computer)) {
                                     HStack {
                                         Image(systemName: "desktopcomputer")
                                         Text(computer.name ).font(.system(size: 12.0)).foregroundColor(.blue)
@@ -125,10 +125,18 @@ struct ComputerBasicActionView: View {
             // Actions card
             VStack(alignment: .leading) {
                 HStack {
-                    // Deletion has moved to the detail pane for single-item deletion. Use the detail panel to delete the currently selected computer.
-                    Text("Use the detail pane to delete the selected computer")
-                        .foregroundColor(.secondary)
-                    
+                    Button(action: {
+                        showingWarning = true
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.processDeleteComputers(selection: selectionComp, server: server, authToken: networkController.authToken, resourceType: ResourceType.policies)
+                    }) {
+                        Text("Delete Selection")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+
                     Button(action: {
                         progress.showProgress()
                         progress.waitForABit()
@@ -140,6 +148,9 @@ struct ComputerBasicActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(.blue)
+                    .alert(isPresented: $showingWarning) {
+                        Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
+                    }
                 }
             }
             .padding()
