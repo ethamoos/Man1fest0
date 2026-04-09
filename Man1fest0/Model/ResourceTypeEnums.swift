@@ -305,7 +305,7 @@ func getViewString(data: ResourceType) -> String {
     case .computerDetailed:
         return "ComputerDetailedView"
     case .computerBasic:
-        return "ComputersBasicView"    
+        return "ComputerBasicActionView"    
     case .computerGroup:
         return "ComputerGroupView"
     case .configProfileMacOS:

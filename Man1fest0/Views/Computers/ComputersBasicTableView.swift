@@ -201,7 +201,7 @@ struct ComputersBasicTableView: View {
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     }
                 }
-                .padding()
+                //                .padding()
                 
                 Divider()
                 
@@ -233,134 +233,138 @@ struct ComputersBasicTableView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
                         }
-                    
-                    Picker(selection: $selectionDepartmentId, label: Text("Department:").bold()) {
-                        Text("").tag("")
-                        ForEach(filteredDepartments, id: \.self) { department in
-                            Text(String(describing: department.name)).tag(department.id)
+                        
+                        Picker(selection: $selectionDepartmentId, label: Text("Department:").bold()) {
+                            Text("").tag("")
+                            ForEach(filteredDepartments, id: \.self) { department in
+                                Text(String(describing: department.name)).tag(department.id)
+                            }
                         }
                     }
-                    }
-
-                }
-             
                     
+                }
+                
+                
                 
                 //  ##########################################################################
                 //  Commands
                 //  ##########################################################################
                 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
+                HStack {
+                    
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
                         Picker("Commands", selection: $selectedCommand) {
                             ForEach(pushController.flushCommands, id: \.self) {
                                 Text(String(describing: $0))
                             }
                         }
                     }
+                    
+                    Button("Flush Commands") {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        Task {
+                            await pushController.flushCommandBatch(server: server, authToken: networkController.authToken, selectionComp: selection, selectedCommand: selectedCommand, deviceType: "computers")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    
+                }
+                
+                
+                
+                
+                
+                
+                
+                
+                //              ##########################################################################
+                //              Selections
+                //              ##########################################################################
+                
+                
+                //              ##########################################################################
+                //              Computer Group Picker
+                //              ##########################################################################
+                
+                Divider()
+                
+                //  ##########################################################################
+                //  processUpdateAddComputersToGroup
+                //  ##########################################################################
+                
+                HStack {
+                    Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        // Call the real update group function and show progress
+                        guard let compGroup = selectionCompGroup else {
+                            // No group selected - nothing to do
+                            return
+                        }
+                        
+                        // Request group members XML then call addMultipleComputersToGroup when the XML is available.
+                        Task {
+                            xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
                             
-                Button("Flush Commands") {
+                            // wait for the xmlController to populate computerGroupMembersXML (timeout after ~3s)
+                            var attempts = 0
+                            while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
+                                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+                                attempts += 1
+                            }
+                            
+                            if xmlController.computerGroupMembersXML.isEmpty {
+                                print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
+                            } else {
+                                print("Got groupMembers XML")
+                            }
+                            
+                            xmlController.addMultipleComputersToGroupOld(xmlContent: xmlController.computerGroupMembersXML,
+                                                                         computers: selection,
+                                                                         authToken: networkController.authToken,
+                                                                         groupId: String(compGroup.id),
+                                                                         resourceType: ResourceType.computerGroup,
+                                                                         server: server)
+                        }
+                        
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Add Selection To Group")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                     
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    Task {
-                        await pushController.flushCommandBatch(server: server, authToken: networkController.authToken, selectionComp: selection, selectedCommand: selectedCommand, deviceType: "computers")
+                    HStack(spacing: 1) {
+                        TextField("Filter", text: $computerGroupFilter)
+                        Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
+                            // Provide an explicit nil tag so the optional selection has a matching tag
+                            Text("Select...").tag(nil as ComputerGroup?)
+                            ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
+                                Text(group.name)
+                                    .tag(group as ComputerGroup?)
+                            }
+                        }
+                        .onAppear {
+                            if let first = networkController.allComputerGroups.first {
+                                selectionCompGroup = first
+                            } else {
+                                selectionCompGroup = nil
+                            }
+                        }
                     }
+                  Spacer()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .shadow(color: .gray, radius: 2, x: 0, y: 2)
-
-                
-                
-                
-                
-                
-                
-         
-            
-            
-            //              ##########################################################################
-            //              Selections
-            //              ##########################################################################
-            
-           
-            //              ##########################################################################
-            //              Computer Group Picker
-            //              ##########################################################################
-           
-            Divider()
-            
-            //  ##########################################################################
-            //  processUpdateAddComputersToGroup
-            //  ##########################################################################
-            
-    Button(action: {
-        
-        progress.showProgress()
-        progress.waitForABit()
-        
-        // Call the real update group function and show progress
-        guard let compGroup = selectionCompGroup else {
-            // No group selected - nothing to do
-            return
-        }
-        
-        // Request group members XML then call addMultipleComputersToGroup when the XML is available.
-        Task {
-            xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
-
-            // wait for the xmlController to populate computerGroupMembersXML (timeout after ~3s)
-            var attempts = 0
-            while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
-                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
-                attempts += 1
+                .padding()
             }
-
-            if xmlController.computerGroupMembersXML.isEmpty {
-                print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
-            } else {
-                print("Got groupMembers XML")
-            }
-
-            xmlController.addMultipleComputersToGroupOld(xmlContent: xmlController.computerGroupMembersXML,
-                                                     computers: selection,
-                                                     authToken: networkController.authToken,
-                                                     groupId: String(compGroup.id),
-                                                     resourceType: ResourceType.computerGroup,
-                                                     server: server)
-        }
-        
-    }) {
-        HStack(spacing: 10) {
-            Image(systemName: "arrow.clockwise")
-            Text("Add Selection To Group")
-        }
-    }
-    .buttonStyle(.borderedProminent)
-    .tint(.blue)
-          
-            HStack(spacing: 10) {
-                TextField("Filter", text: $computerGroupFilter)
-                Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
-                    // Provide an explicit nil tag so the optional selection has a matching tag
-                    Text("Select...").tag(nil as ComputerGroup?)
-                    ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
-                        Text(group.name)
-                            .tag(group as ComputerGroup?)
-                    }
-                }
-                .onAppear {
-                    if let first = networkController.allComputerGroups.first {
-                        selectionCompGroup = first
-                    } else {
-                        selectionCompGroup = nil
-                    }
-                }
-            }
-               
-            }
-            .padding()
             
             Divider()
             

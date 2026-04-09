@@ -9,7 +9,7 @@ struct ComputersView: View {
 
     var body: some View {
         NavigationView {
-            ComputersBasicView(server: server)
+            ComputerBasicActionView(server: server)
                 .environmentObject(networkController)
                 .environmentObject(layout)
                 .environmentObject(progress)

@@ -86,14 +86,17 @@ struct OptionsView: View {
                                 NavigationLink(destination: ComputersView( server: server )) {
                                                                  Text("Computers (beta)")
                                                              }
-                                NavigationLink(destination: ComputerBasicView(selectedResourceType: ResourceType.computerDetailed, server: server )) {
-                                    Text("Computers")
+                                NavigationLink(destination: ComputerBasicView( server: server )) {
+                                                                                                 Text("Computers")
+                                                                                             }
+                                
+                                
+                                NavigationLink(destination: ComputerBasicActionView( server: server )) {
+                                    Text("Computers Basic Actions")
                                 }
                                 
                          
-                                NavigationLink(destination: ComputersActionView( server: server )) {
-                                                                                                 Text("Computers Basic Actions")
-                                                                                             }
+                        
                                 
                                 
 #if os(macOS)
