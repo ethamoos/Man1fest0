@@ -1,226 +1,276 @@
 import SwiftUI
 
 struct ComputerBasicActionView: View {
-    
-    //    var selectedResourceType = ResourceType.computerBasic
-    
-    @State var server: String
-    @State var computersBasic: [ComputerBasicRecord] = []
-    @State private var searchText = ""
-    @State private var computerGroupFilter: String = ""
-    
-    //  ########################################################################################
-    //  EnvironmentObjects
-    //  ########################################################################################
-    
-    @EnvironmentObject var progress: Progress
-    
-    @EnvironmentObject var networkController: NetBrain
-    
-    @State var currentDetailedPolicy: PoliciesDetailed? = nil
-    
-    @EnvironmentObject var xmlController: XmlBrain
-    
-    //  ########################################################################################
-    //  Selections
-    //  ########################################################################################
-    
-    @State private var selectionCompGroup: ComputerGroup? = nil
-    
-    @State var selection = Set<ComputerBasicRecord>()
-    //    @State var selection: ComputerBasicRecord
-    
-    
-    var body: some View {
+
         
-        VStack(alignment: .leading) {
+        @State var server: String
+        @State var computersBasic: [ComputerBasicRecord] = []
+        @State private var searchText = ""
+        @State private var computerGroupFilter: String = ""
+        
+        //  ########################################################################################
+        //  EnvironmentObjects
+        //  ########################################################################################
+        
+        @EnvironmentObject var progress: Progress
+        
+        @EnvironmentObject var networkController: NetBrain
+        
+        @State var currentDetailedPolicy: PoliciesDetailed? = nil
+        
+        @EnvironmentObject var xmlController: XmlBrain
+        
+        @EnvironmentObject var extensionAttributeController: EaBrain
+        
+        //  ########################################################################################
+        //  Selections
+        //  ########################################################################################
+        
+        @State private var selectionCompGroup: ComputerGroup? = nil
+        @State var selection = Set<ComputerBasicRecord>()
+        
+        @State private var selectedEAName = ""
+        @State private var eaValue = ""
+        
+        var body: some View {
             
-            if networkController.allComputersBasic.computers.count > 0 {
+            VStack(alignment: .leading) {
                 
-                NavigationView {
-#if os(macOS)
-                    List(searchResults, id: \.self, selection: $selection) { computer in
-                        HStack {
-                            Image(systemName: "apple.logo")
-                            Text(computer.name).font(.system(size: 12.0))
-                        }
-                        .foregroundColor(.blue)
+                // Header
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading) {
+                        Text("Computers")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        Text("Browse and manage computers")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
-                    .searchable(text: $searchText)
-                    
-#else
-                    List(searchResults, id: \.self) { computer in
-                        HStack {
-                            Image(systemName: "apple.logo")
-                            Text(computer.name).font(.system(size: 12.0))
+                    Spacer()
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        Task {
+                            try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
                         }
-                        .foregroundColor(.blue)
-                    }
-                    .searchable(text: $searchText)
-#endif
-                    Text("\(networkController.computers.count) total computers")
-                }
-                
-                //                .toolbar {
-                //
-                //                    Button(action: {
-                //                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-                //                        progress.showProgress()
-                //                        progress.waitForABit()
-                //                        print("Refresh")
-                //                    }) {
-                //                        HStack(spacing: 10) {
-                //                            Image(systemName: "arrow.clockwise")
-                //                            Text("Refresh")
-                //                        }
-                //                    }
-                //                }
-                
-                Text("\(networkController.computers.count) total computers")
-                
-                    .navigationViewStyle(DefaultNavigationViewStyle())
-                
-                //  ##########################################################################
-                //  processUpdateAddComputersToGroup
-                //  ##########################################################################
-                
-                Button(action: {
-                    
-                    progress.showProgress()
-                    progress.waitForABit()
-                    
-                    // Call the real update group function and show progress
-                    guard let compGroup = selectionCompGroup else {
-                        // No group selected - nothing to do
-                        return
-                    }
-                    
-                    // Request group members XML then call addMultipleComputersToGroup when the XML is available.
-                    Task {
-                        xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
-                        
-                        // wait for the xmlController to populate computerGroupMembersXML (timeout after ~3s)
-                        var attempts = 0
-                        while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
-                            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
-                            attempts += 1
-                        }
-                        
-                        if xmlController.computerGroupMembersXML.isEmpty {
-                            print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
-                        } else {
-                            print("Got groupMembers XML")
-                        }
-                        
-                        xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
-                                                                   computers: selection,
-                                                                   authToken: networkController.authToken,
-                                                                   groupId: String(compGroup.id),
-                                                                   resourceType: ResourceType.computerGroup,
-                                                                   server: server)
-                    }
-                    
-                }) {
-                    HStack(spacing: 10) {
+                    }) {
                         Image(systemName: "arrow.clockwise")
-                        Text("Add Selection To Group")
                     }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .padding(.bottom, 6)
+                .padding(.horizontal)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
                 
-                HStack(spacing: 10) {
-                    TextField("Filter", text: $computerGroupFilter)
-                        // Keep the text field to its intrinsic size and avoid stretching
-                        .fixedSize()
-                        .frame(minWidth: 160)
-                    Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
-                        ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
-                            Text(group.name)
-                                .tag(group as ComputerGroup?)
+                if networkController.allComputersBasic.computers.count > 0 {
+                    
+                    NavigationView {
+    #if os(macOS)
+                        List(searchResults, id: \.self, selection: $selection) { computer in
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .searchable(text: $searchText)
+                        .listStyle(.sidebar)
+    #else
+                        List(searchResults, id: \.self) { computer in
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .searchable(text: $searchText)
+    #endif
+                        Text("\(networkController.computers.count) total computers")
+                    }
+                    
+                    Text("\(networkController.computers.count) total computers")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 6)
+                        .navigationViewStyle(DefaultNavigationViewStyle())
+                    
+                    //  ##########################################################################
+                    //  processUpdateAddComputersToGroup
+                    //  ##########################################################################
+                    
+                    Button(action: {
+                        
+                        progress.showProgress()
+                        progress.waitForABit()
+                        
+                        // Call the real update group function and show progress
+                        guard let compGroup = selectionCompGroup else {
+                            // No group selected - nothing to do
+                            return
+                        }
+                        
+                        // Request group members XML then call addMultipleComputersToGroup when the XML is available.
+                        Task {
+                            xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
+                            
+                            var attempts = 0
+                            while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
+                                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+                                attempts += 1
+                            }
+                            
+                            if xmlController.computerGroupMembersXML.isEmpty {
+                                print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
+                            } else {
+                                print("Got groupMembers XML")
+                            }
+                            
+                            xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
+                                                                      computers: selection,
+                                                                      authToken: networkController.authToken,
+                                                                      groupId: String(compGroup.id),
+                                                                      resourceType: ResourceType.computerGroup,
+                                                                      server: server)
+                        }
+                        
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Add Selection To Group")
                         }
                     }
-                    // Use a compact menu-style picker so it doesn't expand to fill the HStack
-                    .pickerStyle(MenuPickerStyle())
-                    .fixedSize()
-                 }
-                 .onAppear {
-                     
-                         if networkController.allComputersBasic.computers.count == 0 {
-                             print("Fetching computers")
-                             Task {
-                                 try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
-                             }
-                         }
-                         
-                         Task {
-                             try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                         }
-                         
-                         if let first = networkController.allComputerGroups.first {
-                             selectionCompGroup = first
-                         } else {
-                             selectionCompGroup = nil
-                         }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    
+                    HStack(spacing: 10) {
+                        TextField("Filter", text: $computerGroupFilter)
+                            // Keep the text field to its intrinsic size and avoid stretching
+                            .fixedSize()
+                            .frame(minWidth: 160)
+                        Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
+                            ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
+                                Text(group.name)
+                                    .tag(group as ComputerGroup?)
+                            }
+                        }
+                        // Use a compact menu-style picker so it doesn't expand to fill the HStack
+                        .pickerStyle(MenuPickerStyle())
+                        .fixedSize()
                      }
-                
-            } else {
-                
-                ProgressView {
-                    Text("Loading data")
-                        .font(.title)
-                        .progressViewStyle(.horizontal)
+                     
+                    Divider()
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Update Extension Attribute")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        HStack {
+                            Text("Extension Attribute:")
+                            Picker("", selection: $selectedEAName) {
+                                Text("Select...").tag("")
+                                ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                                    Text(ea.name).tag(ea.name)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+                        
+                        HStack {
+                            Text("Value:")
+                            TextField("EA Value", text: $eaValue)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                        
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            let computerIds = Set(selection.map { $0.id })
+                            Task {
+                                do {
+                                    try await extensionAttributeController.updateComputerEAValueMultipleComputers(
+                                        server: server,
+                                        authToken: networkController.authToken,
+                                        computerIds: computerIds,
+                                        extAttName: selectedEAName,
+                                        updateValue: eaValue
+                                    )
+                                } catch {
+                                    print("Failed to update EA: \(error)")
+                                }
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                Text("Update EA Value for \(selection.count) computers")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .disabled(selectedEAName.isEmpty || selection.isEmpty)
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                     
+                    .onAppear {
+                        
+                        if networkController.allComputersBasic.computers.count == 0 {
+                            print("Fetching computers")
+                            Task {
+                                try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                            }
+                        }
+                        
+                        
+                        Task {
+                            try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                        }
+                        
+                        if let first = networkController.allComputerGroups.first {
+                            selectionCompGroup = first
+                        } else {
+                            selectionCompGroup = nil
+                        }
+                    }
+                    
+                } else {
+                    
+                    ProgressView {
+                        Text("Loading data")
+                            .font(.title)
+                            .progressViewStyle(.horizontal)
+                    }
+                    .padding()
+                    Spacer()
                 }
-                .padding()
-                Spacer()
+            }
+            .padding()
+        }
+
+        var searchResults: [ComputerBasicRecord] {
+            
+            let allComputers = networkController.allComputersBasic.computers
+            let allComputersArray = Array (allComputers)
+            
+            if searchText.isEmpty {
+                return networkController.allComputersBasic.computers.sorted { $0.name < $1.name }
+            } else {
+                print("Search Added")
+                return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
             }
         }
-        .padding()
-    }
-    
-    
-    //        .frame(minWidth: 200, minHeight: 100, alignment: .leading)
-    
-    //        .onAppear {
-    //
-    //            networkController.refreshComputers()
-    //
-    //            //            if networkController.computers.count < 0 {
-    //            //                print("Fetching computers")
-    //            //                networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
-    //            //            }
-    //            //            if networkController.computers.count < 0 {
-    //            //                print("Fetching basic computers")
-    //            //                //                networkController.allComputersBasic.computers
-    //            //            }
-    //        }
-    //}
-    
-    //}
-    
-    func handleConnect(resourceType: ResourceType) async {
-        print("Running handleConnect. resourceType is set as:\(resourceType)")
-    }
-    
-    
-    var searchResults: [ComputerBasicRecord] {
         
-        let allComputers = networkController.allComputersBasic.computers
-        let allComputersArray = Array (allComputers)
-        
-        if searchText.isEmpty {
-            return networkController.allComputersBasic.computers.sorted { $0.name < $1.name }
-        } else {
-            print("Search Added")
-            return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
-        }
     }
-    
-}
 
 
-//struct TestView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        TestView()
-//    }
-//}
+    //struct TestView_Previews: PreviewProvider {
+    //    static var previews: some View {
+    //        TestView()
+    //    }
+    //}
+
