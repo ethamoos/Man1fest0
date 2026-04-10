@@ -15,6 +15,7 @@ struct ComputerBasicActionView: View {
         @EnvironmentObject var progress: Progress
         
         @EnvironmentObject var networkController: NetBrain
+        @EnvironmentObject var layout: Layout
         
         @State var currentDetailedPolicy: PoliciesDetailed? = nil
         
@@ -57,7 +58,22 @@ struct ComputerBasicActionView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     .buttonStyle(.bordered)
-                }
+                    
+                    // Open selected computers in the Jamf web UI
+                    Button(action: {
+                        guard !selection.isEmpty else { return }
+                        progress.showProgress()
+                        progress.waitForABit()
+
+                        let ids = selection.map { String($0.id) }
+                        for id in ids {
+                            layout.openURL(urlString: "\(server)/computers.html?id=\(id)&o=r", requestType: "computers")
+                        }
+                    }) {
+                        Image(systemName: "safari")
+                    }
+                    .buttonStyle(.bordered)
+                 }
                 .padding(.bottom, 6)
                 .padding(.horizontal)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
@@ -273,4 +289,3 @@ struct ComputerBasicActionView: View {
     //        TestView()
     //    }
     //}
-
