@@ -5767,7 +5767,7 @@ xml = """
     // Fetch detailed advanced computer search by id
     func getDetailAdvancedComputerSearch(userID: String) async throws {
         do {
-            let request = APIRequest<AdvancedComputerSearchDetailedResponse>(endpoint: "advancedcomputers/id/" + userID, method: .get)
+            let request = APIRequest<AdvancedComputerSearchDetailedResponse>(endpoint: "advancedcomputersearches/id/" + userID, method: .get)
             print("APIRequest: \(request)")
             // ensure we have an auth token
             if authToken.isEmpty {
