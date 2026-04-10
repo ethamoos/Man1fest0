@@ -189,7 +189,8 @@ actor AsyncSemaphore {
     
     @Published var advancedComputerSearches: [AdvancedComputerSearch] = []
     @Published var allAdvancedComputerSearches: [AdvancedComputerSearch] = []
-    
+    @Published var advancedComputerSearchDetailed: AdvancedComputerSearchDetailed? = nil
+
     //  #############################################################################
     //    ############ Packages
     //  #############################################################################
@@ -452,8 +453,13 @@ actor AsyncSemaphore {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
+                    print(String(data: data, encoding: .utf8)!)
+
             throw JamfAPIError.badResponseCode
         }
+print("DEBUG - status code is 200, response is:")
+        print(String(data: data, encoding: .utf8)!)
+
         
         let decoder = JSONDecoder()
         let searchesResponse = try decoder.decode(ComputerSearches.self, from: data)
@@ -5754,10 +5760,28 @@ xml = """
             self.alertTitle = "Failed to load departments"
             self.alertMessage = error.localizedDescription
             self.showAlert = true
-            
+
         }
     }
-    
+
+    // Fetch detailed advanced computer search by id
+    func getDetailAdvancedComputerSearch(userID: String) async throws {
+        do {
+            let request = APIRequest<AdvancedComputerSearchDetailedResponse>(endpoint: "advancedcomputers/id/" + userID, method: .get)
+            print("APIRequest: \(request)")
+            // ensure we have an auth token
+            if authToken.isEmpty {
+                _ = try await getToken(server: server, username: username, password: password )
+            }
+            let decoded = try await requestSender.resultFor(apiRequest: request)
+            self.advancedComputerSearchDetailed = decoded.advancedComputerSearch
+            print("Loaded advanced computer search detail for id: \(userID)")
+        } catch {
+            publishError(error, title: "Failed to load advanced computer search details")
+            throw error
+        }
+    }
+
     // Fetch all computers
   func getAllComputers() async throws {
       do {
@@ -5775,5 +5799,5 @@ xml = """
           
       }
   }
-    
+
 }

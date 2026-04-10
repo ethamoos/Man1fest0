@@ -1,17 +1,6 @@
-//
-//  AdvancedComputerSearch.swift
-//  Man1fest0
-//
-//  Created by Copilot on 09/04/2026.
-//
-
 import Foundation
 
-// Matches the API response for advanced computer searches.
-// The API may return different JSON shapes for "advanced_computer_searches":
-// 1) An object with fields: { "size": Int, "advanced_computer_search": [ {...}, ... ] }
-// 2) An array directly: { "advanced_computer_searches": [ {...}, ... ] }
-// Also, the inner "advanced_computer_search" may sometimes be a single object instead of an array.
+// Re-declare the minimal model structs to allow standalone decoding tests in a script.
 
 struct ComputerSearches: Codable {
     let advancedComputerSearches: AdvancedComputerSearchesContainer
@@ -47,8 +36,8 @@ struct ComputerSearches: Codable {
 }
 
 struct AdvancedComputerSearchesContainer: Codable {
-    let size: Int?
-    let advancedComputerSearch: [AdvancedComputerSearch]
+    var size: Int?
+    var advancedComputerSearch: [AdvancedComputerSearch]
 
     enum CodingKeys: String, CodingKey {
         case size
@@ -105,5 +94,27 @@ struct AdvancedComputerSearch: Codable, Identifiable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case id, name
+    }
+}
+
+// Now run decoding tests
+let decoder = JSONDecoder()
+let jsonVariants: [(String, String)] = [
+    ("object_form", "{ \"advanced_computer_searches\": { \"size\": 1, \"advanced_computer_search\": [ { \"id\": 123, \"name\": \"Test Search\" } ] } }"),
+    ("array_form", "{ \"advanced_computer_searches\": [ { \"id\": 456, \"name\": \"Array Search\" } ] }"),
+    ("single_object_inner", "{ \"advanced_computer_searches\": { \"size\": 1, \"advanced_computer_search\": { \"id\": 789, \"name\": \"Single Inner\" } } }")
+]
+
+for (label, json) in jsonVariants {
+    print("--- Testing: \(label) ---")
+    guard let data = json.data(using: .utf8) else { print("failed to create data"); continue }
+    do {
+        let result = try decoder.decode(ComputerSearches.self, from: data)
+        print("Decoded count: \(result.advancedComputerSearches.advancedComputerSearch.count)")
+        for s in result.advancedComputerSearches.advancedComputerSearch {
+            print("- id=\(s.id) name=\(s.name)")
+        }
+    } catch {
+        print("Failed to decode variant \(label): \(error)")
     }
 }
