@@ -172,7 +172,28 @@ struct ComputersBasicTableView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    
+
+                    // Open selected computers in the Jamf web UI
+                    Button(action: {
+                        guard !selection.isEmpty else { return }
+                        progress.showProgress()
+                        progress.waitForABit()
+
+                        // Iterate selections and open each computer in the browser
+                        for id in selection {
+                            let idString = String(describing: id)
+                            layout.openURL(urlString: "\(server)/computers.html?id=\(idString)&o=r", requestType: "computers")
+                        }
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "safari")
+                            Text("Open Selection In Browser")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .disabled(selection.isEmpty)
+
                     //              ##########################################################################
                     //              New Computer Name to SELECTION
                     //              ##########################################################################
