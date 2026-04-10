@@ -100,6 +100,21 @@ struct PolicyScopeTabView: View {
     @State var ldapServerSelection: LDAPServer? = nil
     
     @State var ldapSearchCustomGroupSelection = LDAPCustomGroup(uuid: "", ldapServerID: 0, id: "", name: "", distinguishedName: "")
+
+    // New: filter text for the "Search Results:" picker
+    @State private var ldapSearchPickerFilter: String = ""
+
+    // Computed filtered results for the picker
+    var filteredLdapCustomGroups: [LDAPCustomGroup] {
+        if ldapSearchPickerFilter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return scopingController.allLdapCustomGroupsCombinedArray
+        } else {
+            return scopingController.allLdapCustomGroupsCombinedArray.filter {
+                // Use localizedCaseInsensitiveContains on the group's name (safe-string conversion)
+                String(describing: $0.name).localizedCaseInsensitiveContains(ldapSearchPickerFilter)
+            }
+        }
+    }
     
     @State var getDetailedPolicyHasRun = false
     
@@ -402,7 +417,7 @@ struct PolicyScopeTabView: View {
     private var editScopingView: some View {
         VStack(alignment: .leading) {
             Divider()
-            DisclosureGroup("Edit Scoping") {
+//            DisclosureGroup("Edit Scoping") {
                 VStack(alignment: .leading, spacing: 12) {
                     computersEditorView
                     departmentEditorView
@@ -412,7 +427,7 @@ struct PolicyScopeTabView: View {
                     editLimitationsEditorView
                     exclusionsEditorView
                 }
-            }
+//            }
         }
     }
 
@@ -601,41 +616,53 @@ struct PolicyScopeTabView: View {
     }
 
     private var editLimitationsEditorView: some View {
-        DisclosureGroup("Edit Limitations") {
-            VStack(alignment: .leading) {
-                LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
-                    HStack(spacing: 20) {
-                        Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:")) {
-                            Text("").tag(ldapSearchCustomGroupSelection as LDAPCustomGroup?)
-                            ForEach(scopingController.allLdapCustomGroupsCombinedArray, id: \.self) { group in
-                                Text(String(describing: group.name)).tag(ldapSearchCustomGroupSelection as LDAPCustomGroup?)
-                            }
+//        DisclosureGroup("Edit Limitations") {
+        VStack(alignment: .leading) {
+//            LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
+            HStack(spacing: 5) {
+                //                        Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:")) {
+                // Provide a lightweight filter field above the picker (placed inline)
+                //                        }
+                // Move the filter and picker out of the Picker literal so layout is clearer
+//                VStack(alignment: .leading, spacing: 6) {
+                    TextField("Filter search results...", text: $ldapSearchPickerFilter)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.bottom, 4)
+                    
+                    Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:")) {
+                        ForEach(filteredLdapCustomGroups, id: \.self) { group in
+                            Text(String(describing: group.name)).tag(group)
                         }
-
-                        Button(action: {
-                            showingWarningLimitScope = true
-                            progress.showProgress()
-                            progress.waitForABit()
-                        }) {
-                            Image(systemName: "plus.square.fill.on.square.fill"); Text("Limit")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .alert(isPresented: $showingWarningLimitScope) {
-                            Alert(
-                                title: Text("Caution!"),
-                                message: Text("This action will limit the policy scoping.\n Some devices may not receive the policy"),
-                                primaryButton: .destructive(Text("I understand!")) {
-                                    xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
-                                    Task { await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID)) }
-                                },
-                                secondaryButton: .cancel()
-                            )
-                        }
-
-                        Button(action: {
-                            progress.showProgress(); progress.waitForABit(); showingWarningClearLimit = true
-                        }) { Text("Clear Limitations") }
+                    }
+                }
+//            }
+            
+            HStack(spacing: 5) {
+                
+                Button(action: {
+                    showingWarningLimitScope = true
+                    progress.showProgress()
+                    progress.waitForABit()
+                }) {
+                    Image(systemName: "plus.square.fill.on.square.fill"); Text("Limit")
+                }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .alert(isPresented: $showingWarningLimitScope) {
+                        Alert(
+                            title: Text("Caution!"),
+                            message: Text("This action will limit the policy scoping.\n Some devices may not receive the policy"),
+                            primaryButton: .destructive(Text("I understand!")) {
+                                xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
+                                Task { await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID)) }
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                    
+                    Button(action: {
+                        progress.showProgress(); progress.waitForABit(); showingWarningClearLimit = true
+                    }) { Text("Clear Limitations") }
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
                         .alert(isPresented: $showingWarningClearLimit) {
@@ -648,26 +675,26 @@ struct PolicyScopeTabView: View {
                                 secondaryButton: .cancel()
                             )
                         }
+                }
+//            }
+            
+            // LDAP server selection and search
+            LazyVGrid(columns: layout.threeColumnsFlex, spacing: 20) {
+                Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:")) {
+                    ForEach(scopingController.allLdapServers, id: \.self) { group in
+                        Text(String(describing: group.name)).tag(ldapServerSelection as LDAPServer?)
                     }
                 }
-
-                // LDAP server selection and search
-                LazyVGrid(columns: layout.threeColumnsFlex, spacing: 20) {
-                    Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:")) {
-                        ForEach(scopingController.allLdapServers, id: \.self) { group in
-                            Text(String(describing: group.name)).tag(ldapServerSelection as LDAPServer?)
-                        }
-                    }
-                }
-
-                LazyVGrid(columns: layout.threeColumnsFlex, spacing: 20) {
+            }
+            
+            LazyVGrid(columns: layout.threeColumnsFlex, spacing: 20) {
                     HStack { Text("Search LDAP"); TextField("", text: $ldapSearch) }
                     Button(action: { progress.showProgress(); progress.waitForABit(); Task { try await scopingController.getLdapGroupsSearch(server: server, search: ldapSearch, authToken: networkController.authToken) } }) {
                         HStack(spacing:10) { Image(systemName: "magnifyingglass"); Text("Search") }
                     }
                 }
             }
-        }
+//        }
     }
 
     private var exclusionsEditorView: some View {
