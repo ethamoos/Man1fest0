@@ -163,9 +163,25 @@ struct ComputerBasicView: View {
 
                 HStack {
                     Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
-                        Text("").tag("") //basically added empty tag and it solve the case
+                        // Provide an explicit placeholder and tag matching the Department type by using
+                        // the first department as a default when none is selected.
                         ForEach(networkController.departments, id: \.self) { department in
-                            Text(String(describing: department.name))
+                            Text(department.name).tag(department)
+                        }
+                    }
+                    .onAppear {
+                        // If the initial placeholder Department (jamfId 0 / empty name) is still present
+                        // replace it with the first real department so the Picker has a matching tag.
+                        if let first = networkController.departments.first, (selectionDepartment.jamfId == 0 && selectionDepartment.name.isEmpty) {
+                            selectionDepartment = first
+                        }
+                    }
+                    .onChange(of: networkController.departments) { newDepartments in
+                        if !newDepartments.isEmpty {
+                            // Ensure selectionDepartment matches an available department
+                            if !newDepartments.contains(selectionDepartment) {
+                                selectionDepartment = newDepartments.first!
+                            }
                         }
                     }
 

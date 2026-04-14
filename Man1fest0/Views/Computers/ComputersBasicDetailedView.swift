@@ -158,11 +158,12 @@ struct ComputersBasicDetailedView: View {
                                        .font(.headline)
                                        .foregroundColor(.primary)
                                    
-                                   Text("DEBUG: \(extensionAttributeController.allComputerExtensionAttributesDict.count) EAs loaded")
-                                       .foregroundColor(.red)
-                                       .font(.caption)
-                                       .padding(5)
-                                       .background(Color.yellow.opacity(0.3))
+//                                   Disable debug text
+//                                   Text("DEBUG: \(extensionAttributeController.allComputerExtensionAttributesDict.count) EAs loaded")
+//                                       .foregroundColor(.red)
+//                                       .font(.caption)
+//                                       .padding(5)
+//                                       .background(Color.yellow.opacity(0.3))
                                    
                                    HStack {
                                        Text("Extension Attribute:")

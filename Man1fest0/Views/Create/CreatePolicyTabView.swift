@@ -81,7 +81,11 @@ struct CreatePolicyTabView: View {
         networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
     }
     
-    @State var selectedDepartment: Department = Department(jamfId: 0, name: "")
+    // Use selectedDepartmentId (Int?) so Picker tags (jamfId) match selection type
+    @State var selectedDepartmentId: Int? = nil
+    private var selectedDepartment: Department? {
+        networkController.departments.first(where: { $0.jamfId == selectedDepartmentId })
+    }
     
     @State var selectedScript: Script = Script(id: "", name: "")
     
@@ -124,7 +128,7 @@ struct CreatePolicyTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory?.jamfId ?? 0), category: selectedCategory?.name ?? "", departmentID: String(describing: selectedDepartment.jamfId ?? 0) , department: selectedDepartment.name , scriptID: String(describing: $selectedScript.id), scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
+                            networkController.createNewPolicy(server: server, authToken: networkController.authToken, policyName: policyName, customTrigger: policyName, categoryID: String(describing: selectedCategory?.jamfId ?? 0), category: selectedCategory?.name ?? "", departmentID: String(describing: selectedDepartment?.jamfId ?? 0), department: selectedDepartment?.name ?? "", scriptID: selectedScript.id, scriptName: selectedScript.name, scriptParameter4: scriptParameter4 , scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6 , resourceType: selectedResourceType, notificationName: policyName, notificationStatus: "true")
                     
                             if createDepartmentIsChecked == true {
                                 networkController.createDepartment(name: policyName, server: server, authToken: networkController.authToken )
@@ -138,8 +142,8 @@ struct CreatePolicyTabView: View {
                             print("Creating new Policy:\(policyName)")
                             print("categoryID:\(selectedCategory?.jamfId ?? 0)")
                             print("Category:\(selectedCategory?.name ?? "")")
-                            print("selectedDepartment ID:\(String(describing: selectedDepartment.jamfId ?? 0))")
-                            print("selectedCategory:\(selectedCategory?.name ?? "")")
+                            print("selectedDepartment ID:\(String(describing: selectedDepartment?.jamfId ?? 0))")
+                            print("selectedDepartment:\(selectedDepartment?.name ?? "")")
                             
                         }) {
                             Text("Create Policy")
@@ -186,9 +190,15 @@ struct CreatePolicyTabView: View {
                 }
                 
                 LazyVGrid(columns: columns, spacing: 30) {
-                    Picker(selection: $selectedDepartment, label: Text("Department:")) {
+                    Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
+                        Text("No department").tag(nil as Int?)
                         ForEach(networkController.departments) { department in
-                            Text(department.name).tag(department)
+                            Text(department.name).tag(department.jamfId as Int?)
+                        }
+                    }
+                    .onAppear {
+                        if selectedDepartmentId == nil {
+                            selectedDepartmentId = networkController.departments.first?.jamfId
                         }
                     }
                 }

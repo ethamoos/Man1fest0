@@ -348,7 +348,7 @@ struct PolicyScriptsTabView: View {
                             progress.waitForABit()
                             
                             // Pass listSelection.jamfId as optional Int? (nil if 0)
-                            let selId: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
+                            let _: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
                             xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
                             
                         }) {
