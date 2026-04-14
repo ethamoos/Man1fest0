@@ -881,7 +881,7 @@ print("DEBUG - status code is 200, response is:")
     //    #################################################################################
     
     func getPackagesAssignedToPolicy() {
-        
+
         if let detailed = self.policyDetailed {
             if let policyPackages = detailed.package_configuration?.packages {
                 self.separationLine()
@@ -890,7 +890,12 @@ print("DEBUG - status code is 200, response is:")
                 for package in policyPackages {
                     self.separationLine()
                     print("Package is:\(package)")
-                    packagesAssignedToPolicy.insert(package, at: 0)
+                    // Avoid inserting duplicates: check by jamfId
+                    if !packagesAssignedToPolicy.contains(where: { $0.jamfId == package.jamfId }) {
+                        packagesAssignedToPolicy.insert(package, at: 0)
+                    } else {
+                        print("Skipping duplicate package with jamfId: \(package.jamfId)")
+                    }
                 }
             }
         } else {
@@ -1891,7 +1896,7 @@ print("DEBUG - status code is 200, response is:")
     
     
     func addExistingPackages() {
-        
+
         if let detailed = self.policyDetailed {
             if let policyPackages = detailed.package_configuration?.packages {
                 self.separationLine()
@@ -1899,7 +1904,12 @@ print("DEBUG - status code is 200, response is:")
                 for package in policyPackages {
                     self.separationLine()
                     print("Package is:\(package)")
-                    packagesAssignedToPolicy.insert(package, at: 0)
+                    // Avoid inserting duplicates: check by jamfId
+                    if !packagesAssignedToPolicy.contains(where: { $0.jamfId == package.jamfId }) {
+                        packagesAssignedToPolicy.insert(package, at: 0)
+                    } else {
+                        print("Skipping duplicate package with jamfId: \(package.jamfId)")
+                    }
                 }
             }
         } else {
@@ -5656,34 +5666,27 @@ xml = """
             self.lastErrorMessage = nil
             // Also keep the slim ComputerDetailedResponse if other code relies on it.
             // Attempt to map a lightweight ComputerSlim.General-like structure into computerDetailedResponse
-            do {
-                // Map fields available in the full response into the slim response shape
-                let gen = decodedFull.computer.general
-                // build a ComputerDetailedResponse-compatible minimal wrapper if possible
-                // Note: ComputerDetailedResponse expects `computer.general` with certain keys; we can construct a ComputerSlim.General via JSON decoding round-trip
-                // But for safety, we still map the minimal ComputerBasicRecord below for backward compatibility.
-                if let gen = gen {
-                    // Map to ComputerBasicRecord for existing UI
-                    let jamfId = Int(gen.id) ?? 0
-                    let detail = ComputerBasicRecord(id: jamfId,
-                                                     name: gen.name ?? "",
-                                                     managed: true,
-                                                     username: gen.username ?? "",
-                                                     model: gen.model ?? "",
-                                                     department: gen.department ?? "",
-                                                     building: gen.building ?? "",
-                                                     macAddress: "",
-                                                     udid: gen.udid ?? "",
-                                                     serialNumber: gen.serial_number ?? "",
-                                                     reportDateUTC: gen.report_date_utc ?? "",
-                                                     reportDateEpoch: 0)
-                    self.computerDetailed = detail
-                    print("Loaded detailed computer id: \(jamfId)")
-                } else {
-                    print("Decoded full response had no general section")
-                }
-            } catch {
-                print("Warning: failed to map full decoded response to legacy slim - \(error)")
+            // Map fields available in the full response into the slim response shape
+            let gen = decodedFull.computer.general
+            if let gen = gen {
+                // Map to ComputerBasicRecord for existing UI
+                let jamfId = Int(gen.id) ?? 0
+                let detail = ComputerBasicRecord(id: jamfId,
+                                                 name: gen.name ?? "",
+                                                 managed: true,
+                                                 username: gen.username ?? "",
+                                                 model: gen.model ?? "",
+                                                 department: gen.department ?? "",
+                                                 building: gen.building ?? "",
+                                                 macAddress: "",
+                                                 udid: gen.udid ?? "",
+                                                 serialNumber: gen.serial_number ?? "",
+                                                 reportDateUTC: gen.report_date_utc ?? "",
+                                                 reportDateEpoch: 0)
+                self.computerDetailed = detail
+                print("Loaded detailed computer id: \(jamfId)")
+            } else {
+                print("Decoded full response had no general section")
             }
         } catch {
             publishError(error, title: "Failed to load computer detail")

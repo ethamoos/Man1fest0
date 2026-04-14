@@ -1,182 +1,187 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import AEXML
 
 
 struct PolicyDetailView: View {
-    
+
     var server: String
-    
+
     //  ########################################################################################
     //  EnvironmentObjects
     //  ########################################################################################
-    
+
     @EnvironmentObject var networkController: NetBrain
-    
+
     @EnvironmentObject var exportController: ImportExportBrain
-    
+
     @EnvironmentObject var scopingController: ScopingBrain
-    
+
     @EnvironmentObject var policyController: PolicyBrain
-    
+
     @EnvironmentObject var xmlController: XmlBrain
-    
+
     @EnvironmentObject var progress: Progress
-    
+
     @EnvironmentObject var layout: Layout
-    
+
     //  ########################################################################################
-    
+
     @State var categoryName = ""
-    
+
     @State private var categoryID = ""
-    
+
     @State var categories: [Category] = []
-    
+
     @State private var computers: [ Computer ] = []
-    
+
     @State var computerID = ""
-    
+
     @State var computerUDID = ""
-    
+
     @State var computerName = ""
-    
+
+    // New states for Clone-per-package flow
+    @State private var showingClonePerPackageConfirm = false
+    @State private var cloningInProgress = false
+
     //  ########################################################################################
     //  GROUPS
     //  ########################################################################################
-    
+
     @State var computerGroupFilter = ""
 
     //  ########################################################################################
     //  Packages
     //  ########################################################################################
-    
+
     @State var packageFilter = ""
-    
+
     @State private var packageID = ""
-    
+
     @State private var packageName = ""
-    
+
     //  ########################################################################################
     //  Policies
     //  ########################################################################################
-    
+
     var policy: Policy
-    
+
     var policyID: Int
-    
+
     @State var policyName = ""
-    
+
     @State var policyNameInitial = ""
-    
+
     @State var policyNameClone = ""
-    
+
     @State var policyCustomTrigger = ""
-    
-    
+
+
     //    ########################################################################################
-//    Triggers
+    //    Triggers
     //    ########################################################################################
 
     @State var trigger_login: Bool = false
     @State var trigger_checkin: Bool = false
     @State var trigger_startup: Bool = false
     @State var trigger_enrollment_complete: Bool = false
-    
+
     // Computed property - always reflects current detailed policy triggers
     private var pushTriggerActiveWarningComputed: Bool {
         let gd = networkController.policyDetailed?.general
         return (gd?.triggerLogin ?? false) || (gd?.triggerCheckin ?? false) || (gd?.triggerStartup ?? false) || (gd?.triggerEnrollmentComplete ?? false)
     }
-    
+
     //    ########################################################################################
     //    ########################################################################################
     //    VARIABLES
     //    ########################################################################################
     //    ########################################################################################
-    
-//    @State var currentDetailedPolicy: PoliciesDetailed? = nil
-    
-    @State var scriptName = ""
-    
-    @State var scriptID = ""
-    
-    @State var enableDisableButton: Bool = true
-    
-    @State var enableDisableStatus: Bool = true
-    
-    @State var enableDisableSelfServiceStatus: Bool = true
-    
-    @State var enableDisableSelfService: Bool = true
-    
-    // removed stored pushTriggerActiveWarning; view now reads computed property
-    
-    @State private var exporting = false
-    
 
-    
+    //    @State var currentDetailedPolicy: PoliciesDetailed? = nil
+
+    @State var scriptName = ""
+
+    @State var scriptID = ""
+
+    @State var enableDisableButton: Bool = true
+
+    @State var enableDisableStatus: Bool = true
+
+    @State var enableDisableSelfServiceStatus: Bool = true
+
+    @State var enableDisableSelfService: Bool = true
+
+    // removed stored pushTriggerActiveWarning; view now reads computed property
+
+    @State private var exporting = false
+
+
+
     //    ########################################################################################
     //    Selections
     //    ########################################################################################
-    
+
     @State var selectedResourceType = ResourceType.policyDetail
-    
+
     // Explicit TabView selection (ensures tab clicks reliably switch tabs on macOS)
     @State private var selectedPolicyDetailTab: Int = 0
- 
+
     @State var selection: Package? = nil
-    
+
     @State var packageSelection = Set<Package>()
-    
+
     @State private var computerGroupSelection = Set<ComputerGroup>()
-    
+
     @State var selectedComputer: Computer = Computer(id: 0, name: "")
-    
+
     @State var selectedCategory: Category = Category(jamfId: 0, name: "")
-    
+
     @State var selectedDepartment: Department = Department(jamfId: 0, name: "")
-    
+
     @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
-    
+
     @State var selectedPackage: Package = Package(jamfId: 0, name: "", udid: nil)
-    
+
     @State var iconMultiSelection = Set<String>()
-    
+
     @State var selectedIconString = ""
-    
+
     @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
-    
+
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
-    
+
     //    ########################################################################################
     //    Script parameters
     //    ########################################################################################
-    
+
     @State var scriptParameter4: String = ""
-    
+
     @State var scriptParameter5: String = ""
-    
+
     @State var scriptParameter6: String = ""
-    
+
     @State  var tempUUID = (UUID(uuidString: "") ?? UUID())
-    
+
     @State private var showingWarning = false
-    
+
     @State private var showingWarningDelete = false
-    
+
     @State private var showingWarningClearScope = false
-    
+
     @State private var showingWarningClearLimit = false
-    
+
     //    ########################################################################################
     //    ########################################################################################
     //    MAIN BODY
     //    ########################################################################################
     //    ########################################################################################
-    
+
     var body: some View {
-        
+
         let text = String(describing: xmlController.currentPolicyAsXML)
-                
+
         let currentDateString = layout.date
         // Prepare a safe filename for export (replace characters that are not allowed in filenames)
         let safeDateComponent = currentDateString.replacingOccurrences(of: ":", with: "-").replacingOccurrences(of: " ", with: "_")
@@ -184,15 +189,15 @@ struct PolicyDetailView: View {
         let exportFilename = "\(policyName)\(safeDateComponent).txt"
 
         let document = TextDocument(text: text)
-        
+
         VStack(alignment: .leading) {
-            
+
             //  ################################################################################
             //              Top
             //  ################################################################################
-            
+
             if networkController.policyDetailed != nil {
-                
+
 #if os(macOS)
                 VStack(alignment: .leading) {
                     Text("Jamf Name:\t\t\t\t\(networkController.policyDetailed?.general?.name ?? "Blank")\n")
@@ -227,7 +232,7 @@ struct PolicyDetailView: View {
                     
                 }
                 .textSelection(.enabled)
-                .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
+                .foregroundColor(.blue)
                 
                 //              ################################################################################
                 //              Toolbar
@@ -393,9 +398,35 @@ struct PolicyDetailView: View {
                 .tint(.orange)
                     TextField(policyName, text: $policyNameClone)
                         .textSelection(.enabled)
-                    Spacer()
-                    
-            }
+                
+                // Clone-per-package button: only present when multiple packages are attached
+                if networkController.packagesAssignedToPolicy.count > 1 {
+                    Button(action: {
+                        showingClonePerPackageConfirm = true
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "doc.on.doc")
+                            Text("Clone per Package")
+                        }
+                    }
+                    .help("Create one cloned policy per package currently assigned to this policy. Each clone will contain exactly one package.")
+                    .buttonStyle(.borderedProminent)
+                    .tint(.purple)
+                    .disabled(cloningInProgress)
+                    .alert(isPresented: $showingClonePerPackageConfirm) {
+                        Alert(
+                            title: Text("Clone per Package"),
+                            message: Text("This will create \(networkController.packagesAssignedToPolicy.count) new policies (one per package). Are you sure?"),
+                            primaryButton: .destructive(Text("Yes, clone")) {
+                                clonePerPackage()
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                }
+                         Spacer()
+                     
+             }
 #endif
             }
             
@@ -791,7 +822,99 @@ struct PolicyDetailView: View {
             print("package data is available")
         }
     }
-    
+
+    // Clone the current policy into multiple policies, one per attached package.
+    // This function edits a local copy of the policy XML (does not persist changes to the original)
+    // and calls the existing clone API for each package.
+    func clonePerPackage() {
+        Task {
+            cloningInProgress = true
+            defer { cloningInProgress = false }
+
+            let baseName = policyNameClone.isEmpty ? (networkController.policyDetailed?.general?.name ?? policyName) : policyNameClone
+
+            let packages = networkController.packagesAssignedToPolicy
+            guard !packages.isEmpty else {
+                print("No packages assigned to policy - nothing to clone per package")
+                return
+            }
+
+            let xmlString = xmlController.currentPolicyAsXML
+            guard !xmlString.isEmpty else {
+                print("Current policy XML is empty - cannot clone")
+                return
+            }
+
+            // Track generated names so we can guarantee uniqueness within this run
+            var generatedNames = Set<String>()
+
+            // Helper to sanitize names for inclusion in policy names (keep alphanumerics, spaces, - and _)
+            func sanitizeForName(_ input: String) -> String {
+                var allowed = CharacterSet.alphanumerics.union(.whitespaces).union(CharacterSet(charactersIn: "-_"))
+                // Normalize Unicode scalars to remove weird characters
+                let filtered = input.unicodeScalars.map { allowed.contains($0) ? Character($0) : Character("-") }
+                var out = String(filtered)
+                // Collapse multiple dashes
+                while out.contains("--") { out = out.replacingOccurrences(of: "--", with: "-") }
+                // Trim whitespace and dashes
+                out = out.trimmingCharacters(in: .whitespacesAndNewlines)
+                out = out.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+                if out.isEmpty { out = "package" }
+                // Limit length to avoid excessively long policy names
+                if out.count > 200 { out = String(out.prefix(200)) }
+                return out
+            }
+
+            let sanitizedBase = sanitizeForName(baseName)
+
+            for pkg in packages {
+                do {
+                    // Work on a fresh AEXMLDocument so we don't mutate shared controller state
+                    let data = Data(xmlString.utf8)
+                    let doc = try AEXMLDocument(xml: data)
+
+                    // Ensure package_configuration exists
+                    if doc.root["package_configuration"].children.isEmpty {
+                        _ = doc.root.addChild(name: "package_configuration")
+                    }
+
+                    // Remove any existing <packages> node and create a new one with single package
+                    if doc.root["package_configuration"]["packages"].children.count > 0 {
+                        doc.root["package_configuration"]["packages"].removeFromParent()
+                    }
+                    let packagesNode = doc.root["package_configuration"].addChild(name: "packages")
+                    packagesNode.addChild(name: "size", value: "1")
+                    let packageNode = packagesNode.addChild(name: "package")
+                    packageNode.addChild(name: "id", value: String(pkg.jamfId))
+                    packageNode.addChild(name: "name", value: pkg.name)
+                    packageNode.addChild(name: "action", value: "Install")
+                    packageNode.addChild(name: "fut", value: "false")
+                    packageNode.addChild(name: "feu", value: "false")
+                    packageNode.addChild(name: "update_autorun", value: "false")
+
+                    // Prepare clone name - include package name (sanitized). Guarantee uniqueness by appending jamfId if needed
+                    let sanitizedPkgName = sanitizeForName(pkg.name)
+                    var candidateName = "\(sanitizedBase)-\(sanitizedPkgName)"
+                    if generatedNames.contains(candidateName) {
+                        candidateName += "-\(pkg.jamfId)"
+                    }
+                    generatedNames.insert(candidateName)
+                    let newPolicyName = candidateName
+
+                    // Call the existing clone routine (PolicyBrain)
+                    policyController.clonePolicy(xmlContent: doc.root.xml, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+                    print("Requested clone for package \(pkg.name) as \(newPolicyName)")
+
+                    // Small delay between requests to avoid hammering the server
+                    try await Task.sleep(nanoseconds: 200_000_000)
+                } catch {
+                    print("Failed to create clone XML for package \(pkg.name): \(error)")
+                }
+            }
+            print("clonePerPackage finished")
+        }
+    }
+
 }
 
 //struct PolicyDetailView_Previews: PreviewProvider {

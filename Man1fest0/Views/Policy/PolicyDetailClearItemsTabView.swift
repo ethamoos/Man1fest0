@@ -112,7 +112,7 @@ struct PolicyDetailClearItemsTabView: View {
                 
                 HStack(spacing:20 ){
                     
-                    Text("Delete Policies")
+                    Text("Delete Selections")
                     
                     Button(action: {
                         showingWarningDelete = true
@@ -130,7 +130,7 @@ struct PolicyDetailClearItemsTabView: View {
                     .alert(isPresented: $showingWarningDelete) {
                         Alert(
                             title: Text("Caution!"),
-                            message: Text("This action will delete data.\n Always ensure that you have a backup!"),
+                            message: Text("This action will delete policy data.\n Always ensure that you have a backup!"),
                             primaryButton: .destructive(Text("I understand!")) {
                                 networkController.processDeletePoliciesGeneral(selection: selectedPoliciesInt, server: server,  authToken: networkController.authToken, resourceType: ResourceType.policies)
                                 print("Delete button - Yes tapped")
