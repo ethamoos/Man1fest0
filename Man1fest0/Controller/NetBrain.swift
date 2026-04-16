@@ -1414,139 +1414,175 @@ print("DEBUG - status code is 200, response is:")
     //    Delete - functions
     //    #################################################################################
     
+    // Helper: build a well-formed JSSResource URL for a resourcePath and optional itemID.
+    // This appends path components safely (avoids double-slashes and preserves escaping).
+    private func buildJSSResourceURL(server: String, resourcePath: String, itemID: String? = nil, useAPI: Bool = false) -> URL? {
+        // Start from server as URL
+        guard var baseURL = URL(string: server) else { return nil }
+
+        // If server URL already contains JSSResource/API/V1, don't add the prefix
+        let serverPathLower = baseURL.path.lowercased()
+        let needsPrefix = !(serverPathLower.contains("jssresource") || serverPathLower.contains("/api") || serverPathLower.contains("/v1"))
+
+        if needsPrefix {
+            baseURL.appendPathComponent(useAPI ? "api" : "JSSResource")
+        }
+
+        // Trim leading/trailing slashes from resourcePath then append components
+        var trimmed = resourcePath
+        if trimmed.hasPrefix("/") { trimmed.removeFirst() }
+        if trimmed.hasSuffix("/") { trimmed.removeLast() }
+
+        let components = trimmed.split(separator: "/").map { String($0) }
+        for comp in components where !comp.isEmpty {
+            baseURL.appendPathComponent(comp)
+        }
+
+        // Optionally append the itemID as a final component
+        if let id = itemID, !id.isEmpty {
+            baseURL.appendPathComponent(id)
+        }
+
+        return baseURL
+    }
+    
     func deleteComputer(server: String, authToken: String, resourceType: ResourceType, itemID: String) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+        // Deleting an individual computer requires the "computers/id/<id>" path.
+        // Accept callers passing .computer or .computerBasic for convenience and map
+        // them to the detailed resource path used for single-item operations.
+        let effectiveResourceType: ResourceType = {
+            if resourceType == .computer || resourceType == .computerBasic {
+                return .computerDetailed
+            }
+            return resourceType
+        }()
+
+        // Use the effective resource type so callers can request the correct URL format
+        let resourcePath = getURLFormat(data: effectiveResourceType)
+
+        if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID) {
             separationLine()
             print("Running deleteComputer - url is set as:\(url)")
             print("resourceType is set as:\(resourceType)")
+
+            // Mark processing as in-progress and kick off the delete. The completion handler
+            // in requestDelete will clear processingComplete when the network call finishes.
+            self.processingComplete = false
             requestDelete(url: url, authToken: authToken, resourceType: resourceType)
             appendStatus("Connecting to \(url)...")
-            print("deleteComputer has finished")
-            print("Set processingComplete to true")
-            self.processingComplete = true
-            print(String(describing: self.processingComplete))
+            print("deleteComputer request started (async)")
+        } else {
+            print("deleteComputer: failed to build URL for resourcePath=\(resourcePath) itemID=\(itemID)")
         }
     }
     
     func deleteConfigProfile(server: String,authToken: String, resourceType: ResourceType, itemID: String) {
-        
         let resourcePath = getURLFormat(data: (ResourceType.configProfileDetailedMacOS))
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+        if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID) {
             separationLine()
-            print("Running delete computer function - url is set as:\(url)")
+            print("Running delete config profile - url is set as:\(url)")
             print("resourceType is set as:\(resourceType)")
+            self.processingComplete = false
             requestDelete(url: url, authToken: authToken, resourceType: resourceType)
             appendStatus("Connecting to \(url)...")
-            
-            print("deleteComputer has finished")
-            print("Set processingComplete to true")
-            self.processingComplete = true
-            print(String(describing: self.processingComplete))
+        } else {
+            print("deleteConfigProfile: failed to build URL")
         }
     }
     
     func deletePackage(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
         
         print("Running deletePackage for item\(itemID)")
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.package))
         
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+        if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID) {
             separationLine()
             print("Running delete package function - url is set as:\(url)")
             print("resourceType is set as:\(resourceType)")
             print("itemID is set as:\(itemID)")
+            self.processingComplete = false
             requestDelete(url: url, authToken: authToken, resourceType: resourceType)
             appendStatus("Connecting to \(url)...")
+        } else {
+            print("deletePackage: failed to build URL")
         }
     }
     
     func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+        let resourcePath = getURLFormat(data: (ResourceType.policy))
+        if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID) {
             separationLine()
             print("Running deletePolicy function - url is set as:\(url)")
             print("resourceType is set as:\(resourceType)")
+            self.processingComplete = false
             requestDelete(url: url, authToken: authToken, resourceType: resourceType)
-//            appendStatus("Connecting to \(url)...")
-            print("deletePolicy has finished for:\(itemID)")
-            print("Set processingComplete to true")
-            self.processingComplete = true
-            print(String(describing: self.processingComplete))
+            print("deletePolicy request started for:\(itemID)")
+        } else {
+            print("deletePolicy: failed to build URL")
         }
     }
     
     func deleteScript(server: String,resourceType: ResourceType, itemID: String, authToken: String) async throws {
-        
-        let resourcePath = getURLFormat(data: (resourceType))
-        
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+        let resourcePath = getURLFormat(data: (ResourceType.script))
+
+        if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID, useAPI: true) {
             separationLine()
             print("Running delete script function - url is set as:\(url)")
             print("resourceType is set as:\(resourceType)")
-            
+
             do {
                 try await requestDeleteXML(url: url, authToken: authToken, resourceType: resourceType)
             } catch {
                 throw JamfAPIError.badURL
             }
-            
-//            appendStatus("Connecting to \(url)...")
-            
+
             print("deleteScript has finished")
+        } else {
+            print("deleteScript: failed to build URL for resourcePath=\(resourcePath) itemID=\(itemID)")
         }
     }
     
     
     
-    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
-        
-        print("Running deleteScriptAlt function - server is set as:\(server)")
-
-        let resourcePath = getURLFormat(data: (resourceType))
-        print("resourcePath is set as:\(resourcePath)")
-
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
-            separationLine()
-            print("Running deleteScriptAlt function - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            atSeparationLine()
-            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
-            
-//            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-            var request = URLRequest(url: url)
-
-            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/xml", forHTTPHeaderField: "Accept")
-            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-            request.httpMethod = "DELETE"
-            
-            print("Request is:\(request)")
-            
-            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-                  print("Running shared data task")
-                        
-                if let data = data, let response = response {
-                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                    print("deleteScript Status code is:\(statusCode)")
-                    
-                } else {
-                    print("No Response")
-                }
-            }
-        }
-    }
+//    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
+//        
+//        print("Running deleteScriptAlt function - server is set as:\(server)")
+//
+//        let resourcePath = getURLFormat(data: (resourceType))
+//        print("resourcePath is set as:\(resourcePath)")
+//
+//        if let serverURL = URL(string: server) {
+//            let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+//            separationLine()
+//            print("Running deleteScriptAlt function - url is set as:\(url)")
+//            print("resourceType is set as:\(resourceType)")
+//            atSeparationLine()
+//            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
+//            
+////            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+//            var request = URLRequest(url: url)
+//
+//            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+//            request.setValue("application/xml", forHTTPHeaderField: "Accept")
+//            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+//            request.httpMethod = "DELETE"
+//            
+//            print("Request is:\(request)")
+//            
+//            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
+//                  print("Running shared data task")
+//                        
+//                if let data = data, let response = response {
+//                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
+//                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+//                    print("deleteScript Status code is:\(statusCode)")
+//                    
+//                } else {
+//                    print("No Response")
+//                }
+//            }
+//        }
+//    }
     
     func batchDeleteScripts(selection:  Set<ScriptClassic>, server: String, authToken: String, resourceType: ResourceType) {
         self.separationLine()
@@ -1562,7 +1598,7 @@ print("DEBUG - status code is 200, response is:")
             print("resourceType is: \(resourceType)")
             
             Task {
-                try await self.deleteScript(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
+                try await self.deleteScript(server: server, resourceType: ResourceType.script, itemID: scriptID, authToken: authToken )
             }
         }
         self.separationLine()
@@ -1570,7 +1606,7 @@ print("DEBUG - status code is 200, response is:")
     }
     
     func deleteGroup(server: String,resourceType: ResourceType, itemID: String, authToken: String)  async throws {
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.computerGroup))
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
             separationLine()
@@ -2574,6 +2610,40 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         print("Finished - Set processingComplete to true")
         self.processingComplete = true
         print(String(describing: self.processingComplete))
+    }
+
+    // Async variant that awaits each delete so callers can ensure completion
+    func processDeleteComputersBasicAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String, resourceType: ResourceType) async {
+        separationLine()
+        print("Running: processDeleteComputersBasicAsync")
+        self.processingComplete = false
+        var failedDeletes: [String] = []
+
+        for eachItem in selection {
+            separationLine()
+            let computerID = String(describing: eachItem)
+            print("Attempting delete for computerID: \(computerID)")
+            do {
+                try await deleteComputerAwait(server: server, authToken: authToken, resourceType: resourceType, itemID: computerID)
+                print("Delete succeeded for id: \(computerID)")
+            } catch {
+                print("Delete failed for id: \(computerID) - error: \(error)")
+                failedDeletes.append(computerID)
+            }
+            // brief pause to avoid hammering the server
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+
+        // Refresh basic list after deletes complete
+        do {
+            try await getComputersBasic(server: server, authToken: authToken)
+        } catch {
+            print("Failed to refresh computers after delete: \(error)")
+        }
+
+        separationLine()
+        print("Finished async deletes; failures: \(failedDeletes)")
+        self.processingComplete = true
     }
     
     
@@ -4713,49 +4783,86 @@ xml = """
 
         atSeparationLine()
         print("Running requestDelete function - resourceType is set as:\(resourceType)")
+        print("Running requestDelete function - url is set as:\(url)")
 
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.allHTTPHeaderFields = headers
         request.httpMethod = "DELETE"
+        // Debug: print the request URL and headers
+        print("requestDelete - URL: \(request.url?.absoluteString ?? "<no url>")")
+//        print("requestDelete - Headers: \(request.allHTTPHeaderFields ?? [:])")
 
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let data = data, let response = response {
-                // Ensure UI/actor updates happen on main actor
-                DispatchQueue.main.async {
-                    print("Doing processing of requestDelete")
 
-                    if resourceType == ResourceType.computer {
-                        print("Assigning to processComputer - Resource type is set in request to computer")
-                        self.processComputer(data: data, response: response, resourceType: "computer")
-                    } else if resourceType == ResourceType.computerBasic {
-                        print("Assigning to processComputersBasic - Resource type is set in request to computerBasic")
-                        print("################################################")
-                        print(String(data: data, encoding: .utf8)!)
-                        print((response))
-                        print("Error is:\(String(describing: error))")
-                        self.processComputersBasic(data: data, response: response, resourceType: "computerBasic")
-                    } else if resourceType == ResourceType.scripts {
-                        print("Assigning to processScripts - Resource type is set in request to scripts")
-                        self.processScripts(data: data, response: response, resourceType: "scripts")
-                    } else if resourceType == ResourceType.department {
-                        print("Assigning to processDepartment - Resource type is set in request to departments")
-                        self.processDepartment(data: data, response: response, resourceType: "department")
-                    } else if resourceType == ResourceType.package {
-                        print("Assigning to processPackage - Resource type is set in request to package")
-                    } else {
-                        print("Assigning to processPolicies - Resource type is set in request to policies")
-                        self.processPolicies(data: data, response: response, resourceType: resourceType)
+            // Default to assuming there will be an error until we verify otherwise
+            var statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+
+            if let error = error {
+                print("requestDelete network error: \(error)")
+            }
+
+            // If we have data/response, process according to resourceType. Make sure UI updates
+            // happen on the main actor/queue.
+            DispatchQueue.main.async {
+//                defer {
+//                    // Ensure we always clear the processing flag when the network call completes
+//                    self.processingComplete = true
+//                    print("requestDelete finished; processingComplete set to true")
+//                }
+
+                if let response = response {
+                    statusCode = (response as? HTTPURLResponse)?.statusCode ?? statusCode
+                    self.currentResponseCode = String(describing: statusCode)
+                    if let http = response as? HTTPURLResponse {
+                        print("requestDelete - response status: \(http.statusCode)")
+                        print("requestDelete - response headers: \(http.allHeaderFields)")
                     }
                 }
-            } else {
-                var text = "\n\nFailed."
-                if let error = error {
-                    text += " \(error)."
+
+                // Treat non-200/204 status as an error
+                if statusCode != 200 && statusCode != 204 {
+                    self.hasError = true
+                    print("requestDelete HTTP status: \(statusCode)")
                 }
-                //                self.appendStatus(text)
+
+                if let data = data {
+                    let body = String(data: data, encoding: .utf8) ?? "<binary>"
+                    print("Doing processing of requestDelete; body:\n\(body)")
+
+                    if statusCode != 200 && statusCode != 204 {
+                        print("requestDelete ERROR body:\n\(body)")
+                    }
+
+                } else {
+                    // No data returned; still ensure UI state updated
+                    print("requestDelete: no data returned, response: \(String(describing: response)), error: \(String(describing: error))")
+                }
             }
         }
         dataTask.resume()
+    }
+
+    // Async variant that callers can await so they know the delete has completed (200 or 204 accepted)
+    func deleteComputerAwait(server: String, authToken: String, resourceType: ResourceType, itemID: String) async throws {
+        // Map convenient resource types to the detailed "computers/id" path
+        let effectiveResourceType: ResourceType = {
+            if resourceType == .computer || resourceType == .computerBasic {
+                return .computerDetailed
+            }
+            return resourceType
+        }()
+
+        let resourcePath = getURLFormat(data: effectiveResourceType)
+        if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID) {
+            separationLine()
+            print("Running deleteComputerAwait - url is set as:\(url)")
+            print("resourceType is set as:\(resourceType)")
+            try await requestDeleteAwait(url: url, authToken: authToken, resourceType: resourceType)
+            print("deleteComputerAwait finished for id:\(itemID)")
+        } else {
+            print("deleteComputerAwait: failed to build URL for resourcePath=\(resourcePath) itemID=\(itemID)")
+            throw JamfAPIError.badURL
+        }
     }
     
     func requestDeleteXML(url: URL, authToken: String, resourceType: ResourceType) async throws {
@@ -4778,10 +4885,10 @@ xml = """
         let (data, response) = try await URLSession.shared.data(for: request)
         print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard statusCode == 200 || statusCode == 204 else {
+            print("Code not 200/204")
             self.hasError = true
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             self.currentResponseCode = String(describing: statusCode)
             print("requestDeleteXML Status code is:\(statusCode)")
             throw JamfAPIError.http(statusCode)
@@ -4808,10 +4915,10 @@ xml = """
         let (data, response) = try await URLSession.shared.data(for: request)
         print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard statusCode == 200 || statusCode == 204 else {
+            print("Code not 200/204")
             self.hasError = true
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             self.currentResponseCode = String(describing: statusCode)
             print("requestDeleteXML Status code is:\(statusCode)")
             throw JamfAPIError.http(statusCode)

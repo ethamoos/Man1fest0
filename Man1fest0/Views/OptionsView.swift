@@ -165,12 +165,12 @@ struct OptionsView: View {
                                     Text("Policies")
                                 }
 #if os(macOS)
-//                                NavigationLink(destination: PoliciesActionView(server: server, selectedResourceType: ResourceType.policy )) {
-//                                    Text("Policy Actions - OLD")
-//                                }
+                                NavigationLink(destination: PoliciesActionView(server: server, selectedResourceType: ResourceType.policy )) {
+                                    Text("Policy Actions")
+                                }
                                 
                                 NavigationLink(destination: PolicyActionsDetailTableView(server: server)) {
-                                    Text("Policy Actions")
+                                    Text("Policy Actions - Detailed")
                                 }
                                 
                                 NavigationLink(destination: PolicySearchView(server: server)) {

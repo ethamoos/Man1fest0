@@ -24,12 +24,30 @@ struct PolicyBasic: Codable, Hashable {
 }
 
 struct Policy: Codable, Hashable, Identifiable {
+    // Keep a UUID for Identifiable conformance but use jamfId for equality/hash when available
     var id = UUID()
     var jamfId: Int?
     var name: String
     enum CodingKeys:String, CodingKey{
         case jamfId = "id"
         case name = "name"
+    }
+
+    // Stable equality: prefer jamfId (server-side ID) when present so different decoded
+    // instances representing the same server item compare equal. Fallback to name.
+    static func == (lhs: Policy, rhs: Policy) -> Bool {
+        if let lId = lhs.jamfId, let rId = rhs.jamfId {
+            return lId == rId
+        }
+        return lhs.name == rhs.name
+    }
+
+    func hash(into hasher: inout Hasher) {
+        if let id = jamfId {
+            hasher.combine(id)
+        } else {
+            hasher.combine(name)
+        }
     }
 }
 

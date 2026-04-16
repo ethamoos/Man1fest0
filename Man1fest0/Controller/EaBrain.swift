@@ -119,8 +119,13 @@ import AEXML
         }
     }
     
+    
+    //    #################################################################################
+    //    Delete - functions
+    //    #################################################################################
+    
     func deleteComputerEA(server: String,resourceType: ResourceType, itemID: String, authToken: String) async throws {
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.computerExtensionAttribute))
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
             separationLine()
@@ -159,7 +164,7 @@ import AEXML
             print("Current jamfID is:\(String(describing: jamfID))")
             
             do {
-               try await self.deleteComputerEA(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
+                try await self.deleteComputerEA(server: server, resourceType: ResourceType.computerExtensionAttribute, itemID: jamfID, authToken: authToken )
             } catch {
                 throw JamfAPIError.badURL
             }
@@ -169,71 +174,11 @@ import AEXML
     }
     
     
+    //    #################################################################################
+    //    Delete - functions - end
+    //    #################################################################################
     
-    //    Update Extension Attribute
-    //
-    //    var request = URLRequest(url: URL(string: "https://testJamfserver.jamfcloud.com/JSSResource/computerextensionattributes/id/{{id}}")!,timeoutInterval: Double.infinity)
-    //    request.addValue("application/xml", forHTTPHeaderField: "Accept")
-    //    request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
     
-    //
-    //    request.httpMethod = "PUT"
-    //
-    //    let task = URLSession.shared.dataTask(with: request) { data, response, error in
-    //      guard let data = data else {
-    //        print(String(describing: error))
-    //        return
-    //      }
-    //      print(String(data: data, encoding: .utf8)!)
-    //    }
-    //
-    //    task.resume()
-    //
-    //    var request = URLRequest(url: URL(string: "https://testJamfserver.jamfcloud.com/JSSResource/computerextensionattributes/name/{{name}}")!,timeoutInterval: Double.infinity)
-    //    request.addValue("application/xml", forHTTPHeaderField: "Accept")
-    //    request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-    //
-    //    request.httpMethod = "PUT"
-    //
-    //    let task = URLSession.shared.dataTask(with: request) { data, response, error in
-    //      guard let data = data else {
-    //        print(String(describing: error))
-    //        return
-    //      }
-    //      print(String(data: data, encoding: .utf8)!)
-    //    }
-    //
-    //    task.resume()
-    
-    //    <?xml version="1.0" encoding="UTF-8"?>
-    //    <user_extension_attribute>
-    //        <id>1</id>
-    //        <name>username Test EA</name>
-    //        <description/>
-    //        <data_type>Date</data_type>
-    //        <input_type>
-    //            <type>Text Field</type>
-    //        </input_type>
-    //    </user_extension_attribute>
-    
-    //    <?xml version="1.0" encoding="UTF-8"?>
-    //    <computer_extension_attribute>
-    //        <id>1</id>
-    //        <name>Extension Attribute 1</name>
-    //        <description/>
-    //        <data_type>String</data_type>
-    //        <input_type>
-    //            <type>Pop-up Menu</type>
-    //            <popup_choices>
-    //                <choice>Value 1</choice>
-    //                <choice>Value 2</choice>
-    //                <choice>Value 3</choice>
-    //            </popup_choices>
-    //        </input_type>
-    //        <inventory_display>General</inventory_display>
-    //        <recon_display>Extension Attributes</recon_display>
-    //    </computer_extension_attribute>
-    //
     
     func updateComputerExtensionAttribute(server: String, authToken: String, extAtId: String, extAtName: String, enabled: Bool, resourceType: ResourceType = .computerExtensionAttribute) async throws {
         separationLine()
