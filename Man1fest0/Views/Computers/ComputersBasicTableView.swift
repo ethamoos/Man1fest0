@@ -161,10 +161,11 @@ struct ComputersBasicTableView: View {
                             title: Text("Caution!"),
                             message: Text("This action will delete data.\n Always ensure that you have a backup!"),
                             primaryButton: .destructive(Text("I understand!")) {
-                                // Code to execute when "Yes" is tapped
-                                networkController.processDeleteComputersBasic(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.computer)
-                                print("Yes tapped")
-                                
+                                // Run async deletes and refresh once complete
+                                Task {
+                                    await networkController.processDeleteComputersBasicAsync(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.computer)
+                                }
+                                print("Yes tapped - started async delete")
                             },
                             secondaryButton: .cancel()
                         )

@@ -144,13 +144,13 @@ Divider()
                 isDeleting = true
                 progress.showProgress()
                 Task {
-                    // Use ResourceType.computerDetailed so NetBrain constructs the correct URL
-                    networkController.deleteComputer(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, itemID: computerID)
-                    // Refresh the basic list to reflect deletion
+                    // Use the async await variant so we only refresh after delete completes
                     do {
+                        try await networkController.deleteComputerAwait(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, itemID: computerID)
+                        // Refresh the basic list to reflect deletion
                         try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
                     } catch {
-                        print("Error refreshing computers after delete: \(error)")
+                        print("Error deleting computer or refreshing list: \(error)")
                     }
                     // small delay and finish
                     progress.waitForABit()
