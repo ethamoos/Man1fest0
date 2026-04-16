@@ -7,6 +7,14 @@ struct ComputersDetailedView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var layout: Layout
     @EnvironmentObject var progress: Progress
+    @EnvironmentObject var pushController: PushBrain
+    @EnvironmentObject var extensionAttributeController: EaBrain
+
+    // Local UI state for buttons copied from ComputersBasicDetailedView
+    @State private var selectedCommand = ""
+    @State private var selectedEAName = ""
+    @State private var eaValue = ""
+    @State private var computerName = ""
 
     // Use the published full decoded ComputerFull from NetBrain directly
     @State private var isLoading: Bool = true
@@ -24,8 +32,31 @@ struct ComputersDetailedView: View {
                 // Preferred detailed model
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
+                        
 
-                        // Top action row (Delete button)
+                        let general = detail.general
+                        let hardware = detail.hardware
+                        let security = detail.security
+
+                        Text("Name: \(general?.name ?? "")")
+                        Text("ID: \(general?.id ?? "")")
+                        Text("UDID: \(general?.udid ?? "")")
+                        Text("Serial: \(general?.serial_number ?? "")")
+                        Text("Model: \(general?.model ?? "")")
+                        Text("Username: \(general?.username ?? "")")
+                        Text("Department: \(general?.department ?? "")")
+                        Text("Building: \(general?.building ?? "")")
+                        Text("Last checkin: \(general?.report_date_utc ?? "")")
+
+                        // Avoid nested quotes by using locals for defaults
+                        let filevaultStatus = hardware?.diskEncryptionConfiguration ?? "Not enabled"
+                        let activationLock = security?.activationLock ?? ""
+
+                        Text("Hardware model: \(hardware?.model ?? "")")
+                        Text("Filevault Status: \(filevaultStatus)")
+                        Text("Activation Lock Status: \(activationLock)")
+
+                        // Top action row (Delete button + Open in Browser)
                         HStack {
                             Spacer()
                             Button(role: .destructive) {
@@ -39,7 +70,6 @@ struct ComputersDetailedView: View {
                             .disabled(isDeleting)
                             .help("Delete this computer record from the server")
 
-                            // Open in browser button
                             Button(action: {
                                 progress.showProgress()
                                 progress.waitForABit()
@@ -55,11 +85,109 @@ struct ComputersDetailedView: View {
                             .help("Open this computer in the Jamf web UI")
                         }
 
-//                        DISABLE Below debug
-                        // Raw debug dump so it's obvious when data arrives and what's inside
-//                        Text("Raw detail: \(String(describing: detail))")
-//                            .font(.caption)
-//                            .foregroundColor(.secondary)
+                        Divider()
+
+                        // --- Additional actions copied from ComputersBasicDetailedView ---
+                        // Rename field + button
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                TextField("New name", text: $computerName)
+                                    .textSelection(.enabled)
+                                Button(action: {
+                                    progress.showProgress()
+                                    progress.waitForABit()
+                                    networkController.updateComputerName(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerName: computerName, computerID: computerID)
+                                    networkController.separationLine()
+                                    print("Renaming computerName:\(computerName)")
+                                    print("computerID is:\(computerID)")
+                                }) {
+                                    Text("Rename")
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.blue)
+                            }
+                        }
+
+                        // Picker for commands + Flush button
+                        HStack(alignment: .center, spacing: 12) {
+                            Picker("Commands", selection: $selectedCommand) {
+                                ForEach(pushController.flushCommands, id: \.self) { cmd in
+                                    Text(String(describing: cmd))
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            Button("Flush Commands") {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                if let compInt = Int(computerID) {
+                                    Task {
+                                        do {
+                                            try await pushController.flushCommands(targetId: compInt, deviceType: "computers", command: selectedCommand, authToken: networkController.authToken, server: server)
+                                        } catch {
+                                            print("flushCommands failed: \(error)")
+                                        }
+                                    }
+                                } else {
+                                    print("Invalid computerID for flushCommands: \(computerID)")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                        }
+
+                        // Extension Attribute Update Section
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Update Extension Attribute")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+
+                            HStack {
+                                Text("Extension Attribute:")
+                                Picker("", selection: $selectedEAName) {
+                                    Text("Select...").tag("")
+                                    ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                                        Text(ea.name).tag(ea.name)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            }
+
+                            HStack {
+                                Text("Value:")
+                                TextField("EA Value", text: $eaValue)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                if let compInt = Int(computerID) {
+                                    Task {
+                                        do {
+                                            try await extensionAttributeController.updateComputerEAValue(server: server, authToken: networkController.authToken, computerId: compInt, extAttName: selectedEAName, updateValue: eaValue)
+                                        } catch {
+                                            print("Failed to update EA: \(error)")
+                                        }
+                                    }
+                                } else {
+                                    print("Invalid computerID for updateComputerEAValue: \(computerID)")
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                    Text("Update EA Value")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .disabled(selectedEAName.isEmpty)
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                        // --- End copied actions ---
 
                         if let updated = lastUpdated {
                             Text("Last updated: \(updated.formatted(.dateTime.hour().minute().second()))")
@@ -67,26 +195,7 @@ struct ComputersDetailedView: View {
                                 .foregroundColor(.secondary)
                         }
 
-                        Divider()
-
-                        let general = detail.general
-                        let hardware = detail.hardware
-                        let security = detail.security
-
-                        Text("Name: \(general?.name ?? "")")
-                        Text("ID: \(general?.id ?? "")")
-                        Text("UDID: \(general?.udid ?? "")")
-                        Text("Serial: \(general?.serial_number ?? "")")
-                        Text("Model: \(general?.model ?? "")")
-                        Text("Username: \(general?.username ?? "")")
-                        Text("Department: \(general?.department ?? "")")
-                        Text("Building: \(general?.building ?? "")")
-                        Text("Last checkin: \(general?.report_date_utc ?? "")")
-Divider()
-                        // New hardware / security fields
-                        Text("Hardware model: \(hardware?.model ?? "")")
-                        Text("Filevault Status: \(hardware?.diskEncryptionConfiguration ?? "Not enabled")")
-                        Text("Activation Lock Status: \(security?.activationLock ?? "")")
+       
                     }
                     .padding()
                 }
@@ -99,7 +208,6 @@ Divider()
                     Text("Model: \(legacy.model)")
                     Text("Username: \(legacy.username)")
                     Text("Department: \(legacy.department)")
-                    // show lastUpdated if available
                     if let updated = lastUpdated {
                         Text("Last updated: \(updated.formatted(.dateTime.hour().minute().second()))")
                             .font(.caption2)
@@ -109,7 +217,6 @@ Divider()
                 .padding()
 
             } else if let msg = networkController.lastErrorMessage {
-                // Show error returned by NetBrain if decoding/request failed
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Failed to load details")
                         .font(.headline)
@@ -124,6 +231,7 @@ Divider()
                         .foregroundColor(.secondary)
                 }
                 .padding()
+
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("No details")
@@ -140,19 +248,15 @@ Divider()
         }
         .alert("Delete computer?", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
-                // Execute delete
                 isDeleting = true
                 progress.showProgress()
                 Task {
-                    // Use ResourceType.computerDetailed so NetBrain constructs the correct URL
                     networkController.deleteComputer(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, itemID: computerID)
-                    // Refresh the basic list to reflect deletion
                     do {
                         try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
                     } catch {
                         print("Error refreshing computers after delete: \(error)")
                     }
-                    // small delay and finish
                     progress.waitForABit()
                     isDeleting = false
                 }
@@ -162,24 +266,19 @@ Divider()
             Text("This will permanently remove the selected computer record from the server. Are you sure?")
         }
         .task(id: computerID) {
-            // Run fetch; set loading to false when done so the UI updates based on published value
             print("ComputersDetailedView.task starting for computerID: \(computerID)")
             isLoading = true
-            // Clear any previously shown detail to avoid stale data while loading
             await MainActor.run {
                 networkController.computerDetailedFull = nil
                 networkController.computerDetailed = nil
             }
             do {
                 try await networkController.getDetailedComputer(userID: computerID)
-                // update lastUpdated when successful
                 lastUpdated = Date()
                 print("ComputersDetailedView.task completed fetch for computerID: \(computerID)")
             } catch {
-                // error already published by NetBrain.publishError; fallback to printing here
                 print("ComputersDetailedView: getDetailedComputer failed: \(error)")
             }
-            // small delay to allow published value propagation before turning off loader
             try? await Task.sleep(nanoseconds: 100_000_000)
             isLoading = false
             print("ComputersDetailedView.task finished for computerID: \(computerID), isLoading=\(isLoading)")
