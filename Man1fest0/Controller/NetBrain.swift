@@ -1416,7 +1416,7 @@ print("DEBUG - status code is 200, response is:")
     
     func deleteComputer(server: String, authToken: String, resourceType: ResourceType, itemID: String) {
         
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.computer))
         
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
@@ -1454,7 +1454,7 @@ print("DEBUG - status code is 200, response is:")
     func deletePackage(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
         
         print("Running deletePackage for item\(itemID)")
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.package))
         
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
@@ -1469,7 +1469,7 @@ print("DEBUG - status code is 200, response is:")
     
     func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
         
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.policy))
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
             separationLine()
@@ -1486,7 +1486,7 @@ print("DEBUG - status code is 200, response is:")
     
     func deleteScript(server: String,resourceType: ResourceType, itemID: String, authToken: String) async throws {
         
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.script))
         
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
@@ -1508,45 +1508,45 @@ print("DEBUG - status code is 200, response is:")
     
     
     
-    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
-        
-        print("Running deleteScriptAlt function - server is set as:\(server)")
-
-        let resourcePath = getURLFormat(data: (resourceType))
-        print("resourcePath is set as:\(resourcePath)")
-
-        if let serverURL = URL(string: server) {
-            let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
-            separationLine()
-            print("Running deleteScriptAlt function - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            atSeparationLine()
-            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
-            
-//            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-            var request = URLRequest(url: url)
-
-            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/xml", forHTTPHeaderField: "Accept")
-            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-            request.httpMethod = "DELETE"
-            
-            print("Request is:\(request)")
-            
-            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
-                  print("Running shared data task")
-                        
-                if let data = data, let response = response {
-                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                    print("deleteScript Status code is:\(statusCode)")
-                    
-                } else {
-                    print("No Response")
-                }
-            }
-        }
-    }
+//    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
+//        
+//        print("Running deleteScriptAlt function - server is set as:\(server)")
+//
+//        let resourcePath = getURLFormat(data: (resourceType))
+//        print("resourcePath is set as:\(resourcePath)")
+//
+//        if let serverURL = URL(string: server) {
+//            let url = serverURL.appendingPathComponent("api").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+//            separationLine()
+//            print("Running deleteScriptAlt function - url is set as:\(url)")
+//            print("resourceType is set as:\(resourceType)")
+//            atSeparationLine()
+//            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
+//            
+////            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+//            var request = URLRequest(url: url)
+//
+//            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+//            request.setValue("application/xml", forHTTPHeaderField: "Accept")
+//            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+//            request.httpMethod = "DELETE"
+//            
+//            print("Request is:\(request)")
+//            
+//            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
+//                  print("Running shared data task")
+//                        
+//                if let data = data, let response = response {
+//                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
+//                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+//                    print("deleteScript Status code is:\(statusCode)")
+//                    
+//                } else {
+//                    print("No Response")
+//                }
+//            }
+//        }
+//    }
     
     func batchDeleteScripts(selection:  Set<ScriptClassic>, server: String, authToken: String, resourceType: ResourceType) {
         self.separationLine()
@@ -1562,7 +1562,7 @@ print("DEBUG - status code is 200, response is:")
             print("resourceType is: \(resourceType)")
             
             Task {
-                try await self.deleteScript(server: server, resourceType: resourceType, itemID: scriptID, authToken: authToken )
+                try await self.deleteScript(server: server, resourceType: ResourceType.script, itemID: scriptID, authToken: authToken )
             }
         }
         self.separationLine()
@@ -1570,7 +1570,7 @@ print("DEBUG - status code is 200, response is:")
     }
     
     func deleteGroup(server: String,resourceType: ResourceType, itemID: String, authToken: String)  async throws {
-        let resourcePath = getURLFormat(data: (resourceType))
+        let resourcePath = getURLFormat(data: (ResourceType.computerGroup))
         if let serverURL = URL(string: server) {
             let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
             separationLine()

@@ -48,7 +48,12 @@ struct PoliciesActionView: View {
     //  ########################################################################################
     
     
+    // Selection stored as a Set of Policy objects for use across tabs and actions.
+    // SwiftUI's List selection on macOS prefers an ID type; keep a secondary
+    // Set<Int> of jamfId values and synchronize them.
     @State private var policiesSelection = Set<Policy>()
+    // Use the Policy.id (UUID) as the List selection ID so we avoid optional jamfId keypath issues
+    @State private var selectedPolicyUUIDs = Set<UUID>()
     
     @State var searchText = ""
     // Focus for the inline search field so it can be focused via Cmd-F
@@ -178,13 +183,78 @@ struct PoliciesActionView: View {
                 }
                 .padding([.leading, .trailing, .top])
                 
-                List(searchResults, selection: $policiesSelection) { policy in
+                List(searchResults, id: \.id, selection: $selectedPolicyUUIDs) { policy in
 
                     HStack {
                         Image(systemName:"text.justify")
                         Text("\(policy.name)")
+                            .lineLimit(2)
                     }
-                    .foregroundColor(.blue)
+                    // Use contrasting text color when selected so it remains readable
+                    .foregroundColor(policiesSelection.contains(policy) ? Color.primary : Color.primary)
+                    // Make the entire row tappable and ensure hit testing covers full width
+                    .contentShape(Rectangle())
+                    // Visible background when selected (stronger blue so it's obvious)
+                    .background(
+                        Group {
+                            if policiesSelection.contains(policy) {
+                                // Use a single blue highlight for selected rows
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.blue.opacity(0.25))
+                                    .padding(.vertical, -6)
+                            } else {
+                                Color.clear
+                            }
+                        }
+                    )
+                    .overlay(
+                        Group {
+                            if policiesSelection.contains(policy) {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.blue.opacity(0.6), lineWidth: 1)
+                                    .padding(.vertical, -6)
+                            }
+                        }
+                    )
+                    // Also apply listRowBackground as a fallback for platform list styling
+                    .listRowBackground(
+                        Group {
+                            if policiesSelection.contains(policy) {
+                                // subtle blue fill as a fallback
+                                RoundedRectangle(cornerRadius: 6).fill(Color.blue.opacity(0.12))
+                            } else {
+                                Color.clear
+                            }
+                        }
+                    )
+                    // Helpful debug: log taps (does not change selection binding, only for diagnosis)
+                    .onTapGesture {
+                        print("Row tapped: \(policy.name) id:\(policy.jamfId ?? -1) selected=\(policiesSelection.contains(policy))")
+                    }
+                }
+                #if os(macOS)
+                .listStyle(.sidebar)
+                #endif
+                // Keep the UUID-based selection in sync with the Set<Policy> used elsewhere
+                .onChange(of: selectedPolicyUUIDs) { newUUIDs in
+                    // Map UUIDs back to Policy objects from the current policies list
+                    let newSelection = Set(networkController.policies.filter { p in
+                        return newUUIDs.contains(p.id)
+                    })
+                    if newSelection != policiesSelection {
+                        policiesSelection = newSelection
+                    }
+                    let names = newSelection.map { $0.name }
+                    print("selectedPolicyUUIDs changed. uuids=\(newUUIDs) names=\(names)")
+                }
+                // Also ensure programmatic changes to policiesSelection update the UUID set
+                .onChange(of: policiesSelection) { newSelection in
+                    let ids = Set(newSelection.map { $0.id })
+                    if ids != selectedPolicyUUIDs {
+                        selectedPolicyUUIDs = ids
+                    }
+                    let names = newSelection.map { $0.name }
+                    print("policiesSelection changed. count=\(newSelection.count) uuids=\(ids) names=\(names)")
                 }
                 // .searchable removed to avoid multiple SwiftUI search toolbar items in the same window
                  .onReceive([self.policiesSelection].publisher.first()) { (value) in
@@ -308,13 +378,9 @@ struct PoliciesActionView: View {
                             progress.waitForABit()
 
                             for eachItem in policiesSelection {
-
                                 let currentPolicyID = (eachItem.jamfId ?? 0)
-
                                 print("Download file for \(eachItem.name)")
-                                print("jamfId is \(String(describing: eachItem.jamfId ?? 0))")
-
-                                ASyncFileDownloader.downloadFileAsyncAuth( objectID: currentPolicyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in}
+                                ASyncFileDownloader.downloadFileAsyncAuth(objectID: currentPolicyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in }
                             }
 
                         }) {
