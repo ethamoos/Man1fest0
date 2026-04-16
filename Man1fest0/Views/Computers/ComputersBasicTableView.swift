@@ -212,7 +212,7 @@ struct ComputersBasicTableView: View {
                     .disabled(selection.isEmpty)
                 }
                     
-                DisclosureGroup("Export CSV") {
+                DisclosureGroup("Import CSV") {
                         
                         
                         
