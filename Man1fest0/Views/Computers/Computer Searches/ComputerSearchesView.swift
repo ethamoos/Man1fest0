@@ -37,7 +37,8 @@ struct ComputerSearchesView: View {
         
         VStack(alignment: .leading) {
             
-            Section(header: Text("Computer Searches:").bold().padding()) {
+            // Use smaller horizontal padding for the section header so the split content aligns closer to the window edge.
+            Section(header: Text("Computer Searches:").bold().padding(.horizontal, 8)) {
                 
                 NavigationSplitView {
                     // sidebar
@@ -97,7 +98,8 @@ struct ComputerSearchesView: View {
                                 }
                             }
                             .listStyle(SidebarListStyle())
-                            .frame(minWidth: 260)
+                            // Narrow the sidebar so the detail pane sits closer to the list.
+                            .frame(minWidth: 140, idealWidth: 180, maxWidth: 260)
                             .searchable(text: $searchText, placement: .sidebar)
                         }
                     }
@@ -269,7 +271,13 @@ struct ComputerSearchesView: View {
                         }
                         Spacer()
                     }
-                    .padding()
+                    // Anchor the detail content to the top-leading corner and limit leading padding so
+                    // the content appears closer to the left edge of the detail pane on wide windows.
+//                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    // Reduce leading/trailing padding so information starts closer to the split edge.
+//                    .padding(.top, 6)
+//                    .padding(.leading, 6)
+//                    .padding(.trailing, 6)
                 } else {
                     Text("Loading...")
                         .task(id: searchId) {
