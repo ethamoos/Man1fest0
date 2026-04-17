@@ -1545,7 +1545,7 @@ print("DEBUG - status code is 200, response is:")
     
     
 //    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
-//        
+//
 //        print("Running deleteScriptAlt function - server is set as:\(server)")
 //
 //        let resourcePath = getURLFormat(data: (resourceType))
@@ -1558,7 +1558,7 @@ print("DEBUG - status code is 200, response is:")
 //            print("resourceType is set as:\(resourceType)")
 //            atSeparationLine()
 //            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
-//            
+//
 ////            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //            var request = URLRequest(url: url)
 //
@@ -1566,17 +1566,17 @@ print("DEBUG - status code is 200, response is:")
 //            request.setValue("application/xml", forHTTPHeaderField: "Accept")
 //            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
 //            request.httpMethod = "DELETE"
-//            
+//
 //            print("Request is:\(request)")
-//            
+//
 //            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //                  print("Running shared data task")
-//                        
+//
 //                if let data = data, let response = response {
 //                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 //                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 //                    print("deleteScript Status code is:\(statusCode)")
-//                    
+//
 //                } else {
 //                    print("No Response")
 //                }
@@ -5696,22 +5696,49 @@ xml = """
     
     func getAllScripts() async throws {
         do {
-            print("Running getAllScripts")
+            print("Running getAllScripts (paginated)")
             // Ensure we have a valid token (refresh or fetch if needed)
             let validToken = try await getValidToken(server: server)
             // Assign to authToken in case getValidToken refreshed it
             self.authToken = validToken
 
-            // Use the API v1 scripts endpoint (page 0, page-size 500). RequestSender handles
-            // endpoints that start with "/api/" or "/" as full API paths.
-            let request = APIRequest<ScriptResults>(endpoint: "/api/v1/scripts?page=0&page-size=500", method: .get)
-            let decoded = try await requestSender.resultFor(apiRequest: request)
+            var allResults: [Script] = []
+            let pageSize = 500
+            var page = 0
+            var totalCount: Int? = nil
+            // Safety guard to prevent infinite loops in case the API misbehaves
+            let maxPages = 1000
 
-            // decoded.results is [Script] (JamfObjects.Script)
-            self.allScriptsDetailed = decoded.results
+            while true {
+                let endpoint = "/api/v1/scripts?page=\(page)&page-size=\(pageSize)"
+                print("Fetching scripts page \(page) (endpoint: \(endpoint))")
+                let request = APIRequest<ScriptResults>(endpoint: endpoint, method: .get)
+                let decoded = try await requestSender.resultFor(apiRequest: request)
+
+                // Append results from this page
+                allResults.append(contentsOf: decoded.results)
+
+                // If the API provides a totalCount, use it to decide when to stop
+                if totalCount == nil {
+                    totalCount = decoded.totalCount
+                }
+
+                // Break if we've received fewer than a full page or we've reached totalCount
+                if decoded.results.count < pageSize { break }
+                if let tc = totalCount, allResults.count >= tc { break }
+
+                page += 1
+                if page > maxPages {
+                    print("Aborting pagination after reaching maxPages (\(maxPages))")
+                    break
+                }
+            }
+
+            // Assign the aggregated results to published properties
+            self.allScriptsDetailed = allResults
 
             // Map to the lightweight ScriptClassic used elsewhere in the UI
-            self.scripts = decoded.results.map { s in
+            self.scripts = allResults.map { s in
                 let jamfId = Int(s.id) ?? 0
                 return ScriptClassic(name: s.name, jamfId: jamfId)
             }
@@ -5719,7 +5746,7 @@ xml = """
             // Mirror into the allScripts collection as a convenience for other views
             self.allScripts = self.scripts
 
-            print("Loaded \(scripts.count) scripts")
+            print("Loaded \(scripts.count) scripts (paginated)")
         } catch {
             // Provide clearer diagnostics when script fetching fails
             separationLine()
