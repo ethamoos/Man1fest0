@@ -4,6 +4,7 @@ struct PolicyDelayPreferencesView: View {
     @EnvironmentObject var networkController: NetBrain
     @State private var delayValue: Double = 3.0
     @State private var showSavedToast = false
+    @State private var concurrencyValue: Int = 4
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -51,6 +52,43 @@ struct PolicyDelayPreferencesView: View {
             Text("Human readable: \(networkController.humanReadableDuration(delayValue))")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+
+            // Concurrency controls embedded here so users who open Policy Delay also
+            // see and can adjust the fetch concurrency without returning to the
+            // root Preferences navigation.
+            Divider()
+            Text("Policy fetch concurrency")
+                .font(.headline)
+
+            HStack {
+                Stepper(value: $concurrencyValue, in: 1...16, step: 1) {
+                    Text("\(concurrencyValue) concurrent requests")
+                }
+                Spacer()
+            }
+
+            HStack(spacing: 12) {
+                Button(action: {
+                    networkController.setPolicyFetchConcurrency(concurrencyValue)
+                    showSavedToast = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showSavedToast = false
+                    }
+                }) {
+                    Text("Save")
+                }
+
+                Button(action: {
+                    concurrencyValue = networkController.getPolicyFetchConcurrency()
+                }) {
+                    Text("Reset to current")
+                }
+
+                Spacer()
+
+                Text("Current: \(networkController.policyFetchConcurrency)")
+                    .foregroundColor(.secondary)
+            }
 
             Spacer()
         }

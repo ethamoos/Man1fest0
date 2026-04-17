@@ -61,7 +61,7 @@ struct SecureAppWrapper<Content: View>: View {
         }
         #else
         // macOS-only preferences window handled above; keep existing sheet for non-mac platforms if desired
-        .sheet(isPresented: showingPreferences) {
+                .sheet(isPresented: showingPreferences) {
             // Inline preferences UI to ensure compilation and avoid symbol-scope issues
             NavigationView {
                 Form {
@@ -70,12 +70,22 @@ struct SecureAppWrapper<Content: View>: View {
                     }
                     Section(header: Text("Policy Fetch")) {
                         // Inlined Policy Delay controls
-                        HStack(alignment: .top) {
-                            Text("Policy fetch delay (seconds)")
-                            Spacer()
-                            PolicyDelayInlineViewLocal()
-                                .environmentObject(networkController)
-                                .frame(maxWidth: 360)
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(alignment: .top) {
+                                Text("Policy fetch delay (seconds)")
+                                Spacer()
+                                PolicyDelayInlineViewLocal()
+                                    .environmentObject(networkController)
+                                    .frame(maxWidth: 360)
+                            }
+
+                            HStack(alignment: .top) {
+                                Text("Policy fetch concurrency")
+                                Spacer()
+                                PolicyConcurrencyInlineViewLocal()
+                                    .environmentObject(networkController)
+                                    .frame(maxWidth: 260)
+                            }
                         }
                      }
                 }
@@ -169,12 +179,22 @@ fileprivate struct PreferencesWindowContent: View {
                     Divider()
                     
                     Section(header: Text("Policy Fetch").font(.headline)) {
-                        HStack(alignment: .top) {
-                            Text("Policy fetch delay (seconds)")
-                            Spacer()
-                            PolicyDelayInlineViewLocal()
-                                .environmentObject(networkController)
-                                .frame(maxWidth: 360)
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(alignment: .top) {
+                                Text("Policy fetch delay (seconds)")
+                                Spacer()
+                                PolicyDelayInlineViewLocal()
+                                    .environmentObject(networkController)
+                                    .frame(maxWidth: 360)
+                            }
+
+                            HStack(alignment: .top) {
+                                Text("Policy fetch concurrency")
+                                Spacer()
+                                PolicyConcurrencyInlineViewLocal()
+                                    .environmentObject(networkController)
+                                    .frame(maxWidth: 260)
+                            }
                         }
                  }
                 }
@@ -248,6 +268,30 @@ fileprivate struct PolicyDelayInlineViewLocal: View {
                 Text(networkController.humanReadableDuration(delayValue))
             }
             .onAppear { delayValue = networkController.getPolicyRequestDelay() }
+        }
+    }
+}
+
+// Inline concurrency control for preferences
+fileprivate struct PolicyConcurrencyInlineViewLocal: View {
+    @EnvironmentObject var networkController: NetBrain
+    @State private var concurrencyValue: Int = 1
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Stepper(value: $concurrencyValue, in: 1...16, step: 1) {
+                Text("\(concurrencyValue)")
+            }
+            HStack {
+                Button("Save") {
+                    networkController.setPolicyFetchConcurrency(concurrencyValue)
+                }
+                Button("Reset") {
+                    concurrencyValue = networkController.getPolicyFetchConcurrency()
+                }
+                Text("Current: \(networkController.policyFetchConcurrency)")
+            }
+            .onAppear { concurrencyValue = networkController.getPolicyFetchConcurrency() }
         }
     }
 }
