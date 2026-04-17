@@ -16,6 +16,7 @@ struct ScriptUsageView: View {
     @EnvironmentObject var policyController: PolicyBrain
     
     @State private var searchText = ""
+    @State private var unassignedFilter = ""
     @State var assignedScripts: [PolicyScripts] = []
     @State var assignedScriptsArray: [String] = []
     @State var assignedScriptsByNameDict: [String: String] = [:]
@@ -23,7 +24,7 @@ struct ScriptUsageView: View {
     //    ########################################
     //    SUMMARIES
     //    ########################################
-    
+
     @State var clippedScripts = Set<String>()
     @State var unassignedScriptsSet = Set<String>()
     @State var unassignedScriptsArray: [String] = []
@@ -33,6 +34,16 @@ struct ScriptUsageView: View {
     @State var allScriptsByNameDict: [String: String] = [:]
     @State var allScriptsByNameSet = Set<String>()
     @State var totalScriptsNotUsed = 0
+
+    // Computed results for the Unassigned Scripts list (filtered by `unassignedFilter`)
+    private var unassignedSearchResults: [String] {
+        let all = Array(unassignedScriptsSet)
+        if unassignedFilter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return all.sorted()
+        }
+        let q = unassignedFilter.lowercased()
+        return all.filter { $0.lowercased().contains(q) }.sorted()
+    }
 
     //    ########################################
     //    Selections
@@ -206,8 +217,24 @@ struct ScriptUsageView: View {
                                 .font(.headline)
                                 .padding(.horizontal)
 
+                            // Filter field for the Unassigned Scripts list
+                            HStack {
+                                TextField("Filter unassigned scripts", text: $unassignedFilter)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .padding(.horizontal)
+
+                                if !unassignedFilter.isEmpty {
+                                    Button(action: { unassignedFilter = "" }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.trailing)
+                                }
+                            }
+
                             List(selection: $selection) {
-                                ForEach(unassignedScriptsSet.sorted(), id: \ .self) { script in
+                                ForEach(unassignedSearchResults, id: \ .self) { script in
                                     HStack {
                                         Label(script, systemImage: "xmark.circle")
                                             .foregroundColor(.orange)
