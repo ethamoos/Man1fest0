@@ -96,8 +96,8 @@ struct ComputerSearchesView: View {
                                     selectedSearch = nil
                                 }
                             }
-                            .listStyle(SidebarListStyle())
-                            .frame(minWidth: 260)
+//                            .listStyle(SidebarListStyle())
+//                            .frame(minWidth: 260)
                             .searchable(text: $searchText, placement: .sidebar)
                         }
                     }
