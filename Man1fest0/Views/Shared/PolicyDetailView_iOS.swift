@@ -361,8 +361,7 @@
 //                    HStack {
 //                        
 //                        Picker(selection: $selectedCategory, label: Text("Category")) {
-//                            //                            Text("").tag("") //basically added empty tag and it solve the case
-//                            ForEach(networkController.categories, id: \.self) { category in
+//                            //                            //                            ForEach(networkController.categories, id: \.self) { category in
 //                                Text(String(describing: category.name))
 //                                    .tag(category as Category?)
 //                            }

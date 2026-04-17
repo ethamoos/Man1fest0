@@ -285,6 +285,24 @@
 			path = Welcome;
 			sourceTree = "<group>";
 		};
+		A8020CC42F921BD200F3778D /* Computer Searches */ = {
+			isa = PBXGroup;
+			children = (
+				A80209622F8813B600F3778D /* ComputerSearchesView.swift */,
+			);
+			path = "Computer Searches";
+			sourceTree = "<group>";
+		};
+		A8020CC52F921BE700F3778D /* ComputerExtAttributes */ = {
+			isa = PBXGroup;
+			children = (
+				A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */,
+				A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */,
+				A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */,
+			);
+			path = ComputerExtAttributes;
+			sourceTree = "<group>";
+		};
 		A857A4292E25686600A96F3A /* NotesPersistent */ = {
 			isa = PBXGroup;
 			children = (
@@ -340,11 +358,9 @@
 				A8B312EF2F87B4A200DF685C /* ComputerBasicView.swift */,
 				A8B312ED2F87B34D00DF685C /* ComputersBasicDetailedView.swift */,
 				A8DD6B3A2A13CA890098563C /* ComputerBasicActionView.swift */,
-				A80209622F8813B600F3778D /* ComputerSearchesView.swift */,
+				A8020CC42F921BD200F3778D /* Computer Searches */,
 				E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */,
-				A86F4DEE2C78ED6200D5518B /* ComputerExtAttributeView.swift */,
-				A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */,
-				A8C4EAC52D53BB610022E0ED /* ComputerExtAttDetailView.swift */,
+				A8020CC52F921BE700F3778D /* ComputerExtAttributes */,
 			);
 			path = Computers;
 			sourceTree = "<group>";

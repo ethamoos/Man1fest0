@@ -179,7 +179,6 @@ struct ComputerSearchesView: View {
                         secondaryButton: .cancel()
                     )
                 }
-                
             }
             .padding()
             .onAppear() {
@@ -222,9 +221,11 @@ struct ComputerSearchesView: View {
     }
     
     struct ComputerSearchDetailView: View {
+        
         @EnvironmentObject var networkController: NetBrain
+        
         let searchId: Int
-
+        
         var body: some View {
             Group {
                 if let d = networkController.advancedComputerSearchDetailed, d.id == searchId {
@@ -242,35 +243,35 @@ struct ComputerSearchesView: View {
                                 if base.hasSuffix("/") { base.removeLast() }
                                 let uiURLString = "\(base)/advancedComputerSearches.html?id=\(searchId)&o=r"
                                 if let uiURL = URL(string: uiURLString) {
-                                    #if os(macOS)
+#if os(macOS)
                                     NSWorkspace.shared.open(uiURL)
-                                    #endif
+#endif
                                 } else {
                                     // Fallback: attempt the resource endpoint
                                     if let apiURL = URL(string: networkController.server + "/JSSResource/advancedcomputersearches/id/" + String(searchId)) {
-                                        #if os(macOS)
+#if os(macOS)
                                         NSWorkspace.shared.open(apiURL)
-                                        #endif
+#endif
                                     }
                                 }
-                             }
-                             .buttonStyle(.bordered)
-
+                            }
+                            .buttonStyle(.bordered)
+                            
                             Button("Delete Selection") {
-                                 Task {
-                                     let setSel: Set<AdvancedComputerSearch> = Set([AdvancedComputerSearch(id: d.id, name: d.name)])
-                                     try? await networkController.batchDeleteAdvancedComputerSearch(selection: setSel, server: networkController.server, authToken: networkController.authToken, resourceType: .advancedComputerSearch)
-                                 }
-                             }
-                             .buttonStyle(.borderedProminent)
-                             .tint(.red)
-                             Spacer()
-                         }
-                         Spacer()
-                     }
-                     .padding()
-                 } else {
-                     Text("Loading...")
+                                Task {
+                                    let setSel: Set<AdvancedComputerSearch> = Set([AdvancedComputerSearch(id: d.id, name: d.name)])
+                                    try? await networkController.batchDeleteAdvancedComputerSearch(selection: setSel, server: networkController.server, authToken: networkController.authToken, resourceType: .advancedComputerSearch)
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                } else {
+                    Text("Loading...")
                         .task(id: searchId) {
                             do {
                                 try await networkController.getDetailAdvancedComputerSearch(userID: String(searchId))
@@ -278,7 +279,7 @@ struct ComputerSearchesView: View {
                                 print("Failed to load detail for id \(searchId): \(error)")
                             }
                         }
-                 }
+                }
             }
         }
     }

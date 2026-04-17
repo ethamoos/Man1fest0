@@ -80,8 +80,7 @@ struct CreatePushPackageTabView: View {
 //
 //                            LazyVGrid(columns: columns, spacing: 20) {
 //                                Picker(selection: $selectedPackage, label: Text("Package:").bold()) {
-//                                    Text("").tag("") //basically added empty tag and it solve the case
-//                                    ForEach(networkController.packages, id: \.self) { package in
+//                                    //                                    ForEach(networkController.packages, id: \.self) { package in
 //                                        Text(String(describing: package.name))
 //                                    }
 //                                }

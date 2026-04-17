@@ -421,40 +421,42 @@ struct ComputersBasicTableView: View {
                                 Text(String(describing: department.name)).tag(department.id)
                             }
                         }
-                    }
-                    
-                }
-                
-                
-                
-                //  ##########################################################################
-                //  Commands
-                //  ##########################################################################
-                
-                HStack {
-                    
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 250)), GridItem(.flexible())]) {
-                        Picker("Commands", selection: $selectedCommand) {
-                            ForEach(pushController.flushCommands, id: \.self) {
-                                Text(String(describing: $0))
+                        
+                        
+                        //  ##########################################################################
+                        //  Commands
+                        //  ##########################################################################
+                        
+                        HStack {
+                            
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 30)), GridItem(.flexible())]) {
+                                Picker("Commands", selection: $selectedCommand) {
+                                    ForEach(pushController.flushCommands, id: \.self) {
+                                        Text(String(describing: $0))
+                                    }
+                                }
                             }
+                            
+                            Button("Flush Commands") {
+                                
+                                progress.showProgress()
+                                progress.waitForABit()
+                                
+                                Task {
+                                    await pushController.flushCommandBatch(server: server, authToken: networkController.authToken, selectionComp: selection, selectedCommand: selectedCommand, deviceType: "computers")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                            
                         }
                     }
-                    
-                    Button("Flush Commands") {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        Task {
-                            await pushController.flushCommandBatch(server: server, authToken: networkController.authToken, selectionComp: selection, selectedCommand: selectedCommand, deviceType: "computers")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     
                 }
+                
+                
+                
                 
                 
                 

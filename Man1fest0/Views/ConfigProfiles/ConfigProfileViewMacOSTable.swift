@@ -70,7 +70,7 @@ struct ConfigProfileViewMacOSTable: View {
                         LazyVGrid(columns: layout.columnsFlex) {
                             
                             Picker(selection: $selectedGroup, label: Text("Computer Group")) {
-                                //                                                        Text("").tag("") //basically added empty tag and it solve the case
+                                //                                                         //
                                 ForEach(networkController.allComputerGroups, id: \.self) { group in
                                     Text(String(describing: group.name)).tag(group.name)
                                         .tag(group as ComputerGroup?)
@@ -86,26 +86,29 @@ struct ConfigProfileViewMacOSTable: View {
                             }
                         }
                         
-                        LazyVGrid(columns: layout.columnsFlex) {
-                            Picker("Commands", selection: $selectedCommand) {
-                                ForEach(pushController.flushCommands, id: \.self) {
-                                    Text(String(describing: $0)).tag($0)
+                        HStack {
+                            LazyVGrid(columns: layout.columnsFlex) {
+                                Picker("Commands", selection: $selectedCommand) {
+                                    ForEach(pushController.flushCommands, id: \.self) {
+                                        Text(String(describing: $0)).tag($0)
+                                    }
                                 }
                             }
-                        }
-                        
-                        Button("Flush Commands") {
                             
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            Task {
-                                try await pushController.flushCommands(targetId: selectedGroup.id, deviceType: "computergroups", command: selectedCommand, authToken: networkController.authToken, server: server )
+                            Button("Flush Commands") {
+                                
+                                progress.showProgress()
+                                progress.waitForABit()
+                                
+                                Task {
+                                    try await pushController.flushCommands(targetId: selectedGroup.id, deviceType: "computergroups", command: selectedCommand, authToken: networkController.authToken, server: server )
+                                }
                             }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                         Spacer()
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
                     }
                 } else {
                     ProgressView {

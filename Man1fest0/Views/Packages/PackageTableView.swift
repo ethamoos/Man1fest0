@@ -310,7 +310,7 @@ struct PackageTableView: View {
                 
                 HStack {
                     Picker(selection: $categorySelection, label: Text("Category:\t\t")) {
-                        Text("").tag("") //basically added empty tag and it solve the case
+                         //
                         ForEach(networkController.categories, id: \.self) { category in
                             Text(String(describing: category.name))
                         }
@@ -412,7 +412,7 @@ struct PackageTableView: View {
 
                     HStack(spacing:20 ){
                         Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:").bold()) {
-                            //                        Text("").tag("") //basically added empty tag and it solve the case
+                            //                         //
                             ForEach(scopingController.allLdapCustomGroupsCombinedArray, id: \.self) { group in
                                 Text(String(describing: group.name))
                                     .tag(ldapSearchCustomGroupSelection as LDAPCustomGroup?)
@@ -510,7 +510,7 @@ struct PackageTableView: View {
             
             LazyVGrid(columns: layout.threeColumns, spacing: 20) {
                 Picker(selection: $ldapServerSelection, label: Text("Ldap Servers:").bold()) {
-//                    Text("").tag("") //basically added empty tag and it solve the case
+ //
                     ForEach(scopingController.allLdapServers, id: \.self) { group in
                         Text(String(describing: group.name))
                             .tag(ldapServerSelection as LDAPServer?)
