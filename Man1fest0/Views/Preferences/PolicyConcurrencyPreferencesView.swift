@@ -1,30 +1,27 @@
 import SwiftUI
 
-struct PolicyDelayPreferencesView: View {
+struct PolicyConcurrencyPreferencesView: View {
     @EnvironmentObject var networkController: NetBrain
-    @State private var delayValue: Double = 3.0
     @State private var concurrencyValue: Int = 4
     @State private var showSavedToast = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Policy fetch delay (seconds)")
+            Text("Policy fetch concurrency")
                 .font(.headline)
 
             HStack {
-                Slider(value: $delayValue, in: 0...10, step: 0.1)
-                Stepper(value: $delayValue, in: 0...60, step: 1) {
-                    Text("\(Int(delayValue)) s")
-                        .frame(minWidth: 60)
+                Stepper(value: $concurrencyValue, in: 1...16, step: 1) {
+                    Text("\(concurrencyValue) concurrent requests")
                 }
+                Spacer()
             }
 
             HStack(spacing: 12) {
                 Button(action: {
-                    networkController.setPolicyRequestDelay(delayValue)
                     networkController.setPolicyFetchConcurrency(concurrencyValue)
                     showSavedToast = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                         showSavedToast = false
                     }
                 }) {
@@ -32,7 +29,6 @@ struct PolicyDelayPreferencesView: View {
                 }
 
                 Button(action: {
-                    delayValue = networkController.getPolicyRequestDelay()
                     concurrencyValue = networkController.getPolicyFetchConcurrency()
                 }) {
                     Text("Reset to current")
@@ -40,7 +36,7 @@ struct PolicyDelayPreferencesView: View {
 
                 Spacer()
 
-                Text(networkController.policyDelayStatus)
+                Text("Current: \(networkController.policyFetchConcurrency)")
                     .foregroundColor(.secondary)
             }
 
@@ -51,34 +47,23 @@ struct PolicyDelayPreferencesView: View {
 
             Divider()
 
-            Text("Human readable: \(networkController.humanReadableDuration(delayValue))")
+            Text("Tip: Increasing concurrency may make fetching policies faster but may also increase load on the Jamf server.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-
-            HStack {
-                Text("Concurrent policy fetches")
-                Spacer()
-                Stepper(value: $concurrencyValue, in: 1...16, step: 1) {
-                    Text("\(concurrencyValue)")
-                        .frame(minWidth: 44)
-                }
-            }
-            .padding(.top, 6)
 
             Spacer()
         }
         .padding()
         .onAppear {
-            delayValue = networkController.getPolicyRequestDelay()
             concurrencyValue = networkController.getPolicyFetchConcurrency()
         }
-        .frame(minWidth: 400, minHeight: 160)
+        .frame(minWidth: 400, minHeight: 140)
     }
 }
 
-struct PolicyDelayPreferencesView_Previews: PreviewProvider {
+struct PolicyConcurrencyPreferencesView_Previews: PreviewProvider {
     static var previews: some View {
-        PolicyDelayPreferencesView()
+        PolicyConcurrencyPreferencesView()
             .environmentObject(NetBrain())
     }
 }

@@ -320,6 +320,9 @@ actor AsyncSemaphore {
     // This value is persisted to UserDefaults under the key "policyRequestDelay" so it can be
     // adjusted by the user via preferences (or programmatically by the UI).
     @Published var policyRequestDelay: TimeInterval
+    // Configurable number of concurrent detail fetches for policies. Persisted to UserDefaults
+    // under the key "policyFetchConcurrency" so the user can adjust it in preferences.
+    @Published var policyFetchConcurrency: Int
     private var lastRequestDate: Date?
 
     init(minInterval: TimeInterval = 0.0) {
@@ -330,6 +333,9 @@ actor AsyncSemaphore {
         } else {
             self.policyRequestDelay = minInterval
         }
+        // load concurrency setting (default to 4)
+        let persistedConcurrency = UserDefaults.standard.integer(forKey: "policyFetchConcurrency")
+        self.policyFetchConcurrency = persistedConcurrency > 0 ? persistedConcurrency : 4
         print("NetBrain initialized: policyRequestDelay = \(self.policyRequestDelay) seconds (\(formatDuration(self.policyRequestDelay)))")
     }
 
@@ -349,6 +355,17 @@ actor AsyncSemaphore {
     }
 
     func getPolicyRequestDelay() -> TimeInterval { self.policyRequestDelay }
+
+    // Setter and getter for concurrency setting exposed to preferences UI
+    func setPolicyFetchConcurrency(_ count: Int) {
+        guard count >= 1 else { return }
+        self.policyFetchConcurrency = count
+        UserDefaults.standard.set(count, forKey: "policyFetchConcurrency")
+        separationLine()
+        print("Policy fetch concurrency updated to \(count). Persisted to UserDefaults key 'policyFetchConcurrency'.")
+    }
+
+    func getPolicyFetchConcurrency() -> Int { self.policyFetchConcurrency }
 
     // Public helper so views can display a duration consistently.
     func humanReadableDuration(_ seconds: TimeInterval) -> String {
@@ -812,52 +829,88 @@ print("DEBUG - status code is 200, response is:")
         // Log the filtering results for debugging
         print("Total policies provided: \(policies.count) -> valid policies with jamfId>0: \(validPolicies.count)")
 
-        // Set maximum number of tasks that can run simultaneously
-        let maxConcurrentTasks = 4
-        // Initialize array to track which policy fetches failed
+        // Use user-configured concurrency (persisted setting). Default to 4 if invalid.
+        let concurrency = max(1, self.policyFetchConcurrency)
+
         var failedCalls: [String] = []
 
-        // Sequentially fetch each policy detail to avoid MainActor reentrancy issues
-        for policy in validPolicies {
-            let jamfIdVal = policy.jamfId ?? 0
-            let policyID = String(describing: jamfIdVal)
-            do {
-                // Rate limiting: ensure minimum delay between requests
-                let now = Date()
-                let last = await MainActor.run { self.lastRequestDate }
-                let delayNeeded: TimeInterval = await MainActor.run { () -> TimeInterval in
-                    if let last = last {
-                        let elapsed = now.timeIntervalSince(last)
-                        return elapsed < self.policyRequestDelay ? (self.policyRequestDelay - elapsed) : 0
-                    } else {
-                        return 0
+        // Process policies in batches sized by `concurrency` to bound concurrent network requests.
+        for start in stride(from: 0, to: validPolicies.count, by: concurrency) {
+            let end = Swift.min(start + concurrency, validPolicies.count)
+            let batch = Array(validPolicies[start..<end])
+
+            await withTaskGroup(of: (String, Result<PolicyDetailed, Error>).self) { group in
+                for policy in batch {
+                    let serverCopy = server
+                    let tokenCopy = validToken
+                    let policyID = String(describing: policy.jamfId ?? 0)
+                    let userAgent = "\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))"
+
+                    group.addTask {
+                        // Respect global rate limiting via MainActor-coordinated timestamp
+                        let now = Date()
+                        let delayNeeded: TimeInterval = await MainActor.run { () -> TimeInterval in
+                            if let last = self.lastRequestDate {
+                                let elapsed = now.timeIntervalSince(last)
+                                return elapsed < self.policyRequestDelay ? (self.policyRequestDelay - elapsed) : 0
+                            }
+                            return 0
+                        }
+
+                        if delayNeeded > 0 {
+                            let human = await MainActor.run { self.formatDuration(delayNeeded) }
+                            let nextRunAt = Date().addingTimeInterval(delayNeeded)
+                            print("Throttling: sleeping for \(delayNeeded) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
+                            await MainActor.run { self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))" }
+                            try? await Task.sleep(nanoseconds: UInt64(delayNeeded * 1_000_000_000))
+                        }
+
+                        // Claim the timestamp before issuing the request so other tasks see it
+                        await MainActor.run { self.lastRequestDate = Date() }
+
+                        // Build URL and request locally (avoid MainActor-bound helpers)
+                        let jamfURLQuery = serverCopy + "/JSSResource/policies/id/" + policyID
+                        guard let url = URL(string: jamfURLQuery) else {
+                            return (policyID, .failure(JamfAPIError.badURL))
+                        }
+                        var request = URLRequest(url: url)
+                        request.httpMethod = "GET"
+                        request.setValue("Bearer \(tokenCopy)", forHTTPHeaderField: "Authorization")
+                        request.addValue(userAgent, forHTTPHeaderField: "User-Agent")
+                        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+                        do {
+                            let (data, response) = try await URLSession.shared.data(for: request)
+                            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                            guard status == 200 else {
+                                return (policyID, .failure(JamfAPIError.http(status)))
+                            }
+                            let decoder = JSONDecoder()
+                            let detailed = try decoder.decode(PoliciesDetailed.self, from: data).policy
+                            return (policyID, .success(detailed))
+                        } catch {
+                            return (policyID, .failure(error))
+                        }
                     }
                 }
 
-                if delayNeeded > 0 {
-                    let human = await MainActor.run { self.formatDuration(delayNeeded) }
-                    let nextRunAt = Date().addingTimeInterval(delayNeeded)
-                    print("Throttling: sleeping for \(delayNeeded) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
-                    await MainActor.run { self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))" }
-                    try await Task.sleep(nanoseconds: UInt64(delayNeeded * 1_000_000_000))
+                // Collect results for this batch
+                for await (policyID, result) in group {
+                    switch result {
+                    case .success(let detailed):
+                        // Insert onto MainActor-owned collection
+                        await MainActor.run {
+                            self.allPoliciesDetailed.insert(detailed, at: 0)
+                        }
+                        print("Fetched policy detail for ID: \(policyID)")
+                    case .failure(let err):
+                        print("Error fetching detailed policy ID \(policyID): \(err)")
+                        await MainActor.run { failedCalls.append(policyID) }
+                    }
                 }
-
-                // Update last request time
-                await MainActor.run { self.lastRequestDate = Date() }
-
-                // Perform the network request for the detailed policy
-                try await self.getDetailedPolicy(server: server, authToken: validToken, policyID: policyID)
-
-                let name = policy.name
-                if !name.isEmpty {
-                    print("Fetched policy detail for: \(name) (ID: \(policyID))")
-                } else {
-                    print("Fetched policy detail for ID: \(policyID)")
-                }
-            } catch {
-                print("Error fetching detailed policy ID \(policyID): \(error)")
-                await MainActor.run { failedCalls.append(policyID) }
             }
+            // small pause between batches to give the server breathing room
+            try? await Task.sleep(nanoseconds: 50_000_000)
         }
 
         // On completion, record failures but mark detailed fetch as completed so callers don't retry infinitely
@@ -1545,7 +1598,7 @@ print("DEBUG - status code is 200, response is:")
     
     
 //    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
-//
+//        
 //        print("Running deleteScriptAlt function - server is set as:\(server)")
 //
 //        let resourcePath = getURLFormat(data: (resourceType))
@@ -1558,7 +1611,7 @@ print("DEBUG - status code is 200, response is:")
 //            print("resourceType is set as:\(resourceType)")
 //            atSeparationLine()
 //            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
-//
+//            
 ////            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //            var request = URLRequest(url: url)
 //
@@ -1566,17 +1619,17 @@ print("DEBUG - status code is 200, response is:")
 //            request.setValue("application/xml", forHTTPHeaderField: "Accept")
 //            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
 //            request.httpMethod = "DELETE"
-//
+//            
 //            print("Request is:\(request)")
-//
+//            
 //            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //                  print("Running shared data task")
-//
+//                        
 //                if let data = data, let response = response {
 //                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 //                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 //                    print("deleteScript Status code is:\(statusCode)")
-//
+//                    
 //                } else {
 //                    print("No Response")
 //                }
@@ -5696,49 +5749,22 @@ xml = """
     
     func getAllScripts() async throws {
         do {
-            print("Running getAllScripts (paginated)")
+            print("Running getAllScripts")
             // Ensure we have a valid token (refresh or fetch if needed)
             let validToken = try await getValidToken(server: server)
             // Assign to authToken in case getValidToken refreshed it
             self.authToken = validToken
 
-            var allResults: [Script] = []
-            let pageSize = 500
-            var page = 0
-            var totalCount: Int? = nil
-            // Safety guard to prevent infinite loops in case the API misbehaves
-            let maxPages = 1000
+            // Use the API v1 scripts endpoint (page 0, page-size 500). RequestSender handles
+            // endpoints that start with "/api/" or "/" as full API paths.
+            let request = APIRequest<ScriptResults>(endpoint: "/api/v1/scripts?page=0&page-size=500", method: .get)
+            let decoded = try await requestSender.resultFor(apiRequest: request)
 
-            while true {
-                let endpoint = "/api/v1/scripts?page=\(page)&page-size=\(pageSize)"
-                print("Fetching scripts page \(page) (endpoint: \(endpoint))")
-                let request = APIRequest<ScriptResults>(endpoint: endpoint, method: .get)
-                let decoded = try await requestSender.resultFor(apiRequest: request)
-
-                // Append results from this page
-                allResults.append(contentsOf: decoded.results)
-
-                // If the API provides a totalCount, use it to decide when to stop
-                if totalCount == nil {
-                    totalCount = decoded.totalCount
-                }
-
-                // Break if we've received fewer than a full page or we've reached totalCount
-                if decoded.results.count < pageSize { break }
-                if let tc = totalCount, allResults.count >= tc { break }
-
-                page += 1
-                if page > maxPages {
-                    print("Aborting pagination after reaching maxPages (\(maxPages))")
-                    break
-                }
-            }
-
-            // Assign the aggregated results to published properties
-            self.allScriptsDetailed = allResults
+            // decoded.results is [Script] (JamfObjects.Script)
+            self.allScriptsDetailed = decoded.results
 
             // Map to the lightweight ScriptClassic used elsewhere in the UI
-            self.scripts = allResults.map { s in
+            self.scripts = decoded.results.map { s in
                 let jamfId = Int(s.id) ?? 0
                 return ScriptClassic(name: s.name, jamfId: jamfId)
             }
@@ -5746,7 +5772,7 @@ xml = """
             // Mirror into the allScripts collection as a convenience for other views
             self.allScripts = self.scripts
 
-            print("Loaded \(scripts.count) scripts (paginated)")
+            print("Loaded \(scripts.count) scripts")
         } catch {
             // Provide clearer diagnostics when script fetching fails
             separationLine()

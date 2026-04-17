@@ -13,6 +13,7 @@ struct PreferencesView: View {
 
                 Section(header: Text("Policy Fetch")) {
                     NavigationLink("Policy Delay…", destination: PolicyDelayPreferencesView())
+                    NavigationLink("Policy Fetch Concurrency…", destination: PolicyConcurrencyPreferencesView())
                 }
             }
             .navigationTitle("Preferences")
