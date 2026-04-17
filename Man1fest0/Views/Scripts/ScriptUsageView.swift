@@ -304,88 +304,36 @@ struct ScriptUsageView: View {
                     }
                     .padding(.vertical)
                 }
-
-                // Compute simple label strings outside the view builder to help the compiler
-                let analyzeRefreshTitle = networkController.fetchedDetailedPolicies ? "Refresh Data" : "Analyze Scripts"
-                let analyzeRefreshImage = networkController.fetchedDetailedPolicies ? "arrow.clockwise" : "magnifyingglass"
-
-                // Keep action toolbar fixed below the panes so it is not pushed off-screen
-                HStack(spacing: 12) {
-                    Button(action: {
-                        // Delete selection: map selected entries to Jamf IDs, delete, then refresh
-                        progress.showProgress()
-                        progress.waitForABit()
-
-                        // Capture selection snapshot
-                        let selectedItems = Array(selection)
-
-                        Task {
-                            await performDeleteSelection(selectedItems)
-                        }
-                     
-                        // End of Delete button Task
-                     }) {
-                         Label("Delete Selection", systemImage: "trash")
-                     }
-                     .buttonStyle(.borderedProminent)
-                     .tint(.red)
-
-                    Spacer()
-
-                    // Shared Analyze / Refresh button
-                    Button(action: {
-                        // Analyze or Refresh action: depends on current state
-                        if networkController.fetchedDetailedPolicies {
-                            // Refresh: clear cached data and re-fetch scripts and policies
-                            Task {
-                                progress.showProgress()
-                                await networkController.refreshScriptsAndPolicies(server: server)
-                                progress.endProgress()
-                            }
-                        } else {
-                            // Analyze: trigger policy analysis for selected scripts
-                            // (Note: this could be optimized to analyze only the selected/unclipped scripts)
-                            Task {
-                                progress.showProgress()
-                                await networkController.analyzeScripts(server: server, scriptIDs: Array(clippedScripts))
-                                progress.endProgress()
-                            }
-                        }
-                    }) {
-                        Label(analyzeRefreshTitle, systemImage: analyzeRefreshImage)
-                    }
-                     .buttonStyle(.borderedProminent)
-                     .tint(networkController.fetchedDetailedPolicies ? .green : .blue)
-                 }
-                 .padding(.horizontal)
-                 .padding(.bottom, 12)
-                 .background(RoundedRectangle(cornerRadius: 10).fill(sectionBoxBackground).shadow(color: Color.black.opacity(0.1), radius: 4))
-                 .padding(.horizontal)
-             }
-         }
-         .frame(minWidth: 800, minHeight: 600)
-         .background(Color(NSColor.windowBackgroundColor))
-         .onAppear {
-             // Initial data load
-             Task {
-                 progress.showProgress()
-                 await networkController.getAllScripts()
-                 await networkController.getAllPolicies(server: server)
-                 progress.endProgress()
-             }
-         }
-         .onChange(of: networkController.scripts) { _ in
+            }
+        }
+        .frame(minWidth: 800, minHeight: 600)
+        .background(Color(NSColor.windowBackgroundColor))
+        .onAppear {
+            // Initial data load
+            Task {
+                progress.showProgress()
+                do {
+                    try await networkController.getAllScripts()
+                    try await networkController.getAllPolicies(server: server)
+                } catch {
+                    print("Failed to load scripts/policies: \(error)")
+                    networkController.publishError(error, title: "Failed to load scripts/policies")
+                }
+                progress.endProgress()
+            }
+        }
+        .onChange(of: networkController.scripts) { _ in
             // Scripts list updated: recompute local value maps
             getScriptValues()
-         }
-         .onChange(of: policyController.assignedScriptsByNameDict) { _ in
+        }
+        .onChange(of: policyController.assignedScriptsByNameDict) { _ in
             // Assigned scripts mapping updated: refresh assigned scripts list
             refreshAssignedScripts()
-         }
-         .onChange(of: unassignedFilter) { _ in
-             // Unassigned filter text changed: update unassigned scripts list
-             updateUnassignedScripts()
-         }
+        }
+        .onChange(of: unassignedFilter) { _ in
+            // Unassigned filter text changed: update unassigned scripts list
+            updateUnassignedScripts()
+        }
      }
     
     // MARK: - Local Data Handling
@@ -414,7 +362,7 @@ struct ScriptUsageView: View {
     
     private func refreshAssignedScripts() {
         // Refresh the list of assigned scripts based on the current policyController data
-        assignedScriptsByNameDict = policyController.assignedScriptsByNameDict
+         assignedScriptsByNameDict = policyController.assignedScriptsByNameDict
         assignedScriptsByNameSet = Set(assignedScriptsByNameDict.keys)
         assignedScriptsArray = Array(assignedScriptsByNameDict.values)
     }
