@@ -179,22 +179,12 @@ fileprivate struct PreferencesWindowContent: View {
                     Divider()
                     
                     Section(header: Text("Policy Fetch").font(.headline)) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(alignment: .top) {
-                                Text("Policy fetch delay (seconds)")
-                                Spacer()
-                                PolicyDelayInlineViewLocal()
-                                    .environmentObject(networkController)
-                                    .frame(maxWidth: 360)
-                            }
-
-                            HStack(alignment: .top) {
-                                Text("Policy fetch concurrency")
-                                Spacer()
-                                PolicyConcurrencyInlineViewLocal()
-                                    .environmentObject(networkController)
-                                    .frame(maxWidth: 260)
-                            }
+                        HStack(alignment: .top) {
+                            Text("Policy fetch delay (seconds)")
+                            Spacer()
+                            PolicyDelayInlineViewLocal()
+                                .environmentObject(networkController)
+                                .frame(maxWidth: 360)
                         }
                  }
                 }
@@ -282,6 +272,7 @@ fileprivate struct PolicyConcurrencyInlineViewLocal: View {
             Stepper(value: $concurrencyValue, in: 1...16, step: 1) {
                 Text("\(concurrencyValue)")
             }
+            .help("Set how many policy detail requests the app will run at the same time. Recommended: 1–4.")
             HStack {
                 Button("Save") {
                     networkController.setPolicyFetchConcurrency(concurrencyValue)
@@ -292,6 +283,11 @@ fileprivate struct PolicyConcurrencyInlineViewLocal: View {
                 Text("Current: \(networkController.policyFetchConcurrency)")
             }
             .onAppear { concurrencyValue = networkController.getPolicyFetchConcurrency() }
+            if concurrencyValue > 8 {
+                Text("Warning: values above 8 may overload some Jamf servers or cause rate-limiting.")
+                    .foregroundColor(.red)
+                    .font(.caption)
+            }
         }
     }
 }

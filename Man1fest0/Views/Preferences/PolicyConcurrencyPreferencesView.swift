@@ -14,6 +14,7 @@ struct PolicyConcurrencyPreferencesView: View {
                 Stepper(value: $concurrencyValue, in: 1...16, step: 1) {
                     Text("\(concurrencyValue) concurrent requests")
                 }
+                .help("Set how many policy detail requests the app will run at the same time. Recommended: 1–4.")
                 Spacer()
             }
 
@@ -47,7 +48,13 @@ struct PolicyConcurrencyPreferencesView: View {
 
             Divider()
 
-            Text("Tip: Increasing concurrency may make fetching policies faster but may also increase load on the Jamf server.")
+            if concurrencyValue > 8 {
+                Text("Warning: Values above 8 may overload some Jamf servers or cause rate-limiting.")
+                    .foregroundColor(.red)
+                    .font(.subheadline)
+            }
+
+            Text("Tip: Increasing concurrency may make fetching policies faster but may also increase load on the Jamf server. Recommended: 1–4.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 

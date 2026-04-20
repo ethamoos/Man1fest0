@@ -289,18 +289,21 @@ struct PolicyActionsDetailTableView: View {
         
         print("Reset allPoliciesDetailedGeneral and re-add")
  
-         // Always update published/UI-state on the main thread
-         DispatchQueue.main.async {
-             networkController.allPoliciesDetailedGeneral.removeAll()
- 
+         // Always update published/UI-state on the main thread. Build the new
+         // array off-main-thread, then assign it atomically to avoid layout thrash.
+         DispatchQueue.global(qos: .utility).async {
+             var newGeneralList: [General] = []
              if networkController.allPoliciesDetailed.isEmpty != true {
                  for eachPolicy in networkController.allPoliciesDetailed {
                      if let eachPolicyGeneral = eachPolicy?.general {
-                         networkController.allPoliciesDetailedGeneral.insert(eachPolicyGeneral, at: 0)
+                         newGeneralList.insert(eachPolicyGeneral, at: 0)
                      }
                  }
              }
-            print("convertToallPoliciesDetailedGeneral completed - new count=\(networkController.allPoliciesDetailedGeneral.count) | allPoliciesDetailed.count=\(networkController.allPoliciesDetailed.count)")
+             DispatchQueue.main.async {
+                 networkController.allPoliciesDetailedGeneral = newGeneralList
+                 print("convertToallPoliciesDetailedGeneral completed - new count=\(networkController.allPoliciesDetailedGeneral.count) | allPoliciesDetailed.count=\(networkController.allPoliciesDetailed.count)")
+             }
          }
      }
     
