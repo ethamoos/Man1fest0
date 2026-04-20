@@ -90,7 +90,16 @@ struct ScriptUsageView: View {
             return .secondary
         }
     }
-        
+    
+    // Computed property: are detailed policies fully downloaded?
+    private var detailedPoliciesComplete: Bool {
+        // Some code paths populate `networkController.policies` instead of `allPoliciesConverted`; use the max expected count
+        let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
+        let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
+        // Treat as complete if the controller flag is set, if we have any detailed entries, or when expected==actual
+        return networkController.fetchedDetailedPolicies || actual > 0 || (expected > 0 && actual == expected)
+    }
+
     @State var totalAvailableHeight: CGFloat = 600
     // Ratios for the three vertical panes (sum should be 1.0)
     @State private var paneRatios: [CGFloat] = [0.33, 0.33, 0.34]
@@ -121,7 +130,29 @@ struct ScriptUsageView: View {
 
                 // Note: Analyse/Refresh controls moved to bottom toolbar to keep UI consistent (one set of controls)
              }
-            .padding([.top, .horizontal])
+             .padding([.top, .horizontal])
+
+            // Policy detailed fetch status and live count (was present in v1.58)
+            HStack(alignment: .center, spacing: 8) {
+                // spinner when actively fetching
+                if networkController.isFetchingDetailedPolicies {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(policyFetchStatusText)
+                        .font(.subheadline)
+                        .foregroundColor(policyFetchStatusColor)
+                    // big count on its own line for quick visibility
+                    Text("\(networkController.allPoliciesDetailed.count)")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal)
 
             if networkController.scripts.count == 0 {
                 VStack(alignment: .center) {
@@ -305,6 +336,68 @@ struct ScriptUsageView: View {
                     .padding(.vertical)
                 }
             }
+
+            // Bottom action toolbar (fixed area reserved above via toolbarReservedHeight)
+            HStack(spacing: 12) {
+                // Delete selected scripts
+                Button(action: {
+                    // Confirm and delete selected items
+                    let items = Array(selection)
+                    guard items.count > 0 else { return }
+                    progress.showProgress()
+                    Task {
+                        await performDeleteSelection(items)
+                        // Clear selection on main actor
+                        await MainActor.run {
+                            selection.removeAll()
+                        }
+                    }
+                }) {
+                    Text("Delete Selection")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .disabled(selection.isEmpty)
+
+                Spacer()
+
+                // Analyse Data (recompute scripts in use based on policies)
+                Button(action: {
+                    Task {
+                        progress.showExtendedProgress()
+                        // Ensure we have policies detailed; if not, trigger them
+                        if networkController.allPoliciesDetailed.isEmpty {
+                            try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+                        }
+                        // Recompute scripts assigned/unassigned
+                        policyController.getScriptsInUse(allPoliciesDetailed: networkController.allPoliciesDetailed)
+                        policyController.getScriptValues(allScripts: networkController.scripts)
+                        // small delay to ensure UI updates
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        progress.endExtendedProgress()
+                    }
+                }) {
+                    Text("Analyse Data")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                // Enable once at least some detailed policies exist
+                .disabled(!detailedPoliciesComplete)
+
+                // Refresh policy detailed data
+                Button(action: {
+                    networkController.allPoliciesDetailed.removeAll()
+                    Task {
+                        try? await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    }
+                }) {
+                    Text("Refresh Policy Data")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+            }
+            .padding()
+            .background(Color(NSColor.windowBackgroundColor))
         }
         .frame(minWidth: 800, minHeight: 600)
         .background(Color(NSColor.windowBackgroundColor))

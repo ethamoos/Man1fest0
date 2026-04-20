@@ -35,8 +35,11 @@ struct PackageUsageView: View {
 
     // Computed property: are detailed policies fully downloaded?
     private var detailedPoliciesComplete: Bool {
-        // Consider complete only when there is at least one policy and the detailed count equals the converted list
-        return networkController.allPoliciesConverted.count > 0 && networkController.allPoliciesDetailed.count == networkController.allPoliciesConverted.count
+        // Consider complete when the count of non-nil detailed entries equals the expected basic policy count.
+        // Some code paths populate `networkController.policies` (basic list) rather than `allPoliciesConverted`, so take the max of those counts.
+        let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
+        let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
+        return expected > 0 && actual == expected
     }
     
     var body: some View {
