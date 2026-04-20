@@ -5788,16 +5788,40 @@ xml = """
             // Assign to authToken in case getValidToken refreshed it
             self.authToken = validToken
 
-            // Use the API v1 scripts endpoint (page 0, page-size 500). RequestSender handles
-            // endpoints that start with "/api/" or "/" as full API paths.
-            let request = APIRequest<ScriptResults>(endpoint: "/api/v1/scripts?page=0&page-size=500", method: .get)
-            let decoded = try await requestSender.resultFor(apiRequest: request)
+            // Pagination parameters
+            var page = 0
+            let pageSize = 500
+            var accumulated: [Script] = []
+            var totalCount: Int? = nil
 
-            // decoded.results is [Script] (JamfObjects.Script)
-            self.allScriptsDetailed = decoded.results
+            while true {
+                let endpoint = "/api/v1/scripts?page=\(page)&page-size=\(pageSize)"
+                let request = APIRequest<ScriptResults>(endpoint: endpoint, method: .get)
+                let decoded = try await requestSender.resultFor(apiRequest: request)
+
+                // Append page results
+                accumulated.append(contentsOf: decoded.results)
+
+                // Capture totalCount from first response if provided
+                if totalCount == nil {
+                    totalCount = decoded.totalCount
+                }
+
+                print("Fetched page \(page): returned \(decoded.results.count) scripts; accumulated=\(accumulated.count) totalReported=\(totalCount ?? -1)")
+
+                // Stop if this page returned fewer results than pageSize or we've reached the reported total
+                if decoded.results.count < pageSize { break }
+                if let total = totalCount, accumulated.count >= total { break }
+
+                // Otherwise fetch next page
+                page += 1
+            }
+
+            // Assign into published properties
+            self.allScriptsDetailed = accumulated
 
             // Map to the lightweight ScriptClassic used elsewhere in the UI
-            self.scripts = decoded.results.map { s in
+            self.scripts = accumulated.map { s in
                 let jamfId = Int(s.id) ?? 0
                 return ScriptClassic(name: s.name, jamfId: jamfId)
             }
@@ -5805,7 +5829,7 @@ xml = """
             // Mirror into the allScripts collection as a convenience for other views
             self.allScripts = self.scripts
 
-            print("Loaded \(scripts.count) scripts")
+            print("Loaded \(scripts.count) scripts (detailed: \(allScriptsDetailed.count))")
         } catch {
             // Provide clearer diagnostics when script fetching fails
             separationLine()
