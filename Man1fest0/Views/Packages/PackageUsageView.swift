@@ -40,16 +40,16 @@ struct PackageUsageView: View {
 
     // Computed property: are detailed policies fully downloaded?
     private var detailedPoliciesComplete: Bool {
-        let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
-        let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
+        let expected = networkController.detailedPoliciesProgress.expected
+        let loaded = networkController.detailedPoliciesProgress.loaded
         // If controller flag is set, consider complete
         if networkController.fetchedDetailedPolicies { return true }
-        // If we've downloaded at least one detailed policy, allow Analyse (same behavior as ScriptUsageView)
-        if actual > 0 { return true }
+        // If we've downloaded at least one detailed policy, allow Analyse (same permissive behavior)
+        if loaded > 0 { return true }
         // Exact match
-        if expected > 0 && actual == expected { return true }
+        if expected > 0 && loaded == expected { return true }
         // Allow if only a small number missing (tolerance)
-        if expected > 0 && (expected - actual) <= detailedPoliciesTolerance { return true }
+        if expected > 0 && (expected - loaded) <= detailedPoliciesTolerance { return true }
         return false
     }
     
@@ -215,31 +215,6 @@ struct PackageUsageView: View {
                                         Text(policyID)
                                             .font(.footnote)
                                             .foregroundColor(.red)
-                                    }
-                                    HStack { Spacer()
-                                        Button(action: {
-                                            Task {
-                                                progress.showExtendedProgress()
-                                                // Build list of Policy objects that match failed IDs and retry
-                                                let failedIDs = networkController.retryFailedDetailedPolicyCalls
-                                                let policiesToRetry = networkController.allPoliciesConverted.filter { p in
-                                                    guard let pid = p.jamfId else { return false }
-                                                    return failedIDs.contains(String(pid))
-                                                }
-                                                if !policiesToRetry.isEmpty {
-                                                    do {
-                                                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: policiesToRetry)
-                                                    } catch {
-                                                        print("Retry failed policies error: \(error)")
-                                                    }
-                                                }
-                                                progress.endExtendedProgress()
-                                            }
-                                        }) {
-                                            Text("Retry Failed")
-                                        }
-                                        .buttonStyle(.bordered)
-                                        .tint(.red)
                                     }
                                 }
                                 .padding(8)

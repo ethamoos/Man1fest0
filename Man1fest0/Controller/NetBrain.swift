@@ -34,10 +34,19 @@ actor AsyncSemaphore {
 }
 
 @MainActor class NetBrain: ObservableObject {
-    
+
     // #########################################################################
     // Global Variables
     // #########################################################################
+    // Progress summary for detailed policies (single source of truth for views)
+    struct DetailedPoliciesProgress {
+        var expected: Int = 0
+        var loaded: Int = 0
+        var failedIDs: [String] = []
+    }
+
+    @Published var detailedPoliciesProgress = DetailedPoliciesProgress()
+
     let debug_enabled = false
     // #########################################################################
     //  Build identifiers
@@ -815,7 +824,16 @@ print("DEBUG - status code is 200, response is:")
             print("getAllPoliciesDetailed called while a fetch is already in progress; skipping")
             return
         }
-        await MainActor.run { self.isFetchingDetailedPolicies = true; self.retryFailedDetailedPolicyCalls = [] }
+        await MainActor.run {
+            self.isFetchingDetailedPolicies = true
+            self.retryFailedDetailedPolicyCalls = []
+            // Initialize progress for the UI
+            self.detailedPoliciesProgress = DetailedPoliciesProgress(
+                expected: policies.filter { ($0.jamfId ?? 0) > 0 }.count,
+                loaded: 0,
+                failedIDs: []
+            )
+        }
 
         // Ignore passed authToken and use managed token instead
         let validToken = try await getValidToken(server: server)
@@ -833,6 +851,7 @@ print("DEBUG - status code is 200, response is:")
         let concurrency = max(1, self.policyFetchConcurrency)
 
         var failedCalls: [String] = []
+        var loadedCount: Int = 0
 
         // Process policies in batches sized by `concurrency` to bound concurrent network requests.
         for start in stride(from: 0, to: validPolicies.count, by: concurrency) {
@@ -901,19 +920,33 @@ print("DEBUG - status code is 200, response is:")
                         // Insert onto MainActor-owned collection
                         await MainActor.run {
                             self.allPoliciesDetailed.insert(detailed, at: 0)
+                            loadedCount += 1
+                            self.detailedPoliciesProgress.loaded = loadedCount
                         }
                         print("Fetched policy detail for ID: \(policyID)")
                     case .failure(let err):
                         print("Error fetching detailed policy ID \(policyID): \(err)")
-                        await MainActor.run { failedCalls.append(policyID) }
+                        await MainActor.run {
+                            failedCalls.append(policyID)
+                            self.detailedPoliciesProgress.failedIDs = failedCalls
+                        }
                     }
                 }
+            }
+            // Publish progress after each batch
+            await MainActor.run {
+                self.detailedPoliciesProgress.loaded = loadedCount
+                self.detailedPoliciesProgress.failedIDs = failedCalls
             }
             // small pause between batches to give the server breathing room
             try? await Task.sleep(nanoseconds: 50_000_000)
         }
 
         // On completion, record failures but mark detailed fetch as completed so callers don't retry infinitely
+        await MainActor.run {
+            self.detailedPoliciesProgress.loaded = loadedCount
+            self.detailedPoliciesProgress.failedIDs = failedCalls
+        }
         if !failedCalls.isEmpty {
             print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
             await MainActor.run {
@@ -1598,7 +1631,7 @@ print("DEBUG - status code is 200, response is:")
     
     
 //    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
-//        
+//
 //        print("Running deleteScriptAlt function - server is set as:\(server)")
 //
 //        let resourcePath = getURLFormat(data: (resourceType))
@@ -1611,7 +1644,7 @@ print("DEBUG - status code is 200, response is:")
 //            print("resourceType is set as:\(resourceType)")
 //            atSeparationLine()
 //            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
-//            
+//
 ////            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //            var request = URLRequest(url: url)
 //
@@ -1619,17 +1652,17 @@ print("DEBUG - status code is 200, response is:")
 //            request.setValue("application/xml", forHTTPHeaderField: "Accept")
 //            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
 //            request.httpMethod = "DELETE"
-//            
+//
 //            print("Request is:\(request)")
-//            
+//
 //            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //                  print("Running shared data task")
-//                        
+//
 //                if let data = data, let response = response {
 //                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 //                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 //                    print("deleteScript Status code is:\(statusCode)")
-//                    
+//
 //                } else {
 //                    print("No Response")
 //                }

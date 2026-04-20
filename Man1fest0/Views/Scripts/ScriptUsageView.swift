@@ -18,7 +18,9 @@ struct ScriptUsageView: View {
     @EnvironmentObject var policyController: PolicyBrain
     
     @State private var searchText = ""
-    @State private var unassignedFilter = ""
+    // Toggle to show failed-policy debug panel (click missing count to toggle)
+    @State private var showDetailedFetchDebug: Bool = false
+    
     @State var assignedScripts: [PolicyScripts] = []
     @State var assignedScriptsArray: [String] = []
     @State var assignedScriptsByNameDict: [String: String] = [:]
@@ -54,6 +56,49 @@ struct ScriptUsageView: View {
     @State var selection = Set<String>()
     @State var selectedKey: [String] = []
     @State var selectedValue: String = ""
+    // Filter text for the unassigned scripts list
+    @State var unassignedFilter: String = ""
+
+    // Small helper views to reduce type-checking complexity in large body
+    @ViewBuilder
+    private func allScriptRow(_ script: ScriptClassic) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "applescript")
+                .foregroundColor(.blue)
+            Text(script.name)
+                .lineLimit(1)
+            Spacer()
+            Text("#\(script.jamfId)")
+                .foregroundColor(.secondary)
+                .font(.caption)
+        }
+        .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private func assignedScriptRow(_ script: String, value: String) -> some View {
+        HStack {
+            Label(script, systemImage: "checkmark.seal")
+            Spacer()
+            Text(value)
+                .foregroundColor(.secondary)
+                .font(.caption)
+        }
+        .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private func unassignedScriptRow(_ script: String, value: String) -> some View {
+        HStack {
+            Label(script, systemImage: "xmark.circle")
+                .foregroundColor(.orange)
+            Spacer()
+            Text(value)
+                .foregroundColor(.secondary)
+                .font(.caption)
+        }
+        .padding(.vertical, 6)
+    }
 
     // Computed cross-platform background color for boxed headings
     private var sectionBoxBackground: Color {
@@ -66,14 +111,20 @@ struct ScriptUsageView: View {
         #endif
     }
 
-    // Policy fetch status text shown in the UI
+    // Policy fetch status text shown in the UI (driven by detailedPoliciesProgress)
     private var policyFetchStatusText: String {
         if networkController.isFetchingDetailedPolicies {
             return "Fetching detailed policies…"
-        } else if networkController.fetchedDetailedPolicies && networkController.retryFailedDetailedPolicyCalls.count == 0 {
+        }
+        let expected = networkController.detailedPoliciesProgress.expected
+        let loaded = networkController.detailedPoliciesProgress.loaded
+        let failed = networkController.detailedPoliciesProgress.failedIDs.count
+        if networkController.fetchedDetailedPolicies && failed == 0 {
             return "Detailed policies: Done"
-        } else if networkController.fetchedDetailedPolicies && networkController.retryFailedDetailedPolicyCalls.count > 0 {
-            return "Detailed policies: Failed (\(networkController.retryFailedDetailedPolicyCalls.count))"
+        } else if networkController.fetchedDetailedPolicies && failed > 0 {
+            return "Detailed policies: Failed (\(failed))"
+        } else if expected > 0 {
+            return "Detailed policies: \(loaded) / \(expected)"
         } else {
             return "Detailed policies: Idle"
         }
@@ -82,9 +133,11 @@ struct ScriptUsageView: View {
     private var policyFetchStatusColor: Color {
         if networkController.isFetchingDetailedPolicies {
             return .red
-        } else if networkController.fetchedDetailedPolicies && networkController.retryFailedDetailedPolicyCalls.isEmpty {
+        }
+        let failed = networkController.detailedPoliciesProgress.failedIDs.count
+        if networkController.fetchedDetailedPolicies && failed == 0 {
             return .green
-        } else if networkController.fetchedDetailedPolicies && !networkController.retryFailedDetailedPolicyCalls.isEmpty {
+        } else if networkController.fetchedDetailedPolicies && failed > 0 {
             return .blue
         } else {
             return .secondary
@@ -93,11 +146,10 @@ struct ScriptUsageView: View {
     
     // Computed property: are detailed policies fully downloaded?
     private var detailedPoliciesComplete: Bool {
-        // Some code paths populate `networkController.policies` instead of `allPoliciesConverted`; use the max expected count
-        let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
-        let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
-        // Treat as complete if the controller flag is set, if we have any detailed entries, or when expected==actual
-        return networkController.fetchedDetailedPolicies || actual > 0 || (expected > 0 && actual == expected)
+        let expected = networkController.detailedPoliciesProgress.expected
+        let loaded = networkController.detailedPoliciesProgress.loaded
+        // Treat as complete if the controller flag is set, if we have any detailed entries, or when expected==loaded
+        return networkController.fetchedDetailedPolicies || loaded > 0 || (expected > 0 && loaded == expected)
     }
 
     @State var totalAvailableHeight: CGFloat = 600
@@ -144,15 +196,74 @@ struct ScriptUsageView: View {
                     Text(policyFetchStatusText)
                         .font(.subheadline)
                         .foregroundColor(policyFetchStatusColor)
-                    // big count on its own line for quick visibility
-                    Text("\(networkController.allPoliciesDetailed.count)")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
+                    // show loaded / expected and make missing clickable to show failed IDs
+                    let expected = networkController.detailedPoliciesProgress.expected
+                    let loaded = networkController.detailedPoliciesProgress.loaded
+                    let missing = max(0, expected - loaded)
+                    HStack(spacing: 6) {
+                        if missing > 0 {
+                            Button(action: { showDetailedFetchDebug.toggle() }) {
+                                Text("\(loaded) / \(expected) (missing: \(missing))")
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                                    .underline()
+                            }
+                            .buttonStyle(.plain)
+                            .help("Click to show failed policy IDs and retry them")
+                        } else {
+                            Text("\(loaded) / \(expected)")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
 
                 Spacer()
             }
             .padding(.horizontal)
+
+            // When the user toggles the debug panel, show failed policy IDs (if any) and a retry action
+            if showDetailedFetchDebug {
+                VStack(alignment: .leading, spacing: 6) {
+                    if networkController.detailedPoliciesProgress.failedIDs.count > 0 {
+                        ForEach(networkController.detailedPoliciesProgress.failedIDs, id: \.self) { id in
+                            Text(id)
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                        }
+
+                        HStack { Spacer()
+                            Button(action: {
+                                Task {
+                                    progress.showExtendedProgress()
+                                    let failedIDs = networkController.detailedPoliciesProgress.failedIDs
+                                    let policiesToRetry = networkController.allPoliciesConverted.filter { p in
+                                        guard let pid = p.jamfId else { return false }
+                                        return failedIDs.contains(String(pid))
+                                    }
+                                    if !policiesToRetry.isEmpty {
+                                        do {
+                                            try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: policiesToRetry)
+                                        } catch {
+                                            print("Retry failed policies error: \(error)")
+                                        }
+                                    }
+                                    progress.endExtendedProgress()
+                                }
+                            }) {
+                                Text("Retry Failed")
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+                        }
+                    } else {
+                        Text("No failed policy IDs to show")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.horizontal)
+            }
 
             if networkController.scripts.count == 0 {
                 VStack(alignment: .center) {
@@ -184,17 +295,7 @@ struct ScriptUsageView: View {
 
                             List {
                                 ForEach(searchResults, id: \.self) { script in
-                                    HStack(spacing: 10) {
-                                        Image(systemName: "applescript")
-                                            .foregroundColor(.blue)
-                                        Text(script.name)
-                                            .lineLimit(1)
-                                        Spacer()
-                                        Text("#\(script.jamfId)")
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                    .padding(.vertical, 6)
+                                    allScriptRow(script)
                                 }
                             }
                             .listStyle(.inset)
@@ -243,14 +344,7 @@ struct ScriptUsageView: View {
                                 ForEach(assignedScriptsByNameDict.keys.sorted(), id: \.self) { script in
                                     // Use the local copy of the mapping to avoid complex expressions involving environment objects
                                     let scriptValue = assignedScriptsByNameDict[script] ?? ""
-                                    HStack {
-                                        Label(script, systemImage: "checkmark.seal")
-                                        Spacer()
-                                        Text(scriptValue)
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                    .padding(.vertical, 6)
+                                    assignedScriptRow(script, value: scriptValue)
                                 }
                             }
                             .listStyle(.inset)
@@ -314,15 +408,7 @@ struct ScriptUsageView: View {
                                 ForEach(unassignedSearchResults, id: \.self) { script in
                                     // Localize the lookup result to help the compiler type-check this view
                                     let scriptValue = allScriptsByNameDict[script] ?? ""
-                                    HStack {
-                                        Label(script, systemImage: "xmark.circle")
-                                            .foregroundColor(.orange)
-                                        Spacer()
-                                        Text(scriptValue)
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                    .padding(.vertical, 6)
+                                    unassignedScriptRow(script, value: scriptValue)
                                 }
                             }
                             .listStyle(.inset)
