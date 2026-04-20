@@ -33,6 +33,8 @@ struct PolicyActionsDetailTableView: View {
     @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
     @State private var selectedIDs = []
+    // Toggle to show failed-policy debug panel (click missing count to toggle)
+    @State private var showDetailedFetchDebug: Bool = false
     // policiesSelection mirrors selectedPolicyIDs (used by PoliciesActionScopeTab)
     @State private var policiesSelection = Set<Policy>()
     // Additional state required for scope controls (moved from PoliciesActionView)
@@ -85,13 +87,80 @@ struct PolicyActionsDetailTableView: View {
             // Header area
             LazyVGrid(columns: layout.fiveColumns, spacing: 5) {
                 VStack(alignment: .leading, spacing: 5) {
+                    // Compute expected/actual/missing for detailed policies
+                    let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
+                    let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
+                    let missing = max(0, expected - actual)
+                    
                     Text("Total Policies:\t\(networkController.allPoliciesConverted.count)")
                         .fontWeight(.bold)
-                    Text("Policies fetched:\t\(networkController.allPoliciesDetailed.count)")
-                        .fontWeight(.bold)
+                    
+                    // If there are missing items, make the label clickable to toggle the debug panel
+                    HStack(spacing: 0) {
+                        if missing > 0 {
+                            Button(action: { showDetailedFetchDebug.toggle() }) {
+                                Text("Policies fetched:\t\(actual) / \(expected) (missing: \(missing))")
+                                    .fontWeight(.bold)
+                                    .underline()
+                            }
+                            .buttonStyle(.plain)
+                            .help("Click to show failed policy IDs and retry them")
+                        } else {
+                            Text("Policies fetched:\t\(actual) / \(expected)")
+                                .fontWeight(.bold)
+                        }
+                    }
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal, 12)
+            }
+            
+            // Optional debug panel: when toggled, show failed policy IDs and a Retry button
+            if showDetailedFetchDebug {
+                VStack(alignment: .leading, spacing: 6) {
+                    if networkController.retryFailedDetailedPolicyCalls.isEmpty {
+                        Text("No failed detailed policy IDs to show")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else {
+                        ForEach(networkController.retryFailedDetailedPolicyCalls, id: \.self) { id in
+                            Text(id)
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                        }
+                        
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                Task {
+                                    progress.showExtendedProgress()
+                                    // Build list of Policy objects that match failed IDs
+                                    let failedIDs = networkController.retryFailedDetailedPolicyCalls
+                                    let policiesToRetry = networkController.allPoliciesConverted.filter { p in
+                                        guard let pid = p.jamfId else { return false }
+                                        return failedIDs.contains(String(pid))
+                                    }
+                                    if !policiesToRetry.isEmpty {
+                                        do {
+                                            try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: policiesToRetry)
+                                        } catch {
+                                            print("Retry failed policies error: \(error)")
+                                        }
+                                    }
+                                    progress.endExtendedProgress()
+                                }
+                            }) {
+                                Text("Retry Failed")
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+                        }
+                    }
+                }
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.red.opacity(0.06)))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.red.opacity(0.12)))
+                .padding(.bottom, 6)
             }
 
             // Table fixed at the top

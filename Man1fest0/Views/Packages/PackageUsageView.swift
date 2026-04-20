@@ -5,6 +5,9 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct PackageUsageView: View {
     
@@ -32,14 +35,57 @@ struct PackageUsageView: View {
     @State var selectedValue: String = ""
     
     @State var fetchedDetailedPolicies: Bool = false
+    // Manual override to force-enable Analyse Data (temporary, for debugging / network flakiness)
+    @State private var forceEnableAnalyse: Bool = false
 
     // Computed property: are detailed policies fully downloaded?
     private var detailedPoliciesComplete: Bool {
-        // Consider complete when the count of non-nil detailed entries equals the expected basic policy count.
-        // Some code paths populate `networkController.policies` (basic list) rather than `allPoliciesConverted`, so take the max of those counts.
         let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
         let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
-        return expected > 0 && actual == expected
+        // If controller flag is set, consider complete
+        if networkController.fetchedDetailedPolicies { return true }
+        // If we've downloaded at least one detailed policy, allow Analyse (same behavior as ScriptUsageView)
+        if actual > 0 { return true }
+        // Exact match
+        if expected > 0 && actual == expected { return true }
+        // Allow if only a small number missing (tolerance)
+        if expected > 0 && (expected - actual) <= detailedPoliciesTolerance { return true }
+        return false
+    }
+    
+    // Tolerance: allow Analyse to enable when the number of missing detailed policies is <= this threshold
+    private var detailedPoliciesTolerance: Int { 20 }
+    
+    // Helper: show downloaded / expected as string
+    private var detailedPoliciesProgressText: String {
+        let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
+        let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
+        if expected > 0 {
+            let missing = max(0, expected - actual)
+            return "\(actual) / \(expected) (missing: \(missing))"
+        } else {
+            return "\(actual)"
+        }
+    }
+    
+    // Debug visibility for detailed fetch diagnostics (toggleable)
+    @State private var showDetailedFetchDebug: Bool = false
+
+    private var detailedFetchDebugView: some View {
+        let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
+        let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
+        let missing = max(0, expected - actual)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack { Text("fetchedDetailedPolicies:"); Spacer(); Text(String(describing: networkController.fetchedDetailedPolicies)) }
+            HStack { Text("expected:"); Spacer(); Text(String(expected)) }
+            HStack { Text("actual (non-nil):"); Spacer(); Text(String(actual)) }
+            HStack { Text("missing:"); Spacer(); Text(String(missing)) }
+            HStack { Text("retryFailed count:"); Spacer(); Text(String(networkController.retryFailedDetailedPolicyCalls.count)) }
+            HStack { Text("detailedPoliciesComplete:"); Spacer(); Text(String(detailedPoliciesComplete)) }
+        }
+        .font(.caption2)
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.windowBackgroundColor)))
     }
     
     var body: some View {
@@ -121,6 +167,95 @@ struct PackageUsageView: View {
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.03)))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.04)))
+                .padding(.bottom, 6)
+
+                // Download status
+                HStack {
+                    if progress.showExtendedProgressView {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    } else {
+                        // compute expected/actual/missing locally so we can make the missing count interactive
+                        let expected = max(networkController.allPoliciesConverted.count, networkController.policies.count)
+                        let actual = networkController.allPoliciesDetailed.compactMap { $0 }.count
+                        let missing = max(0, expected - actual)
+
+                        VStack(alignment: .leading) {
+                            Text("Downloaded policies:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            HStack {
+                                if missing > 0 {
+                                    // clickable text toggles the debug panel listing failed IDs
+                                    Button(action: { showDetailedFetchDebug.toggle() }) {
+                                        Text("\(actual) / \(expected) (missing: \(missing))")
+                                            .fontWeight(.bold)
+                                            .underline()
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("Click to show failed policy IDs and retry them")
+                                } else {
+                                    Text("\(actual) / \(expected)")
+                                        .fontWeight(.bold)
+                                }
+                                Spacer()
+                            }
+                        }
+                        .padding(8)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.green.opacity(0.12)))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.green.opacity(0.04)))
+                        .padding(.bottom, 6)
+
+                        // When the user toggles the debug panel, show failed policy IDs (if any) and a retry action
+                        if showDetailedFetchDebug {
+                            if networkController.retryFailedDetailedPolicyCalls.count > 0 {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    ForEach(networkController.retryFailedDetailedPolicyCalls, id: \.self) { policyID in
+                                        Text(policyID)
+                                            .font(.footnote)
+                                            .foregroundColor(.red)
+                                    }
+                                    HStack { Spacer()
+                                        Button(action: {
+                                            Task {
+                                                progress.showExtendedProgress()
+                                                // Build list of Policy objects that match failed IDs and retry
+                                                let failedIDs = networkController.retryFailedDetailedPolicyCalls
+                                                let policiesToRetry = networkController.allPoliciesConverted.filter { p in
+                                                    guard let pid = p.jamfId else { return false }
+                                                    return failedIDs.contains(String(pid))
+                                                }
+                                                if !policiesToRetry.isEmpty {
+                                                    do {
+                                                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: policiesToRetry)
+                                                    } catch {
+                                                        print("Retry failed policies error: \(error)")
+                                                    }
+                                                }
+                                                progress.endExtendedProgress()
+                                            }
+                                        }) {
+                                            Text("Retry Failed")
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .tint(.red)
+                                    }
+                                }
+                                .padding(8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(Color.red.opacity(0.12)))
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.red.opacity(0.04)))
+                                .padding(.bottom, 6)
+                            } else {
+                                Text("No failed policy IDs to show")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                    .padding(.bottom, 6)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
                 .padding(.bottom, 6)
 
                 // If packages are still downloading show a simple notice
@@ -236,7 +371,15 @@ struct PackageUsageView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                     // Disable the button until all detailed policies have finished downloading
-                    .disabled(!detailedPoliciesComplete)
+                    .disabled(!(detailedPoliciesComplete || forceEnableAnalyse))
+
+                    // Small control to force-enable Analyse when network fetched is flaky
+                    Button(action: { forceEnableAnalyse.toggle() }) {
+                        Text(forceEnableAnalyse ? "Analyse forced" : "Force Analyse")
+                    }
+                    .buttonStyle(.bordered)
+                    .foregroundColor(forceEnableAnalyse ? .green : .primary)
+                    .help("Temporarily force-enable Analyse Data if downloads are mostly complete")
 
                     Button(action: {
                         networkController.allPoliciesDetailed.removeAll()
