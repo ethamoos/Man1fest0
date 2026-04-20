@@ -34,19 +34,10 @@ actor AsyncSemaphore {
 }
 
 @MainActor class NetBrain: ObservableObject {
-
+    
     // #########################################################################
     // Global Variables
     // #########################################################################
-    // Progress summary for detailed policies (single source of truth for views)
-    struct DetailedPoliciesProgress {
-        var expected: Int = 0
-        var loaded: Int = 0
-        var failedIDs: [String] = []
-    }
-
-    @Published var detailedPoliciesProgress = DetailedPoliciesProgress()
-
     let debug_enabled = false
     // #########################################################################
     //  Build identifiers
@@ -333,6 +324,10 @@ actor AsyncSemaphore {
     // under the key "policyFetchConcurrency" so the user can adjust it in preferences.
     @Published var policyFetchConcurrency: Int
     private var lastRequestDate: Date?
+    // Buffer to coalesce fetched policy details before updating view-backed collections
+    private var policyDetailsBuffer: [PolicyDetailed] = []
+    private var isPolicyDetailsFlushScheduled: Bool = false
+    private let policyDetailsFlushInterval: TimeInterval = 0.20 // 200ms
 
     init(minInterval: TimeInterval = 0.0) {
         // look for a persisted setting first
@@ -393,6 +388,23 @@ actor AsyncSemaphore {
         if hours > 0 { return String(format: "%dh %02dm %02ds", hours, mins, secs) }
         return String(format: "%dm %02ds", mins, secs)
     }
+
+    // Small helper to expose progress info to Views that expect
+    // `networkController.detailedPoliciesProgress.expected/loaded/failedIDs`.
+    struct DetailedPoliciesProgress {
+        var expected: Int
+        var loaded: Int
+        var failedIDs: [String]
+    }
+
+    // Computed property so Views can read progress without needing to access
+    // internal implementation details. This is intentionally synchronous and
+    // lightweight.
+    var detailedPoliciesProgress: DetailedPoliciesProgress {
+        return DetailedPoliciesProgress(expected: allPoliciesConverted.count,
+                                         loaded: allPoliciesDetailed.compactMap { $0 }.count,
+                                         failedIDs: retryFailedDetailedPolicyCalls)
+    }
     
     //    #################################################################################
     //    Functions
@@ -414,14 +426,19 @@ actor AsyncSemaphore {
             throw JamfAPIError.badResponseCode
         }
         
-        let decoder = JSONDecoder()
-        
-        self.allComputersBasic = try decoder.decode(ComputerBasic.self, from: data)
-        
-        
-        self.allComputersBasicDict = self.allComputersBasic.computers
-        
-        self.initialDataLoaded = true
+        // Decode JSON off the main actor to avoid doing heavy work during a UI layout pass
+        let decoded: ComputerBasic = try await Task.detached(priority: .userInitiated) {
+            let decoder = JSONDecoder()
+            return try decoder.decode(ComputerBasic.self, from: data)
+        }.value
+
+        // Assign published properties asynchronously on the main queue to ensure
+        // we don't mutate view-backed collections during an active layout pass.
+        DispatchQueue.main.async {
+            self.allComputersBasic = decoded
+            self.allComputersBasicDict = decoded.computers
+            self.initialDataLoaded = true
+        }
         
     }
     
@@ -805,7 +822,6 @@ print("DEBUG - status code is 200, response is:")
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
         
-        self.policyDetailed = decodedData
 
 //        if self.debug_enabled == true {
             separationLine()
@@ -813,8 +829,12 @@ print("DEBUG - status code is 200, response is:")
 //        print("Policy Trigger:\t\t\t\(self.policyDetailed?.general?.triggerOther ?? "")\n")
 
 //        }
-        //      On completion add policy to array of detailed policies
-        self.allPoliciesDetailed.insert(self.policyDetailed, at: 0)
+        self.policyDetailed = decodedData
+
+        // Buffer the fetched detail and schedule a coalesced flush to update the
+        // view-backed collection. This avoids frequent mutations during layout.
+        self.policyDetailsBuffer.append(decodedData)
+        self.scheduleFlushPolicyDetails()
       
     }
     
@@ -824,16 +844,7 @@ print("DEBUG - status code is 200, response is:")
             print("getAllPoliciesDetailed called while a fetch is already in progress; skipping")
             return
         }
-        await MainActor.run {
-            self.isFetchingDetailedPolicies = true
-            self.retryFailedDetailedPolicyCalls = []
-            // Initialize progress for the UI
-            self.detailedPoliciesProgress = DetailedPoliciesProgress(
-                expected: policies.filter { ($0.jamfId ?? 0) > 0 }.count,
-                loaded: 0,
-                failedIDs: []
-            )
-        }
+        await MainActor.run { self.isFetchingDetailedPolicies = true; self.retryFailedDetailedPolicyCalls = [] }
 
         // Ignore passed authToken and use managed token instead
         let validToken = try await getValidToken(server: server)
@@ -851,102 +862,95 @@ print("DEBUG - status code is 200, response is:")
         let concurrency = max(1, self.policyFetchConcurrency)
 
         var failedCalls: [String] = []
-        var loadedCount: Int = 0
 
-        // Process policies in batches sized by `concurrency` to bound concurrent network requests.
-        for start in stride(from: 0, to: validPolicies.count, by: concurrency) {
-            let end = Swift.min(start + concurrency, validPolicies.count)
-            let batch = Array(validPolicies[start..<end])
+        // Use an AsyncSemaphore to bound concurrent requests and a single TaskGroup to manage
+        // all the asynchronous fetch tasks. This approach ensures that increasing
+        // `policyFetchConcurrency` will allow more simultaneous requests.
+        let semaphore = AsyncSemaphore(value: concurrency)
 
-            await withTaskGroup(of: (String, Result<PolicyDetailed, Error>).self) { group in
-                for policy in batch {
-                    let serverCopy = server
-                    let tokenCopy = validToken
-                    let policyID = String(describing: policy.jamfId ?? 0)
-                    let userAgent = "\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))"
+        await withTaskGroup(of: (String, Result<PolicyDetailed, Error>).self) { group in
+            for policy in validPolicies {
+                let serverCopy = server
+                let tokenCopy = validToken
+                let policyID = String(describing: policy.jamfId ?? 0)
+                let userAgent = "\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))"
 
-                    group.addTask {
-                        // Respect global rate limiting via MainActor-coordinated timestamp
-                        let now = Date()
-                        let delayNeeded: TimeInterval = await MainActor.run { () -> TimeInterval in
-                            if let last = self.lastRequestDate {
-                                let elapsed = now.timeIntervalSince(last)
-                                return elapsed < self.policyRequestDelay ? (self.policyRequestDelay - elapsed) : 0
-                            }
-                            return 0
+                group.addTask {
+                    // Limit concurrency
+                    await semaphore.wait()
+                    defer { Task { await semaphore.signal() } }
+
+                    // Respect global rate limiting via MainActor-coordinated timestamp
+                    let now = Date()
+                    let delayNeeded: TimeInterval = await MainActor.run { () -> TimeInterval in
+                        if let last = self.lastRequestDate {
+                            let elapsed = now.timeIntervalSince(last)
+                            return elapsed < self.policyRequestDelay ? (self.policyRequestDelay - elapsed) : 0
                         }
-
-                        if delayNeeded > 0 {
-                            let human = await MainActor.run { self.formatDuration(delayNeeded) }
-                            let nextRunAt = Date().addingTimeInterval(delayNeeded)
-                            print("Throttling: sleeping for \(delayNeeded) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
-                            await MainActor.run { self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))" }
-                            try? await Task.sleep(nanoseconds: UInt64(delayNeeded * 1_000_000_000))
-                        }
-
-                        // Claim the timestamp before issuing the request so other tasks see it
-                        await MainActor.run { self.lastRequestDate = Date() }
-
-                        // Build URL and request locally (avoid MainActor-bound helpers)
-                        let jamfURLQuery = serverCopy + "/JSSResource/policies/id/" + policyID
-                        guard let url = URL(string: jamfURLQuery) else {
-                            return (policyID, .failure(JamfAPIError.badURL))
-                        }
-                        var request = URLRequest(url: url)
-                        request.httpMethod = "GET"
-                        request.setValue("Bearer \(tokenCopy)", forHTTPHeaderField: "Authorization")
-                        request.addValue(userAgent, forHTTPHeaderField: "User-Agent")
-                        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-                        do {
-                            let (data, response) = try await URLSession.shared.data(for: request)
-                            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                            guard status == 200 else {
-                                return (policyID, .failure(JamfAPIError.http(status)))
-                            }
-                            let decoder = JSONDecoder()
-                            let detailed = try decoder.decode(PoliciesDetailed.self, from: data).policy
-                            return (policyID, .success(detailed))
-                        } catch {
-                            return (policyID, .failure(error))
-                        }
+                        return 0
                     }
-                }
 
-                // Collect results for this batch
-                for await (policyID, result) in group {
-                    switch result {
-                    case .success(let detailed):
-                        // Insert onto MainActor-owned collection
-                        await MainActor.run {
-                            self.allPoliciesDetailed.insert(detailed, at: 0)
-                            loadedCount += 1
-                            self.detailedPoliciesProgress.loaded = loadedCount
+                    if delayNeeded > 0 {
+                        let human = await MainActor.run { self.formatDuration(delayNeeded) }
+                        let nextRunAt = Date().addingTimeInterval(delayNeeded)
+                        print("Throttling: sleeping for \(delayNeeded) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
+                        await MainActor.run { self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))" }
+                        try? await Task.sleep(nanoseconds: UInt64(delayNeeded * 1_000_000_000))
+                    }
+
+                    // Claim the timestamp before issuing the request so other tasks see it
+                    await MainActor.run { self.lastRequestDate = Date() }
+
+                    // Build URL and request locally (avoid MainActor-bound helpers)
+                    let jamfURLQuery = serverCopy + "/JSSResource/policies/id/" + policyID
+                    guard let url = URL(string: jamfURLQuery) else {
+                        return (policyID, .failure(JamfAPIError.badURL))
+                    }
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "GET"
+                    request.setValue("Bearer \(tokenCopy)", forHTTPHeaderField: "Authorization")
+                    request.addValue(userAgent, forHTTPHeaderField: "User-Agent")
+                    request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+                    do {
+                        let (data, response) = try await URLSession.shared.data(for: request)
+                        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                        guard status == 200 else {
+                            return (policyID, .failure(JamfAPIError.http(status)))
                         }
-                        print("Fetched policy detail for ID: \(policyID)")
-                    case .failure(let err):
-                        print("Error fetching detailed policy ID \(policyID): \(err)")
-                        await MainActor.run {
-                            failedCalls.append(policyID)
-                            self.detailedPoliciesProgress.failedIDs = failedCalls
-                        }
+                        let decoder = JSONDecoder()
+                        let detailed = try decoder.decode(PoliciesDetailed.self, from: data).policy
+                        return (policyID, .success(detailed))
+                    } catch {
+                        return (policyID, .failure(error))
                     }
                 }
             }
-            // Publish progress after each batch
-            await MainActor.run {
-                self.detailedPoliciesProgress.loaded = loadedCount
-                self.detailedPoliciesProgress.failedIDs = failedCalls
+
+            // Collect results as they complete; buffer successes to minimize UI layout churn
+            var successes: [PolicyDetailed] = []
+            for await (policyID, result) in group {
+                switch result {
+                case .success(let detailed):
+                    successes.append(detailed)
+                    print("Fetched policy detail for ID: \(policyID)")
+                case .failure(let err):
+                    print("Error fetching detailed policy ID \(policyID): \(err)")
+                    failedCalls.append(policyID)
+                }
             }
-            // small pause between batches to give the server breathing room
-            try? await Task.sleep(nanoseconds: 50_000_000)
+
+            // Insert buffered successes in one MainActor update to reduce layout thrash
+            if !successes.isEmpty {
+                // Append buffered successes to the coalescing buffer and schedule a flush
+                await MainActor.run {
+                    self.policyDetailsBuffer.append(contentsOf: successes)
+                    self.scheduleFlushPolicyDetails()
+                }
+            }
         }
 
         // On completion, record failures but mark detailed fetch as completed so callers don't retry infinitely
-        await MainActor.run {
-            self.detailedPoliciesProgress.loaded = loadedCount
-            self.detailedPoliciesProgress.failedIDs = failedCalls
-        }
         if !failedCalls.isEmpty {
             print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
             await MainActor.run {
@@ -961,6 +965,34 @@ print("DEBUG - status code is 200, response is:")
                 self.isFetchingDetailedPolicies = false
             }
         }
+    }
+
+    // Schedule a flush of buffered policy details to the published array. This
+    // coalesces multiple incoming items and flushes them at most once per
+    // `policyDetailsFlushInterval` to avoid layout thrash.
+    private func scheduleFlushPolicyDetails() {
+        guard !isPolicyDetailsFlushScheduled else { return }
+        isPolicyDetailsFlushScheduled = true
+        let interval = policyDetailsFlushInterval
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
+            Task { await self?.flushPolicyDetails() }
+        }
+    }
+
+    // Flush buffered policy details into `allPoliciesDetailed` in a single
+    // atomic update on the main thread.
+    @MainActor
+    private func flushPolicyDetails() {
+        guard !policyDetailsBuffer.isEmpty else { isPolicyDetailsFlushScheduled = false; return }
+        // Prepend buffered items while preserving order
+        let toInsertOptional = policyDetailsBuffer.map { Optional($0) }
+        var newArray: [PolicyDetailed?] = []
+        newArray.append(contentsOf: toInsertOptional.reversed())
+        newArray.append(contentsOf: self.allPoliciesDetailed)
+        self.allPoliciesDetailed = newArray
+        // Clear the buffer and reset the scheduled flag
+        self.policyDetailsBuffer.removeAll()
+        isPolicyDetailsFlushScheduled = false
     }
     //    #################################################################################
     //    FUNCTIONS
@@ -1631,7 +1663,7 @@ print("DEBUG - status code is 200, response is:")
     
     
 //    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
-//
+//        
 //        print("Running deleteScriptAlt function - server is set as:\(server)")
 //
 //        let resourcePath = getURLFormat(data: (resourceType))
@@ -1644,7 +1676,7 @@ print("DEBUG - status code is 200, response is:")
 //            print("resourceType is set as:\(resourceType)")
 //            atSeparationLine()
 //            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
-//
+//            
 ////            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //            var request = URLRequest(url: url)
 //
@@ -1652,17 +1684,17 @@ print("DEBUG - status code is 200, response is:")
 //            request.setValue("application/xml", forHTTPHeaderField: "Accept")
 //            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
 //            request.httpMethod = "DELETE"
-//
+//            
 //            print("Request is:\(request)")
-//
+//            
 //            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //                  print("Running shared data task")
-//
+//                        
 //                if let data = data, let response = response {
 //                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 //                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 //                    print("deleteScript Status code is:\(statusCode)")
-//
+//                    
 //                } else {
 //                    print("No Response")
 //                }
