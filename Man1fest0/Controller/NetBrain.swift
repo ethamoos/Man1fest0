@@ -1777,8 +1777,15 @@ print("DEBUG - status code is 200, response is:")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
         // send request and get data
+        if debug_enabled {
+            separationLine()
+            print("[DEBUG] Token request URL: \(url.absoluteString)")
+            print("[DEBUG] Token request Authorization header (first 16 chars): \(String(base64.prefix(16)))...")
+        }
+
         guard let (data, response) = try? await URLSession.shared.data(for: request)
         else {
+            if debug_enabled { print("[DEBUG] Token request failed: no response/data") }
             throw JamfAPIError.requestFailed
         }
         
@@ -1786,6 +1793,11 @@ print("DEBUG - status code is 200, response is:")
         self.tokenStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         
         if self.tokenStatusCode != 200 {
+            if debug_enabled {
+                let body = String(data: data, encoding: .utf8) ?? "<non-text response>"
+                print("[DEBUG] Token response status: \(self.tokenStatusCode)")
+                print("[DEBUG] Token response body: \(body)")
+            }
             
             //            self.currentResponseCode = authStatusCode
             
@@ -1830,6 +1842,11 @@ print("DEBUG - status code is 200, response is:")
             }
           
         } else {
+            if debug_enabled {
+                let body = String(data: data, encoding: .utf8) ?? "<non-text response>"
+                print("[DEBUG] Token response status: 200")
+                print("[DEBUG] Token response body: \(body)")
+            }
             print("Authentication success")
             self.status = "Connected"
         }
@@ -1844,7 +1861,13 @@ print("DEBUG - status code is 200, response is:")
         
         print("We have a token")
         self.status = "Connected"
+        // Persist the received token and mark the controller as connected so
+        // callers that invoke `getToken` directly (e.g. the ConnectSheet) don't
+        // need to call `connect()` separately.
+        self.auth = auth
         self.authToken = auth.token
+        self.connected = true
+        self.needsCredentials = false
         // Store expiration time and credentials for refresh
         self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
         self.refreshUsername = username

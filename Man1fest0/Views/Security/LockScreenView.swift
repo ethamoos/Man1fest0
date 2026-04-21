@@ -209,7 +209,7 @@ struct LockScreenView: View {
                 
                 // Unlock successful
                 await MainActor.run {
-                    inactivityMonitor.unlockApp()
+                    inactivityMonitor.unlockApp(password: password)
                 }
                 
                 } catch {
@@ -219,7 +219,9 @@ struct LockScreenView: View {
                     // not required.
                     if networkController.isTokenValid() {
                         await MainActor.run {
-                            inactivityMonitor.unlockApp()
+                            // No password was provided but we have a valid cached token;
+                            // pass a non-nil placeholder to indicate programmatic unlock.
+                            inactivityMonitor.unlockApp(password: "cached-token")
                         }
                         return
                     }
@@ -254,14 +256,14 @@ struct LockScreenView: View {
                 
                 // Unlock successful
                 await MainActor.run {
-                    inactivityMonitor.unlockApp()
+                    inactivityMonitor.unlockApp(password: keychainPassword)
                 }
                 
             } catch {
                 // Allow unlock if we still have a valid cached token
                 if networkController.isTokenValid() {
                     await MainActor.run {
-                        inactivityMonitor.unlockApp()
+                        inactivityMonitor.unlockApp(password: "cached-token")
                     }
                     return
                 }
