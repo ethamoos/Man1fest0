@@ -9,6 +9,7 @@ import SwiftUI
 
 struct UserDetailedView: View {
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var layout: Layout
     var userID: String
     var server: String
 
@@ -16,6 +17,47 @@ struct UserDetailedView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 if let user = networkController.userDetail {
+                    // Top action row: Open in Browser
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            // Build the JSSResource URL for the user and ask Layout to open/translate it
+//                            let uiAPIURL = server.trimmingCharacters(in: .whitespacesAndNewlines)
+//                            let apiURL = uiAPIURL.hasSuffix("/") ? uiAPIURL + "JSSResource/users/id/\(user.id)&o=r&side-tabs=General" : uiAPIURL + "/JSSResource/users/id/\(user.id)&o=r&side-tabs=General"
+//                            
+////                            let uiURL = "\(base)/OSXConfigurationProfiles.html?id=\(profileID)&o=r&side-tabs=General"
+//
+//                            print("Open in Browser - URL: \(apiURL)")
+//                            layout.openURL(urlString: apiURL, requestType: "users")
+                            
+                            
+                            let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                            var base = trimmedServer
+                            if base.hasSuffix("/") { base.removeLast() }
+                            // Construct a UI path using the API resource name; this mirrors the pattern used for scripts
+//                            let profileID = selection.jamfId ?? 0
+            
+                            let uiURL = "\(base)/users.html?id=\(user.id)&o=r"
+                            layout.openURL(urlString: uiURL)
+                            print("Open in Browser - URL: \(uiURL)")
+                            
+                            
+                            
+                            
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "safari")
+                                Text("Open in Browser")
+                            }
+                        }
+                        .help("Open this user in the Jamf web interface in your default browser.")
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .padding(.top, 6)
+                        Spacer()
+                    }
+                    .padding()
+
                     Text(user.name ?? "(no name)")
                         .font(.title)
                         .bold()
