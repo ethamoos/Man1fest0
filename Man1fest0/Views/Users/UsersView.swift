@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct UsersView: View {
-    
     @EnvironmentObject var networkController: NetBrain
 
     @State private var searchText: String = ""
@@ -17,7 +16,7 @@ struct UsersView: View {
     var body: some View {
         Group {
             if networkController.allUsers.count > 0 {
-                List(searchResults, id: \.id) { (user: UserSimple) in
+                List(searchResults) { (user: UserSimple) in
                     NavigationLink(destination: UserDetailedView(userID: String(describing: user.jamfId ?? 0), server: server)) {
                         HStack {
                             Image(systemName: "person")
@@ -26,7 +25,6 @@ struct UsersView: View {
                         .foregroundColor(.primary)
                     }
                 }
-                .navigationTitle("Jamf Users")
             } else {
                 VStack {
                     Text("No users loaded")
@@ -35,7 +33,6 @@ struct UsersView: View {
                             do {
                                 try await networkController.getAllUsers()
                             } catch {
-                                // networkController publishes the error; nothing more needed here
                                 print("getAllUsers failed: \(error)")
                             }
                         }
@@ -43,14 +40,19 @@ struct UsersView: View {
                 }
             }
         }
+        #if !os(macOS)
+        .searchable(text: $searchText)
+        #endif
+        .navigationTitle("Jamf Users")
         .alert(isPresented: $networkController.showErrorAlert) {
             Alert(title: Text(networkController.lastErrorTitle ?? "Error"), message: Text(networkController.lastErrorMessage ?? ""), dismissButton: .default(Text("OK")) )
         }
-        .onAppear() {
-            
+        .onAppear {
             Task {
                 do {
                     try await networkController.getAllUsers()
+                } catch {
+                    print("onAppear getAllUsers failed: \(error)")
                 }
             }
         }
@@ -61,7 +63,7 @@ struct UsersView: View {
             return networkController.allUsers
         } else {
             let lowered = searchText.lowercased()
-            return networkController.allUsers.filter { ( $0.name ?? "" ).lowercased().contains(lowered) }
+            return networkController.allUsers.filter { ($0.name ?? "").lowercased().contains(lowered) }
         }
     }
 }

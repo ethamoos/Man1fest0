@@ -1598,7 +1598,7 @@ print("DEBUG - status code is 200, response is:")
     
     
 //    func deleteScriptAlt(server: String,resourceType: ResourceType, itemID: String, authToken: String) {
-//        
+//
 //        print("Running deleteScriptAlt function - server is set as:\(server)")
 //
 //        let resourcePath = getURLFormat(data: (resourceType))
@@ -1611,7 +1611,7 @@ print("DEBUG - status code is 200, response is:")
 //            print("resourceType is set as:\(resourceType)")
 //            atSeparationLine()
 //            print("Running deleteScriptAlt function - resourceType is set as:\(resourceType)")
-//            
+//
 ////            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
 //            var request = URLRequest(url: url)
 //
@@ -1619,17 +1619,17 @@ print("DEBUG - status code is 200, response is:")
 //            request.setValue("application/xml", forHTTPHeaderField: "Accept")
 //            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
 //            request.httpMethod = "DELETE"
-//            
+//
 //            print("Request is:\(request)")
-//            
+//
 //            let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
 //                  print("Running shared data task")
-//                        
+//
 //                if let data = data, let response = response {
 //                    print("Data is:\(String(describing: String(data: data, encoding: .utf8) ?? "no data") )")
 //                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
 //                    print("deleteScript Status code is:\(statusCode)")
-//                    
+//
 //                } else {
 //                    print("No Response")
 //                }
@@ -1681,6 +1681,35 @@ print("DEBUG - status code is 200, response is:")
             }
             print("deleteGroup has finished successfully")
         }
+    }
+
+    // Delete a user by Jamf ID using the Classic API (JSSResource/users/id/<id>)
+    func deleteUser(server: String, resourceType: ResourceType = .account, itemID: String, authToken: String) async throws {
+        let resourcePath = "users"
+        guard let serverURL = URL(string: server) else {
+            throw JamfAPIError.badURL
+        }
+
+        let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemID)
+        separationLine()
+        print("Running deleteUser function - url is set as:\(url)")
+        var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "DELETE"
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        // Accept 200 or 204 as successful delete responses (some Jamf endpoints return 204)
+        guard statusCode == 200 || statusCode == 204 else {
+            print("deleteUser Status code is:\(statusCode)")
+            self.hasError = true
+            self.currentResponseCode = String(describing: statusCode)
+            throw JamfAPIError.http(statusCode)
+        }
+
+        print("deleteUser has finished successfully")
     }
     
 

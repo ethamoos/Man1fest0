@@ -22,14 +22,7 @@ struct UserDetailedView: View {
                         Spacer()
                         Button(action: {
                             // Build the JSSResource URL for the user and ask Layout to open/translate it
-//                            let uiAPIURL = server.trimmingCharacters(in: .whitespacesAndNewlines)
-//                            let apiURL = uiAPIURL.hasSuffix("/") ? uiAPIURL + "JSSResource/users/id/\(user.id)&o=r&side-tabs=General" : uiAPIURL + "/JSSResource/users/id/\(user.id)&o=r&side-tabs=General"
-//                            
-////                            let uiURL = "\(base)/OSXConfigurationProfiles.html?id=\(profileID)&o=r&side-tabs=General"
-//
-//                            print("Open in Browser - URL: \(apiURL)")
-//                            layout.openURL(urlString: apiURL, requestType: "users")
-                            
+
                             
                             let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
                             var base = trimmedServer
