@@ -54,6 +54,24 @@ class InactivityMonitor: ObservableObject {
         // This prevents the lock screen from appearing immediately on launch when
         // credentials may still be loaded from the keychain.
         // checkLockStatus()
+
+        // React to changes in the requirePasswordOnWake preference: if the user
+        // disables the requirement we should clear any active lock so the UI
+        // doesn't remain blocked after the preference change.
+        securitySettings.$requirePasswordOnWake
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] requires in
+                guard let self = self else { return }
+                if !requires {
+                    // If the user turned off password-on-wake, ensure the app is
+                    // unlocked and timers restarted.
+                    self.isLocked = false
+                    self.showLockScreen = false
+                    self.securitySettings.setLocked(false)
+                    self.resetInactivityTimer()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Public Methods

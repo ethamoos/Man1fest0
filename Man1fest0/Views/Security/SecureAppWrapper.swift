@@ -70,21 +70,23 @@ struct SecureAppWrapper<Content: View>: View {
                     }
                     Section(header: Text("Policy Fetch")) {
                         // Inlined Policy Delay controls
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(alignment: .top) {
-                                Text("Policy fetch delay (seconds)")
-                                Spacer()
-                                PolicyDelayInlineViewLocal()
-                                    .environmentObject(networkController)
-                                    .frame(maxWidth: 360)
-                            }
-
-                            HStack(alignment: .top) {
-                                Text("Policy fetch concurrency")
-                                Spacer()
-                                PolicyConcurrencyInlineViewLocal()
-                                    .environmentObject(networkController)
-                                    .frame(maxWidth: 260)
+                        LazyVGrid(columns: layout.threeColumnsAdaptive) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(alignment: .leading) {
+                                    Text("Policy fetch delay (seconds)")
+                                    //                                Spacer()
+                                    PolicyDelayInlineViewLocal()
+                                        .environmentObject(networkController)
+                                        .frame(maxWidth: 360)
+                                }
+                                
+                                HStack(alignment: .top) {
+                                    Text("Policy fetch concurrency")
+                                    //                                Spacer()
+                                    PolicyConcurrencyInlineViewLocal()
+                                        .environmentObject(networkController)
+                                        .frame(maxWidth: 260)
+                                }
                             }
                         }
                      }
