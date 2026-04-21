@@ -5837,30 +5837,54 @@ xml = """
     
     func getAllScripts() async throws {
         do {
-            print("Running getAllScripts")
+            print("Running getAllScripts (paginated)")
             // Ensure we have a valid token (refresh or fetch if needed)
             let validToken = try await getValidToken(server: server)
             // Assign to authToken in case getValidToken refreshed it
             self.authToken = validToken
 
-            // Use the API v1 scripts endpoint (page 0, page-size 500). RequestSender handles
-            // endpoints that start with "/api/" or "/" as full API paths.
-            let request = APIRequest<ScriptResults>(endpoint: "/api/v1/scripts?page=0&page-size=500", method: .get)
-            let decoded = try await requestSender.resultFor(apiRequest: request)
+            // Paginate through the API v1 scripts endpoint to load all scripts
+            var allResults: [Script] = []
+            let pageSize = 500
+            var page = 0
 
-            // decoded.results is [Script] (JamfObjects.Script)
-            self.allScriptsDetailed = decoded.results
+            while true {
+                let endpoint = "/api/v1/scripts?page=\(page)&page-size=\(pageSize)"
+                if debug_enabled { print("[DEBUG] Fetching scripts page=\(page) endpoint=\(endpoint)") }
+                let request = APIRequest<ScriptResults>(endpoint: endpoint, method: .get)
+                let decoded = try await requestSender.resultFor(apiRequest: request)
 
-            // Map to the lightweight ScriptClassic used elsewhere in the UI
-            self.scripts = decoded.results.map { s in
-                let jamfId = Int(s.id) ?? 0
-                return ScriptClassic(name: s.name, jamfId: jamfId)
+                let results = decoded.results
+                if results.isEmpty {
+                    if debug_enabled { print("[DEBUG] No results on page \(page); stopping") }
+                    break
+                }
+
+                allResults.append(contentsOf: results)
+
+                if results.count < pageSize {
+                    // last page reached
+                    break
+                }
+
+                page += 1
             }
 
-            // Mirror into the allScripts collection as a convenience for other views
-            self.allScripts = self.scripts
+            // Assign to published properties on the main actor
+            await MainActor.run {
+                self.allScriptsDetailed = allResults
 
-            print("Loaded \(scripts.count) scripts")
+                // Map to the lightweight ScriptClassic used elsewhere in the UI
+                self.scripts = allResults.map { s in
+                    let jamfId = Int(s.id) ?? 0
+                    return ScriptClassic(name: s.name, jamfId: jamfId)
+                }
+
+                // Mirror into the allScripts collection as a convenience for other views
+                self.allScripts = self.scripts
+            }
+
+            print("Loaded \(allResults.count) scripts across \(page + 1) page(s)")
         } catch {
             // Provide clearer diagnostics when script fetching fails
             separationLine()
