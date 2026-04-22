@@ -18,6 +18,7 @@ struct UsersActionView: View {
     @State private var showResultAlert = false
     @State private var resultAlertTitle = ""
     @State private var resultAlertMessage = ""
+    @State private var showDeleteConfirmation = false
 
     // Environment
     @EnvironmentObject var progress: Progress
@@ -73,11 +74,9 @@ struct UsersActionView: View {
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction || selection.isEmpty)
 
-                    // Delete selection
+                    // Delete selection (show confirmation first)
                     Button(action: {
-                        Task {
-                            await performBatchDelete()
-                        }
+                        showDeleteConfirmation = true
                     }) {
                         Label("Delete Selection", systemImage: "trash")
                     }
@@ -89,7 +88,7 @@ struct UsersActionView: View {
                 .padding(.horizontal)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
 
-                // Always-visible action bar: duplicate the important actions here so they're visible
+                // Secondary action bar
                 HStack(spacing: 10) {
                     Spacer()
 
@@ -125,9 +124,7 @@ struct UsersActionView: View {
                     .disabled(isPerformingAction || selection.isEmpty)
 
                     Button(action: {
-                        Task {
-                            await performBatchDelete()
-                        }
+                        showDeleteConfirmation = true
                     }) {
                         Label("Delete", systemImage: "trash")
                     }
@@ -138,130 +135,120 @@ struct UsersActionView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 6)
 
+                // Content area
                 if !networkController.allUsers.isEmpty {
                     NavigationView {
-#if os(macOS)
-                        // macOS: use the modern Table with columns and sorting
+    #if os(macOS)
                         Table(displayedUsers, selection: $selection, sortOrder: $sortOrder) {
-                            // Name column uses value-based key path for sorting
                             TableColumn("Name", value: \UserSimple.nameForSort) { user in
                                 HStack {
                                     Image(systemName: "person.crop.circle")
-                                        .foregroundColor(.accentColor)
                                     Text(user.name ?? "(no name)")
                                 }
                             }
-
-                            // Jamf ID column uses jamfIdForSort for numeric sorting
                             TableColumn("Jamf ID", value: \UserSimple.jamfIdForSort) { user in
                                 Text(user.jamfId.map { String($0) } ?? "—")
                                     .font(.system(.body, design: .monospaced))
                             }
                         }
                         .frame(minWidth: 400, minHeight: 300)
-#else
-                        // iOS / other: use selectable List with stable ids
-                        // Apply sortOrder to the list presentation on platforms without Table
+    #else
                         List(displayedUsers, id: \.id, selection: $selection) { user in
                             HStack {
                                 Image(systemName: "person.crop.circle")
-                                    .foregroundColor(.accentColor)
                                 VStack(alignment: .leading) {
                                     Text(user.name ?? "(no name)")
-                                    Text(user.jamfId.map { "ID: \($0)" } ?? "ID: —")
+                                    Text(user.jamfId.map { "ID: \\($0)" } ?? "ID: —")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                             }
                             .padding(.vertical, 4)
                         }
-#endif
-                        Text("\(networkController.allUsers.count) total users")
+    #endif
                     }
                     .navigationViewStyle(DefaultNavigationViewStyle())
-#if os(macOS)
-                    // Make actions available in the macOS window toolbar so they're always visible
+    #if os(macOS)
                     .toolbar {
                         ToolbarItemGroup {
                             Button(action: {
                                 progress.showProgress()
                                 progress.waitForABit()
                                 Task {
-                                    do {
-                                        try await networkController.getAllUsers()
-                                    } catch {
-                                        networkController.publishError(error, title: "Failed to refresh users")
-                                    }
-                            }
-                        }) {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isPerformingAction)
-
-                        Button(action: {
-                            guard !selection.isEmpty else { return }
-                            progress.showProgress()
-                            progress.waitForABit()
-                            for id in selection {
-                                if id.hasPrefix("jamf-"), let jid = id.split(separator: "-").last {
-                                    layout.openURL(urlString: "\(server)/users.html?id=\(jid)&o=r", requestType: "users")
+                                    do { try await networkController.getAllUsers() } catch { networkController.publishError(error, title: "Failed to refresh users") }
                                 }
+                            }) {
+                                Label("Refresh", systemImage: "arrow.clockwise")
                             }
-                        }) {
-                            Label("Open in Browser", systemImage: "safari")
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isPerformingAction || selection.isEmpty)
 
-                        Button(action: {
-                            Task {
-                                await performBatchDelete()
+                            Button(action: {
+                                guard !selection.isEmpty else { return }
+                                progress.showProgress()
+                                progress.waitForABit()
+                                for id in selection {
+                                    if id.hasPrefix("jamf-"), let jid = id.split(separator: "-").last {
+                                        layout.openURL(urlString: "\(server)/users.html?id=\(jid)&o=r", requestType: "users")
+                                    }
+                                }
+                            }) {
+                                Label("Open in Browser", systemImage: "safari")
                             }
-                        }) {
-                            Label("Delete", systemImage: "trash")
+
+                            Button(action: {
+                                showDeleteConfirmation = true
+                            }) {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
-                        .buttonStyle(.bordered)
-                        .tint(.red)
-                        .disabled(isPerformingAction || selection.isEmpty)
                     }
-                }
-#endif
+    #endif
 
-                Text("\(networkController.allUsers.count) total users")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .padding(.top, 6)
-            } else {
-                ProgressView {
-                    Text("Loading users")
-                        .font(.title)
-                        .progressViewStyle(.horizontal)
+                    // footer
+                    Text("\(networkController.allUsers.count) total users")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 6)
+                } else {
+                    ProgressView {
+                        Text("Loading users")
+                            .font(.title)
+                            .progressViewStyle(.horizontal)
+                    }
+                    .padding()
+                    Spacer()
                 }
-                .padding()
-                Spacer()
+
+                // Overlay spinner while performing actions
+                if isPerformingAction {
+                    Color.black.opacity(0.25)
+                        .ignoresSafeArea()
+                    VStack(spacing: 12) {
+                        ProgressView("Performing action…")
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.2)
+                        Text("Working...")
+                            .foregroundColor(.white)
+                            .font(.headline)
+                    }
+                    .padding(20)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.6)))
+                }
             }
+            .padding()
         }
         .alert(isPresented: $showResultAlert) {
             Alert(title: Text(resultAlertTitle), message: Text(resultAlertMessage), dismissButton: .default(Text("OK")))
         }
-
-        // Semi-opaque overlay with spinner while performing actions
-        if isPerformingAction {
-            Color.black.opacity(0.25)
-                .ignoresSafeArea()
-            VStack(spacing: 12) {
-                ProgressView("Performing action…")
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    .scaleEffect(1.2)
-                Text("Working...")
-                    .foregroundColor(.white)
-                    .font(.headline)
-            }
-            .padding(20)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.6)))
+        .alert(isPresented: $showDeleteConfirmation) {
+            Alert(
+                title: Text("Confirm Delete"),
+                message: Text("Are you sure you want to delete the selected user(s)? This action cannot be undone."),
+                primaryButton: .destructive(Text("Delete")) {
+                    Task { await performBatchDelete() }
+                },
+                secondaryButton: .cancel()
+            )
         }
-        .padding()
         .onAppear {
             Task {
                 if networkController.allUsers.isEmpty {
@@ -273,7 +260,6 @@ struct UsersActionView: View {
 
     // Combined filtering + sorting helper used by both Table (macOS) and List (other platforms)
     var displayedUsers: [UserSimple] {
-        // Apply search filter first
         var list: [UserSimple]
         if searchText.isEmpty {
             list = networkController.allUsers
@@ -281,12 +267,9 @@ struct UsersActionView: View {
             list = networkController.allUsers.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
         }
 
-        // Apply primary sort from sortOrder if present
         if !sortOrder.isEmpty {
-            // Use the standard sorted(using:) which understands KeyPathComparator
             list = list.sorted(using: sortOrder)
         } else {
-            // Default stable sort by name
             list.sort { $0.nameForSort < $1.nameForSort }
         }
 
@@ -295,7 +278,6 @@ struct UsersActionView: View {
 
     // Perform batch delete with confirmation and progress
     @MainActor func performBatchDelete() async {
-        // Double-check selection
         guard !selection.isEmpty else { return }
 
         isPerformingAction = true
@@ -306,11 +288,8 @@ struct UsersActionView: View {
         var failures = 0
         var failureDetails: [String] = []
 
-        // Convert selected stable ids to jamf numeric ids
         let selectedJamfIDs: [String] = selection.compactMap { stable in
-            if stable.hasPrefix("jamf-") {
-                return String(stable.split(separator: "-").last ?? "")
-            }
+            if stable.hasPrefix("jamf-") { return String(stable.split(separator: "-").last ?? "") }
             return nil
         }
 
@@ -320,48 +299,32 @@ struct UsersActionView: View {
                 successes += 1
             } catch let jamfErr as JamfAPIError {
                 failures += 1
-                // Provide user-friendly messages for common HTTP status codes
                 switch jamfErr {
                 case .http(let code):
-                    print("Failed to delete user \(jid): http(\(code))")
-                    if code == 403 {
-                        failureDetails.append("\(jid): Not authorized (403)")
-                    } else if code == 404 {
-                        failureDetails.append("\(jid): Not found (404) — user may already be removed or you may not have permission")
-                    } else {
-                        failureDetails.append("\(jid): HTTP \(code)")
-                    }
+                    if code == 403 { failureDetails.append("\(jid): Not authorized (403)") }
+                    else if code == 404 { failureDetails.append("\(jid): Not found (404)") }
+                    else { failureDetails.append("\(jid): HTTP \(code)") }
                 default:
-                    print("Failed to delete user \(jid): \(jamfErr)")
                     failureDetails.append("\(jid): \(String(describing: jamfErr))")
                 }
             } catch {
                 failures += 1
-                print("Failed to delete user \(jid): \(error)")
                 failureDetails.append("\(jid): \(error.localizedDescription)")
             }
         }
 
-        // Refresh users list after deletions
-        do {
-            try await networkController.getAllUsers()
-        } catch {
-            print("Failed to refresh users after delete: \(error)")
-        }
+        do { try await networkController.getAllUsers() } catch { }
 
         isPerformingAction = false
         progress.endProgress()
 
-        // Clear selection
         selection.removeAll()
 
-        // Build result alert
         if failures == 0 {
             resultAlertTitle = "Delete completed"
             resultAlertMessage = "Deleted \(successes) user(s)."
         } else {
             resultAlertTitle = "Delete completed with errors"
-            // Summarize failures (limit to first 10 to avoid huge alerts)
             let shown = failureDetails.prefix(10).joined(separator: "\n")
             let more = failureDetails.count > 10 ? "\n...and \(failureDetails.count - 10) more" : ""
             resultAlertMessage = "Deleted \(successes) user(s); \(failures) failed.\n\nDetails:\n\(shown)\(more)"

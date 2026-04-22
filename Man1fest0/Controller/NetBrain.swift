@@ -1755,7 +1755,7 @@ print("DEBUG - status code is 200, response is:")
 
     // Delete a user by Jamf ID using the Classic API (JSSResource/users/id/<id>)
     func deleteUser(server: String, resourceType: ResourceType = .account, itemID: String, authToken: String) async throws {
-        let resourcePath = "users"
+        let resourcePath = "users/id"
         guard let serverURL = URL(string: server) else {
             throw JamfAPIError.badURL
         }
