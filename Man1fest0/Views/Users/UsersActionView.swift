@@ -3,27 +3,27 @@ import SwiftUI
 struct UsersActionView: View {
     @State var server: String
     @State private var searchText = ""
-
+    
     // Selection set of UserSimple ids (stable String ids)
     @State private var selection = Set<String>()
-
+    
     // Sorting - use the stable String id for sorting to avoid optional keypath complexity
     @State private var sortOrder: [KeyPathComparator<UserSimple>] = [
         // Default sort by name (ascending)
         .init(\UserSimple.nameForSort, order: .forward)
     ]
-
+    
     // UI state
     @State private var isPerformingAction = false
     @State private var showResultAlert = false
     @State private var resultAlertTitle = ""
     @State private var resultAlertMessage = ""
-
+    
     // Environment
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var layout: Layout
-
+    
     var body: some View {
         ZStack {
             VStack(alignment: .leading) {
@@ -38,7 +38,7 @@ struct UsersActionView: View {
                             .foregroundColor(.secondary)
                     }
                     Spacer()
-
+                    
                     // Refresh
                     Button(action: {
                         progress.showProgress()
@@ -55,7 +55,7 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction)
-
+                    
                     // Open selected in Jamf Web UI
                     Button(action: {
                         guard !selection.isEmpty else { return }
@@ -72,7 +72,7 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction || selection.isEmpty)
-
+                    
                     // Delete selection
                     Button(action: {
                         Task {
@@ -88,11 +88,11 @@ struct UsersActionView: View {
                 .padding(.bottom, 6)
                 .padding(.horizontal)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
-
+                
                 // Always-visible action bar: duplicate the important actions here so they're visible
                 HStack(spacing: 10) {
                     Spacer()
-
+                    
                     Button(action: {
                         progress.showProgress()
                         progress.waitForABit()
@@ -108,7 +108,7 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction)
-
+                    
                     Button(action: {
                         guard !selection.isEmpty else { return }
                         progress.showProgress()
@@ -123,7 +123,7 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction || selection.isEmpty)
-
+                    
                     Button(action: {
                         Task {
                             await performBatchDelete()
@@ -137,7 +137,7 @@ struct UsersActionView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 6)
-
+                
                 if !networkController.allUsers.isEmpty {
                     NavigationView {
 #if os(macOS)
@@ -151,7 +151,7 @@ struct UsersActionView: View {
                                     Text(user.name ?? "(no name)")
                                 }
                             }
-
+                            
                             // Jamf ID column uses jamfIdForSort for numeric sorting
                             TableColumn("Jamf ID", value: \UserSimple.jamfIdForSort) { user in
                                 Text(user.jamfId.map { String($0) } ?? "—")
@@ -192,75 +192,76 @@ struct UsersActionView: View {
                                     } catch {
                                         networkController.publishError(error, title: "Failed to refresh users")
                                     }
-                            }
-                        }) {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isPerformingAction)
-
-                        Button(action: {
-                            guard !selection.isEmpty else { return }
-                            progress.showProgress()
-                            progress.waitForABit()
-                            for id in selection {
-                                if id.hasPrefix("jamf-"), let jid = id.split(separator: "-").last {
-                                    layout.openURL(urlString: "\(server)/users.html?id=\(jid)&o=r", requestType: "users")
                                 }
+                            }) {
+                                Label("Refresh", systemImage: "arrow.clockwise")
                             }
-                        }) {
-                            Label("Open in Browser", systemImage: "safari")
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isPerformingAction || selection.isEmpty)
-
-                        Button(action: {
-                            Task {
-                                await performBatchDelete()
+                            .buttonStyle(.bordered)
+                            .disabled(isPerformingAction)
+                            
+                            Button(action: {
+                                guard !selection.isEmpty else { return }
+                                progress.showProgress()
+                                progress.waitForABit()
+                                for id in selection {
+                                    if id.hasPrefix("jamf-"), let jid = id.split(separator: "-").last {
+                                        layout.openURL(urlString: "\(server)/users.html?id=\(jid)&o=r", requestType: "users")
+                                    }
+                                }
+                            }) {
+                                Label("Open in Browser", systemImage: "safari")
                             }
-                        }) {
-                            Label("Delete", systemImage: "trash")
+                            .buttonStyle(.bordered)
+                            .disabled(isPerformingAction || selection.isEmpty)
+                            
+                            Button(action: {
+                                Task {
+                                    await performBatchDelete()
+                                }
+                            }) {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+                            .disabled(isPerformingAction || selection.isEmpty)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(.red)
-                        .disabled(isPerformingAction || selection.isEmpty)
                     }
-                }
 #endif
-
-                Text("\(networkController.allUsers.count) total users")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .padding(.top, 6)
-            } else {
-                ProgressView {
-                    Text("Loading users")
-                        .font(.title)
-                        .progressViewStyle(.horizontal)
+                    
+                    Text("\(networkController.allUsers.count) total users")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 6)
+                } else {
+                    ProgressView {
+                        Text("Loading users")
+                            .font(.title)
+                            .progressViewStyle(.horizontal)
+                    }
+                    .padding()
+                    Spacer()
                 }
-                .padding()
-                Spacer()
             }
-        }
-        .alert(isPresented: $showResultAlert) {
-            Alert(title: Text(resultAlertTitle), message: Text(resultAlertMessage), dismissButton: .default(Text("OK")))
-        }
-
-        // Semi-opaque overlay with spinner while performing actions
-        if isPerformingAction {
-            Color.black.opacity(0.25)
-                .ignoresSafeArea()
-            VStack(spacing: 12) {
-                ProgressView("Performing action…")
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    .scaleEffect(1.2)
-                Text("Working...")
-                    .foregroundColor(.white)
-                    .font(.headline)
+            .alert(isPresented: $showResultAlert) {
+                Alert(title: Text(resultAlertTitle), message: Text(resultAlertMessage), dismissButton: .default(Text("OK")))
             }
-            .padding(20)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.6)))
-        }
+            
+            // Semi-opaque overlay with spinner while performing actions
+            if isPerformingAction {
+                Color.black.opacity(0.25)
+                    .ignoresSafeArea()
+                VStack(spacing: 12) {
+                    ProgressView("Performing action…")
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.2)
+                    Text("Working...")
+                        .foregroundColor(.white)
+                        .font(.headline)
+                }
+                .padding(20)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.6)))
+            }
+        } // end ZStack
         .padding()
         .onAppear {
             Task {
@@ -269,7 +270,7 @@ struct UsersActionView: View {
                 }
             }
         }
-    }
+    } // end body
 
     // Combined filtering + sorting helper used by both Table (macOS) and List (other platforms)
     var displayedUsers: [UserSimple] {
@@ -280,7 +281,7 @@ struct UsersActionView: View {
         } else {
             list = networkController.allUsers.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
         }
-
+        
         // Apply primary sort from sortOrder if present
         if !sortOrder.isEmpty {
             // Use the standard sorted(using:) which understands KeyPathComparator
@@ -289,23 +290,23 @@ struct UsersActionView: View {
             // Default stable sort by name
             list.sort { $0.nameForSort < $1.nameForSort }
         }
-
+        
         return list
     }
-
+    
     // Perform batch delete with confirmation and progress
     @MainActor func performBatchDelete() async {
         // Double-check selection
         guard !selection.isEmpty else { return }
-
+        
         isPerformingAction = true
         progress.showProgress()
         progress.waitForABit()
-
+        
         var successes = 0
         var failures = 0
         var failureDetails: [String] = []
-
+        
         // Convert selected stable ids to jamf numeric ids
         let selectedJamfIDs: [String] = selection.compactMap { stable in
             if stable.hasPrefix("jamf-") {
@@ -313,7 +314,7 @@ struct UsersActionView: View {
             }
             return nil
         }
-
+        
         for jid in selectedJamfIDs {
             do {
                 try await networkController.deleteUser(server: server, itemID: jid, authToken: networkController.authToken)
@@ -341,20 +342,20 @@ struct UsersActionView: View {
                 failureDetails.append("\(jid): \(error.localizedDescription)")
             }
         }
-
+        
         // Refresh users list after deletions
         do {
             try await networkController.getAllUsers()
         } catch {
             print("Failed to refresh users after delete: \(error)")
         }
-
+        
         isPerformingAction = false
         progress.endProgress()
-
+        
         // Clear selection
         selection.removeAll()
-
+        
         // Build result alert
         if failures == 0 {
             resultAlertTitle = "Delete completed"
