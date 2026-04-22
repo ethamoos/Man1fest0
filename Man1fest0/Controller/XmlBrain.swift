@@ -1047,34 +1047,39 @@ class XmlBrain: ObservableObject {
     
     
     func createScript(name: String, category: String, filename: String, info: String, notes: String, priority: String, parameter4: String, parameter5: String, parameter6: String, parameter7: String, parameter8: String, parameter9: String,parameter10: String,parameter11: String, os_requirements: String,script_contents: String,script_contents_encoded: String,scriptID: String, server: String, authToken: String) {
-        
+
         print("Running createScript")
         print("Script ID is:\(scriptID)")
         print("Server is:\(server)")
-        
-        let parameters = "<script>\n\t<name>\(name)</name>\n\t<category>\(category)</category>\n\t<filename>\(filename)</filename>\n\t<info>\(info)</info>\n\t<notes>\(notes)</notes>\n\t<priority>\(priority)</priority>\n\t<parameters>\n\t\t<parameter4>\(parameter4)</parameter4>\n\t\t<parameter5>\(parameter5)</parameter5>\n\t\t<parameter6>\(parameter6)</parameter6>\n\t\t<parameter7>\(parameter7)</parameter7>\n\t\t<parameter8>\(parameter8)</parameter8>\n\t\t<parameter9>\(parameter9)</parameter9>\n\t\t<parameter10>\(parameter10)</parameter10>\n\t\t<parameter11>\(parameter11)</parameter11>\n\t</parameters>\n\t<os_requirements>\(os_requirements)</os_requirements>\n\t<script_contents>\(script_contents)</script_contents>\n\t<script_contents_encoded>\(script_contents_encoded)</script_contents_encoded>\n</script>"
-        
+
+        // Wrap script contents in CDATA to avoid XML parsing errors caused by special characters
+        // Also ensure any occurrence of the CDATA terminator inside the script is safely handled
+        // Use the common safe replacement pattern used elsewhere to split the terminator across a nested CDATA
+        // The Jamf API accepts CDATA-wrapped script contents. Replace with standard safe sequence used elsewhere in the project
+        let safeScriptContents = "<![CDATA[" + script_contents.replacingOccurrences(of: "]]>", with: "]] ]]>" ) + "]]>"
+        let parameters = "<script>\n\t<name>\(name)</name>\n\t<category>\(category)</category>\n\t<filename>\(filename)</filename>\n\t<info>\(info)</info>\n\t<notes>\(notes)</notes>\n\t<priority>\(priority)</priority>\n\t<parameters>\n\t\t<parameter4>\(parameter4)</parameter4>\n\t\t<parameter5>\(parameter5)</parameter5>\n\t\t<parameter6>\(parameter6)</parameter6>\n\t\t<parameter7>\(parameter7)</parameter7>\n\t\t<parameter8>\(parameter8)</parameter8>\n\t\t<parameter9>\(parameter9)</parameter9>\n\t\t<parameter10>\(parameter10)</parameter10>\n\t\t<parameter11>\(parameter11)</parameter11>\n\t</parameters>\n\t<os_requirements>\(os_requirements)</os_requirements>\n\t<script_contents>\(safeScriptContents)</script_contents>\n\t<script_contents_encoded>\(script_contents_encoded)</script_contents_encoded>\n</script>"
+
         let postData = parameters.data(using: .utf8)
-        
+
         //                let scriptIdString = String(describing: scriptID )
-        
+
         let jamfURLQuery = server + "/JSSResource/scripts/id/" + "\(scriptID)"
-        
+
         let url = URL(string: jamfURLQuery)!
-        
+
         var request = URLRequest(url: url)
-        
+
         print("jamfURLQuery is:\(jamfURLQuery)")
-        
+
         print("Paramameters are set as:\(parameters)")
         print("Paramameters are set as:\(parameters)")
-        
+
         request.addValue("application/xml", forHTTPHeaderField: "Accept")
         request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.httpMethod = "POST"
         request.httpBody = postData
-        
+
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data else {
                 print(String(describing: error))
