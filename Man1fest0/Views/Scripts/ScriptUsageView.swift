@@ -204,16 +204,16 @@ struct ScriptUsageView: View {
                         if missing > 0 {
                             Button(action: { showDetailedFetchDebug.toggle() }) {
                                 Text("\(loaded) / \(expected) (missing: \(missing))")
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                                    .underline()
+//                                    .font(.headline)
+//                                    .foregroundColor(.secondary)
+//                                    .underline()
                             }
                             .buttonStyle(.plain)
                             .help("Click to show failed policy IDs and retry them")
                         } else {
                             Text("\(loaded) / \(expected)")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
+//                                .font(.headline)
+//                                .foregroundColor(.secondary)
                         }
                     }
                 }

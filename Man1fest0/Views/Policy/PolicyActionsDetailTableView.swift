@@ -49,7 +49,6 @@ struct PolicyActionsDetailTableView: View {
     // explicit tab selection for the detail TabView
     @State private var selectedDetailTab: Int = 0
 
-    
     //  ########################################################################################
     //  SELECTIONS
     //  ########################################################################################
@@ -91,26 +90,10 @@ struct PolicyActionsDetailTableView: View {
             let missing = max(0, expected - actual)
             LazyVGrid(columns: layout.fiveColumns, spacing: 5) {
                 VStack(alignment: .leading, spacing: 5) {
-                
                     
                     Text("Total Policies:\t\(networkController.allPoliciesConverted.count)")
                         .fontWeight(.bold)
-                    
                     // If there are missing items, make the label clickable to toggle the debug panel
-//                    HStack(spacing: 0) {
-//                        if missing > 0 {
-//                            Button(action: { showDetailedFetchDebug.toggle() }) {
-//                                Text("Policies fetched:\t\(actual) / \(expected) (missing: \(missing))")
-//                                    .fontWeight(.bold)
-//                                    .underline()
-//                            }
-//                            .buttonStyle(.plain)
-//                            .help("Click to show failed policy IDs and retry them")
-//                        } else {
-//                            Text("Policies fetched:\t\(actual) / \(expected)")
-//                                .fontWeight(.bold)
-//                        }
-//                    }
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal, 12)
@@ -124,14 +107,14 @@ struct PolicyActionsDetailTableView: View {
                             // clickable text toggles the debug panel listing failed IDs
                             Button(action: { showDetailedFetchDebug.toggle() }) {
                                 Text("\(actual) / \(expected) (missing: \(missing))")
-                                    .fontWeight(.bold)
-                                    .underline()
+//                                    .fontWeight(.bold)
+//                                    .underline()
                             }
                             .buttonStyle(.plain)
                             .help("Click to show failed policy IDs and retry them")
                         } else {
                             Text("\(actual) / \(expected)")
-                                .fontWeight(.bold)
+//                                .fontWeight(.bold)
                         }
                         Spacer()
                     }
