@@ -317,6 +317,7 @@
 			children = (
 				A87260E02C99793A005A5562 /* Shared */,
 				E477727D2B5B20F0009FC571 /* Development */,
+				A8C1E2612EC3AB6800DEDBF8 /* Breakout.swift */,
 				E45E13262C53B22F007C175F /* ContentView.swift */,
 				E45E13282C53B27F007C175F /* ConnectSheet.swift */,
 				E45E132A2C53B2CA007C175F /* OptionsView.swift */,
@@ -451,7 +452,6 @@
 		E477727D2B5B20F0009FC571 /* Development */ = {
 			isa = PBXGroup;
 			children = (
-				A8C1E2612EC3AB6800DEDBF8 /* Breakout.swift */,
 				A8EC41112B0277B500496EC2 /* TestView.swift */,
 				E433D9DD2B58488C005727E1 /* TestOptionsView.swift */,
 				A8B276802AD733700016CEE2 /* DownloadsView.swift */,
@@ -918,7 +918,7 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.69.1;
+				CURRENT_PROJECT_VERSION = 1.70.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -944,7 +944,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.69;
+				MARKETING_VERSION = 1.70;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -965,7 +965,7 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.69.1;
+				CURRENT_PROJECT_VERSION = 1.70.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -991,7 +991,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
-				MARKETING_VERSION = 1.69;
+				MARKETING_VERSION = 1.70;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ethamoos.man1fest0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

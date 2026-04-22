@@ -298,11 +298,13 @@ struct OptionsView: View {
                                 //  Users
                                 //  ###########################################################################
                                 
-                                NavigationLink(destination: UsersView(server: server )) {
-                                    Text("Users")
-                                }     
-                                NavigationLink(destination: UsersActionView(server: server )) {
-                                    Text("User Actions")
+                                DisclosureGroup("Users") {
+                                    NavigationLink(destination: UsersView(server: server )) {
+                                        Text("Users")
+                                    }
+                                    NavigationLink(destination: UsersActionView(server: server )) {
+                                        Text("User Actions")
+                                    }
                                 }
                             }
                         }

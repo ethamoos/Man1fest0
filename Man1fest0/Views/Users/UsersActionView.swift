@@ -3,28 +3,32 @@ import SwiftUI
 struct UsersActionView: View {
     @State var server: String
     @State private var searchText = ""
-
+    
     // Selection set of UserSimple ids (stable String ids)
     @State private var selection = Set<String>()
-
+    
     // Sorting - use the stable String id for sorting to avoid optional keypath complexity
     @State private var sortOrder: [KeyPathComparator<UserSimple>] = [
         // Default sort by name (ascending)
         .init(\UserSimple.nameForSort, order: .forward)
     ]
-
+    
     // UI state
     @State private var isPerformingAction = false
     @State private var showResultAlert = false
     @State private var resultAlertTitle = ""
     @State private var resultAlertMessage = ""
+// <<<<<<< InProgEnhancedUsers
     @State private var showDeleteConfirmation = false
 
+// =======
+    
+// >>>>>>> main
     // Environment
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var layout: Layout
-
+    
     var body: some View {
         ZStack {
             VStack(alignment: .leading) {
@@ -39,7 +43,7 @@ struct UsersActionView: View {
                             .foregroundColor(.secondary)
                     }
                     Spacer()
-
+                    
                     // Refresh
                     Button(action: {
                         progress.showProgress()
@@ -56,7 +60,7 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction)
-
+                    
                     // Open selected in Jamf Web UI
                     Button(action: {
                         guard !selection.isEmpty else { return }
@@ -73,8 +77,13 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction || selection.isEmpty)
+// <<<<<<< InProgEnhancedUsers
 
                     // Delete selection (show confirmation first)
+// =======
+                    
+//                     // Delete selection
+// >>>>>>> main
                     Button(action: {
                         showDeleteConfirmation = true
                     }) {
@@ -87,11 +96,16 @@ struct UsersActionView: View {
                 .padding(.bottom, 6)
                 .padding(.horizontal)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
+// <<<<<<< InProgEnhancedUsers
 
                 // Secondary action bar
+// =======
+                
+//                 // Always-visible action bar: duplicate the important actions here so they're visible
+// >>>>>>> main
                 HStack(spacing: 10) {
                     Spacer()
-
+                    
                     Button(action: {
                         progress.showProgress()
                         progress.waitForABit()
@@ -107,7 +121,7 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction)
-
+                    
                     Button(action: {
                         guard !selection.isEmpty else { return }
                         progress.showProgress()
@@ -122,7 +136,7 @@ struct UsersActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isPerformingAction || selection.isEmpty)
-
+                    
                     Button(action: {
                         showDeleteConfirmation = true
                     }) {
@@ -256,7 +270,7 @@ struct UsersActionView: View {
                 }
             }
         }
-    }
+    } // end body
 
     // Combined filtering + sorting helper used by both Table (macOS) and List (other platforms)
     var displayedUsers: [UserSimple] {
@@ -272,18 +286,18 @@ struct UsersActionView: View {
         } else {
             list.sort { $0.nameForSort < $1.nameForSort }
         }
-
+        
         return list
     }
-
+    
     // Perform batch delete with confirmation and progress
     @MainActor func performBatchDelete() async {
         guard !selection.isEmpty else { return }
-
+        
         isPerformingAction = true
         progress.showProgress()
         progress.waitForABit()
-
+        
         var successes = 0
         var failures = 0
         var failureDetails: [String] = []
@@ -292,7 +306,7 @@ struct UsersActionView: View {
             if stable.hasPrefix("jamf-") { return String(stable.split(separator: "-").last ?? "") }
             return nil
         }
-
+        
         for jid in selectedJamfIDs {
             do {
                 try await networkController.deleteUser(server: server, itemID: jid, authToken: networkController.authToken)

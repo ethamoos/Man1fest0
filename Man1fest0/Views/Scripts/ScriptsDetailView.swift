@@ -18,6 +18,8 @@ struct ScriptsDetailView: View {
     @State private var isEditing: Bool = false
     @State private var showReadOnly: Bool = false
     @State private var showSavedToast: Bool = false
+    @State private var showingDeleteConfirmation = false
+    @State private var showDeletedToast: Bool = false
 
     // Environment
     @EnvironmentObject var progress: Progress
@@ -141,9 +143,51 @@ struct ScriptsDetailView: View {
                         Image(systemName: "ellipsis.circle")
                             .imageScale(.large)
                     }
+                 }
+                 .buttonStyle(.bordered)
+                // Delete button (destructive)
+                Button(role: .destructive) {
+                    // Show confirmation dialog
+                    showingDeleteConfirmation = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
                 }
                 .buttonStyle(.bordered)
-            }
+                .tint(.red)
+                .disabled(showDeletedToast)
+                .alert("Delete Script?", isPresented: $showingDeleteConfirmation) {
+                    Button("Delete", role: .destructive) {
+                        // Perform delete
+                        progress.showProgress()
+                        Task {
+                            do {
+                                try await networkController.deleteScript(server: server, resourceType: ResourceType.script, itemID: String(scriptID), authToken: networkController.authToken)
+                                // refresh script list
+                                try? await networkController.getAllScripts()
+                                showDeletedToast = true
+                                // Optionally clear local fields
+                                bodyText = ""
+                                scriptName = ""
+                                category = ""
+                                filename = ""
+                                info = ""
+                                notes = ""
+                                // Dismiss editing mode
+                                isEditing = false
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                                    showDeletedToast = false
+                                }
+                            } catch {
+                                print("Failed to delete script: \(error)")
+                            }
+                            progress.endProgress()
+                        }
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("This will permanently delete the script from the Jamf server. Are you sure?")
+                }
+             }
             .padding([.top, .horizontal])
 
             Divider()
@@ -253,6 +297,16 @@ struct ScriptsDetailView: View {
                 }
                 .padding(8)
                 .background(Color.green.opacity(0.12))
+                .cornerRadius(8)
+                .padding(.horizontal)
+            }
+            if showDeletedToast {
+                HStack {
+                    Image(systemName: "trash")
+                    Text("Deleted")
+                }
+                .padding(8)
+                .background(Color.red.opacity(0.12))
                 .cornerRadius(8)
                 .padding(.horizontal)
             }
