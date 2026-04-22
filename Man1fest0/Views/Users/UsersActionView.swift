@@ -4,8 +4,13 @@ struct UsersActionView: View {
     @State var server: String
     @State private var searchText = ""
 
-    // Selection set of UserSimple (Identifiable & Hashable)
-    @State private var selection = Set<UserSimple>()
+    // Selection set of UserSimple ids (stable String ids)
+    @State private var selection = Set<String>()
+
+    // Sorting - use the stable String id for sorting to avoid optional keypath complexity
+    @State private var sortOrder: [KeyPathComparator<UserSimple>] = [
+        .init(\UserSimple.id, order: .forward)
+    ]
 
     // UI state
     @State private var isPerformingAction = false
@@ -41,7 +46,7 @@ struct UsersActionView: View {
                         }
                     }
                 }) {
-                    Image(systemName: "arrow.clockwise")
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .buttonStyle(.bordered)
                 .disabled(isPerformingAction)
@@ -51,13 +56,14 @@ struct UsersActionView: View {
                     guard !selection.isEmpty else { return }
                     progress.showProgress()
                     progress.waitForABit()
-                    for user in selection {
-                        if let jid = user.jamfId {
+                    for id in selection {
+                        // convert stable id back to jamf numeric id if possible
+                        if id.hasPrefix("jamf-"), let jid = id.split(separator: "-").last {
                             layout.openURL(urlString: "\(server)/users.html?id=\(jid)&o=r", requestType: "users")
                         }
                     }
                 }) {
-                    Image(systemName: "safari")
+                    Label("Open in Browser", systemImage: "safari")
                 }
                 .buttonStyle(.bordered)
                 .disabled(isPerformingAction || selection.isEmpty)
@@ -68,10 +74,7 @@ struct UsersActionView: View {
                         await performBatchDelete()
                     }
                 }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "trash")
-                        Text("Delete Selection")
-                    }
+                    Label("Delete Selection", systemImage: "trash")
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
@@ -81,27 +84,85 @@ struct UsersActionView: View {
             .padding(.horizontal)
             .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
 
+            // Always-visible action bar: duplicate the important actions here so they're visible
+            HStack(spacing: 10) {
+                Spacer()
+
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    Task {
+                        do {
+                            try await networkController.getAllUsers()
+                        } catch {
+                            networkController.publishError(error, title: "Failed to refresh users")
+                        }
+                    }
+                }) {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .disabled(isPerformingAction)
+
+                Button(action: {
+                    guard !selection.isEmpty else { return }
+                    progress.showProgress()
+                    progress.waitForABit()
+                    for id in selection {
+                        if id.hasPrefix("jamf-"), let jid = id.split(separator: "-").last {
+                            layout.openURL(urlString: "\(server)/users.html?id=\(jid)&o=r", requestType: "users")
+                        }
+                    }
+                }) {
+                    Label("Open in Browser", systemImage: "safari")
+                }
+                .buttonStyle(.bordered)
+                .disabled(isPerformingAction || selection.isEmpty)
+
+                Button(action: {
+                    Task {
+                        await performBatchDelete()
+                    }
+                }) {
+                    Label("Delete", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                .disabled(isPerformingAction || selection.isEmpty)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 6)
+
             if !networkController.allUsers.isEmpty {
                 NavigationView {
 #if os(macOS)
-                    // Use selection-enabled List on macOS
-                    List(filteredUsers, selection: $selection) { user in
-                        HStack {
-                            Image(systemName: "person.crop.circle")
-                                .foregroundColor(.accentColor)
-                            Text(user.name ?? "(no name)")
-                                .font(.system(size: 13.0))
+                    // macOS: use the modern Table with columns and sorting
+                    Table(networkController.allUsers, selection: $selection, sortOrder: $sortOrder) {
+                        TableColumn("Name") { user in
+                            HStack {
+                                Image(systemName: "person.crop.circle")
+                                    .foregroundColor(.accentColor)
+                                Text(user.name ?? "(no name)")
+                            }
                         }
-                        .padding(.vertical, 4)
+                        TableColumn("Jamf ID") { user in
+                            Text(user.jamfId.map { String($0) } ?? "—")
+                                .font(.system(.body, design: .monospaced))
+                        }
                     }
-                    .listStyle(.sidebar)
+                    .frame(minWidth: 400, minHeight: 300)
 #else
-                    List(filteredUsers, id: \.self, selection: $selection) { user in
+                    // iOS / other: use selectable List with stable ids
+                    List(filteredUsers, id: \.id, selection: $selection) { user in
                         HStack {
                             Image(systemName: "person.crop.circle")
                                 .foregroundColor(.accentColor)
-                            Text(user.name ?? "(no name)")
-                                .font(.system(size: 13.0))
+                            VStack(alignment: .leading) {
+                                Text(user.name ?? "(no name)")
+                                Text(user.jamfId.map { "ID: \($0)" } ?? "ID: —")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         .padding(.vertical, 4)
                     }
@@ -109,6 +170,54 @@ struct UsersActionView: View {
                     Text("\(networkController.allUsers.count) total users")
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
+#if os(macOS)
+                // Make actions available in the macOS window toolbar so they're always visible
+                .toolbar {
+                    ToolbarItemGroup {
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            Task {
+                                do {
+                                    try await networkController.getAllUsers()
+                                } catch {
+                                    networkController.publishError(error, title: "Failed to refresh users")
+                                }
+                            }
+                        }) {
+                            Label("Refresh", systemImage: "arrow.clockwise")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isPerformingAction)
+
+                        Button(action: {
+                            guard !selection.isEmpty else { return }
+                            progress.showProgress()
+                            progress.waitForABit()
+                            for id in selection {
+                                if id.hasPrefix("jamf-"), let jid = id.split(separator: "-").last {
+                                    layout.openURL(urlString: "\(server)/users.html?id=\(jid)&o=r", requestType: "users")
+                                }
+                            }
+                        }) {
+                            Label("Open in Browser", systemImage: "safari")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isPerformingAction || selection.isEmpty)
+
+                        Button(action: {
+                            Task {
+                                await performBatchDelete()
+                            }
+                        }) {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
+                        .disabled(isPerformingAction || selection.isEmpty)
+                    }
+                }
+#endif
 
                 Text("\(networkController.allUsers.count) total users")
                     .font(.footnote)
@@ -147,9 +256,6 @@ struct UsersActionView: View {
         // Double-check selection
         guard !selection.isEmpty else { return }
 
-        // Ask for confirmation via a simplified approach: use system alert flow via NetBrain.publishError?
-        // For now we'll proceed directly but disable UI and show progress. If you prefer a confirmation sheet, we can add it.
-
         isPerformingAction = true
         progress.showProgress()
         progress.waitForABit()
@@ -157,14 +263,17 @@ struct UsersActionView: View {
         var successes = 0
         var failures = 0
 
-        for user in Array(selection) {
-            guard let jid = user.jamfId else {
-                failures += 1
-                continue
+        // Convert selected stable ids to jamf numeric ids
+        let selectedJamfIDs: [String] = selection.compactMap { stable in
+            if stable.hasPrefix("jamf-") {
+                return String(stable.split(separator: "-").last ?? "")
             }
+            return nil
+        }
 
+        for jid in selectedJamfIDs {
             do {
-                try await networkController.deleteUser(server: server, itemID: String(jid), authToken: networkController.authToken)
+                try await networkController.deleteUser(server: server, itemID: jid, authToken: networkController.authToken)
                 successes += 1
             } catch {
                 failures += 1
@@ -183,7 +292,7 @@ struct UsersActionView: View {
         isPerformingAction = false
         progress.endProgress()
 
-        // Optionally clear selection of deleted items
+        // Clear selection
         selection.removeAll()
 
         // Optionally show summary via published error alert
