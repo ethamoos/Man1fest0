@@ -9,13 +9,64 @@ import SwiftUI
 
 struct UserDetailedView: View {
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var layout: Layout
+    @Environment(\.dismiss) var dismiss
     var userID: String
     var server: String
+
+    @State private var showingDeleteConfirmation: Bool = false
+    @State private var isDeleting: Bool = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 if let user = networkController.userDetail {
+                    // Top action row: Open in Browser and Delete
+                    HStack {
+                        Spacer()
+
+                        // Delete button
+                        Button(action: {
+                            showingDeleteConfirmation = true
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "trash")
+                                Text(isDeleting ? "Deleting..." : "Delete User")
+                            }
+                        }
+                        .help("Permanently delete this user from Jamf Pro")
+                        .buttonStyle(.bordered)
+                        .tint(.red)
+                        .disabled(isDeleting)
+
+                        // Open in Browser button
+                        Button(action: {
+                            // Build the Jamf Pro UI URL for this user and ask Layout to open/translate it
+                            let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                            var base = trimmedServer
+                            if base.hasSuffix("/") { base.removeLast() }
+                            // Use the numeric Jamf user id from the decoded detail
+                            let jamfID = String(describing: user.id)
+                            // Typical Jamf Pro UI user detail URL pattern
+                            let uiURL = "\(base)/users.html?id=\(jamfID)&o=r"
+                            print("Open in Browser - URL: \(uiURL)")
+                            // Use the Layout helper to open / translate the URL
+                            layout.openURL(urlString: uiURL, requestType: "users")
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "safari")
+                                Text("Open in Browser")
+                            }
+                        }
+                        .help("Open this user in the Jamf web interface in your default browser.")
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .padding(.top, 6)
+
+                        Spacer()
+                    }
+                    .padding()
+
                     Text(user.name ?? "(no name)")
                         .font(.title)
                         .bold()
@@ -91,6 +142,33 @@ struct UserDetailedView: View {
                     print("getDetailUser failed: \(error)")
                 }
             }
+        }
+        // Confirmation alert for deletion
+        .alert("Delete User?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                // perform delete
+                isDeleting = true
+                Task {
+                    do {
+                        if let user = networkController.userDetail {
+                            try await networkController.deleteUser(server: server, itemID: String(user.id), authToken: networkController.authToken)
+                            // On success, dismiss this detail view
+                            isDeleting = false
+                            dismiss()
+                        } else {
+                            isDeleting = false
+                        }
+                    } catch {
+                        isDeleting = false
+                        networkController.publishError(error, title: "Failed to delete user")
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                // nothing
+            }
+        } message: {
+            Text("This will permanently remove the user from Jamf Pro. This action cannot be undone.")
         }
         .alert(isPresented: $networkController.showErrorAlert) {
             Alert(title: Text(networkController.lastErrorTitle ?? "Error"), message: Text(networkController.lastErrorMessage ?? ""), dismissButton: .default(Text("OK")) )

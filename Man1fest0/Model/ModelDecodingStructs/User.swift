@@ -8,10 +8,29 @@ struct UserListResponse: Codable {
 }
 
 struct UserSimple: Codable, Hashable, Identifiable {
-    // keep an internal UUID for SwiftUI identity, but expose Jamf id via `jamfId`
-    var id = UUID()
+    // Store jamf id and name from the API
     let jamfId: Int?
     let name: String?
+
+    // Internal UUID fallback for items that don't have a Jamf id yet.
+    // This is stored so the Identifiable id remains stable for these items
+    private let _fallbackUUID: String = UUID().uuidString
+
+    // Expose a stable String id for Identifiable. When Jamf id is present use a
+    // prefixed Jamf id so it's stable across reloads; otherwise use the
+    // generated fallback UUID.
+    var id: String {
+        if let j = jamfId {
+            return "jamf-\(j)"
+        } else {
+            return _fallbackUUID
+        }
+    }
+
+    // Computed properties to aid sorting in SwiftUI Table/List.
+    // Use non-optional values so TableColumn value: keyPaths can be used for sorting.
+    var nameForSort: String { name ?? "" }
+    var jamfIdForSort: Int { jamfId ?? -1 }
 
     enum CodingKeys: String, CodingKey {
         case jamfId = "id"

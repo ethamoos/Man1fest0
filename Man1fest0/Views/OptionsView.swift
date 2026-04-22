@@ -300,6 +300,9 @@ struct OptionsView: View {
                                 
                                 NavigationLink(destination: UsersView(server: server )) {
                                     Text("Users")
+                                }     
+                                NavigationLink(destination: UsersActionView(server: server )) {
+                                    Text("User Actions")
                                 }
                             }
                         }
@@ -353,7 +356,7 @@ struct OptionsView: View {
                         }
                     }
                 }
-                .toolbar(id: "Main") {
+                .toolbar {
                     
                     ToolbarItem(id: "Error") {
                         if networkController.hasError {
