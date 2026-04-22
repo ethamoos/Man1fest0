@@ -1,5 +1,8 @@
 import Foundation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 // MARK: - Security Settings Manager
 @MainActor
@@ -57,7 +60,31 @@ class SecuritySettingsManager: ObservableObject {
     
     // MARK: - Initialization
     init() {
+        // Register sensible defaults so a missing UserDefaults key doesn't
+        // inadvertently flip a boolean preference to false (UserDefaults.bool
+        // returns false for missing keys).
+        UserDefaults.standard.register(defaults: [
+            Keys.inactivityTimeout: InactivityTimeout.fiveMinutes.rawValue,
+            Keys.useKeychainForPassword: false,
+            Keys.requirePasswordOnWake: true
+        ])
+
         loadSettings()
+
+        // Persist settings on application termination / backgrounding so
+        // preferences are not lost when the app shuts down.
+#if canImport(UIKit)
+        NotificationCenter.default.addObserver(forName: UIApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.saveSettings()
+        }
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.saveSettings()
+        }
+#else
+        NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.saveSettings()
+        }
+#endif
     }
     
     // MARK: - Settings Management
@@ -67,8 +94,16 @@ class SecuritySettingsManager: ObservableObject {
             inactivityTimeout = timeout
         }
         
-        useKeychainForPassword = UserDefaults.standard.bool(forKey: Keys.useKeychainForPassword)
-        requirePasswordOnWake = UserDefaults.standard.bool(forKey: Keys.requirePasswordOnWake)
+        // Only override the defaults if a value exists in UserDefaults. This
+        // preserves the registered default values (see init) when keys are
+        // missing.
+        if let useKeychainObj = UserDefaults.standard.object(forKey: Keys.useKeychainForPassword) as? Bool {
+            useKeychainForPassword = useKeychainObj
+        }
+
+        if let requirePWObj = UserDefaults.standard.object(forKey: Keys.requirePasswordOnWake) as? Bool {
+            requirePasswordOnWake = requirePWObj
+        }
     }
     
     func saveSettings() {
@@ -96,6 +131,9 @@ class SecuritySettingsManager: ObservableObject {
     }
     
     func shouldLock() -> Bool {
+        // If the user has explicitly disabled "Require password on wake",
+        // do not lock the app at all.
+        guard requirePasswordOnWake else { return false }
         guard inactivityTimeout != .never else { return false }
         guard let lastActive = getLastActiveTime() else { return false }
         

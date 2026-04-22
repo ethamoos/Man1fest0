@@ -190,14 +190,14 @@ struct PackageUsageView: View {
                                     // clickable text toggles the debug panel listing failed IDs
                                     Button(action: { showDetailedFetchDebug.toggle() }) {
                                         Text("\(actual) / \(expected) (missing: \(missing))")
-                                            .fontWeight(.bold)
-                                            .underline()
+//                                            .fontWeight(.bold)
+//                                            .underline()
                                     }
                                     .buttonStyle(.plain)
                                     .help("Click to show failed policy IDs and retry them")
                                 } else {
                                     Text("\(actual) / \(expected)")
-                                        .fontWeight(.bold)
+//                                        .fontWeight(.bold)
                                 }
                                 Spacer()
                             }

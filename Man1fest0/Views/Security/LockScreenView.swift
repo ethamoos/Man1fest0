@@ -209,10 +209,22 @@ struct LockScreenView: View {
                 
                 // Unlock successful
                 await MainActor.run {
-                    inactivityMonitor.unlockApp()
+                    inactivityMonitor.unlockApp(password: password)
                 }
                 
-            } catch {
+                } catch {
+                    // If the token request failed but we still have a valid token
+                    // cached (e.g. app locked while token still valid), allow
+                    // unlocking to avoid blocking the user when network auth is
+                    // not required.
+                    if networkController.isTokenValid() {
+                        await MainActor.run {
+                            // No password was provided but we have a valid cached token;
+                            // pass a non-nil placeholder to indicate programmatic unlock.
+                            inactivityMonitor.unlockApp(password: "cached-token")
+                        }
+                        return
+                    }
                 // Unlock failed
                 await MainActor.run {
                     isUnlocked = false
@@ -244,10 +256,17 @@ struct LockScreenView: View {
                 
                 // Unlock successful
                 await MainActor.run {
-                    inactivityMonitor.unlockApp()
+                    inactivityMonitor.unlockApp(password: keychainPassword)
                 }
                 
             } catch {
+                // Allow unlock if we still have a valid cached token
+                if networkController.isTokenValid() {
+                    await MainActor.run {
+                        inactivityMonitor.unlockApp(password: "cached-token")
+                    }
+                    return
+                }
                 // Keychain password is invalid
                 await MainActor.run {
                     isUnlocked = false

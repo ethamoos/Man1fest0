@@ -87,7 +87,9 @@ struct ContentView: View {
             // If connected, reset inactivity timer so lock screen doesn't appear immediately
             if networkController.connected {
                 // Ensure any previously-set locked flag is cleared and restart inactivity timer
-                monitor.unlockApp()
+                // Programmatic unlock after successful connect - pass a non-nil value
+                // so unlockApp does not re-show the lock when "Require password on wake"
+                monitor.unlockApp(password: "startup-connect")
                 monitor.resetInactivityTimer()
             } else {
                 // If not connected, ask NetBrain to present the connect sheet

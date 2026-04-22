@@ -19,6 +19,8 @@ struct ConnectSheet: View {
     @State private var alertMessage = ""
     @State private var alertTitle = ""
     @State private var showActivity = false
+    @State private var connecting = false
+    @State private var connectSuccess = false
     
     @AppStorage("server") var server = ""
     @AppStorage("username") var username = ""
@@ -117,14 +119,23 @@ struct ConnectSheet: View {
                 ////  CONNECTION - button on sheet
                 ////  #######################################################################
                 HStack(spacing:30) {
-                    Button("Connect") {
-                        Task { await connect() }
-                        print("Pressing button")
-                        print("networkController.showAlert is set as:\(networkController.showAlert)")
-                        print("showAlert is set as:\(showAlert)")
-                        alertMessage = "Could not authenticate. Please check the url and authentication details"
-                        alertTitle = "Authentication Error"
+                    if connecting {
+                        ProgressView()
+                        Text("Connecting…")
                     }
+
+                    Button(action: {
+                        Task {
+                            await connect()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "bolt.horizontal.circle")
+                            Text("Connect")
+                        }
+                    }
+                    .disabled(connecting)
+                    .keyboardShortcut(.defaultAction)
                 }
             }.padding()
     #else
@@ -175,65 +186,78 @@ struct ConnectSheet: View {
             .padding([.leading, .trailing, .bottom])
         }
         .onAppear(perform: loadSavedCredentials)
+        .alert(alertTitle, isPresented: $showAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
     }
 
     func connect() async {
-        show = false
-    #if os(macOS)
-        if saveInKeychain {
-            try? Keychain.save(password: networkController.password, service: server, account: username)
+        // Begin connection flow; keep the sheet visible until we know the result
+        connecting = true
+
+        let success = await handleConnect(server: server, username: username, password: networkController.password)
+
+        if success {
+            // Save password to keychain if requested
+            #if os(macOS)
+            if saveInKeychain {
+                try? Keychain.save(password: networkController.password, service: server, account: username)
+            }
+            #else
+            if saveInKeychain {
+                try? networkController.updateKC(networkController.password, account: server, service: username)
+            }
+            #endif
+
+            connectSuccess = true
+            // small delay so user sees success briefly, then close
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            show = false
+        } else {
+            // Keep the sheet open and show an alert
+            showAlert = true
         }
-    #else
-        if saveInKeychain {
-            try? networkController.updateKC(networkController.password, account: server, service: username)
-        }
-    #endif
-        Task {
-            await handleConnect(server: server, username: username, password: networkController.password)
-        }
+
+        connecting = false
     }
     
-    func handleConnect(server: String, username: String, password: String ) async {
-        
+    /// Returns true on successful authentication
+    func handleConnect(server: String, username: String, password: String ) async -> Bool {
         print("Running: handleConnect")
         if password.isEmpty {
             print("Try to get password from keychain")
-    #if os(macOS)
-            guard let pwFromKeychain = try? Keychain.getPassword(service: server, account: username)
-            else {
+#if os(macOS)
+            guard let pwFromKeychain = try? Keychain.getPassword(service: server, account: username) else {
                 print("pwFromKeychain failed")
-                return
+                return false
             }
             networkController.password = pwFromKeychain
             print("pwFromKeychain succeeded")
-            #else
-            guard let pwFromKeychain = try? networkController.getPassword(account: username, service: server)
-            else {
+#else
+            guard let pwFromKeychain = try? networkController.getPassword(account: username, service: server) else {
                 print("pwFromKeychain failed")
-                return
+                return false
             }
             networkController.password = pwFromKeychain
             print("pwFromKeychain succeeded")
-    #endif
+#endif
         }
+
         networkController.atSeparationLine()
         print("Handling connection - initial connection to Jamf")
-        
+
         do {
-            //  #######################################################################
-            //  CONNECTION
-            //  #######################################################################
-            
-            try await networkController.getToken(server: server, username: username, password: password)
-            
-            if networkController.authToken != "" {
-                print("Token status is:\(networkController.tokenStatusCode)")
-    //                print("Token is:\(networkController.authToken)")
-            }
-            
+            let auth = try await networkController.getToken(server: server, username: username, password: password)
+            print("handleConnect: received token with expires=\(auth.expires)")
+            return true
         } catch {
-            print("Error is:\(error)")
-            self.showAlert = true
+            print("handleConnect: error=\(error)")
+            // populate alert details
+            alertTitle = "Authentication Error"
+            alertMessage = "Could not authenticate. Please check the URL and credentials. (\(error))"
+            return false
         }
     }
 
