@@ -696,11 +696,12 @@ class PolicyBrain: ObservableObject {
         //        ########################################
         self.assignedScriptsByNameSet = Set(Array(self.assignedScriptsByNameDict.keys))
         //        ########################################
-        //        Unassigned scripts
+        //        Unassigned scripts (those in allScripts but not in assigned)
         //        ########################################
         print(self.separationLine())
         print("everything not in both - scripts not in use")
-        self.unassignedScriptsSet = self.allScriptsByNameSet.symmetricDifference(self.assignedScriptsByNameSet)
+        // Use set subtraction to obtain scripts present in all scripts but not assigned
+        self.unassignedScriptsSet = self.allScriptsByNameSet.subtracting(self.assignedScriptsByNameSet)
         print(self.unassignedScriptsSet.count)
         print(self.separationLine())
         print("unassignedScriptsArray")

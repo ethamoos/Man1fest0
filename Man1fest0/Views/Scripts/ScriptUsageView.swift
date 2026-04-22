@@ -58,6 +58,8 @@ struct ScriptUsageView: View {
     @State var selectedValue: String = ""
     // Filter text for the unassigned scripts list
     @State var unassignedFilter: String = ""
+    // Filter text for the assigned scripts list
+    @State var assignedFilter: String = ""
 
     // Small helper views to reduce type-checking complexity in large body
     @ViewBuilder
@@ -80,9 +82,15 @@ struct ScriptUsageView: View {
         HStack {
             Label(script, systemImage: "checkmark.seal")
             Spacer()
-            Text(value)
-                .foregroundColor(.secondary)
-                .font(.caption)
+            if value.isEmpty {
+                Text("#?")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            } else {
+                Text("#\(value)")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
         }
         .padding(.vertical, 6)
     }
@@ -93,9 +101,15 @@ struct ScriptUsageView: View {
             Label(script, systemImage: "xmark.circle")
                 .foregroundColor(.orange)
             Spacer()
-            Text(value)
-                .foregroundColor(.secondary)
-                .font(.caption)
+            if value.isEmpty {
+                Text("#?")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            } else {
+                Text("#\(value)")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
         }
         .padding(.vertical, 6)
     }
@@ -109,6 +123,16 @@ struct ScriptUsageView: View {
         #else
         return Color.gray.opacity(0.08)
         #endif
+    }
+
+    // Computed results for the Assigned Scripts list (filtered by `assignedFilter`)
+    private var assignedSearchResults: [String] {
+        let all = Array(assignedScriptsByNameDict.keys)
+        if assignedFilter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return all.sorted()
+        }
+        let q = assignedFilter.lowercased()
+        return all.filter { $0.lowercased().contains(q) }.sorted()
     }
 
     // Policy fetch status text shown in the UI (driven by detailedPoliciesProgress)
@@ -204,16 +228,16 @@ struct ScriptUsageView: View {
                         if missing > 0 {
                             Button(action: { showDetailedFetchDebug.toggle() }) {
                                 Text("\(loaded) / \(expected) (missing: \(missing))")
-//                                    .font(.headline)
-//                                    .foregroundColor(.secondary)
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
 //                                    .underline()
                             }
                             .buttonStyle(.plain)
                             .help("Click to show failed policy IDs and retry them")
                         } else {
                             Text("\(loaded) / \(expected)")
-//                                .font(.headline)
-//                                .foregroundColor(.secondary)
+                                .font(.headline)
+                                .foregroundColor(.secondary)
                         }
                     }
                 }
@@ -336,12 +360,41 @@ struct ScriptUsageView: View {
 
                         // Middle pane: Assigned Scripts
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Assigned Scripts")
-                                .font(.headline)
-                                .padding(.horizontal)
+                            HStack {
+                                Text("Assigned Scripts")
+                                    .font(.headline)
+                                Spacer()
+                                if networkController.isFetchingDetailedPolicies {
+                                    HStack(spacing: 6) {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle())
+                                            .scaleEffect(0.8)
+                                        Text("Updating…")
+                                            .foregroundColor(.secondary)
+                                            .font(.caption)
+                                    }
+                                    .padding(.trailing)
+                                }
+                            }
+                            .padding(.horizontal)
+
+                            HStack {
+                                TextField("Filter assigned scripts", text: $assignedFilter)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .padding(.horizontal)
+
+                                if !assignedFilter.isEmpty {
+                                    Button(action: { assignedFilter = "" }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.trailing)
+                                }
+                            }
 
                             List(selection: $selection) {
-                                ForEach(assignedScriptsByNameDict.keys.sorted(), id: \.self) { script in
+                                ForEach(assignedSearchResults, id: \.self) { script in
                                     // Use the local copy of the mapping to avoid complex expressions involving environment objects
                                     let scriptValue = assignedScriptsByNameDict[script] ?? ""
                                     assignedScriptRow(script, value: scriptValue)
@@ -384,10 +437,18 @@ struct ScriptUsageView: View {
 
                         // Bottom pane: Unassigned Scripts
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Scripts not in use")
-                                .sectionHeading(style: .boxed)
-                                .font(.headline)
-                                .padding(.horizontal)
+                            HStack {
+                                Text("Scripts not in use")
+                                    .sectionHeading(style: .boxed)
+                                    .font(.headline)
+                                Spacer()
+                                if networkController.isFetchingDetailedPolicies {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle())
+                                        .scaleEffect(0.8)
+                                }
+                            }
+                            .padding(.horizontal)
 
                             HStack {
                                 TextField("Filter unassigned scripts", text: $unassignedFilter)
@@ -504,10 +565,20 @@ struct ScriptUsageView: View {
         .onChange(of: networkController.scripts) { _ in
             // Scripts list updated: recompute local value maps
             getScriptValues()
+            // After the script name/id map is updated, recompute assigned/unassigned
+            recomputeAssignedUnassignedFromPolicies()
         }
         .onChange(of: policyController.assignedScriptsByNameDict) { _ in
-            // Assigned scripts mapping updated: refresh assigned scripts list
+            // If PolicyBrain's assigned mapping changes (e.g. via Analyse Data), refresh
             refreshAssignedScripts()
+            recomputeAssignedUnassignedFromPolicies()
+        }
+        // Automatically recompute assigned/unassigned when detailed policies arrive
+        .onChange(of: networkController.allPoliciesDetailed) { _ in
+            recomputeAssignedUnassignedFromPolicies()
+        }
+        .onChange(of: assignedFilter) { _ in
+            // assigned filter changed - nothing else needed as the list is computed
         }
         .onChange(of: unassignedFilter) { _ in
             // Unassigned filter text changed: update unassigned scripts list
@@ -526,13 +597,24 @@ struct ScriptUsageView: View {
             allScriptsByNameSet.insert(script.name)
         }
         
-        // Assigned scripts: extract from policyController's data
+        // Assigned scripts: take the mapping provided by PolicyBrain but
+        // compute assigned/unassigned using Jamf IDs to avoid mismatches
+        // caused by name differences (case, whitespace, etc.).
         assignedScriptsByNameDict = policyController.assignedScriptsByNameDict
         assignedScriptsByNameSet = Set(assignedScriptsByNameDict.keys)
-        
-        // Unassigned scripts: compute set difference from all scripts
-        unassignedScriptsSet = allScriptsByNameSet.subtracting(assignedScriptsByNameSet)
-        
+
+        // Build sets of IDs (strings) for robust subtraction
+        let allIDsSet: Set<String> = Set(allScriptsByNameDict.values)
+        let assignedIDsSet: Set<String> = Set(assignedScriptsByNameDict.values)
+
+        // Unassigned IDs are those present in all scripts but not in assigned IDs
+        let unassignedIDs = allIDsSet.subtracting(assignedIDsSet)
+
+        // Map unassigned IDs back to script names for display
+        unassignedScriptsSet = Set(allScriptsByNameDict.compactMap { name, id in
+            return unassignedIDs.contains(id) ? name : nil
+        })
+
         // Update state arrays for views
         assignedScriptsArray = Array(assignedScriptsByNameDict.values)
         assignedScripts = policyController.assignedScripts
@@ -544,16 +626,87 @@ struct ScriptUsageView: View {
          assignedScriptsByNameDict = policyController.assignedScriptsByNameDict
         assignedScriptsByNameSet = Set(assignedScriptsByNameDict.keys)
         assignedScriptsArray = Array(assignedScriptsByNameDict.values)
+
+        // Recompute unassigned scripts whenever assigned mapping changes
+        // Use ID-based subtraction to avoid name-matching pitfalls
+        let allIDsSet: Set<String> = Set(allScriptsByNameDict.values)
+        let assignedIDsSet: Set<String> = Set(assignedScriptsByNameDict.values)
+        let unassignedIDs = allIDsSet.subtracting(assignedIDsSet)
+        unassignedScriptsSet = Set(allScriptsByNameDict.compactMap { name, id in
+            return unassignedIDs.contains(id) ? name : nil
+        })
+        unassignedScriptsArray = Array(unassignedScriptsSet)
+    }
+
+    private func recomputeAssignedUnassignedFromPolicies() {
+        // Build name->id and id->name maps from the master scripts list
+        let nameToId = allScriptsByNameDict
+        var idToName: [String: String] = [:]
+        for (name, id) in nameToId {
+            idToName[id] = name
+        }
+
+        // Collect assigned IDs referenced by any detailed policy
+        var assignedIDs = Set<String>()
+        for eachPolicy in networkController.allPoliciesDetailed {
+            guard let scriptsFound = eachPolicy?.scripts else { continue }
+            for script in scriptsFound {
+                if let sid = script.jamfId {
+                    assignedIDs.insert(String(describing: sid))
+                }
+            }
+        }
+
+        // Build assigned name->id mapping for display (use name if available, else fallback to id placeholder)
+        var assignedNameToId: [String: String] = [:]
+        for id in assignedIDs {
+            if let name = idToName[id] {
+                assignedNameToId[name] = id
+            } else {
+                let placeholder = "#\(id)"
+                assignedNameToId[placeholder] = id
+            }
+        }
+
+        // Compute unassigned IDs and map back to names
+        let allIDsSet = Set(nameToId.values)
+        let unassignedIDs = allIDsSet.subtracting(assignedIDs)
+
+        var unassignedNames: [String] = []
+        for id in unassignedIDs {
+            if let name = idToName[id] {
+                unassignedNames.append(name)
+            }
+        }
+
+        // Update state on main thread
+        DispatchQueue.main.async {
+            self.assignedScriptsByNameDict = assignedNameToId
+            self.assignedScriptsByNameSet = Set(assignedNameToId.keys)
+            self.assignedScriptsArray = Array(assignedNameToId.values)
+
+            self.unassignedScriptsSet = Set(unassignedNames)
+            self.unassignedScriptsArray = unassignedNames
+        }
     }
     
     private func updateUnassignedScripts() {
         // Update the list of unassigned scripts based on the current filter text
-        if unassignedFilter.isEmpty {
-            unassignedScriptsSet = allScriptsByNameSet.subtracting(assignedScriptsByNameSet)
-        } else {
-            let filter = unassignedFilter.lowercased()
-            unassignedScriptsSet = allScriptsByNameSet.subtracting(assignedScriptsByNameSet).filter { $0.lowercased().contains(filter) }
+        // Compute unassigned using IDs to be robust against name differences
+        let allIDsSet: Set<String> = Set(allScriptsByNameDict.values)
+        let assignedIDsSet: Set<String> = Set(assignedScriptsByNameDict.values)
+        let unassignedIDs = allIDsSet.subtracting(assignedIDsSet)
+
+        var candidates = allScriptsByNameDict.compactMap { name, id in
+            return unassignedIDs.contains(id) ? name : nil
         }
+
+        if !unassignedFilter.isEmpty {
+            let filter = unassignedFilter.lowercased()
+            candidates = candidates.filter { $0.lowercased().contains(filter) }
+        }
+
+        unassignedScriptsSet = Set(candidates)
         unassignedScriptsArray = Array(unassignedScriptsSet)
     }
 
