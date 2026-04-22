@@ -46,6 +46,9 @@ struct PolicyActionsDetailTableView: View {
     @State var ldapSearch: String = ""
 
     @State var searchText = ""
+    // Ephemeral banner to indicate basic policies have arrived
+    @State private var showBasicPoliciesBanner: Bool = false
+    @State private var basicPoliciesBannerText: String = ""
     // explicit tab selection for the detail TabView
     @State private var selectedDetailTab: Int = 0
 
@@ -83,6 +86,20 @@ struct PolicyActionsDetailTableView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Ephemeral banner area
+            if showBasicPoliciesBanner {
+                HStack {
+                    Text(basicPoliciesBannerText)
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color.blue))
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.easeInOut(duration: 0.25), value: showBasicPoliciesBanner)
+            }
             // Header area
             // Compute expected/actual/missing for detailed policies from single source of truth
             let expected = networkController.detailedPoliciesProgress.expected
@@ -102,6 +119,9 @@ struct PolicyActionsDetailTableView: View {
                     Text("Downloaded policies:")
                         .font(.caption)
                         .foregroundColor(.secondary)
+//                    Text("Total Policies Downloaded:\t\(networkController.allPoliciesDetailed.count)")
+
+                    
                     HStack {
                         if missing > 0 {
                             // clickable text toggles the debug panel listing failed IDs
@@ -221,6 +241,17 @@ struct PolicyActionsDetailTableView: View {
         // When detailed policies are updated, rebuild the simplified general list so the table fills
         .onReceive(networkController.$allPoliciesDetailed) { _ in
             convertToallPoliciesDetailedGeneral()
+        }
+        // Show a brief banner when basic policies arrive so the user sees activity
+        .onReceive(networkController.$allPoliciesConverted) { newList in
+            let count = newList.count
+            guard count > 0 else { return }
+            basicPoliciesBannerText = "Basic policies downloaded: \(count)"
+            withAnimation { showBasicPoliciesBanner = true }
+            // Hide after 3 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation { showBasicPoliciesBanner = false }
+            }
         }
         // Also log when the simplified general array changes so we can diagnose why the Table may be empty
         .onReceive(networkController.$allPoliciesDetailedGeneral) { newList in

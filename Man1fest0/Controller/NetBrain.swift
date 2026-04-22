@@ -1450,6 +1450,11 @@ print("DEBUG - status code is 200, response is:")
     func receivedPolicies(policies: [Policy]) {
         DispatchQueue.main.async {
             self.policies = policies
+            // Keep the converted/basic policies array in sync so UI bindings
+            // that observe `allPoliciesConverted` update immediately when the
+            // legacy request pipeline returns. This ensures the counts shown in
+            // views update in real-time rather than waiting for other fetches.
+            self.allPoliciesConverted = policies
             // self.status = "Computers retrieved"
             //        self.status = "Policies retrieved"
         }
@@ -5701,19 +5706,9 @@ xml = """
             print("ensurePoliciesLoaded: issuing legacy request to \(url)")
             request(url: url, resourceType: ResourceType.policies, authToken: authToken)
 
-            // Give the async pipeline a small window to populate published arrays
-            // (This is best-effort; callers should await a subsequent check or re-render.)
-            do {
-                try await Task.sleep(nanoseconds: 600_000_000) // 0.6s
-            } catch {
-                // ignore
-            }
-
-            // If receivedPolicies populated `policies`, sync to allPoliciesConverted
-            if self.allPoliciesConverted.isEmpty && !self.policies.isEmpty {
-                print("ensurePoliciesLoaded: syncing policies -> allPoliciesConverted (count=\(self.policies.count))")
-                self.allPoliciesConverted = self.policies
-            }
+            // The legacy request pipeline will call `receivedPolicies(...)` which
+            // now syncs `policies` -> `allPoliciesConverted` immediately. No
+            // artificial sleep or delayed sync is required here.
         } else {
             print("ensurePoliciesLoaded: invalid server URL, cannot fallback")
         }
