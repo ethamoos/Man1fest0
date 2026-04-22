@@ -3257,7 +3257,7 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
     
     
     func updateComputerName(server: String,authToken: String, resourceType: ResourceType, computerName: String, computerID: String) {
-        
+
         let resourcePath = getURLFormat(data: (resourceType))
         //        let computerID = computerID
         var xml: String
@@ -3265,7 +3265,7 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         print("updateName XML")
         print("computerName is set as:\(computerName)")
         print("computerID is set as:\(computerID)")
-        
+
         xml = """
                 <computer>
                     <general>
@@ -3273,8 +3273,8 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
                     </general>
                 </computer>
                 """
-        
-        
+
+
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(computerID)
@@ -3285,9 +3285,89 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
                 appendStatus("Connecting to \(url)...")
                 print("Set updateXML to true ")
                 self.updateXML = true
-                
+
             }
         }
+    }
+
+    // Update the username attribute for a computer (from a detailed computer record)
+    // Example usage: updateComputerUsername(server:server, authToken:token, resourceType:.computerDetailed, computerID: "123", newUsername: "jdoe")
+    func updateComputerUsername(server: String, authToken: String, resourceType: ResourceType, computerID: String, newUsername: String) {
+        let resourcePath = getURLFormat(data: (resourceType))
+        var xml: String
+
+        self.separationLine()
+        print("updateComputerUsername XML")
+        print("newUsername is set as:\(newUsername)")
+        print("computerID is set as:\(computerID)")
+
+        xml = """
+                <computer>
+                    <general>
+                        <username>\(newUsername)</username>
+                    </general>
+                </computer>
+                """
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(computerID)
+                print("Running update computer username function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                // send XML PUT to update username
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            } else {
+                print("Error making serverURL for updateComputerUsername")
+            }
+        } else {
+            print("Invalid server string passed to updateComputerUsername: \(server)")
+        }
+    }
+
+    // Convenience: update username using a decoded ComputerFull (from ComputerDetailedFullResponse)
+    // If `overrideUsername` is provided it will be used; otherwise the function uses the value
+    // found in `computerFull.general?.username`. The function logs useful diagnostics and
+    // returns early when required fields are missing.
+    func updateComputerUsername(from computerFull: ComputerFull, overrideUsername: String? = nil, server: String, authToken: String, resourceType: ResourceType = .computerDetailed) {
+        // Attempt to get the Jamf ID from the detailed object. Many decoded structs represent
+        // the id as a String; if it's numeric elsewhere callers can adapt accordingly.
+        guard let general = computerFull.general else {
+            print("updateComputerUsername(from:): detailed computer record missing 'general' section")
+            return
+        }
+
+        // Some 'general.id' implementations are Strings, others may be Int; normalize to String
+        let jamfIDString: String = {
+            if let idStr = (general as AnyObject).value(forKey: "id") as? String {
+                return idStr
+            }
+            // Fallback: try to use Mirror to read 'id' as Int or other convertible types
+            let mirror = Mirror(reflecting: general)
+            for child in mirror.children {
+                if child.label == "id" {
+                    return String(describing: child.value)
+                }
+            }
+            return ""
+        }()
+
+        if jamfIDString.isEmpty {
+            print("updateComputerUsername(from:): could not determine Jamf ID from detailed record")
+            return
+        }
+
+        // Determine username to apply
+        let usernameToSet = overrideUsername ?? (general as AnyObject).value(forKey: "username") as? String ?? ""
+        if usernameToSet.isEmpty {
+            print("updateComputerUsername(from:): no username available to set (overrideUsername and detailed record both empty)")
+            return
+        }
+
+        // Delegate to existing updater
+        updateComputerUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
     }
     
     
