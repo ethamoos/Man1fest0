@@ -9,7 +9,8 @@ struct UsersActionView: View {
 
     // Sorting - use the stable String id for sorting to avoid optional keypath complexity
     @State private var sortOrder: [KeyPathComparator<UserSimple>] = [
-        .init(\UserSimple.id, order: .forward)
+        // Default sort by name (ascending)
+        .init(\UserSimple.nameForSort, order: .forward)
     ]
 
     // UI state
@@ -137,15 +138,18 @@ struct UsersActionView: View {
                 NavigationView {
 #if os(macOS)
                     // macOS: use the modern Table with columns and sorting
-                    Table(networkController.allUsers, selection: $selection, sortOrder: $sortOrder) {
-                        TableColumn("Name") { user in
+                    Table(displayedUsers, selection: $selection, sortOrder: $sortOrder) {
+                        // Name column uses value-based key path for sorting
+                        TableColumn("Name", value: \UserSimple.nameForSort) { user in
                             HStack {
                                 Image(systemName: "person.crop.circle")
                                     .foregroundColor(.accentColor)
                                 Text(user.name ?? "(no name)")
                             }
                         }
-                        TableColumn("Jamf ID") { user in
+
+                        // Jamf ID column uses jamfIdForSort for numeric sorting
+                        TableColumn("Jamf ID", value: \UserSimple.jamfIdForSort) { user in
                             Text(user.jamfId.map { String($0) } ?? "—")
                                 .font(.system(.body, design: .monospaced))
                         }
@@ -153,7 +157,8 @@ struct UsersActionView: View {
                     .frame(minWidth: 400, minHeight: 300)
 #else
                     // iOS / other: use selectable List with stable ids
-                    List(filteredUsers, id: \.id, selection: $selection) { user in
+                    // Apply sortOrder to the list presentation on platforms without Table
+                    List(displayedUsers, id: \.id, selection: $selection) { user in
                         HStack {
                             Image(systemName: "person.crop.circle")
                                 .foregroundColor(.accentColor)
@@ -243,12 +248,26 @@ struct UsersActionView: View {
         }
     }
 
-    var filteredUsers: [UserSimple] {
+    // Combined filtering + sorting helper used by both Table (macOS) and List (other platforms)
+    var displayedUsers: [UserSimple] {
+        // Apply search filter first
+        var list: [UserSimple]
         if searchText.isEmpty {
-            return networkController.allUsers.sorted { ($0.name ?? "") < ($1.name ?? "") }
+            list = networkController.allUsers
         } else {
-            return networkController.allUsers.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
+            list = networkController.allUsers.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
         }
+
+        // Apply primary sort from sortOrder if present
+        if !sortOrder.isEmpty {
+            // Use the standard sorted(using:) which understands KeyPathComparator
+            list = list.sorted(using: sortOrder)
+        } else {
+            // Default stable sort by name
+            list.sort { $0.nameForSort < $1.nameForSort }
+        }
+
+        return list
     }
 
     // Perform batch delete with confirmation and progress

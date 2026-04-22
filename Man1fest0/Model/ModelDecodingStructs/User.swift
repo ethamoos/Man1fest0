@@ -27,6 +27,11 @@ struct UserSimple: Codable, Hashable, Identifiable {
         }
     }
 
+    // Computed properties to aid sorting in SwiftUI Table/List.
+    // Use non-optional values so TableColumn value: keyPaths can be used for sorting.
+    var nameForSort: String { name ?? "" }
+    var jamfIdForSort: Int { jamfId ?? -1 }
+
     enum CodingKeys: String, CodingKey {
         case jamfId = "id"
         case name = "name"
