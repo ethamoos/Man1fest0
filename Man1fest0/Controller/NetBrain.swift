@@ -5836,7 +5836,6 @@ xml = """
             // Assign to authToken in case getValidToken refreshed it
             self.authToken = validToken
 
-//<<<<<<< HEAD
             // Pagination parameters
             var page = 0
             let pageSize = 500
@@ -5867,50 +5866,11 @@ xml = """
             }
 
             // Assign into published properties
-            self.allScriptsDetailed = accumulated
+            await MainActor.run {
+                self.allScriptsDetailed = accumulated
 
-            // Map to the lightweight ScriptClassic used elsewhere in the UI
-            self.scripts = accumulated.map { s in
-                let jamfId = Int(s.id) ?? 0
-                return ScriptClassic(name: s.name, jamfId: jamfId)
-//=======
-            // Paginate through the API v1 scripts endpoint to load all scripts
-//            var allResults: [Script] = []
-//            let pageSize = 500
-//            var page = 0
-//
-//            while true {
-//                let endpoint = "/api/v1/scripts?page=\(page)&page-size=\(pageSize)"
-//                if debug_enabled { print("[DEBUG] Fetching scripts page=\(page) endpoint=\(endpoint)") }
-//                let request = APIRequest<ScriptResults>(endpoint: endpoint, method: .get)
-//                let decoded = try await requestSender.resultFor(apiRequest: request)
-//
-//                let results = decoded.results
-//                if results.isEmpty {
-//                    if debug_enabled { print("[DEBUG] No results on page \(page); stopping") }
-//                    break
-//                }
-//
-//                allResults.append(contentsOf: results)
-//
-//                if results.count < pageSize {
-//                    // last page reached
-//                    break
-//                }
-//
-//                page += 1
-//>>>>>>> 942bc5cc8cb811d218a488ab97c10252e3e3f33c
-//            }
-//
-//            // Assign to published properties on the main actor
-//            await MainActor.run {
-//                self.allScriptsDetailed = allResults
-//
-//<<<<<<< HEAD
-//            print("Loaded \(scripts.count) scripts (detailed: \(allScriptsDetailed.count))")
-//=======
                 // Map to the lightweight ScriptClassic used elsewhere in the UI
-                self.scripts = allResults.map { s in
+                self.scripts = accumulated.map { s in
                     let jamfId = Int(s.id) ?? 0
                     return ScriptClassic(name: s.name, jamfId: jamfId)
                 }
@@ -5919,8 +5879,7 @@ xml = """
                 self.allScripts = self.scripts
             }
 
-            print("Loaded \(allResults.count) scripts across \(page + 1) page(s)")
-//>>>>>>> 942bc5cc8cb811d218a488ab97c10252e3e3f33c
+            print("Loaded \(accumulated.count) scripts across \(page + 1) page(s)")
         } catch {
             // Provide clearer diagnostics when script fetching fails
             separationLine()

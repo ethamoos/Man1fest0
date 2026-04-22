@@ -361,7 +361,7 @@ struct ScriptUsageView: View {
                         // Middle pane: Assigned Scripts
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Assigned Scripts")
+                                Text("Assigned Scripts: \(assignedScriptsByNameDict.count)")
                                     .font(.headline)
                                 Spacer()
                                 if networkController.isFetchingDetailedPolicies {
@@ -438,7 +438,7 @@ struct ScriptUsageView: View {
                         // Bottom pane: Unassigned Scripts
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Scripts not in use")
+                                Text("Scripts not in use: \(unassignedScriptsSet.count)")
                                     .sectionHeading(style: .boxed)
                                     .font(.headline)
                                 Spacer()

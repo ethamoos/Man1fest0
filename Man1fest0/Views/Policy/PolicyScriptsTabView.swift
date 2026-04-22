@@ -106,8 +106,7 @@ struct PolicyScriptsTabView: View {
                     // ################################################################################
                     
                     if (localPolicyDetailed ?? networkController.policyDetailed)?.scripts?.count ?? 0 > 0 {
-                        
-                        Text("Assigned Scripts").bold()
+                        Text("Assigned Scripts:\((localPolicyDetailed ?? networkController.policyDetailed)?.scripts?.count ?? 0)").bold()
 #if os(macOS)
                         
                         
