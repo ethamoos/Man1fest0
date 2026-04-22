@@ -2493,8 +2493,6 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
     // Removed duplicate getAllPoliciesDetailed implementation; see above for the unified async/throws version.
     
     
-//=======
-//>>>>>>> main
     @Published var showProgressView: Bool = false
     
     func showProgress() {
@@ -5838,37 +5836,79 @@ xml = """
             // Assign to authToken in case getValidToken refreshed it
             self.authToken = validToken
 
-            // Paginate through the API v1 scripts endpoint to load all scripts
-            var allResults: [Script] = []
-            let pageSize = 500
+//<<<<<<< HEAD
+            // Pagination parameters
             var page = 0
+            let pageSize = 500
+            var accumulated: [Script] = []
+            var totalCount: Int? = nil
 
             while true {
                 let endpoint = "/api/v1/scripts?page=\(page)&page-size=\(pageSize)"
-                if debug_enabled { print("[DEBUG] Fetching scripts page=\(page) endpoint=\(endpoint)") }
                 let request = APIRequest<ScriptResults>(endpoint: endpoint, method: .get)
                 let decoded = try await requestSender.resultFor(apiRequest: request)
 
-                let results = decoded.results
-                if results.isEmpty {
-                    if debug_enabled { print("[DEBUG] No results on page \(page); stopping") }
-                    break
+                // Append page results
+                accumulated.append(contentsOf: decoded.results)
+
+                // Capture totalCount from first response if provided
+                if totalCount == nil {
+                    totalCount = decoded.totalCount
                 }
 
-                allResults.append(contentsOf: results)
+                print("Fetched page \(page): returned \(decoded.results.count) scripts; accumulated=\(accumulated.count) totalReported=\(totalCount ?? -1)")
 
-                if results.count < pageSize {
-                    // last page reached
-                    break
-                }
+                // Stop if this page returned fewer results than pageSize or we've reached the reported total
+                if decoded.results.count < pageSize { break }
+                if let total = totalCount, accumulated.count >= total { break }
 
+                // Otherwise fetch next page
                 page += 1
             }
 
-            // Assign to published properties on the main actor
-            await MainActor.run {
-                self.allScriptsDetailed = allResults
+            // Assign into published properties
+            self.allScriptsDetailed = accumulated
 
+            // Map to the lightweight ScriptClassic used elsewhere in the UI
+            self.scripts = accumulated.map { s in
+                let jamfId = Int(s.id) ?? 0
+                return ScriptClassic(name: s.name, jamfId: jamfId)
+//=======
+            // Paginate through the API v1 scripts endpoint to load all scripts
+//            var allResults: [Script] = []
+//            let pageSize = 500
+//            var page = 0
+//
+//            while true {
+//                let endpoint = "/api/v1/scripts?page=\(page)&page-size=\(pageSize)"
+//                if debug_enabled { print("[DEBUG] Fetching scripts page=\(page) endpoint=\(endpoint)") }
+//                let request = APIRequest<ScriptResults>(endpoint: endpoint, method: .get)
+//                let decoded = try await requestSender.resultFor(apiRequest: request)
+//
+//                let results = decoded.results
+//                if results.isEmpty {
+//                    if debug_enabled { print("[DEBUG] No results on page \(page); stopping") }
+//                    break
+//                }
+//
+//                allResults.append(contentsOf: results)
+//
+//                if results.count < pageSize {
+//                    // last page reached
+//                    break
+//                }
+//
+//                page += 1
+//>>>>>>> 942bc5cc8cb811d218a488ab97c10252e3e3f33c
+//            }
+//
+//            // Assign to published properties on the main actor
+//            await MainActor.run {
+//                self.allScriptsDetailed = allResults
+//
+//<<<<<<< HEAD
+//            print("Loaded \(scripts.count) scripts (detailed: \(allScriptsDetailed.count))")
+//=======
                 // Map to the lightweight ScriptClassic used elsewhere in the UI
                 self.scripts = allResults.map { s in
                     let jamfId = Int(s.id) ?? 0
@@ -5880,6 +5920,7 @@ xml = """
             }
 
             print("Loaded \(allResults.count) scripts across \(page + 1) page(s)")
+//>>>>>>> 942bc5cc8cb811d218a488ab97c10252e3e3f33c
         } catch {
             // Provide clearer diagnostics when script fetching fails
             separationLine()
