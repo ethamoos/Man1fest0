@@ -171,7 +171,10 @@ struct UserDetailedView: View {
             Text("This will permanently remove the user from Jamf Pro. This action cannot be undone.")
         }
         .alert(isPresented: $networkController.showErrorAlert) {
-            Alert(title: Text(networkController.lastErrorTitle ?? "Error"), message: Text(networkController.lastErrorMessage ?? ""), dismissButton: .default(Text("OK")) )
+            // Include any parsed dependency details (e.g. computers preventing deletion) for clearer guidance
+            let base = networkController.lastErrorMessage ?? ""
+            let deps = networkController.lastErrorDetails.isEmpty ? "" : "\n\nDependent items: " + networkController.lastErrorDetails.joined(separator: ", ")
+            return Alert(title: Text(networkController.lastErrorTitle ?? "Error"), message: Text(base + deps), dismissButton: .default(Text("OK")))
         }
     }
 }
