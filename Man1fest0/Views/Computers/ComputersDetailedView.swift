@@ -21,6 +21,9 @@ struct ComputersDetailedView: View {
     @State private var lastUpdated: Date? = nil
     @State private var showDeleteAlert: Bool = false
     @State private var isDeleting: Bool = false
+    @State private var editUsername: String = ""
+    @State private var showUpdateUsernameConfirm: Bool = false
+    @State private var isUpdatingUsername: Bool = false
 
     var body: some View {
         Group {
@@ -107,6 +110,35 @@ struct ComputersDetailedView: View {
                                 .tint(.blue)
                             }
                         }
+
+                        // Username update field + button
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                TextField("Username", text: $editUsername)
+                                    .textSelection(.enabled)
+                                    .frame(minWidth: 180)
+                                Button(action: {
+                                    // show confirmation alert
+                                    showUpdateUsernameConfirm = true
+                                }) {
+                                    Text("Update Username")
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.blue)
+                                .disabled(editUsername.isEmpty)
+                            }
+                        }
+                        // Overlay a small activity indicator while updating username
+                        .overlay(
+                            Group {
+                                if isUpdatingUsername {
+                                    ProgressView("Updating...")
+                                        .progressViewStyle(CircularProgressViewStyle())
+                                        .padding(8)
+                                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.windowBackgroundColor).opacity(0.85)))
+                                }
+                            }
+                        )
 
                         // Picker for commands + Flush button
                         HStack(alignment: .center, spacing: 12) {
@@ -268,6 +300,33 @@ struct ComputersDetailedView: View {
         } message: {
             Text("This will permanently remove the selected computer record from the server. Are you sure?")
         }
+        // Confirmation for username update
+        .alert("Update computer username?", isPresented: $showUpdateUsernameConfirm) {
+            Button("Update", role: .none) {
+                isUpdatingUsername = true
+                progress.showProgress()
+                progress.waitForABit()
+
+                Task {
+                    // perform the update (non-async function)
+                    networkController.updateComputerLocationUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: computerID, newUsername: editUsername)
+                    // small delay to let server process, then refresh detailed record
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    do {
+                        try await networkController.getDetailedComputer(userID: computerID)
+                        lastUpdated = Date()
+                    } catch {
+                        print("Failed refreshing detail after username update: \(error)")
+                        networkController.publishError(error, title: "Failed to refresh computer")
+                    }
+                    progress.endProgress()
+                    isUpdatingUsername = false
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will update the username attribute for this computer on the server. Continue?")
+        }
         .task(id: computerID) {
             print("ComputersDetailedView.task starting for computerID: \(computerID)")
             isLoading = true
@@ -277,6 +336,10 @@ struct ComputersDetailedView: View {
             }
             do {
                 try await networkController.getDetailedComputer(userID: computerID)
+                // Populate editable username from fetched detail
+                await MainActor.run {
+                    self.editUsername = networkController.computerDetailedFull?.general?.username ?? networkController.computerDetailed?.username ?? ""
+                }
                 lastUpdated = Date()
                 print("ComputersDetailedView.task completed fetch for computerID: \(computerID)")
             } catch {

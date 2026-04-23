@@ -3290,14 +3290,14 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         }
     }
 
-    // Update the username attribute for a computer (from a detailed computer record)
-    // Example usage: updateComputerUsername(server:server, authToken:token, resourceType:.computerDetailed, computerID: "123", newUsername: "jdoe")
-    func updateComputerUsername(server: String, authToken: String, resourceType: ResourceType, computerID: String, newUsername: String) {
+    // Update the username under <general> for a computer (from a detailed computer record)
+    // Example usage: updateComputerGeneralUsername(server:server, authToken:token, resourceType:.computerDetailed, computerID: "123", newUsername: "jdoe")
+    func updateComputerGeneralUsername(server: String, authToken: String, resourceType: ResourceType, computerID: String, newUsername: String) {
         let resourcePath = getURLFormat(data: (resourceType))
         var xml: String
 
         self.separationLine()
-        print("updateComputerUsername XML")
+        print("updateComputerGeneralUsername XML")
         print("newUsername is set as:\(newUsername)")
         print("computerID is set as:\(computerID)")
 
@@ -3320,22 +3320,22 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
                 print("Set updateXML to true ")
                 self.updateXML = true
             } else {
-                print("Error making serverURL for updateComputerUsername")
+                print("Error making serverURL for updateComputerGeneralUsername")
             }
         } else {
-            print("Invalid server string passed to updateComputerUsername: \(server)")
+            print("Invalid server string passed to updateComputerGeneralUsername: \(server)")
         }
     }
 
-    // Convenience: update username using a decoded ComputerFull (from ComputerDetailedFullResponse)
+    // Convenience: update <general> username using a decoded ComputerFull (from ComputerDetailedFullResponse)
     // If `overrideUsername` is provided it will be used; otherwise the function uses the value
     // found in `computerFull.general?.username`. The function logs useful diagnostics and
     // returns early when required fields are missing.
-    func updateComputerUsername(from computerFull: ComputerFull, overrideUsername: String? = nil, server: String, authToken: String, resourceType: ResourceType = .computerDetailed) {
+    func updateComputerGeneralUsername(from computerFull: ComputerFull, overrideUsername: String? = nil, server: String, authToken: String, resourceType: ResourceType = .computerDetailed) {
         // Attempt to get the Jamf ID from the detailed object. Many decoded structs represent
         // the id as a String; if it's numeric elsewhere callers can adapt accordingly.
         guard let general = computerFull.general else {
-            print("updateComputerUsername(from:): detailed computer record missing 'general' section")
+            print("updateComputerGeneralUsername(from:): detailed computer record missing 'general' section")
             return
         }
 
@@ -3355,19 +3355,105 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         }()
 
         if jamfIDString.isEmpty {
-            print("updateComputerUsername(from:): could not determine Jamf ID from detailed record")
+            print("updateComputerGeneralUsername(from:): could not determine Jamf ID from detailed record")
             return
         }
 
         // Determine username to apply
         let usernameToSet = overrideUsername ?? (general as AnyObject).value(forKey: "username") as? String ?? ""
         if usernameToSet.isEmpty {
-            print("updateComputerUsername(from:): no username available to set (overrideUsername and detailed record both empty)")
+            print("updateComputerGeneralUsername(from:): no username available to set (overrideUsername and detailed record both empty)")
             return
         }
 
         // Delegate to existing updater
-        updateComputerUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
+        updateComputerGeneralUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
+    }
+
+    // New: update the username attribute under <location> for a computer
+    // Example usage: updateComputerLocationUsername(server:server, authToken:token, resourceType:.computerDetailed, computerID: "123", newUsername: "jdoe")
+    func updateComputerLocationUsername(server: String, authToken: String, resourceType: ResourceType, computerID: String, newUsername: String) {
+        let resourcePath = getURLFormat(data: (resourceType))
+        var xml: String
+
+        self.separationLine()
+        print("updateComputerLocationUsername XML")
+        print("newUsername is set as:\(newUsername)")
+        print("computerID is set as:\(computerID)")
+
+        xml = """
+                <computer>
+                    <location>
+                        <username>\(newUsername)</username>
+                    </location>
+                </computer>
+                """
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(computerID)
+                print("Running update computer location username function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                // send XML PUT to update location/username
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            } else {
+                print("Error making serverURL for updateComputerLocationUsername")
+            }
+        } else {
+            print("Invalid server string passed to updateComputerLocationUsername: \(server)")
+        }
+    }
+
+    // Convenience: update <location> username using a decoded ComputerFull
+    func updateComputerLocationUsername(from computerFull: ComputerFull, overrideUsername: String? = nil, server: String, authToken: String, resourceType: ResourceType = .computerDetailed) {
+        guard let general = computerFull.general else {
+            print("updateComputerLocationUsername(from:): detailed computer record missing 'general' section")
+            return
+        }
+
+        // normalize id
+        let jamfIDString: String = {
+            if let idStr = (general as AnyObject).value(forKey: "id") as? String {
+                return idStr
+            }
+            let mirror = Mirror(reflecting: general)
+            for child in mirror.children {
+                if child.label == "id" {
+                    return String(describing: child.value)
+                }
+            }
+            return ""
+        }()
+
+        if jamfIDString.isEmpty {
+            print("updateComputerLocationUsername(from:): could not determine Jamf ID from detailed record")
+            return
+        }
+
+        // prefer overrideUsername, else try to read location.username if present, else fall back to general.username
+        var usernameToSet = overrideUsername ?? ""
+        if usernameToSet.isEmpty {
+            // attempt to read location.username via Mirror / KVC
+            if let location = (computerFull as AnyObject).value(forKeyPath: "location") as? NSObject {
+                if let locUser = location.value(forKey: "username") as? String {
+                    usernameToSet = locUser
+                }
+            }
+            // fallback to general.username
+            if usernameToSet.isEmpty {
+                usernameToSet = (general as AnyObject).value(forKey: "username") as? String ?? ""
+            }
+        }
+
+        if usernameToSet.isEmpty {
+            print("updateComputerLocationUsername(from:): no username available to set (override and fields empty)")
+            return
+        }
+
+        updateComputerLocationUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
     }
     
     
