@@ -44,6 +44,11 @@ struct PolicyDetailView: View {
     // New states for Clone-per-package flow
     @State private var showingClonePerPackageConfirm = false
     @State private var cloningInProgress = false
+    // New states for Clone-per-script flow
+    @State private var showingClonePerScriptConfirm = false
+    @State private var scriptFilter: String = ""
+    @State private var cloneUseParameters: Bool = true
+    @State private var cloneAllParameters: Bool = false
 
     //  ########################################################################################
     //  GROUPS
@@ -190,6 +195,11 @@ struct PolicyDetailView: View {
 
         let document = TextDocument(text: text)
 
+        // Compute filtered scripts list here (outside the ViewBuilder) so we don't place statements inside the view builder
+        let filteredScriptsForClone = networkController.scripts.filter { s in
+            scriptFilter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || s.name.lowercased().contains(scriptFilter.lowercased())
+        }
+        
         VStack(alignment: .leading) {
 
             //  ################################################################################
@@ -367,70 +377,152 @@ struct PolicyDetailView: View {
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 
                 
-                HStack {
+                
+                
+#endif
+            }
+            
+            .textSelection(.enabled)
+            
                 //              ##########################################################################
                 //              CLONE
                 //              ##########################################################################
                 
-               
+                DisclosureGroup("Clone Policy") {
                 
-                Button(action: {
-                    print("Cloning policy:\(policyName)")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    if policyNameClone == policyName {
-                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                        let newPolicyName = "\(policyNameInitial)-1"
-                        print("No name provided - policy is:\(newPolicyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
-                    } else {
-                        print("Cloning name is being used and is set as:\(policyNameClone)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
-                    }
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "dog")
-                        Text("Clone")
-                    }
-                }
-                .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-                    TextField(policyName, text: $policyNameClone)
-                        .textSelection(.enabled)
-                
-                // Clone-per-package button: only present when multiple packages are attached
-                if networkController.packagesAssignedToPolicy.count > 1 {
-                    Button(action: {
-                        showingClonePerPackageConfirm = true
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "doc.on.doc")
-                            Text("Clone per Package")
+                    LazyVGrid(columns: layout.fourColumns, spacing: 20) {
+                        
+                        HStack {
+                            
+                            Button(action: {
+                                print("Cloning policy:\(policyName)")
+                                progress.showProgress()
+                                progress.waitForABit()
+                                if policyNameClone == policyName {
+                                    policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
+                                    let newPolicyName = "\(policyNameInitial)-1"
+                                    print("No name provided - policy is:\(newPolicyName)")
+                                    policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+                                } else {
+                                    print("Cloning name is being used and is set as:\(policyNameClone)")
+                                    policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
+                                }
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "dog")
+                                    Text("Clone")
+                                }
+                            }
+                            .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
+                            .buttonStyle(.borderedProminent)
+                            .tint(.orange)
                         }
                     }
-                    .help("Create one cloned policy per package currently assigned to this policy. Each clone will contain exactly one package.")
+            
+                TextField(policyName, text: $policyNameClone)
+                    .textSelection(.enabled)
+                
+                // UI controls to trigger clonePerScript
+                VStack(alignment: .leading, spacing: 6) {
+                    // Filter input for the picker
+                    TextField("Filter scripts...", text: $scriptFilter)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(maxWidth: 260)
+                        .disabled(cloningInProgress)
+                    
+                    // Compute filtered scripts list from networkController.scripts
+                    if !filteredScriptsForClone.isEmpty {
+                        Picker(selection: $selectedScript, label: Text("Script").bold()) {
+                            ForEach(filteredScriptsForClone, id: \.self) { script in
+                                Text(script.name).tag(script)
+                            }
+                        }
+                        .frame(maxWidth: 260)
+                        .onAppear {
+                            // default to first filtered script if none selected or current selection is not in filtered list
+                            if (selectedScript.jamfId == 0 && selectedScript.name.isEmpty) || !filteredScriptsForClone.contains(selectedScript) {
+                                selectedScript = filteredScriptsForClone.first!
+                            }
+                        }
+                        .onChange(of: networkController.scripts) { _ in
+                            if !filteredScriptsForClone.contains(selectedScript) {
+                                selectedScript = filteredScriptsForClone.first ?? ScriptClassic(name: "", jamfId: 0)
+                            }
+                        }
+                        .disabled(cloningInProgress)
+                    } else {
+                        Text("No scripts match filter")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    HStack(spacing: 8) {
+                        Toggle("Use Parameters", isOn: $cloneUseParameters)
+                            .toggleStyle(SwitchToggleStyle(tint: .blue))
+                            .disabled(cloningInProgress)
+                        Toggle("All Parameters", isOn: $cloneAllParameters)
+                            .toggleStyle(SwitchToggleStyle(tint: .blue))
+                            .disabled(cloningInProgress)
+                    }
+                    
+                    Button(action: {
+                        showingClonePerScriptConfirm = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.on.doc")
+                            Text("Clone per Script")
+                        }
+                    }
                     .buttonStyle(.borderedProminent)
                     .tint(.purple)
-                    .disabled(cloningInProgress)
-                    .alert(isPresented: $showingClonePerPackageConfirm) {
-                        Alert(
-                            title: Text("Clone per Package"),
-                            message: Text("This will create \(networkController.packagesAssignedToPolicy.count) new policies (one per package). Are you sure?"),
+                    .disabled(cloningInProgress || (selectedScript.jamfId == 0 && selectedScript.name.isEmpty))
+                    .alert(isPresented: $showingClonePerScriptConfirm) {
+                        // Determine readable identifier for confirmation text
+                        let idText = selectedScript.jamfId == 0 ? selectedScript.name : String(selectedScript.jamfId)
+                        return Alert(
+                            title: Text("Clone per Script"),
+                            message: Text("This will create clones based on script '\(idText)'. Proceed?"),
                             primaryButton: .destructive(Text("Yes, clone")) {
-                                clonePerPackage()
+                                let identifier = selectedScript.jamfId == 0 ? selectedScript.name : String(selectedScript.jamfId)
+                                clonePerScript(scriptIdentifier: identifier, useParameters: cloneUseParameters, allParameters: cloneAllParameters)
                             },
                             secondaryButton: .cancel()
                         )
                     }
                 }
-                         Spacer()
-                     
-             }
-#endif
+                
+                // Clone-per-package button: only present when multiple packages are attached
+            if networkController.packagesAssignedToPolicy.count > 1 {
+                Button(action: {
+                    showingClonePerPackageConfirm = true
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "doc.on.doc")
+                        Text("Clone per Package")
+                    }
+                }
+                .help("Create one cloned policy per package currently assigned to this policy. Each clone will contain exactly one package.")
+                .buttonStyle(.borderedProminent)
+                .tint(.purple)
+                .disabled(cloningInProgress)
+                .alert(isPresented: $showingClonePerPackageConfirm) {
+                    Alert(
+                        title: Text("Clone per Package"),
+                        message: Text("This will create \(networkController.packagesAssignedToPolicy.count) new policies (one per package). Are you sure?"),
+                        primaryButton: .destructive(Text("Yes, clone")) {
+                            clonePerPackage()
+                        },
+                        secondaryButton: .cancel()
+                    )
+                }
             }
-            
-            .textSelection(.enabled)
+                    
+                    //              ##########################################################################
+                    //              CLONE - END
+                    //
+//                }
+                     Spacer()
+                 
+         }
             
             //  ##########################################################################
             //              UPDATE NAME
@@ -912,6 +1004,243 @@ struct PolicyDetailView: View {
                 }
             }
             print("clonePerPackage finished")
+        }
+    }
+
+    // New: Clone the current policy into multiple policies based on the presence of a specified script.
+    // - `scriptIdentifier`: either a Jamf script ID (numeric string) or a script name to match.
+    // - `useParameters`: when true, create one clone per non-empty parameter value found in matching scripts.
+    // - `allParameters`: when true, each generated clone will include all matching script instances with all parameters preserved; otherwise clones include only the single script instance with only the parameter used for naming.
+    func clonePerScript(scriptIdentifier: String, useParameters: Bool = true, allParameters: Bool = false) {
+        Task {
+            cloningInProgress = true
+            defer { cloningInProgress = false }
+
+            let xmlString = xmlController.currentPolicyAsXML
+            guard !xmlString.isEmpty else {
+                print("Current policy XML is empty - cannot clone per script")
+                return
+            }
+
+            // Determine if identifier is numeric (Jamf ID) or a name
+            let identifierInt = Int(scriptIdentifier)
+            let identifierName = scriptIdentifier
+
+            // Parse XML once to discover matching script nodes
+            do {
+                let data = Data(xmlString.utf8)
+                let doc = try AEXMLDocument(xml: data)
+
+                let scriptsNode = doc.root["scripts"]
+                if scriptsNode.children.isEmpty {
+                    print("No <scripts> section found in policy XML")
+                    return
+                }
+
+                // Gather matching script nodes (we'll capture their XML string and their parameter sets)
+                struct MatchedScript {
+                    let xmlString: String
+                    let id: String
+                    let name: String
+                    let parameters: [(key: String, value: String)]
+                }
+
+                var matchedScripts: [MatchedScript] = []
+
+                for scriptChild in scriptsNode.children where scriptChild.name == "script" {
+                    let sid = scriptChild["id"].string
+                    let sname = scriptChild["name"].string
+
+                    var isMatch = false
+                    if let identifierInt = identifierInt, Int(sid) == identifierInt {
+                        isMatch = true
+                    } else if !identifierName.isEmpty && sname == identifierName {
+                        isMatch = true
+                    }
+
+                    if !isMatch { continue }
+
+                    // Collect parameter elements (parameterX) that are non-empty
+                    var params: [(String, String)] = []
+                    for child in scriptChild.children {
+                        if child.name.lowercased().hasPrefix("parameter") {
+                            let val = child.string.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !val.isEmpty {
+                                params.append((child.name, val))
+                            }
+                        }
+                    }
+
+                    matchedScripts.append(MatchedScript(xmlString: scriptChild.xml, id: sid, name: sname, parameters: params))
+                }
+
+                guard !matchedScripts.isEmpty else {
+                    print("No matching scripts found for identifier: \(scriptIdentifier)")
+                    return
+                }
+
+                // Determine clones to create
+                // If useParameters is true, we will create one clone for each parameter entry across all matched scripts
+                // If useParameters is false, we will create one clone per matched script instance
+                var cloneJobs: [(scriptIndex: Int, parameter: (key: String, value: String)?)] = []
+                if useParameters {
+                    for (idx, ms) in matchedScripts.enumerated() {
+                        if ms.parameters.isEmpty {
+                            // If there are no parameters but useParameters requested, still create a single clone (fallback)
+                            cloneJobs.append((scriptIndex: idx, parameter: nil))
+                        } else {
+                            for param in ms.parameters {
+                                cloneJobs.append((scriptIndex: idx, parameter: param))
+                            }
+                        }
+                    }
+                } else {
+                    for (idx, _) in matchedScripts.enumerated() {
+                        cloneJobs.append((scriptIndex: idx, parameter: nil))
+                    }
+                }
+
+                if cloneJobs.isEmpty {
+                    print("No clone jobs found (no parameters and useParameters requested)")
+                    return
+                }
+
+                // Helper to sanitize names
+                func sanitizeForName(_ input: String) -> String {
+                    var allowed = CharacterSet.alphanumerics.union(.whitespaces).union(CharacterSet(charactersIn: "-_"))
+                    let filtered = input.unicodeScalars.map { allowed.contains($0) ? Character($0) : Character("-") }
+                    var out = String(filtered)
+                    while out.contains("--") { out = out.replacingOccurrences(of: "--", with: "-") }
+                    out = out.trimmingCharacters(in: .whitespacesAndNewlines)
+                    out = out.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+                    if out.isEmpty { out = "script" }
+                    if out.count > 200 { out = String(out.prefix(200)) }
+                    return out
+                }
+
+                var generatedNames = Set<String>()
+
+                // For each clone job, construct a modified XML and request a clone
+                for job in cloneJobs {
+                    do {
+                        let dataForClone = Data(xmlString.utf8)
+                        let cloneDoc = try AEXMLDocument(xml: dataForClone)
+
+                        // Remove existing scripts node entirely and replace with our constructed one
+                        if !cloneDoc.root["scripts"].children.isEmpty {
+                            cloneDoc.root["scripts"].removeFromParent()
+                        }
+
+                        let newScriptsNode = cloneDoc.root.addChild(name: "scripts")
+
+                        if allParameters {
+                            // Include all matched script instances with all parameters preserved
+                            for ms in matchedScripts {
+                                // Parse the matched script fragment to AEXML and append as a child
+                                if let msDoc = try? AEXMLDocument(xml: Data(ms.xmlString.utf8)) {
+                                    // msDoc.root is the <script> node
+                                    let scriptElement = newScriptsNode.addChild(name: "script")
+                                    // copy children from msDoc.root
+                                    for child in msDoc.root.children {
+                                        _ = scriptElement.addChild(name: child.name, value: child.string)
+                                    }
+                                } else {
+                                    // fallback: create an id/name/priority stub
+                                    let scriptElement = newScriptsNode.addChild(name: "script")
+                                    _ = scriptElement.addChild(name: "id", value: ms.id)
+                                    _ = scriptElement.addChild(name: "name", value: ms.name)
+                                }
+                            }
+                            newScriptsNode.addChild(name: "size", value: String(matchedScripts.count))
+
+                            // Derive name: if parameter exists in job, use it for naming, otherwise use a combined name
+                            var candidateName = "\(policyNameClone.isEmpty ? (networkController.policyDetailed?.general?.name ?? policyName) : policyNameClone)"
+                            if let param = job.parameter {
+                                candidateName += "-\(sanitizeForName(param.value))"
+                            } else {
+                                // combine script names
+                                let joined = matchedScripts.map { sanitizeForName($0.name) }.joined(separator: "-")
+                                candidateName += "-\(joined)"
+                            }
+                            var finalName = sanitizeForName(candidateName)
+                            if generatedNames.contains(finalName) {
+                                finalName += "-\(UUID().uuidString.prefix(6))"
+                            }
+                            generatedNames.insert(finalName)
+
+                            policyController.clonePolicy(xmlContent: cloneDoc.root.xml, server: server, policyName: finalName, authToken: networkController.authToken)
+                            print("Requested clone (allParameters) as \(finalName)")
+
+                        } else {
+                            // Only include a single instance of the script with only the selected parameter set (or no parameters if none)
+                            let ms = matchedScripts[job.scriptIndex]
+                            let scriptElement = newScriptsNode.addChild(name: "script")
+                            // basic fields
+                            _ = scriptElement.addChild(name: "id", value: ms.id)
+                            _ = scriptElement.addChild(name: "name", value: ms.name)
+
+                            // attempt to copy priority if present in original matched xml (safe, non-throwing)
+                            var priorityValue: String? = nil
+                            if ms.xmlString.range(of: "<priority>") != nil {
+                                if let doc = try? AEXMLDocument(xml: Data(("<root>\(ms.xmlString)</root>").utf8)) {
+                                    priorityValue = doc.root["script"]["priority"].string
+                                }
+                            }
+                            if let pv = priorityValue, !pv.isEmpty {
+                                _ = scriptElement.addChild(name: "priority", value: pv)
+                            }
+
+                            // Add only the parameter used for naming (when parameter provided), otherwise add no additional parameter elements
+                            if let param = job.parameter {
+                                _ = scriptElement.addChild(name: param.key, value: param.value)
+                            } else {
+                                // If no parameter and useParameters was true but script had none, copy all parameters (fallback)
+                                if ms.parameters.isEmpty {
+                                    // parse ms.xmlString and copy all children except id/name
+                                    if let msDoc = try? AEXMLDocument(xml: Data(ms.xmlString.utf8)) {
+                                        for child in msDoc.root.children {
+                                            if child.name != "id" && child.name != "name" && child.name != "priority" {
+                                                _ = scriptElement.addChild(name: child.name, value: child.string)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            newScriptsNode.addChild(name: "size", value: "1")
+
+                            // Determine clone name
+                            var base = policyNameClone.isEmpty ? (networkController.policyDetailed?.general?.name ?? policyName) : policyNameClone
+                            var candidateName: String
+                            if let param = job.parameter {
+                                candidateName = "\(sanitizeForName(param.value))"
+                            } else {
+                                // fallback to script name or id
+                                candidateName = sanitizeForName(ms.name.isEmpty ? ms.id : ms.name)
+                            }
+                            var finalName = sanitizeForName("\(base)-\(candidateName)")
+                            if generatedNames.contains(finalName) {
+                                finalName += "-\(UUID().uuidString.prefix(6))"
+                            }
+                            generatedNames.insert(finalName)
+
+                            policyController.clonePolicy(xmlContent: cloneDoc.root.xml, server: server, policyName: finalName, authToken: networkController.authToken)
+                            print("Requested clone for script parameter \(String(describing: job.parameter?.value)) as \(finalName)")
+                        }
+
+                        // Small delay between requests
+                        try await Task.sleep(nanoseconds: 200_000_000)
+
+                    } catch {
+                        print("Failed to prepare clone XML for job: \(job). Error: \(error)")
+                    }
+                }
+
+                print("clonePerScript finished - created \(cloneJobs.count) clones (requested)")
+
+            } catch {
+                print("Failed to parse policy XML for clonePerScript: \(error)")
+            }
         }
     }
 

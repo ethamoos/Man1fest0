@@ -315,18 +315,37 @@ struct UsersActionView: View {
                 failures += 1
                 switch jamfErr {
                 case .http(let code):
-                    if code == 403 { failureDetails.append("\(jid): Not authorized (403)") }
-                    else if code == 404 { failureDetails.append("\(jid): Not found (404)") }
-                    else { failureDetails.append("\(jid): HTTP \(code)") }
+                    if code == 403 {
+                        failureDetails.append("\(jid): Not authorized (403)")
+                    } else if code == 404 {
+                        failureDetails.append("\(jid): Not found (404)")
+                    } else if code == 400 {
+                        // Bad Request - likely dependencies preventing delete. Include parsed details from NetBrain if available.
+                        if !networkController.lastErrorDetails.isEmpty {
+                            let deps = networkController.lastErrorDetails.joined(separator: ", ")
+                            failureDetails.append("\(jid): Cannot delete - dependent items: \(deps)")
+                        } else {
+                            failureDetails.append("\(jid): Bad Request (400)")
+                        }
+                    } else {
+                        failureDetails.append("\(jid): HTTP \(code)")
+                    }
                 default:
                     failureDetails.append("\(jid): \(String(describing: jamfErr))")
                 }
             } catch {
                 failures += 1
-                failureDetails.append("\(jid): \(error.localizedDescription)")
+                // If NetBrain parsed dependency details from last response, include them for context
+                if !networkController.lastErrorDetails.isEmpty {
+                    let deps = networkController.lastErrorDetails.joined(separator: ", ")
+                    failureDetails.append("\(jid): \(error.localizedDescription) - dependent items: \(deps)")
+                } else {
+                    failureDetails.append("\(jid): \(error.localizedDescription)")
+                }
             }
         }
 
+        // Refresh the list after attempted deletes
         do { try await networkController.getAllUsers() } catch { }
 
         isPerformingAction = false
@@ -341,17 +360,9 @@ struct UsersActionView: View {
             resultAlertTitle = "Delete completed with errors"
             let shown = failureDetails.prefix(10).joined(separator: "\n")
             let more = failureDetails.count > 10 ? "\n...and \(failureDetails.count - 10) more" : ""
-            resultAlertMessage = "Deleted \(successes) user(s); \(failures) failed.\n\nDetails:\n\(shown)\(more)"
+            resultAlertMessage = shown + more
         }
         showResultAlert = true
     }
-}
 
-struct UsersActionView_Previews: PreviewProvider {
-    static var previews: some View {
-        UsersActionView(server: "https://jamf.example.com")
-            .environmentObject(NetBrain())
-            .environmentObject(Progress())
-            .environmentObject(Layout())
-    }
 }

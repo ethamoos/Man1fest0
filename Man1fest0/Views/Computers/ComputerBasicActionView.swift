@@ -29,6 +29,9 @@ struct ComputerBasicActionView: View {
         
         @State private var selectionCompGroup: ComputerGroup? = nil
         @State var selection = Set<ComputerBasicRecord>()
+        @State private var usernameToSet: String = ""
+        @State private var showUsernameUpdateConfirm: Bool = false
+        @State private var isUpdatingUsername: Bool = false
         
         @State private var selectedEAName = ""
         @State private var eaValue = ""
@@ -92,7 +95,7 @@ struct ComputerBasicActionView: View {
                             .padding(.vertical, 4)
                         }
                         .searchable(text: $searchText)
-                        .listStyle(.sidebar)
+                        .listStyle(SidebarListStyle())
     #else
                         List(searchResults, id: \.self) { computer in
                             HStack {
@@ -184,7 +187,39 @@ struct ComputerBasicActionView: View {
                         Text("Update Extension Attribute")
                             .font(.headline)
                             .foregroundColor(.primary)
-                        
+
+                        // Update Username for selected computers
+                        VStack(alignment: .leading) {
+                            HStack {
+                                TextField("Username to set", text: $usernameToSet)
+                                    .textFieldStyle(.roundedBorder)
+                                Button(action: {
+                                    // show confirmation alert
+                                    guard !selection.isEmpty else { return }
+                                    showUsernameUpdateConfirm = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "person.fill.questionmark")
+                                        Text("Set Username for \(selection.count) computers")
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.blue)
+                                .disabled(usernameToSet.isEmpty || selection.isEmpty || isUpdatingUsername)
+                            }
+                        }
+                        // overlay a small progress indicator while updating
+                        .overlay(
+                            Group {
+                                if isUpdatingUsername {
+                                    ProgressView("Updating...")
+                                        .progressViewStyle(CircularProgressViewStyle())
+                                        .padding(8)
+                                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.windowBackgroundColor).opacity(0.85)))
+                                }
+                            }
+                        )
+
                         HStack {
                             Text("Extension Attribute:")
                             Picker("", selection: $selectedEAName) {
@@ -266,6 +301,27 @@ struct ComputerBasicActionView: View {
                 }
             }
             .padding()
+            // Username update confirmation alert
+            .alert("Set username for selected computers?", isPresented: $showUsernameUpdateConfirm) {
+                Button("Set") {
+                    isUpdatingUsername = true
+                    progress.showProgress()
+                    progress.waitForABit()
+                    let ids = selection.map { String($0.id) }
+                    Task {
+                        for id in ids {
+                            networkController.updateComputerLocationUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, newUsername: usernameToSet)
+                        }
+                        try? await Task.sleep(nanoseconds: 400_000_000)
+                        do { try await networkController.getComputersBasic(server: server, authToken: networkController.authToken) } catch { print("Failed to refresh computers after username update: \(error)") }
+                        progress.endProgress()
+                        isUpdatingUsername = false
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will set the username attribute for the selected computers on the server. Continue?")
+            }
         }
 
         var searchResults: [ComputerBasicRecord] {
