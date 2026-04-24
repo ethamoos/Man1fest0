@@ -975,7 +975,10 @@ print("DEBUG - status code is 200, response is:")
         isPolicyDetailsFlushScheduled = true
         let interval = policyDetailsFlushInterval
         DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
-            Task { await self?.flushPolicyDetails() }
+            Task { [weak self] in
+                // flushPolicyDetails is @MainActor synchronous; call it directly
+                self?.flushPolicyDetails()
+            }
         }
     }
 
@@ -1753,9 +1756,16 @@ print("DEBUG - status code is 200, response is:")
         }
     }
 
+    // Helper to remove HTML tags for better user messages
+    private func stripHTML(_ html: String) -> String {
+        return html.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+                   .replacingOccurrences(of: "&nbsp;", with: " ")
+                   .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     // Delete a user by Jamf ID using the Classic API (JSSResource/users/id/<id>)
     func deleteUser(server: String, resourceType: ResourceType = .account, itemID: String, authToken: String) async throws {
-        let resourcePath = "users"
+        let resourcePath = "users/id"
         guard let serverURL = URL(string: server) else {
             throw JamfAPIError.badURL
         }
@@ -1769,17 +1779,110 @@ print("DEBUG - status code is 200, response is:")
         request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
         request.httpMethod = "DELETE"
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        // Diagnostic: print request method and masked headers (do not log full auth token)
+        var printableHeaders: [String: String] = [:]
+        for (k, v) in request.allHTTPHeaderFields ?? [:] {
+            if k.lowercased() == "authorization" {
+                // Mask token leaving last 4 chars if present
+                let parts = v.split(separator: " ")
+                if parts.count > 1 {
+                    let scheme = String(parts[0])
+                    let token = String(parts[1])
+                    let masked: String
+                    if token.count > 6 {
+                        let visible = token.suffix(4)
+                        masked = String(repeating: "*", count: max(0, token.count - 4)) + visible
+                    } else {
+                        masked = String(repeating: "*", count: token.count)
+                    }
+                    printableHeaders[k] = "\(scheme) \(masked)"
+                } else {
+                    printableHeaders[k] = "****"
+                }
+            } else {
+                printableHeaders[k] = v
+            }
+        }
+        print("Request method: \(request.httpMethod ?? "")")
+        print("Request headers: \(printableHeaders)")
+
+        // Perform request and capture body + response for diagnostics
+        let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+
         // Accept 200 or 204 as successful delete responses (some Jamf endpoints return 204)
         guard statusCode == 200 || statusCode == 204 else {
             print("deleteUser Status code is:\(statusCode)")
             self.hasError = true
             self.currentResponseCode = String(describing: statusCode)
+
+            // Try to print response body (UTF-8), else show length
+            var bodyString: String = ""
+            if data.count > 0 {
+                if let s = String(data: data, encoding: .utf8) {
+                    bodyString = s
+                    print("Response body:\n\(s)")
+                } else {
+                    print("Response body: <non-UTF8> (length: \(data.count) bytes)")
+                }
+            } else {
+                print("Response body: <empty>")
+            }
+
+            if let httpResp = response as? HTTPURLResponse {
+                print("Response headers: \(httpResp.allHeaderFields)")
+            }
+
+            // If server returned a 400 (Bad Request) with explanatory HTML, try to extract a friendly message
+            if statusCode == 400 {
+                var friendlyMessage = "The server rejected the delete request (400)."
+                if !bodyString.isEmpty {
+                    let stripped = stripHTML(bodyString)
+                    // Attempt to extract dependency items like "Computer:Macbook 03" into a structured array
+                    var details: [String] = []
+                    if let regex = try? NSRegularExpression(pattern: "(Computer|Device|Policy|Package|User):\\s*([^\\n\\r<>]+)", options: .caseInsensitive) {
+                        let ns = NSString(string: stripped)
+                        let matches = regex.matches(in: stripped, options: [], range: NSRange(location: 0, length: ns.length))
+                        for m in matches {
+                            if m.numberOfRanges >= 3 {
+                                let type = ns.substring(with: m.range(at: 1)).trimmingCharacters(in: .whitespacesAndNewlines)
+                                let name = ns.substring(with: m.range(at: 2)).trimmingCharacters(in: .whitespacesAndNewlines)
+                                details.append("\(type): \(name)")
+                            }
+                        }
+                    }
+                    if !details.isEmpty {
+                        // publish structured details for UI
+                        DispatchQueue.main.async {
+                            self.lastErrorDetails = details
+                        }
+                    } else {
+                        DispatchQueue.main.async { self.lastErrorDetails = [] }
+                    }
+                     // Look for a line mentioning 'dependent' or a clear reason
+                     let lines = stripped.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+                     if let depLine = lines.first(where: { $0.localizedCaseInsensitiveContains("dependent") || $0.localizedCaseInsensitiveContains("dependent on this") }) {
+                         friendlyMessage = depLine
+                     } else if let br = lines.first(where: { $0.localizedCaseInsensitiveContains("bad request") || $0.localizedCaseInsensitiveContains("error") }) {
+                         friendlyMessage = br
+                     } else {
+                         // fallback to a short excerpt of the stripped body
+                         friendlyMessage = lines.prefix(3).joined(separator: " ")
+                     }
+                 }
+
+                 // Publish an explicit user-facing error so UI can show a helpful alert
+                 publishError(NSError(domain: "JamfAPI", code: statusCode, userInfo: [NSLocalizedDescriptionKey: friendlyMessage]), title: "Cannot delete user")
+             } else {
+                // Generic publish for other error codes: fallback to showing status code / body
+                let display = (bodyString.isEmpty ? "HTTP \(statusCode)" : stripHTML(bodyString))
+                publishError(NSError(domain: "JamfAPI", code: statusCode, userInfo: [NSLocalizedDescriptionKey: display]), title: "Failed to delete user")
+            }
+
             throw JamfAPIError.http(statusCode)
         }
 
-        print("deleteUser has finished successfully")
+        print("deleteUser has finished successfully (status \(statusCode))")
     }
     
 
@@ -5744,6 +5847,8 @@ xml = """
     // Centralized error state (UI observes these to show alerts)
     @Published var lastErrorTitle: String? = nil
     @Published var lastErrorMessage: String? = nil
+    // Structured details extracted from server error responses (e.g. dependent items preventing delete)
+    @Published var lastErrorDetails: [String] = []
     @Published var showErrorAlert: Bool = false
 
     func publishError(_ error: Error, title: String? = nil) {
