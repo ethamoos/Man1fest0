@@ -283,6 +283,10 @@ struct PolicyScopeTabView: View {
     }
 
     private var scopingActionsView: some View {
+        
+                    DisclosureGroup("Enable Bulk Scoping") {
+
+        
         VStack(alignment: .leading) {
             HStack {
                 Button(action: {
@@ -353,42 +357,42 @@ struct PolicyScopeTabView: View {
                     progress.waitForABit()
                 }) {
                     HStack(spacing: 10) { Image(systemName: "eraser"); Text("Disable All Computers") }
-                    .alert(isPresented: $showingWarningDisableAllComputers) {
-                        Alert(
-                            title: Text("Caution!"),
-                            message: Text("This action will disable the policy scoping for all computers.\n This might cause the policy to stop running on many devices"),
-                            primaryButton: .destructive(Text("I understand!")) {
-                                networkController.scopeDisableAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
+                        .alert(isPresented: $showingWarningDisableAllComputers) {
+                            Alert(
+                                title: Text("Caution!"),
+                                message: Text("This action will disable the policy scoping for all computers.\n This might cause the policy to stop running on many devices"),
+                                primaryButton: .destructive(Text("I understand!")) {
+                                    networkController.scopeDisableAllComputers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
-
+                
                 Button(action: {
                     showingWarningDisableAllUsers = true
                     progress.showProgress()
                     progress.waitForABit()
                 }) {
                     HStack(spacing: 10) { Image(systemName: "eraser"); Text("Disable All Users") }
-                    .alert(isPresented: $showingWarningDisableAllUsers) {
-                        Alert(
-                            title: Text("Caution!"),
-                            message: Text("This action will disable the policy scoping for all users.\n This might cause the policy to stop running on many devices"),
-                            primaryButton: .destructive(Text("I understand!")) {
-                                networkController.scopeDisableAllUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
+                        .alert(isPresented: $showingWarningDisableAllUsers) {
+                            Alert(
+                                title: Text("Caution!"),
+                                message: Text("This action will disable the policy scoping for all users.\n This might cause the policy to stop running on many devices"),
+                                primaryButton: .destructive(Text("I understand!")) {
+                                    networkController.scopeDisableAllUsers(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
-
+                
                 Divider()
-
+                
                 HStack {
                     Button(action: {
                         showingWarningClearScope = true
@@ -396,20 +400,21 @@ struct PolicyScopeTabView: View {
                         progress.waitForABit()
                     }) {
                         HStack(spacing: 10) { Image(systemName: "eraser"); Text("Clear Scope") }
-                        .alert(isPresented: $showingWarningClearScope) {
-                            Alert(
-                                title: Text("Caution!"),
-                                message: Text("This action will clear the policy scoping.\n You will need to rescope in order to deploy"),
-                                primaryButton: .destructive(Text("I understand!")) {
-                                    networkController.clearScope(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
-                                },
-                                secondaryButton: .cancel()
-                            )
-                        }
+                            .alert(isPresented: $showingWarningClearScope) {
+                                Alert(
+                                    title: Text("Caution!"),
+                                    message: Text("This action will clear the policy scoping.\n You will need to rescope in order to deploy"),
+                                    primaryButton: .destructive(Text("I understand!")) {
+                                        networkController.clearScope(server: server, resourceType: ResourceType.policyDetail, policyID: String(describing: policyID), authToken: networkController.authToken)
+                                    },
+                                    secondaryButton: .cancel()
+                                )
+                            }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                 }
+            }
             }
         }
     }
@@ -524,9 +529,7 @@ struct PolicyScopeTabView: View {
         Group {
             Divider()
             LazyVGrid(columns: layout.threeColumns, spacing: 20) {
-                TextField("Filter departments...", text: $departmentFilter)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.bottom, 4)
+          
 
                 Picker(selection: $selectionDepartment, label: Text("Department:").bold()) {
                     ForEach(filteredDepartments, id: \.self) { department in
@@ -534,7 +537,9 @@ struct PolicyScopeTabView: View {
                     }
                 }
                 .onAppear { if let first = networkController.departments.first { selectionDepartment = first } }
-
+                TextField("Filter departments...", text: $departmentFilter)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.bottom, 4)
                 Button(action: {
                     progress.showProgress(); progress.waitForABit(); xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken); xmlController.addDepartmentToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, departmentName: selectionDepartment.name, departmentId: String(describing: selectionDepartment.jamfId ?? 0), authToken: networkController.authToken, policyId: String(describing: policyID), resourceType: selectedResourceType, server: server)
                 }) {
@@ -542,6 +547,8 @@ struct PolicyScopeTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                Spacer()
+
             }
         }
     }
@@ -550,9 +557,7 @@ struct PolicyScopeTabView: View {
         Group {
             Divider()
             LazyVGrid(columns: layout.threeColumns, spacing: 20) {
-                TextField("Filter buildings...", text: $buildingFilter)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.bottom, 4)
+                
 
                 Picker(selection: $selectionBuilding, label: Text("Building:").bold()) {
                     Text("").tag(Building(id: 0, name: ""))
@@ -561,7 +566,9 @@ struct PolicyScopeTabView: View {
                     }
                 }
                 .onAppear { if let first = networkController.buildings.first { selectionBuilding = first } }
-
+                TextField("Filter buildings...", text: $buildingFilter)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.bottom, 4)
                 Button(action: {
                     progress.showProgress(); progress.waitForABit(); xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken); xmlController.addBuildingToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, buildingName: selectionBuilding.name, buildingId: String(describing: selectionBuilding.id), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, server: server, authToken: networkController.authToken)
                 }) {
@@ -569,6 +576,8 @@ struct PolicyScopeTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                Spacer()
+
             }
         }
     }
@@ -577,14 +586,14 @@ struct PolicyScopeTabView: View {
         Group {
             Divider()
             LazyVGrid(columns: layout.fourColumnsFlexNarrow, spacing: 5) {
-                TextField("Filter", text: $computerGroupFilter)
+           
                 Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
                     ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)}) , id: \.self) { group in
                         Text(String(describing: group.name)).tag(group as ComputerGroup?)
                     }
                 }
                 .onAppear { if networkController.allComputerGroups.count > 0 { selectionCompGroup = networkController.allComputerGroups[0] } }
-
+                TextField("Filter", text: $computerGroupFilter)
                 Button(action: {
                     progress.showProgress(); progress.waitForABit(); xmlController.updateScopeCompGroupSingle(groupSelection: selectionCompGroup, authToken: networkController.authToken,resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, currentPolicyAsAEXML: networkController.aexmlDoc)
                 }) {
@@ -592,6 +601,7 @@ struct PolicyScopeTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
+                Spacer()
             }
         }
     }
@@ -616,7 +626,7 @@ struct PolicyScopeTabView: View {
     }
 
     private var editLimitationsEditorView: some View {
-//        DisclosureGroup("Edit Limitations") {
+        DisclosureGroup("Edit Limitations") {
         VStack(alignment: .leading) {
 //            LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
             HStack(spacing: 5) {
@@ -694,7 +704,7 @@ struct PolicyScopeTabView: View {
                     }
                 }
             }
-//        }
+        }
     }
 
     private var exclusionsEditorView: some View {
