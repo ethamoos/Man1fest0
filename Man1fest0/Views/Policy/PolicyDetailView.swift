@@ -390,33 +390,34 @@ struct PolicyDetailView: View {
                 
                 DisclosureGroup("Clone Policy") {
                 
-            
-            HStack {
-                
-                Button(action: {
-                    print("Cloning policy:\(policyName)")
-                    progress.showProgress()
-                    progress.waitForABit()
-                    if policyNameClone == policyName {
-                        policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                        let newPolicyName = "\(policyNameInitial)-1"
-                        print("No name provided - policy is:\(newPolicyName)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
-                    } else {
-                        print("Cloning name is being used and is set as:\(policyNameClone)")
-                        policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
+                    LazyVGrid(columns: layout.fourColumns, spacing: 20) {
+                        
+                        HStack {
+                            
+                            Button(action: {
+                                print("Cloning policy:\(policyName)")
+                                progress.showProgress()
+                                progress.waitForABit()
+                                if policyNameClone == policyName {
+                                    policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
+                                    let newPolicyName = "\(policyNameInitial)-1"
+                                    print("No name provided - policy is:\(newPolicyName)")
+                                    policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+                                } else {
+                                    print("Cloning name is being used and is set as:\(policyNameClone)")
+                                    policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
+                                }
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "dog")
+                                    Text("Clone")
+                                }
+                            }
+                            .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
+                            .buttonStyle(.borderedProminent)
+                            .tint(.orange)
+                        }
                     }
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "dog")
-                        Text("Clone")
-                    }
-                }
-                .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-            }
-            
             
                 TextField(policyName, text: $policyNameClone)
                     .textSelection(.enabled)
