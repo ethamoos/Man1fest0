@@ -9,6 +9,7 @@ struct ComputersDetailedView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var pushController: PushBrain
     @EnvironmentObject var extensionAttributeController: EaBrain
+    @EnvironmentObject var prestageController: PrestageBrain
 
     // Local UI state for buttons copied from ComputersBasicDetailedView
     @State private var selectedCommand = ""

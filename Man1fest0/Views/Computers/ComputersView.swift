@@ -18,6 +18,7 @@ struct ComputersView: View {
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
     @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var prestageController: PrestageBrain
     
     //  ########################################################################################
     //  Selections
@@ -68,8 +69,22 @@ struct ComputersView: View {
                             HStack {
                                 Image(systemName: "desktopcomputer")
                                     .foregroundColor(.accentColor)
-                                Text(computer.name)
-                                    .font(.system(size: 13.0))
+                                VStack(alignment: .leading) {
+                                    Text(computer.name)
+                                        .font(.system(size: 13.0))
+                                    HStack(spacing: 8) {
+                                        Text("Serial: \(computer.serialNumber)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        // Show prestage if known
+                                        if let psId = prestageController.allPrestagesScope?.serialsByPrestageID[computer.serialNumber] ?? prestageController.serialPrestageAssignment[computer.serialNumber] {
+                                            let psName = prestageController.allPrestages.first(where: { $0.id == psId })?.displayName ?? "(id:\(psId))"
+                                            Text("Prestage: \(psName)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
                             }
                             .padding(.vertical, 4)
                             .tag(computer.id)
@@ -102,6 +117,7 @@ struct ComputersView: View {
                             .environmentObject(networkController)
                             .environmentObject(xmlController)
                             .environmentObject(progress)
+                            .environmentObject(prestageController)
                     } else {
                         Text("Select a computer to view details")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,12 +130,18 @@ struct ComputersView: View {
                     NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
                                     .environmentObject(networkController)
                                     .environmentObject(xmlController)
-                                    .environmentObject(progress)) {
+                                    .environmentObject(progress)
+                                    .environmentObject(prestageController)) {
                         HStack {
                             Image(systemName: "desktopcomputer")
                                 .foregroundColor(.accentColor)
-                            Text(computer.name)
-                                .font(.system(size: 13.0))
+                            VStack(alignment: .leading) {
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                                Text("Serial: \(computer.serialNumber)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         .padding(.vertical, 4)
                     }
