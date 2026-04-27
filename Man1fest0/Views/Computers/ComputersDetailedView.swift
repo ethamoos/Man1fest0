@@ -61,15 +61,16 @@ struct ComputersDetailedView: View {
                         Text("Activation Lock Status: \(activationLock)")
                         
                         // Show assigned prestage if available
-                        
-                        if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[general?.serial_number ?? ""] ?? prestageController.serialPrestageAssignment[general?.serial_number ?? ""] {
+                        let serialNumber = general?.serial_number ?? ""
+                        if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serialNumber] ?? prestageController.serialPrestageAssignment[serialNumber] {
                             let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
-                            Text("Prestage: \(prestageName)")
-//                                .font(.caption)
-//                                .foregroundColor(.secondary)
+                            // NavigationLink to PrestagesEditView so user can edit the prestage assignment for this device
+                            NavigationLink(destination: PrestagesEditView(initialPrestageID: prestageId, targetPrestageID: "", serial: serialNumber, server: server, showProgressScreen: false)) {
+                                Text("Prestage: \(prestageName)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
-                        
-                        
 
                         // Top action row (Delete button + Open in Browser)
                         HStack {

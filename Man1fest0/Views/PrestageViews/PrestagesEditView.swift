@@ -24,6 +24,9 @@ struct PrestagesEditView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var layout: Layout
 
+    // Allows dismissing / navigating back
+    @Environment(\.dismiss) private var dismiss
+
     
     @State var initialPrestageID: String
     
@@ -79,7 +82,16 @@ struct PrestagesEditView: View {
         VStack(alignment: .leading) {
             
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
+                    // Back button + header
+                    HStack(alignment: .center) {
+                        Button(action: { dismiss() }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.left")
+                                Text("Back")
+                            }
+                        }
+                        .buttonStyle(.bordered)
+
                         VStack(alignment: .leading) {
                             Text("Update Assigned Prestage").font(.title2).fontWeight(.semibold)
                             Text("Move or remove a device from a prestage").font(.subheadline).foregroundColor(.secondary)
