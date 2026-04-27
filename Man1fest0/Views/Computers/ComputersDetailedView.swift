@@ -64,8 +64,12 @@ struct ComputersDetailedView: View {
                         let serialNumber = general?.serial_number ?? ""
                         if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serialNumber] ?? prestageController.serialPrestageAssignment[serialNumber] {
                             let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
-                            // NavigationLink to PrestagesEditView so user can edit the prestage assignment for this device
-                            NavigationLink(destination: PrestagesEditView(initialPrestageID: prestageId, targetPrestageID: "", serial: serialNumber, server: server, showProgressScreen: false)) {
+                            // Open PrestagesEditView as a sheet via PrestageBrain state so parent can control presentation
+                            Button(action: {
+                                prestageController.activePrestageEditorInitialID = prestageId
+                                prestageController.activePrestageEditorSerial = serialNumber
+                                prestageController.isPrestageEditorActive = true
+                            }) {
                                 Text("Prestage: \(prestageName)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)

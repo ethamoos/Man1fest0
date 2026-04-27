@@ -1,7 +1,7 @@
 //
 //  PrestagesEditView.swift
 //  Man1fest0
-//
+//  
 //  Created by Amos Deane on 29/01/2024.
 //
 
@@ -254,6 +254,12 @@ struct PrestagesEditView: View {
             getCurrentPrestageName(initialPrestageID: initialPrestageID)
             getCurrentPrestage(targetPrestageID: initialPrestageID, authToken: networkController.authToken)
             currentPrestageName = self.currentPrestage.displayName
+        }
+        .onDisappear() {
+            // Ensure global editor state is cleared when the view is dismissed
+            prestageController.isPrestageEditorActive = false
+            prestageController.activePrestageEditorSerial = nil
+            prestageController.activePrestageEditorInitialID = nil
         }
     }
     

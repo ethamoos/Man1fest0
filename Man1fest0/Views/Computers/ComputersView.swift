@@ -105,6 +105,29 @@ struct ComputersView: View {
                         if let firstId = newSelection.first,
                            let found = networkController.allComputersBasic.computers.first(where: { $0.id == firstId }) {
                             selectedComputer = found
+
+                            // If the prestage editor is active, decide whether to auto-open for the newly selected computer
+                            if prestageController.isPrestageEditorActive {
+                                if prestageController.autoOpenEditorOnSelectionChange {
+                                    let serial = found.serialNumber
+                                    if let newPrestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serial] ?? prestageController.serialPrestageAssignment[serial] {
+                                        prestageController.activePrestageEditorSerial = serial
+                                        prestageController.activePrestageEditorInitialID = newPrestageId
+                                        // keep isPrestageEditorActive true to present editor for new computer
+                                    } else {
+                                        // No prestage assignment for this new computer - dismiss the editor
+                                        prestageController.isPrestageEditorActive = false
+                                        prestageController.activePrestageEditorSerial = nil
+                                        prestageController.activePrestageEditorInitialID = nil
+                                    }
+                                } else {
+                                    // Preference is to dismiss editor on selection change
+                                    prestageController.isPrestageEditorActive = false
+                                    prestageController.activePrestageEditorSerial = nil
+                                    prestageController.activePrestageEditorInitialID = nil
+                                }
+                            }
+
                         } else {
                             selectedComputer = nil
                         }
@@ -124,6 +147,16 @@ struct ComputersView: View {
                     }
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
+#if os(macOS)
+                // Present PrestagesEditView as a sheet controlled by PrestageBrain so selection changes can influence it
+                .sheet(isPresented: Binding(get: { prestageController.isPrestageEditorActive }, set: { newVal in prestageController.isPrestageEditorActive = newVal })) {
+                    PrestagesEditView(initialPrestageID: prestageController.activePrestageEditorInitialID ?? "", targetPrestageID: "", serial: prestageController.activePrestageEditorSerial ?? "", server: server, showProgressScreen: false)
+                        .environmentObject(prestageController)
+                        .environmentObject(networkController)
+                        .environmentObject(progress)
+                        .environmentObject(xmlController)
+                }
+#endif
 #else
                 // On other platforms, fall back to the existing list with NavigationLinks
                 List(searchResults, id: \.self) { computer in
