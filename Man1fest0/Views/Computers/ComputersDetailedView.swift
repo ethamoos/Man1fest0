@@ -59,6 +59,17 @@ struct ComputersDetailedView: View {
                         Text("Hardware model: \(hardware?.model ?? "")")
                         Text("Filevault Status: \(filevaultStatus)")
                         Text("Activation Lock Status: \(activationLock)")
+                        
+                        // Show assigned prestage if available
+                        
+                        if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[general?.serial_number ?? ""] ?? prestageController.serialPrestageAssignment[general?.serial_number ?? ""] {
+                            let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
+                            Text("Prestage: \(prestageName)")
+//                                .font(.caption)
+//                                .foregroundColor(.secondary)
+                        }
+                        
+                        
 
                         // Top action row (Delete button + Open in Browser)
                         HStack {

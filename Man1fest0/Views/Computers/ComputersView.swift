@@ -77,9 +77,9 @@ struct ComputersView: View {
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         // Show prestage if known
-                                        if let psId = prestageController.allPrestagesScope?.serialsByPrestageID[computer.serialNumber] ?? prestageController.serialPrestageAssignment[computer.serialNumber] {
-                                            let psName = prestageController.allPrestages.first(where: { $0.id == psId })?.displayName ?? "(id:\(psId))"
-                                            Text("Prestage: \(psName)")
+                                        if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[computer.serialNumber] ?? prestageController.serialPrestageAssignment[computer.serialNumber] {
+                                            let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
+                                            Text("Prestage: \(prestageName)")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                         }
@@ -128,23 +128,23 @@ struct ComputersView: View {
                 // On other platforms, fall back to the existing list with NavigationLinks
                 List(searchResults, id: \.self) { computer in
                     NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                    .environmentObject(networkController)
-                                    .environmentObject(xmlController)
-                                    .environmentObject(progress)
-                                    .environmentObject(prestageController)) {
-                        HStack {
-                            Image(systemName: "desktopcomputer")
-                                .foregroundColor(.accentColor)
-                            VStack(alignment: .leading) {
-                                Text(computer.name)
-                                    .font(.system(size: 13.0))
-                                Text("Serial: \(computer.serialNumber)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                        .environmentObject(networkController)
+                        .environmentObject(xmlController)
+                        .environmentObject(progress)
+                        .environmentObject(prestageController)) {
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                VStack(alignment: .leading) {
+                                    Text(computer.name)
+                                        .font(.system(size: 13.0))
+                                    Text("Serial: \(computer.serialNumber)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                             }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
-                    }
                 }
                 .searchable(text: $searchText)
 #endif
@@ -167,9 +167,13 @@ struct ComputersView: View {
                 Spacer()
                 
                     .onAppear {
-                        print("Fetching computers")
+                        print("Fetching required data for ComputersView")
                         Task {
                             try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                         
+                            try await prestageController.getAllDevicesPrestageScope(server: server, prestageID: prestageController.serialPrestageAssignment[""] ?? "" , authToken: networkController.authToken)
+
+                            try await prestageController.getAllPrestages(server: server, authToken: networkController.authToken)
                         }
                     }
             }
