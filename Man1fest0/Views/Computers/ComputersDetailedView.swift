@@ -80,6 +80,27 @@ struct ComputersDetailedView: View {
                 HStack {
                     Spacer()
                     Button(role: .destructive) {
+
+                        Task {
+                            do {
+                                try await networkController.getComputerHistory(computerID: computerID)
+                            } catch {
+                                print("Failed to fetch computer history on tab change: \(error)")
+                            }
+                        }
+
+
+
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                            Text("Get History")
+                        }
+                    }
+//                    .disabled(isDeleting)
+//                    .help("Delete this computer record from the server")
+                    
+     Button(role: .destructive) {
                         showDeleteAlert = true
                     } label: {
                         HStack(spacing: 8) {
@@ -243,11 +264,11 @@ struct ComputersDetailedView: View {
             if let history = networkController.computerHistory {
                 if let gen = history.general {
                     Text("Name: \(gen.name ?? "")")
-                    Text("ID: \(gen.id ?? "")")
+                    Text("ID: \(gen.id.map(String.init) ?? "")")
                     Text("Serial: \(gen.serialNumber ?? "")")
                 }
 
-                if let cmds = history.commands?.completed?.command, !cmds.isEmpty {
+                if let cmds = history.commands?.completed, !cmds.isEmpty {
                     Divider()
                     Text("Completed Commands")
                         .font(.headline)
@@ -312,7 +333,7 @@ struct ComputersDetailedView: View {
                     .onChange(of: selectedTab) { newVal in
                         if newVal == 1 {
                             // Only fetch if we don't already have history for this computer
-                            if networkController.computerHistory?.general?.id != computerID {
+                            if networkController.computerHistory?.general?.idString != computerID {
                                 Task {
                                     do {
                                         try await networkController.getComputerHistory(computerID: computerID)

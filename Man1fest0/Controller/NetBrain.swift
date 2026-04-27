@@ -6268,16 +6268,73 @@ xml = """
     }
 
     // Fetch computer history (legacy JSSResource/computerhistory)
+    // This variant includes extra debug logging: it prints the full request URL
+    // used and the raw (undecoded) response body to help diagnose decoding issues.
     func getComputerHistory(computerID: String) async throws {
+
+        print("Running: getComputerHistory")
+        // Ensure we have a valid auth token
+        if authToken.isEmpty {
+            _ = try await getToken(server: server, username: username, password: password)
+        }
+
+        // Build full URL similarly to RequestSender.resultFor so behavior matches
+        var normalizedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !normalizedServer.lowercased().contains("://") {
+            normalizedServer = "https://" + normalizedServer
+        }
+        let jamfURLQuery = normalizedServer + "/JSSResource/computerhistory/id/" + computerID
+        guard let url = URL(string: jamfURLQuery) else {
+            print("getComputerHistory: failed to build URL for: \(jamfURLQuery)")
+            throw JamfAPIError.badURL
+        }
+
+        print("getComputerHistory: requesting URL -> \(url.absoluteString)")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+
         do {
-            let request = APIRequest<ComputerHistoryResponse>(endpoint: "computerhistory/id/" + computerID, method: .get)
-            // ensure auth token exists
-            if authToken.isEmpty {
-                _ = try await getToken(server: server, username: username, password: password)
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            print("getComputerHistory: response status code = \(status)")
+
+            // Print raw response body for debugging (UTF-8 if possible)
+            if data.count > 0 {
+                if let body = String(data: data, encoding: .utf8) {
+                    separationLine()
+                    print("getComputerHistory: raw response body:\n\(body)")
+                    separationLine()
+                } else {
+                    print("getComputerHistory: raw response body is non-UTF8 (\(data.count) bytes)")
+                }
+            } else {
+                print("getComputerHistory: response body is empty")
             }
-            let decoded = try await requestSender.resultFor(apiRequest: request)
-            self.computerHistory = decoded.computerHistory
-            print("Loaded computer history for id: \(computerID)")
+
+            guard status == 200 else {
+                print("getComputerHistory: unexpected status code: \(status)")
+                throw JamfAPIError.http(status)
+            }
+
+            // The Jamf response wraps the object under "computer_history" so decode
+            // using the generated ComputerHistoryResponse which handles that wrapper.
+            let decoder = JSONDecoder()
+            do {
+                let wrapper = try decoder.decode(ComputerHistoryResponse.self, from: data)
+                self.computerHistory = wrapper.computerHistory
+                print("Loaded computer history for id: \(computerID)")
+                print("computerHistory is: \(String(describing: self.computerHistory))")
+            } catch {
+                // Decoding failed: print error and rethrow with context
+                print("getComputerHistory: decoding error: \(error)")
+                throw error
+            }
+
         } catch {
             publishError(error, title: "Failed to load computer history")
             throw error

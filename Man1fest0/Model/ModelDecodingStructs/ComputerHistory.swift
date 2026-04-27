@@ -37,8 +37,8 @@ struct ComputerHistoryResponse: Decodable {
 // MARK: - ComputerHistory
 struct ComputerHistory: Decodable {
     let general: CHGeneral?
-    let computerUsageLogs: String?
-    let audits: String?
+    let computerUsageLogs: [Any]? // flexible: can be array or object in different API versions
+    let audits: [Any]?
     let policyLogs: PolicyLogs?
     let commands: Commands?
     let userLocation: CHUserLocation?
@@ -53,57 +53,114 @@ struct ComputerHistory: Decodable {
         case userLocation = "user_location"
         case macAppStoreApplications = "mac_app_store_applications"
     }
+
+    // Custom decoding to be tolerant of multiple shapes returned by Jamf for this
+    // endpoint (some endpoints return arrays directly, others wrap them). We
+    // primarily extract `general` and `userLocation` reliably; other fields are
+    // left as flexible arrays when possible.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // general
+        self.general = try container.decodeIfPresent(CHGeneral.self, forKey: .general)
+
+        // computer_usage_logs may be an array or an object; try array first
+        if let arr = try? container.decodeIfPresent([AnyCodable].self, forKey: .computerUsageLogs) {
+            self.computerUsageLogs = arr.map { $0.value }
+        } else {
+            self.computerUsageLogs = nil
+        }
+
+        // audits similarly
+        if let arr = try? container.decodeIfPresent([AnyCodable].self, forKey: .audits) {
+            self.audits = arr.map { $0.value }
+        } else {
+            self.audits = nil
+        }
+
+        // policy_logs sometimes is an array or an object; attempt to decode PolicyLogs first
+        if let pl = try? container.decodeIfPresent(PolicyLogs.self, forKey: .policyLogs) {
+            self.policyLogs = pl
+        } else if let arr = try? container.decodeIfPresent([PolicyLog].self, forKey: .policyLogs) {
+            // server returned an array of policy log objects; wrap into PolicyLogs
+            self.policyLogs = PolicyLogs(policyLog: arr)
+        } else if let _ = try? container.decodeIfPresent([AnyCodable].self, forKey: .policyLogs) {
+            // unknown array form - treat as empty
+            self.policyLogs = PolicyLogs(policyLog: [])
+        } else {
+            self.policyLogs = nil
+        }
+
+                // commands - try to decode object or tolerant shapes
+                if let cmds = try? container.decodeIfPresent(Commands.self, forKey: .commands) {
+                    self.commands = cmds
+                } else {
+                    self.commands = nil
+                }
+
+        // user_location in some responses is an array of location objects directly
+        if let locArray = try? container.decodeIfPresent([CHLocation].self, forKey: .userLocation) {
+            self.userLocation = CHUserLocation(location: locArray)
+        } else if let locObj = try? container.decodeIfPresent(CHUserLocation.self, forKey: .userLocation) {
+            self.userLocation = locObj
+        } else {
+            self.userLocation = nil
+        }
+
+        // mac_app_store_applications may be object with installed/pending/failed
+        self.macAppStoreApplications = try? container.decodeIfPresent(MACAppStoreApplications.self, forKey: .macAppStoreApplications)
+    }
 }
 
 // MARK: - Commands
 struct Commands: Decodable {
-    let completed: Completed?
-    let pending: String?
-    let failed: Failed?
+    let completed: [CompletedCommand]?
+    let pending: [PendingCommand]?
+    let failed: [PendingCommand]?
 }
 
-// MARK: - Completed
-struct Completed: Decodable {
-    let command: [CommandElement]?
-}
-
-// MARK: - CommandElement
-struct CommandElement: Decodable {
+// MARK: - CompletedCommand
+struct CompletedCommand: Decodable {
     let name: String?
     let completed: String?
-    let completedEpoch: String?
+    let completedEpoch: Int64?
     let completedUTC: String?
     let username: String?
 
     enum CodingKeys: String, CodingKey {
         case name, completed
-        case completedEpoch = "completedEpoch"
-        case completedUTC = "completedUTC"
+        case completedEpoch = "completed_epoch"
+        case completedUTC = "completed_utc"
         case username
     }
 }
 
-// MARK: - Failed
-struct Failed: Decodable {
-    let command: FailedCommand?
-}
-
-// MARK: - FailedCommand
-struct FailedCommand: Decodable {
+// MARK: - PendingCommand (used for pending and failed arrays)
+struct PendingCommand: Decodable {
     let name: String?
     let status: String?
     let issued: String?
-    let issuedEpoch: String?
+    let issuedEpoch: Int64?
     let issuedUTC: String?
-    let failed: String?
-    let failedEpoch: String?
-    let failedUTC: String?
+    let lastPush: String?
+    let lastPushEpoch: Int64?
+    let lastPushUTC: String?
     let username: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name, status, issued
+        case issuedEpoch = "issued_epoch"
+        case issuedUTC = "issued_utc"
+        case lastPush = "last_push"
+        case lastPushEpoch = "last_push_epoch"
+        case lastPushUTC = "last_push_utc"
+        case username
+    }
 }
 
 // MARK: - General
 struct CHGeneral: Decodable {
-    let id: String?
+    let id: Int?
     let name: String?
     let udid: String?
     let serialNumber: String?
@@ -111,24 +168,25 @@ struct CHGeneral: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, udid
-        case serialNumber = "serialNumber"
-        case macAddress = "macAddress"
+        case serialNumber = "serial_number"
+        case macAddress = "mac_address"
+    }
+
+    // Convenience: string form of id for UI comparisons
+    var idString: String? {
+        guard let id = id else { return nil }
+        return String(id)
     }
 }
 
 // MARK: - MACAppStoreApplications
 struct MACAppStoreApplications: Decodable {
-    let installed: Installed?
-    let pending: String?
-    let failed: String?
-}
+    let installed: [CHApp]?
+    let pending: [CHApp]?
+    let failed: [CHApp]?
 
-// MARK: - Installed
-struct Installed: Decodable {
-    let apps: [CHApp]?
-    
     enum CodingKeys: String, CodingKey {
-        case apps = "app"
+        case installed, pending, failed
     }
 }
 
@@ -155,9 +213,19 @@ struct PolicyLog: Decodable {
     let policyName: String?
     let username: String?
     let dateCompleted: String?
-    let dateCompletedEpoch: String?
+    let dateCompletedEpoch: Int64?
     let dateCompletedUTC: String?
     let status: String?
+
+    enum CodingKeys: String, CodingKey {
+        case policyID = "policy_id"
+        case policyName = "policy_name"
+        case username
+        case dateCompleted = "date_completed"
+        case dateCompletedEpoch = "date_completed_epoch"
+        case dateCompletedUTC = "date_completed_utc"
+        case status
+    }
 }
 
 // MARK: - UserLocation
@@ -178,5 +246,16 @@ struct CHLocation: Decodable {
     let building: String?
     let room: String?
     let position: String?
+
+    enum CodingKeys: String, CodingKey {
+        case dateTime = "date_time"
+        case dateTimeEpoch = "date_time_epoch"
+        case dateTimeUTC = "date_time_utc"
+        case username
+        case fullName = "full_name"
+        case emailAddress = "email_address"
+        case phoneNumber = "phone_number"
+        case department, building, room, position
+    }
 }
 
