@@ -25,6 +25,268 @@ struct ComputersDetailedView: View {
     @State private var editUsername: String = ""
     @State private var showUpdateUsernameConfirm: Bool = false
     @State private var isUpdatingUsername: Bool = false
+    @State private var selectedTab: Int = 0
+
+    // Split large body into smaller subviews to help the compiler type-check faster
+    @ViewBuilder
+    private func generalView(detail: /* inferred type */ Any) -> some View {
+        // `detail` is passed from the caller and we treat it as an opaque value here;
+        // the view only accesses properties on `detail` via dynamic casts inside.
+        // This keeps the main body simpler for the compiler.
+        VStack(alignment: .leading, spacing: 12) {
+            // We'll safely cast to the expected type at runtime. If the cast fails,
+            // present an empty view to avoid crashes during compilation.
+            if let d = detail as? AnyObject {
+                // Use optional chaining on the `d` object via Mirror or KVC is not ideal,
+                // but to keep this change minimal we mirror the original layout using
+                // the networkController values accessed from the parent scope instead.
+                // Reconstruct the original UI using networkController.computerDetailedFull
+                let general = networkController.computerDetailedFull?.general
+                let hardware = networkController.computerDetailedFull?.hardware
+                let security = networkController.computerDetailedFull?.security
+
+                Text("Name: \(general?.name ?? "")")
+                Text("ID: \(general?.id ?? "")")
+                Text("UDID: \(general?.udid ?? "")")
+                Text("Serial: \(general?.serial_number ?? "")")
+                Text("Model: \(general?.model ?? "")")
+                Text("Username: \(general?.username ?? "")")
+                Text("Department: \(general?.department ?? "")")
+                Text("Building: \(general?.building ?? "")")
+                Text("Last checkin: \(general?.report_date_utc ?? "")")
+
+                let filevaultStatus = hardware?.diskEncryptionConfiguration ?? "Not enabled"
+                let activationLock = security?.activationLock ?? ""
+
+                Text("Hardware model: \(hardware?.model ?? "")")
+                Text("Filevault Status: \(filevaultStatus)")
+                Text("Activation Lock Status: \(activationLock)")
+
+                let serialNumber = general?.serial_number ?? ""
+                if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serialNumber] ?? prestageController.serialPrestageAssignment[serialNumber] {
+                    let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
+                    Button(action: {
+                        prestageController.activePrestageEditorInitialID = prestageId
+                        prestageController.activePrestageEditorSerial = serialNumber
+                        prestageController.isPrestageEditorActive = true
+                    }) {
+                        Text("Prestage: \(prestageName)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                // Rest of the action rows use the same networkController and other environment objects
+                HStack {
+                    Spacer()
+                    Button(role: .destructive) {
+                        showDeleteAlert = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "trash")
+                            Text("Delete Selection")
+                        }
+                    }
+                    .disabled(isDeleting)
+                    .help("Delete this computer record from the server")
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        layout.openURL(urlString: "\(server)/computers.html?id=\(computerID)&o=r", requestType: "computers")
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "safari")
+                            Text("Open In Browser")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .help("Open this computer in the Jamf web UI")
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        TextField("New name", text: $computerName)
+                            .textSelection(.enabled)
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.updateComputerName(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerName: computerName, computerID: computerID)
+                            networkController.separationLine()
+                        }) {
+                            Text("Rename")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        TextField("Username", text: $editUsername)
+                            .textSelection(.enabled)
+                            .frame(minWidth: 180)
+                        Button(action: {
+                            showUpdateUsernameConfirm = true
+                        }) {
+                            Text("Update Username")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .disabled(editUsername.isEmpty)
+                    }
+                }
+                .overlay(
+                    Group {
+                        if isUpdatingUsername {
+                            ProgressView("Updating...")
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .padding(8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(Color(.windowBackgroundColor).opacity(0.85)))
+                        }
+                    }
+                )
+
+                HStack(alignment: .center, spacing: 12) {
+                    Picker("Commands", selection: $selectedCommand) {
+                        ForEach(pushController.flushCommands, id: \.self) { cmd in
+                            Text(String(describing: cmd))
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Button("Flush Commands") {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        if let compInt = Int(computerID) {
+                            Task {
+                                do {
+                                    try await pushController.flushCommands(targetId: compInt, deviceType: "computers", command: selectedCommand, authToken: networkController.authToken, server: server)
+                                } catch {
+                                    print("flushCommands failed: \(error)")
+                                }
+                            }
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Update Extension Attribute")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    HStack {
+                        Text("Extension Attribute:")
+                        Picker("", selection: $selectedEAName) {
+                            Text("Select...").tag("")
+                            ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                                Text(ea.name).tag(ea.name)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    HStack {
+                        Text("Value:")
+                        TextField("EA Value", text: $eaValue)
+                            .textFieldStyle(.roundedBorder)
+                    }
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        if let compInt = Int(computerID) {
+                            Task {
+                                do {
+                                    try await extensionAttributeController.updateComputerEAValue(server: server, authToken: networkController.authToken, computerId: compInt, extAttName: selectedEAName, updateValue: eaValue)
+                                } catch {
+                                    print("Failed to update EA: \(error)")
+                                }
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                            Text("Update EA Value")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .disabled(selectedEAName.isEmpty)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+
+                if let updated = lastUpdated {
+                    Text("Last updated: \(updated.formatted(.dateTime.hour().minute().second()))")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func historyView() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Computer History")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            if let history = networkController.computerHistory {
+                if let gen = history.general {
+                    Text("Name: \(gen.name ?? "")")
+                    Text("ID: \(gen.id ?? "")")
+                    Text("Serial: \(gen.serialNumber ?? "")")
+                }
+
+                if let cmds = history.commands?.completed?.command, !cmds.isEmpty {
+                    Divider()
+                    Text("Completed Commands")
+                        .font(.headline)
+                    ForEach(cmds.indices, id: \.self) { i in
+                        let cmd = cmds[i]
+                        VStack(alignment: .leading) {
+                            Text(cmd.name ?? "")
+                                .font(.subheadline)
+                            Text("Completed: \(cmd.completed ?? "") by \(cmd.username ?? "")")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+
+                if let policies = history.policyLogs?.policyLog, !policies.isEmpty {
+                    Divider()
+                    Text("Policy Logs")
+                        .font(.headline)
+                    ForEach(policies.indices, id: \.self) { i in
+                        let pl = policies[i]
+                        VStack(alignment: .leading) {
+                            Text(pl.policyName ?? "")
+                                .font(.subheadline)
+                            Text("Status: \(pl.status ?? "")")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+
+            } else {
+                ProgressView("Loading history...")
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+        }
+    }
 
     var body: some View {
         Group {
@@ -35,218 +297,33 @@ struct ComputersDetailedView: View {
             } else if let detail = networkController.computerDetailedFull {
                 // Preferred detailed model
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        
+                    // Tabs: 0 = Overview, 1 = History
+                    TabView(selection: $selectedTab) {
+                        generalView(detail: detail)
+                            .padding()
+                            .tag(0)
+                            .tabItem { Text("General") }
 
-                        let general = detail.general
-                        let hardware = detail.hardware
-                        let security = detail.security
-
-                        Text("Name: \(general?.name ?? "")")
-                        Text("ID: \(general?.id ?? "")")
-                        Text("UDID: \(general?.udid ?? "")")
-                        Text("Serial: \(general?.serial_number ?? "")")
-                        Text("Model: \(general?.model ?? "")")
-                        Text("Username: \(general?.username ?? "")")
-                        Text("Department: \(general?.department ?? "")")
-                        Text("Building: \(general?.building ?? "")")
-                        Text("Last checkin: \(general?.report_date_utc ?? "")")
-
-                        // Avoid nested quotes by using locals for defaults
-                        let filevaultStatus = hardware?.diskEncryptionConfiguration ?? "Not enabled"
-                        let activationLock = security?.activationLock ?? ""
-
-                        Text("Hardware model: \(hardware?.model ?? "")")
-                        Text("Filevault Status: \(filevaultStatus)")
-                        Text("Activation Lock Status: \(activationLock)")
-                        
-                        // Show assigned prestage if available
-                        let serialNumber = general?.serial_number ?? ""
-                        if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serialNumber] ?? prestageController.serialPrestageAssignment[serialNumber] {
-                            let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
-                            // Open PrestagesEditView as a sheet via PrestageBrain state so parent can control presentation
-                            Button(action: {
-                                prestageController.activePrestageEditorInitialID = prestageId
-                                prestageController.activePrestageEditorSerial = serialNumber
-                                prestageController.isPrestageEditorActive = true
-                            }) {
-                                Text("Prestage: \(prestageName)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-
-                        // Top action row (Delete button + Open in Browser)
-                        HStack {
-                            Spacer()
-                            Button(role: .destructive) {
-                                showDeleteAlert = true
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "trash")
-                                    Text("Delete Selection")
-                                }
-                            }
-                            .disabled(isDeleting)
-                            .help("Delete this computer record from the server")
-
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                layout.openURL(urlString: "\(server)/computers.html?id=\(computerID)&o=r", requestType: "computers")
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "safari")
-                                    Text("Open In Browser")
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-                            .help("Open this computer in the Jamf web UI")
-                        }
-
-                        Divider()
-
-                        // --- Additional actions copied from ComputersBasicDetailedView ---
-                        // Rename field + button
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                TextField("New name", text: $computerName)
-                                    .textSelection(.enabled)
-                                Button(action: {
-                                    progress.showProgress()
-                                    progress.waitForABit()
-                                    networkController.updateComputerName(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerName: computerName, computerID: computerID)
-                                    networkController.separationLine()
-                                    print("Renaming computerName:\(computerName)")
-                                    print("computerID is:\(computerID)")
-                                }) {
-                                    Text("Rename")
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.blue)
-                            }
-                        }
-
-                        // Username update field + button
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                TextField("Username", text: $editUsername)
-                                    .textSelection(.enabled)
-                                    .frame(minWidth: 180)
-                                Button(action: {
-                                    // show confirmation alert
-                                    showUpdateUsernameConfirm = true
-                                }) {
-                                    Text("Update Username")
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.blue)
-                                .disabled(editUsername.isEmpty)
-                            }
-                        }
-                        // Overlay a small activity indicator while updating username
-                        .overlay(
-                            Group {
-                                if isUpdatingUsername {
-                                    ProgressView("Updating...")
-                                        .progressViewStyle(CircularProgressViewStyle())
-                                        .padding(8)
-                                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.windowBackgroundColor).opacity(0.85)))
-                                }
-                            }
-                        )
-
-                        // Picker for commands + Flush button
-                        HStack(alignment: .center, spacing: 12) {
-                            Picker("Commands", selection: $selectedCommand) {
-                                ForEach(pushController.flushCommands, id: \.self) { cmd in
-                                    Text(String(describing: cmd))
-                                }
-                            }
-                            .pickerStyle(.menu)
-
-                            Button("Flush Commands") {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                if let compInt = Int(computerID) {
-                                    Task {
-                                        do {
-                                            try await pushController.flushCommands(targetId: compInt, deviceType: "computers", command: selectedCommand, authToken: networkController.authToken, server: server)
-                                        } catch {
-                                            print("flushCommands failed: \(error)")
-                                        }
-                                    }
-                                } else {
-                                    print("Invalid computerID for flushCommands: \(computerID)")
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                            .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                        }
-
-                        // Extension Attribute Update Section
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Update Extension Attribute")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-
-                            HStack {
-                                Text("Extension Attribute:")
-                                Picker("", selection: $selectedEAName) {
-                                    Text("Select...").tag("")
-                                    ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
-                                        Text(ea.name).tag(ea.name)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                            }
-
-                            HStack {
-                                Text("Value:")
-                                TextField("EA Value", text: $eaValue)
-                                    .textFieldStyle(.roundedBorder)
-                            }
-
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                if let compInt = Int(computerID) {
-                                    Task {
-                                        do {
-                                            try await extensionAttributeController.updateComputerEAValue(server: server, authToken: networkController.authToken, computerId: compInt, extAttName: selectedEAName, updateValue: eaValue)
-                                        } catch {
-                                            print("Failed to update EA: \(error)")
-                                        }
-                                    }
-                                } else {
-                                    print("Invalid computerID for updateComputerEAValue: \(computerID)")
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: "arrow.triangle.2.circlepath")
-                                    Text("Update EA Value")
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                            .disabled(selectedEAName.isEmpty)
-                        }
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                        // --- End copied actions ---
-
-                        if let updated = lastUpdated {
-                            Text("Last updated: \(updated.formatted(.dateTime.hour().minute().second()))")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
-
-       
+                        historyView()
+                            .padding()
+                            .tag(1)
+                            .tabItem { Text("History") }
                     }
-                    .padding()
+                    .onChange(of: selectedTab) { newVal in
+                        if newVal == 1 {
+                            // Only fetch if we don't already have history for this computer
+                            if networkController.computerHistory?.general?.id != computerID {
+                                Task {
+                                    do {
+                                        try await networkController.getComputerHistory(computerID: computerID)
+                                    } catch {
+                                        print("Failed to fetch computer history on tab change: \(error)")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .tabViewStyle(DefaultTabViewStyle())
                 }
 
             } else if let legacy = networkController.computerDetailed {
@@ -326,7 +403,7 @@ struct ComputersDetailedView: View {
 
                 Task {
                     // perform the update (non-async function)
-                    networkController.updateComputerLocationUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: computerID, newUsername: editUsername)
+                    networkController.updateComputerUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: computerID, newUsername: editUsername)
                     // small delay to let server process, then refresh detailed record
                     try? await Task.sleep(nanoseconds: 400_000_000)
                     do {
