@@ -428,9 +428,38 @@ actor AsyncSemaphore {
         }
         
         // Decode JSON off the main actor to avoid doing heavy work during a UI layout pass
+        // Add extra debug logging on failure to help diagnose date/formatting issues.
         let decoded: ComputerBasic = try await Task.detached(priority: .userInitiated) {
             let decoder = JSONDecoder()
-            return try decoder.decode(ComputerBasic.self, from: data)
+            do {
+                return try decoder.decode(ComputerBasic.self, from: data)
+            } catch let decodingError as DecodingError {
+                // Capture raw body for diagnostics
+                let body = String(data: data, encoding: .utf8) ?? "<binary>"
+                print("--- Decoding error in getComputersBasic ---")
+                print("DecodingError: \(decodingError)")
+                print("Response body (truncated 2000 chars):\n\(body.prefix(2000))")
+
+                // Print specific DecodingError details
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    print("Type mismatch for type: \(type) at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("Value not found for type: \(type) at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                case .keyNotFound(let key, let context):
+                    print("Key not found: \(key) at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    print("Data corrupted at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                @unknown default:
+                    print("Unknown decoding error: \(decodingError)")
+                }
+                throw decodingError
+            } catch {
+                // Non-decoding errors
+                let body = String(data: data, encoding: .utf8) ?? "<binary>"
+                print("Unexpected error decoding ComputerBasic: \(error)\nBody:\n\(body.prefix(2000))")
+                throw error
+            }
         }.value
 
         // Assign published properties asynchronously on the main queue to ensure
@@ -6268,14 +6297,31 @@ xml = """
     }
 
     // Fetch computer history (legacy JSSResource/computerhistory)
-    func getComputerHistory(computerID: String) async throws {
+    // Accept an optional server parameter so callers can explicitly choose the server
+    // to query; if nil the NetBrain.server is used.
+    func getComputerHistory(server: String? = nil, computerID: String) async throws {
         do {
-            let request = APIRequest<ComputerHistoryResponse>(endpoint: "computerhistory/id/" + computerID, method: .get)
+            let endpoint = "computerhistory/id/" + computerID
+            let usedServer = server ?? self.server
+            print("getComputerHistory: using server=\(usedServer), endpoint=\(endpoint)")
             // ensure auth token exists
             if authToken.isEmpty {
-                _ = try await getToken(server: server, username: username, password: password)
+                _ = try await getToken(server: server ?? self.server, username: username, password: password)
             }
-            let decoded = try await requestSender.resultFor(apiRequest: request)
+
+            // Choose which RequestSender to use depending on whether caller specified a server
+            let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
+
+            // Fetch raw data so we can print the raw JSON for debugging
+            let raw = try await rs.fetchRawData(endpoint: endpoint, httpMethod: .get)
+            if let rawStr = String(data: raw, encoding: .utf8) {
+                print("Raw computer history JSON for id \(computerID):\n\(rawStr)")
+            } else {
+                print("Raw computer history response (binary) for id \(computerID), \(raw.count) bytes")
+            }
+
+            // Decode using the app's JSONDecoder
+            let decoded = try JSONDecoder().decode(ComputerHistoryResponse.self, from: raw)
             self.computerHistory = decoded.computerHistory
             print("Loaded computer history for id: \(computerID)")
         } catch {

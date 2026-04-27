@@ -74,6 +74,78 @@ final class RequestSender {
         return try await resultFor(endpoint: apiRequest.endpoint, httpMethod: apiRequest.method, as: APIModel.self)
     }
 
+    // Fetch raw Data for an endpoint without attempting JSON decoding. Useful for
+    // debugging unexpected response shapes or printing raw JSON for inspection.
+    func fetchRawData(endpoint: String, httpMethod: HTTPMethod) async throws -> Data {
+        // Reuse the same URL construction logic from resultFor
+        let jamfURLQuery: String
+        let trimmedEndpoint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedEndpoint.lowercased().hasPrefix("http://") || trimmedEndpoint.lowercased().hasPrefix("https://") {
+            jamfURLQuery = trimmedEndpoint
+        } else if trimmedEndpoint.hasPrefix("/") {
+            jamfURLQuery = normalizedServer + trimmedEndpoint
+        } else if trimmedEndpoint.hasPrefix("api/") {
+            jamfURLQuery = normalizedServer + "/" + trimmedEndpoint
+        } else {
+            jamfURLQuery = normalizedServer + "/JSSResource/" + trimmedEndpoint
+        }
+
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL constructed: \(jamfURLQuery)")
+            throw RequestError.invalidURL(jamfURLQuery)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = httpMethod.stringValue
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        // Debug logs for request
+        let maskedTokenInfo = authToken.isEmpty ? "(none)" : "(present) length=\(authToken.count)"
+        print("RequestSender (raw): requesting \(request.httpMethod ?? "") \(url.absoluteString)")
+        print("RequestSender (raw): authToken \(maskedTokenInfo)")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResp = response as? HTTPURLResponse else {
+                print("Non-HTTP response received: \(String(describing: response))")
+                throw RequestError.unexpectedStatus(statusCode: -1, body: nil)
+            }
+            let status = httpResp.statusCode
+            let bodyString = String(data: data, encoding: .utf8)
+            print("Response status code: \(status)")
+            if status == 200 {
+                return data
+            }
+
+            // Forward common HTTP status codes as errors (include body for debugging)
+            switch status {
+            case 401:
+                print("401 Unauthorized. Response body: \(bodyString ?? "")")
+                throw RequestError.unauthorized
+            case 403:
+                print("403 Forbidden. Response body: \(bodyString ?? "")")
+                throw RequestError.forbidden
+            case 404:
+                print("404 Not Found. Response body: \(bodyString ?? "")")
+                throw RequestError.notFound
+            case 500...599:
+                print("Server error \(status). Response body: \(bodyString ?? "")")
+                throw RequestError.serverError(statusCode: status, body: bodyString)
+            default:
+                print("Unexpected status \(status). Response body: \(bodyString ?? "")")
+                throw RequestError.unexpectedStatus(statusCode: status, body: bodyString)
+            }
+        } catch let reqErr as RequestError {
+            throw reqErr
+        } catch let urlErr as URLError {
+            print("Network URLError: \(urlErr)")
+            throw RequestError.network(urlErr)
+        } catch {
+            print("Unexpected networking error: \(error)")
+            throw RequestError.network(error)
+        }
+    }
+
     func resultFor<APIModel: Decodable>(
         endpoint: String,
         httpMethod: HTTPMethod,
