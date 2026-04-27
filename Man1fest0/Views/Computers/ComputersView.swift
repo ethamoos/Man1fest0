@@ -18,6 +18,7 @@ struct ComputersView: View {
     @State var currentDetailedPolicy: PoliciesDetailed? = nil
     
     @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var prestageController: PrestageBrain
     
     //  ########################################################################################
     //  Selections
@@ -68,8 +69,22 @@ struct ComputersView: View {
                             HStack {
                                 Image(systemName: "desktopcomputer")
                                     .foregroundColor(.accentColor)
-                                Text(computer.name)
-                                    .font(.system(size: 13.0))
+                                VStack(alignment: .leading) {
+                                    Text(computer.name)
+                                        .font(.system(size: 13.0))
+                                    HStack(spacing: 8) {
+                                        Text("Serial: \(computer.serialNumber)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        // Show prestage if known
+                                        if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[computer.serialNumber] ?? prestageController.serialPrestageAssignment[computer.serialNumber] {
+                                            let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
+                                            Text("Prestage: \(prestageName)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
                             }
                             .padding(.vertical, 4)
                             .tag(computer.id)
@@ -90,6 +105,29 @@ struct ComputersView: View {
                         if let firstId = newSelection.first,
                            let found = networkController.allComputersBasic.computers.first(where: { $0.id == firstId }) {
                             selectedComputer = found
+
+                            // If the prestage editor is active, decide whether to auto-open for the newly selected computer
+                            if prestageController.isPrestageEditorActive {
+                                if prestageController.autoOpenEditorOnSelectionChange {
+                                    let serial = found.serialNumber
+                                    if let newPrestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serial] ?? prestageController.serialPrestageAssignment[serial] {
+                                        prestageController.activePrestageEditorSerial = serial
+                                        prestageController.activePrestageEditorInitialID = newPrestageId
+                                        // keep isPrestageEditorActive true to present editor for new computer
+                                    } else {
+                                        // No prestage assignment for this new computer - dismiss the editor
+                                        prestageController.isPrestageEditorActive = false
+                                        prestageController.activePrestageEditorSerial = nil
+                                        prestageController.activePrestageEditorInitialID = nil
+                                    }
+                                } else {
+                                    // Preference is to dismiss editor on selection change
+                                    prestageController.isPrestageEditorActive = false
+                                    prestageController.activePrestageEditorSerial = nil
+                                    prestageController.activePrestageEditorInitialID = nil
+                                }
+                            }
+
                         } else {
                             selectedComputer = nil
                         }
@@ -102,27 +140,44 @@ struct ComputersView: View {
                             .environmentObject(networkController)
                             .environmentObject(xmlController)
                             .environmentObject(progress)
+                            .environmentObject(prestageController)
                     } else {
                         Text("Select a computer to view details")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
+#if os(macOS)
+                // Present PrestagesEditView as a sheet controlled by PrestageBrain so selection changes can influence it
+                .sheet(isPresented: Binding(get: { prestageController.isPrestageEditorActive }, set: { newVal in prestageController.isPrestageEditorActive = newVal })) {
+                    PrestagesEditView(initialPrestageID: prestageController.activePrestageEditorInitialID ?? "", targetPrestageID: "", serial: prestageController.activePrestageEditorSerial ?? "", server: server, showProgressScreen: false)
+                        .environmentObject(prestageController)
+                        .environmentObject(networkController)
+                        .environmentObject(progress)
+                        .environmentObject(xmlController)
+                }
+#endif
 #else
                 // On other platforms, fall back to the existing list with NavigationLinks
                 List(searchResults, id: \.self) { computer in
                     NavigationLink(destination: ComputersDetailedView(server: server, computerID: String(computer.id))
-                                    .environmentObject(networkController)
-                                    .environmentObject(xmlController)
-                                    .environmentObject(progress)) {
-                        HStack {
-                            Image(systemName: "desktopcomputer")
-                                .foregroundColor(.accentColor)
-                            Text(computer.name)
-                                .font(.system(size: 13.0))
+                        .environmentObject(networkController)
+                        .environmentObject(xmlController)
+                        .environmentObject(progress)
+                        .environmentObject(prestageController)) {
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                VStack(alignment: .leading) {
+                                    Text(computer.name)
+                                        .font(.system(size: 13.0))
+                                    Text("Serial: \(computer.serialNumber)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
-                    }
                 }
                 .searchable(text: $searchText)
 #endif
@@ -145,9 +200,13 @@ struct ComputersView: View {
                 Spacer()
                 
                     .onAppear {
-                        print("Fetching computers")
+                        print("Fetching required data for ComputersView")
                         Task {
                             try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                         
+                            try await prestageController.getAllDevicesPrestageScope(server: server, prestageID: prestageController.serialPrestageAssignment[""] ?? "" , authToken: networkController.authToken)
+
+                            try await prestageController.getAllPrestages(server: server, authToken: networkController.authToken)
                         }
                     }
             }

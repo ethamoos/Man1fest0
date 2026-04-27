@@ -9,6 +9,7 @@ struct ComputersDetailedView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var pushController: PushBrain
     @EnvironmentObject var extensionAttributeController: EaBrain
+    @EnvironmentObject var prestageController: PrestageBrain
 
     // Local UI state for buttons copied from ComputersBasicDetailedView
     @State private var selectedCommand = ""
@@ -58,6 +59,22 @@ struct ComputersDetailedView: View {
                         Text("Hardware model: \(hardware?.model ?? "")")
                         Text("Filevault Status: \(filevaultStatus)")
                         Text("Activation Lock Status: \(activationLock)")
+                        
+                        // Show assigned prestage if available
+                        let serialNumber = general?.serial_number ?? ""
+                        if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serialNumber] ?? prestageController.serialPrestageAssignment[serialNumber] {
+                            let prestageName = prestageController.allPrestages.first(where: { $0.id == prestageId })?.displayName ?? "(id:\(prestageId))"
+                            // Open PrestagesEditView as a sheet via PrestageBrain state so parent can control presentation
+                            Button(action: {
+                                prestageController.activePrestageEditorInitialID = prestageId
+                                prestageController.activePrestageEditorSerial = serialNumber
+                                prestageController.isPrestageEditorActive = true
+                            }) {
+                                Text("Prestage: \(prestageName)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
 
                         // Top action row (Delete button + Open in Browser)
                         HStack {

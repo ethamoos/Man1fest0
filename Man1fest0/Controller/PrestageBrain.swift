@@ -51,6 +51,15 @@ import SwiftUI
     // The version lock for changes to prestages
     var depVersionLock = 0
     @Published var authToken = ""
+
+    // UI state: active prestage editor information. When non-nil / true, UI can present the PrestagesEditView
+    @Published var activePrestageEditorSerial: String? = nil
+    @Published var activePrestageEditorInitialID: String? = nil
+    @Published var isPrestageEditorActive: Bool = false
+    // If true, when the selected computer changes while the prestage editor is active,
+    // automatically open the prestage editor for the newly selected computer (if it has a prestage assignment).
+    // If false, the editor will be dismissed on selection change.
+    @Published var autoOpenEditorOnSelectionChange: Bool = false
     
 //    #########################################################################
     

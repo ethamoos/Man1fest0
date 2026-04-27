@@ -38,10 +38,35 @@ struct PrestagesAssignedView: View {
                     VStack {
                         VStack {
                             List (searchResults, id: \.self) { serial in
+                                // Map serial -> ComputerBasicRecord if available
+                                let found = networkController.allComputersBasic.computers.first(where: { $0.serialNumber == serial })
                                 NavigationLink(destination: PrestagesEditView(initialPrestageID:  prestageController.serialPrestageAssignment[serial] ?? "", targetPrestageID: "", serial: serial, server: server, showProgressScreen: false)) {
                                     HStack {
                                         Image(systemName: "desktopcomputer")
-                                        Text (serial).lineLimit(1)
+                                        VStack(alignment: .leading) {
+                                            HStack(spacing: 8) {
+                                                Text(serial).lineLimit(1)
+                                                if let comp = found {
+                                                    Text("— \(comp.name)").foregroundColor(.secondary).lineLimit(1)
+                                                } else {
+                                                    Text("— Unknown").foregroundColor(.secondary).lineLimit(1)
+                                                }
+                                            }
+                                            HStack(spacing: 8) {
+                                                if let comp = found {
+                                                    Text("Jamf ID: \(comp.id)")
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                } else {
+                                                    Text("Jamf ID: —").font(.caption).foregroundColor(.secondary)
+                                                }
+                                                // Show current prestage ID if available
+                                                if let ps = prestageController.serialPrestageAssignment[serial], !ps.isEmpty {
+                                                    let psName = prestageController.allPrestages.first(where: { $0.id == ps })?.displayName ?? "(id:\(ps))"
+                                                    Text("Prestage: \(psName)").font(.caption).foregroundColor(.secondary)
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                                 .foregroundColor(.blue)

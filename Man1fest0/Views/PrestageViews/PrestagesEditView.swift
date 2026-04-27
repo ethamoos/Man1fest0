@@ -1,7 +1,7 @@
 //
 //  PrestagesEditView.swift
 //  Man1fest0
-//
+//  
 //  Created by Amos Deane on 29/01/2024.
 //
 
@@ -23,6 +23,9 @@ struct PrestagesEditView: View {
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var layout: Layout
+
+    // Allows dismissing / navigating back
+    @Environment(\.dismiss) private var dismiss
 
     
     @State var initialPrestageID: String
@@ -79,7 +82,16 @@ struct PrestagesEditView: View {
         VStack(alignment: .leading) {
             
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
+                    // Back button + header
+                    HStack(alignment: .center) {
+                        Button(action: { dismiss() }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.left")
+                                Text("Back")
+                            }
+                        }
+                        .buttonStyle(.bordered)
+
                         VStack(alignment: .leading) {
                             Text("Update Assigned Prestage").font(.title2).fontWeight(.semibold)
                             Text("Move or remove a device from a prestage").font(.subheadline).foregroundColor(.secondary)
@@ -242,6 +254,12 @@ struct PrestagesEditView: View {
             getCurrentPrestageName(initialPrestageID: initialPrestageID)
             getCurrentPrestage(targetPrestageID: initialPrestageID, authToken: networkController.authToken)
             currentPrestageName = self.currentPrestage.displayName
+        }
+        .onDisappear() {
+            // Ensure global editor state is cleared when the view is dismissed
+            prestageController.isPrestageEditorActive = false
+            prestageController.activePrestageEditorSerial = nil
+            prestageController.activePrestageEditorInitialID = nil
         }
     }
     
