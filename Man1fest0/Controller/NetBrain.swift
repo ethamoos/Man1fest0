@@ -6310,8 +6310,10 @@ xml = """
                 if let body = String(data: data, encoding: .utf8) {
                     separationLine()
                     print("getComputerHistory: raw response body:\n\(body)")
-                    // Store raw body for UI debugging / preview
-                    self.lastComputerHistoryRaw = body
+                    // Store raw body for UI debugging / preview on the main actor
+                    await MainActor.run {
+                        self.lastComputerHistoryRaw = body
+                    }
                     separationLine()
                 } else {
                     print("getComputerHistory: raw response body is non-UTF8 (\(data.count) bytes)")
@@ -6330,7 +6332,10 @@ xml = """
             let decoder = JSONDecoder()
             do {
                 let wrapper = try decoder.decode(ComputerHistoryResponse.self, from: data)
-                self.computerHistory = wrapper.computerHistory
+                // Assign decoded model on the main actor so SwiftUI observes the change reliably
+                await MainActor.run {
+                    self.computerHistory = wrapper.computerHistory
+                }
                 print("Loaded computer history for id: \(computerID)")
                 print("computerHistory is: \(String(describing: self.computerHistory))")
             } catch {
