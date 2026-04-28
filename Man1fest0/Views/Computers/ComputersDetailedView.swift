@@ -167,7 +167,7 @@ struct ComputersDetailedView: View {
     private func commandsView(_ cmds: Commands) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if let completed = cmds.completed, !completed.isEmpty {
-                Text("Completed Commands").font(.headline)
+                Text("Completed MDM Commands").font(.headline)
                 ForEach(completed.indices, id: \.self) { i in
                     let cmd = completed[i]
                     VStack(alignment: .leading) {
@@ -340,8 +340,8 @@ struct ComputersDetailedView: View {
                 Picker(selection: $historyInnerTab, label: Text("")) {
                     Text("All").tag(0)
                     Text("Policies").tag(1)
-                    Text("Commands").tag(2)
-                    Text("Mac Apps").tag(3)
+                    Text("MDM Commands").tag(2)
+                    Text("App Store Apps").tag(3)
                     Text("Locations").tag(4)
                     Text("Audits").tag(5)
                 }
