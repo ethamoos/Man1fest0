@@ -169,6 +169,8 @@ actor AsyncSemaphore {
     // Full decoded ComputerFull published for detailed UI views
     @Published var computerDetailedFull: ComputerFull? = nil
     @Published var computerHistory: ComputerHistory? = nil
+    // Raw JSON body returned by the last computer history request (for debugging / UI preview)
+    @Published var lastComputerHistoryRaw: String? = nil
     
     //  #############################################################################
     //    ############ GROUPS
@@ -6308,6 +6310,8 @@ xml = """
                 if let body = String(data: data, encoding: .utf8) {
                     separationLine()
                     print("getComputerHistory: raw response body:\n\(body)")
+                    // Store raw body for UI debugging / preview
+                    self.lastComputerHistoryRaw = body
                     separationLine()
                 } else {
                     print("getComputerHistory: raw response body is non-UTF8 (\(data.count) bytes)")
@@ -6330,6 +6334,10 @@ xml = """
                 print("Loaded computer history for id: \(computerID)")
                 print("computerHistory is: \(String(describing: self.computerHistory))")
             } catch {
+                // Save raw body for inspection before rethrowing
+                if self.lastComputerHistoryRaw == nil {
+                    self.lastComputerHistoryRaw = String(data: data, encoding: .utf8)
+                }
                 // Decoding failed: print error and rethrow with context
                 print("getComputerHistory: decoding error: \(error)")
                 throw error

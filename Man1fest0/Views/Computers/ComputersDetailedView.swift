@@ -26,6 +26,7 @@ struct ComputersDetailedView: View {
     @State private var showUpdateUsernameConfirm: Bool = false
     @State private var isUpdatingUsername: Bool = false
     @State private var selectedTab: Int = 0
+    @State private var showRawHistory: Bool = false
 
     // Split large body into smaller subviews to help the compiler type-check faster
     @ViewBuilder
@@ -257,34 +258,124 @@ struct ComputersDetailedView: View {
     @ViewBuilder
     private func historyView() -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Computer History")
-                .font(.title2)
-                .fontWeight(.semibold)
+            HStack(alignment: .center) {
+                Text("Computer History")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Spacer()
+                Button(action: {
+                    Task {
+                        do {
+                            try await networkController.getComputerHistory(computerID: computerID)
+                        } catch {
+                            print("Failed to load computer history: \(error)")
+                        }
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Reload")
+                    }
+                }
+                Button(action: { showRawHistory.toggle() }) {
+                    Text(showRawHistory ? "Hide Raw" : "Show Raw")
+                }
+                .help("Toggle raw JSON response preview")
+            }
+
+            // Raw JSON preview (monospaced) helpful when decoding fails
+            if showRawHistory, let raw = networkController.lastComputerHistoryRaw {
+                ScrollView {
+                    Text(raw)
+                        .font(.system(.body, design: .monospaced))
+                        .textSelection(.enabled)
+                        .padding(8)
+                }
+                .frame(maxHeight: 220)
+                .background(Color(.windowBackgroundColor).opacity(0.03))
+                .cornerRadius(6)
+            }
 
             if let history = networkController.computerHistory {
+                // General
                 if let gen = history.general {
+                    Divider()
+                    Text("General")
+                        .font(.headline)
                     Text("Name: \(gen.name ?? "")")
                     Text("ID: \(gen.id.map(String.init) ?? "")")
                     Text("Serial: \(gen.serialNumber ?? "")")
                 }
 
-                if let cmds = history.commands?.completed, !cmds.isEmpty {
+                // User location(s)
+                if let locs = history.userLocation?.location, !locs.isEmpty {
                     Divider()
-                    Text("Completed Commands")
+                    Text("User Location")
                         .font(.headline)
-                    ForEach(cmds.indices, id: \.self) { i in
-                        let cmd = cmds[i]
+                    ForEach(locs.indices, id: \.self) { i in
+                        let l = locs[i]
                         VStack(alignment: .leading) {
-                            Text(cmd.name ?? "")
+                            Text(l.fullName ?? l.username ?? "(unknown)")
                                 .font(.subheadline)
-                            Text("Completed: \(cmd.completed ?? "") by \(cmd.username ?? "")")
+                            Text(l.dateTime ?? "")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
 
+                // Commands: Completed / Pending / Failed
+                if let cmds = history.commands {
+                    if let completed = cmds.completed, !completed.isEmpty {
+                        Divider()
+                        Text("Completed Commands")
+                            .font(.headline)
+                        ForEach(completed.indices, id: \.self) { i in
+                            let cmd = completed[i]
+                            VStack(alignment: .leading) {
+                                Text(cmd.name ?? "")
+                                    .font(.subheadline)
+                                Text("Completed: \(cmd.completed ?? "") by \(cmd.username ?? "")")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+
+                    if let pending = cmds.pending, !pending.isEmpty {
+                        Divider()
+                        Text("Pending Commands")
+                            .font(.headline)
+                        ForEach(pending.indices, id: \.self) { i in
+                            let p = pending[i]
+                            VStack(alignment: .leading) {
+                                Text(p.name ?? "")
+                                    .font(.subheadline)
+                                Text(p.status ?? "")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+
+                    if let failed = cmds.failed, !failed.isEmpty {
+                        Divider()
+                        Text("Failed Commands")
+                            .font(.headline)
+                        ForEach(failed.indices, id: \.self) { i in
+                            let f = failed[i]
+                            VStack(alignment: .leading) {
+                                Text(f.name ?? "")
+                                    .font(.subheadline)
+                                Text(f.status ?? "")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                // Policy logs
                 if let policies = history.policyLogs?.policyLog, !policies.isEmpty {
                     Divider()
                     Text("Policy Logs")
@@ -300,6 +391,16 @@ struct ComputersDetailedView: View {
                         }
                         .padding(.vertical, 4)
                     }
+                }
+
+                // Mac App Store Applications counts
+                if let apps = history.macAppStoreApplications {
+                    Divider()
+                    Text("Mac App Store Applications")
+                        .font(.headline)
+                    Text("Installed: \(apps.installed?.count ?? 0), Pending: \(apps.pending?.count ?? 0), Failed: \(apps.failed?.count ?? 0)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
             } else {
