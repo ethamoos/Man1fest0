@@ -416,11 +416,12 @@ struct PolicyDetailView: View {
                             .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
                             .buttonStyle(.borderedProminent)
                             .tint(.orange)
+                            TextField(policyName, text: $policyNameClone)
+                                .textSelection(.enabled)
                         }
                     }
             
-                TextField(policyName, text: $policyNameClone)
-                    .textSelection(.enabled)
+              
                 
                 // UI controls to trigger clonePerScript
                 VStack(alignment: .leading, spacing: 6) {
