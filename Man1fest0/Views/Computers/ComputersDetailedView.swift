@@ -326,7 +326,7 @@ struct ComputersDetailedView: View {
 
                 Task {
                     // perform the update (non-async function)
-                    networkController.updateComputerLocationUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: computerID, newUsername: editUsername)
+                    networkController.updateComputerUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: computerID, newUsername: editUsername)
                     // small delay to let server process, then refresh detailed record
                     try? await Task.sleep(nanoseconds: 400_000_000)
                     do {

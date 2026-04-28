@@ -3,6 +3,49 @@ import Foundation
 import SwiftUI
 import AEXML
 
+// Minimal decoding structs for Computer History responses. These mirror the
+// pieces of the API response that the UI references (general, commands,
+// policyLogs). They are intentionally small and will be extended when more
+// fields are needed.
+struct ComputerHistoryResponse: Codable {
+    let computerHistory: ComputerHistory
+}
+
+struct ComputerHistory: Codable {
+    let general: ComputerHistoryGeneral?
+    let commands: ComputerHistoryCommands?
+    let policyLogs: ComputerHistoryPolicyLogs?
+}
+
+struct ComputerHistoryGeneral: Codable {
+    let name: String?
+    let id: String?
+    let serialNumber: String?
+}
+
+struct ComputerHistoryCommands: Codable {
+    let completed: ComputerHistoryCompletedCommands?
+}
+
+struct ComputerHistoryCompletedCommands: Codable {
+    let command: [ComputerHistoryCommand]?
+}
+
+struct ComputerHistoryCommand: Codable {
+    let name: String?
+    let completed: String?
+    let username: String?
+}
+
+struct ComputerHistoryPolicyLogs: Codable {
+    let policyLog: [ComputerHistoryPolicyLog]?
+}
+
+struct ComputerHistoryPolicyLog: Codable {
+    let policyName: String?
+    let status: String?
+}
+
 // AsyncSemaphore for rate limiting in concurrent environments
 actor AsyncSemaphore {
     private var value: Int
@@ -168,6 +211,7 @@ actor AsyncSemaphore {
     @Published var computerDetailed: ComputerBasicRecord? = nil
     // Full decoded ComputerFull published for detailed UI views
     @Published var computerDetailedFull: ComputerFull? = nil
+    @Published var computerHistory: ComputerHistory? = nil
     
     //  #############################################################################
     //    ############ GROUPS
@@ -427,9 +471,38 @@ actor AsyncSemaphore {
         }
         
         // Decode JSON off the main actor to avoid doing heavy work during a UI layout pass
+        // Add extra debug logging on failure to help diagnose date/formatting issues.
         let decoded: ComputerBasic = try await Task.detached(priority: .userInitiated) {
             let decoder = JSONDecoder()
-            return try decoder.decode(ComputerBasic.self, from: data)
+            do {
+                return try decoder.decode(ComputerBasic.self, from: data)
+            } catch let decodingError as DecodingError {
+                // Capture raw body for diagnostics
+                let body = String(data: data, encoding: .utf8) ?? "<binary>"
+                print("--- Decoding error in getComputersBasic ---")
+                print("DecodingError: \(decodingError)")
+                print("Response body (truncated 2000 chars):\n\(body.prefix(2000))")
+
+                // Print specific DecodingError details
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    print("Type mismatch for type: \(type) at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("Value not found for type: \(type) at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                case .keyNotFound(let key, let context):
+                    print("Key not found: \(key) at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    print("Data corrupted at codingPath: \(context.codingPath) — \(context.debugDescription)")
+                @unknown default:
+                    print("Unknown decoding error: \(decodingError)")
+                }
+                throw decodingError
+            } catch {
+                // Non-decoding errors
+                let body = String(data: data, encoding: .utf8) ?? "<binary>"
+                print("Unexpected error decoding ComputerBasic: \(error)\nBody:\n\(body.prefix(2000))")
+                throw error
+            }
         }.value
 
         // Assign published properties asynchronously on the main queue to ensure
@@ -3290,14 +3363,14 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         }
     }
 
-    // Update the username under <general> for a computer (from a detailed computer record)
-    // Example usage: updateComputerGeneralUsername(server:server, authToken:token, resourceType:.computerDetailed, computerID: "123", newUsername: "jdoe")
-    func updateComputerGeneralUsername(server: String, authToken: String, resourceType: ResourceType, computerID: String, newUsername: String) {
+    // Update the username attribute for a computer (from a detailed computer record)
+    // Example usage: updateComputerUsername(server:server, authToken:token, resourceType:.computerDetailed, computerID: "123", newUsername: "jdoe")
+    func updateComputerUsername(server: String, authToken: String, resourceType: ResourceType, computerID: String, newUsername: String) {
         let resourcePath = getURLFormat(data: (resourceType))
         var xml: String
 
         self.separationLine()
-        print("updateComputerGeneralUsername XML")
+        print("updateComputerUsername XML")
         print("newUsername is set as:\(newUsername)")
         print("computerID is set as:\(computerID)")
 
@@ -3320,22 +3393,22 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
                 print("Set updateXML to true ")
                 self.updateXML = true
             } else {
-                print("Error making serverURL for updateComputerGeneralUsername")
+                print("Error making serverURL for updateComputerUsername")
             }
         } else {
-            print("Invalid server string passed to updateComputerGeneralUsername: \(server)")
+            print("Invalid server string passed to updateComputerUsername: \(server)")
         }
     }
 
-    // Convenience: update <general> username using a decoded ComputerFull (from ComputerDetailedFullResponse)
+    // Convenience: update username using a decoded ComputerFull (from ComputerDetailedFullResponse)
     // If `overrideUsername` is provided it will be used; otherwise the function uses the value
     // found in `computerFull.general?.username`. The function logs useful diagnostics and
     // returns early when required fields are missing.
-    func updateComputerGeneralUsername(from computerFull: ComputerFull, overrideUsername: String? = nil, server: String, authToken: String, resourceType: ResourceType = .computerDetailed) {
+    func updateComputerUsername(from computerFull: ComputerFull, overrideUsername: String? = nil, server: String, authToken: String, resourceType: ResourceType = .computerDetailed) {
         // Attempt to get the Jamf ID from the detailed object. Many decoded structs represent
         // the id as a String; if it's numeric elsewhere callers can adapt accordingly.
         guard let general = computerFull.general else {
-            print("updateComputerGeneralUsername(from:): detailed computer record missing 'general' section")
+            print("updateComputerUsername(from:): detailed computer record missing 'general' section")
             return
         }
 
@@ -3355,105 +3428,19 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         }()
 
         if jamfIDString.isEmpty {
-            print("updateComputerGeneralUsername(from:): could not determine Jamf ID from detailed record")
+            print("updateComputerUsername(from:): could not determine Jamf ID from detailed record")
             return
         }
 
         // Determine username to apply
         let usernameToSet = overrideUsername ?? (general as AnyObject).value(forKey: "username") as? String ?? ""
         if usernameToSet.isEmpty {
-            print("updateComputerGeneralUsername(from:): no username available to set (overrideUsername and detailed record both empty)")
+            print("updateComputerUsername(from:): no username available to set (overrideUsername and detailed record both empty)")
             return
         }
 
         // Delegate to existing updater
-        updateComputerGeneralUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
-    }
-
-    // New: update the username attribute under <location> for a computer
-    // Example usage: updateComputerLocationUsername(server:server, authToken:token, resourceType:.computerDetailed, computerID: "123", newUsername: "jdoe")
-    func updateComputerLocationUsername(server: String, authToken: String, resourceType: ResourceType, computerID: String, newUsername: String) {
-        let resourcePath = getURLFormat(data: (resourceType))
-        var xml: String
-
-        self.separationLine()
-        print("updateComputerLocationUsername XML")
-        print("newUsername is set as:\(newUsername)")
-        print("computerID is set as:\(computerID)")
-
-        xml = """
-                <computer>
-                    <location>
-                        <username>\(newUsername)</username>
-                    </location>
-                </computer>
-                """
-
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(computerID)
-                print("Running update computer location username function - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                // send XML PUT to update location/username
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-                print("Set updateXML to true ")
-                self.updateXML = true
-            } else {
-                print("Error making serverURL for updateComputerLocationUsername")
-            }
-        } else {
-            print("Invalid server string passed to updateComputerLocationUsername: \(server)")
-        }
-    }
-
-    // Convenience: update <location> username using a decoded ComputerFull
-    func updateComputerLocationUsername(from computerFull: ComputerFull, overrideUsername: String? = nil, server: String, authToken: String, resourceType: ResourceType = .computerDetailed) {
-        guard let general = computerFull.general else {
-            print("updateComputerLocationUsername(from:): detailed computer record missing 'general' section")
-            return
-        }
-
-        // normalize id
-        let jamfIDString: String = {
-            if let idStr = (general as AnyObject).value(forKey: "id") as? String {
-                return idStr
-            }
-            let mirror = Mirror(reflecting: general)
-            for child in mirror.children {
-                if child.label == "id" {
-                    return String(describing: child.value)
-                }
-            }
-            return ""
-        }()
-
-        if jamfIDString.isEmpty {
-            print("updateComputerLocationUsername(from:): could not determine Jamf ID from detailed record")
-            return
-        }
-
-        // prefer overrideUsername, else try to read location.username if present, else fall back to general.username
-        var usernameToSet = overrideUsername ?? ""
-        if usernameToSet.isEmpty {
-            // attempt to read location.username via Mirror / KVC
-            if let location = (computerFull as AnyObject).value(forKeyPath: "location") as? NSObject {
-                if let locUser = location.value(forKey: "username") as? String {
-                    usernameToSet = locUser
-                }
-            }
-            // fallback to general.username
-            if usernameToSet.isEmpty {
-                usernameToSet = (general as AnyObject).value(forKey: "username") as? String ?? ""
-            }
-        }
-
-        if usernameToSet.isEmpty {
-            print("updateComputerLocationUsername(from:): no username available to set (override and fields empty)")
-            return
-        }
-
-        updateComputerLocationUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
+        updateComputerUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
     }
     
     
@@ -3497,6 +3484,81 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         else {
             print("Nothing to do")
             
+        }
+    }
+
+    // A logical variant of updateName that derives a new name from the existing
+    // policy name using simple operations, then uploads the resulting name.
+    // Supported actions:
+    // - "removelast": remove the last `count` characters
+    // - "replacelast": remove the last `count` characters and append `replacement`
+    // - "replaceall": replace all occurrences of `match` with `replacement`
+    // If the in-memory detailed policy isn't available the function will log and return.
+    func updatePolicyNameLogical(server: String, authToken: String, resourceType: ResourceType, policyID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
+        // Attempt to obtain the current name from the in-memory detailed policy
+        let currentName = self.policyDetailed?.general?.name ?? ""
+        guard !currentName.isEmpty else {
+            print("updatePolicyNameLogical: current policy name not available in memory for id: \(policyID). Aborting.")
+            return
+        }
+
+        var newName = currentName
+        let lowerAction = action.lowercased()
+        switch lowerAction {
+        case "removelast":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropLast(remove))
+            }
+        case "replacelast":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropLast(remove)) + replacement
+            } else {
+                // if count is zero, just append the replacement
+                newName += replacement
+            }
+        case "replaceall":
+            if !match.isEmpty {
+                newName = newName.replacingOccurrences(of: match, with: replacement)
+            }
+        default:
+            print("updatePolicyNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            return
+        }
+
+        // If nothing changed, there's no need to update
+        if newName == currentName {
+            print("updatePolicyNameLogical: computed name is identical to current name; nothing to do")
+            return
+        }
+
+        // Delegate to the same XML-based update used by updateName
+        let resourcePath = getURLFormat(data: (resourceType))
+        var xml: String
+        self.separationLine()
+        print("updatePolicyNameLogical - currentName='\(currentName)' newName='\(newName)'")
+
+        xml = """
+                <policy>
+                    <general>
+                        <name>\(newName)</name>
+                    </general>
+                </policy>
+                """
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
+                print("Running updatePolicyNameLogical - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        } else {
+            print("updatePolicyNameLogical: invalid server string")
         }
     }
         
@@ -6348,6 +6410,58 @@ xml = """
             print("Loaded advanced computer search detail for id: \(userID)")
         } catch {
             publishError(error, title: "Failed to load advanced computer search details")
+            throw error
+        }
+    }
+
+    // Fetch computer history (legacy JSSResource/computerhistory)
+    // Accept an optional server parameter so callers can explicitly choose the server
+    // to query; if nil the NetBrain.server is used.
+    func getComputerHistory(server: String? = nil, computerID: String) async throws {
+        do {
+            let endpoint = "computerhistory/id/" + computerID
+            let usedServer = server ?? self.server
+            print("getComputerHistory: using server=\(usedServer), endpoint=\(endpoint)")
+            // ensure auth token exists
+            if authToken.isEmpty {
+                _ = try await getToken(server: server ?? self.server, username: username, password: password)
+            }
+
+            // Choose which RequestSender to use depending on whether caller specified a server
+            let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
+
+            // Use RequestSender's typed resultFor to fetch and decode the ComputerHistoryResponse
+            let req = APIRequest<ComputerHistoryResponse>(endpoint: endpoint, method: HTTPMethod.get)
+            let decoded = try await rs.resultFor(apiRequest: req)
+            self.computerHistory = decoded.computerHistory
+            print("Loaded computer history for id: \(computerID)")
+        } catch {
+            publishError(error, title: "Failed to load computer history")
+            throw error
+        }
+    }
+
+    // Fetch a subset of the computer history using the subset path component
+    // Example endpoint: computerhistory/id/<id>/subset/<subset>
+    func getComputerHistorySubset(server: String? = nil, computerID: String, subset: String) async throws {
+        do {
+            let endpoint = "computerhistory/id/" + computerID + "/subset/" + subset
+            let usedServer = server ?? self.server
+            print("getComputerHistorySubset: using server=\(usedServer), endpoint=\(endpoint)")
+
+            // ensure auth token exists
+            if authToken.isEmpty {
+                _ = try await getToken(server: server ?? self.server, username: username, password: password)
+            }
+
+            let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
+
+            let req = APIRequest<ComputerHistoryResponse>(endpoint: endpoint, method: HTTPMethod.get)
+            let decoded = try await rs.resultFor(apiRequest: req)
+            self.computerHistory = decoded.computerHistory
+            print("Loaded computer history subset '\(subset)' for id: \(computerID)")
+        } catch {
+            publishError(error, title: "Failed to load computer history subset")
             throw error
         }
     }
