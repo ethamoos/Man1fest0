@@ -236,7 +236,7 @@ struct CHUserLocation: Decodable {
 // MARK: - Location
 struct CHLocation: Decodable {
     let dateTime: String?
-    let dateTimeEpoch: String?
+    let dateTimeEpoch: Int64?
     let dateTimeUTC: String?
     let username: String?
     let fullName: String?
@@ -256,6 +256,33 @@ struct CHLocation: Decodable {
         case emailAddress = "email_address"
         case phoneNumber = "phone_number"
         case department, building, room, position
+    }
+
+    // Tolerant decoding: date_time_epoch can be an integer or a string in different
+    // Jamf API versions. Attempt to decode as Int64 first, then as String and
+    // convert to Int64 if possible.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.dateTime = try container.decodeIfPresent(String.self, forKey: .dateTime)
+
+        // Try Int64
+        if let intVal = try? container.decodeIfPresent(Int64.self, forKey: .dateTimeEpoch) {
+            self.dateTimeEpoch = intVal
+        } else if let strVal = try? container.decodeIfPresent(String.self, forKey: .dateTimeEpoch), let parsed = Int64(strVal) {
+            self.dateTimeEpoch = parsed
+        } else {
+            self.dateTimeEpoch = nil
+        }
+
+        self.dateTimeUTC = try container.decodeIfPresent(String.self, forKey: .dateTimeUTC)
+        self.username = try container.decodeIfPresent(String.self, forKey: .username)
+        self.fullName = try container.decodeIfPresent(String.self, forKey: .fullName)
+        self.emailAddress = try container.decodeIfPresent(String.self, forKey: .emailAddress)
+        self.phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        self.department = try container.decodeIfPresent(String.self, forKey: .department)
+        self.building = try container.decodeIfPresent(String.self, forKey: .building)
+        self.room = try container.decodeIfPresent(String.self, forKey: .room)
+        self.position = try container.decodeIfPresent(String.self, forKey: .position)
     }
 }
 
