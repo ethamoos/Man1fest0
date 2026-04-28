@@ -310,7 +310,7 @@ struct ComputerBasicActionView: View {
                     let ids = selection.map { String($0.id) }
                     Task {
                         for id in ids {
-                            networkController.updateComputerLocationUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, newUsername: usernameToSet)
+                            networkController.updateComputerUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, newUsername: usernameToSet)
                         }
                         try? await Task.sleep(nanoseconds: 400_000_000)
                         do { try await networkController.getComputersBasic(server: server, authToken: networkController.authToken) } catch { print("Failed to refresh computers after username update: \(error)") }
