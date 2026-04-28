@@ -32,6 +32,8 @@ struct ComputerHistoryResponse: Decodable {
             computerHistory = try singleValue.decode(ComputerHistory.self)
         }
     }
+
+    
 }
 
 // MARK: - ComputerHistory
@@ -110,6 +112,20 @@ struct ComputerHistory: Decodable {
         // mac_app_store_applications may be object with installed/pending/failed
         self.macAppStoreApplications = try? container.decodeIfPresent(MACAppStoreApplications.self, forKey: .macAppStoreApplications)
     }
+
+    // Allow manual construction when decoding fails so callers can build a
+    // best-effort ComputerHistory from loosely parsed JSON.
+    init(general: CHGeneral?, computerUsageLogs: [Any]?, audits: [Any]?, policyLogs: PolicyLogs?, commands: Commands?, userLocation: CHUserLocation?, macAppStoreApplications: MACAppStoreApplications?) {
+        self.general = general
+        self.computerUsageLogs = computerUsageLogs
+        self.audits = audits
+        self.policyLogs = policyLogs
+        self.commands = commands
+        self.userLocation = userLocation
+        self.macAppStoreApplications = macAppStoreApplications
+    }
+
+    
 }
 
 // MARK: - Commands
@@ -133,6 +149,36 @@ struct CompletedCommand: Decodable {
         case completedUTC = "completed_utc"
         case username
     }
+
+    // Tolerant decoding for completedEpoch: accept Int or String
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.name = try container.decodeIfPresent(String.self, forKey: .name)
+        self.completed = try container.decodeIfPresent(String.self, forKey: .completed)
+
+        if let intVal = try? container.decodeIfPresent(Int64.self, forKey: .completedEpoch) {
+            self.completedEpoch = intVal
+        } else if let intVal = try? container.decodeIfPresent(Int.self, forKey: .completedEpoch) {
+            self.completedEpoch = Int64(intVal)
+        } else if let strVal = try? container.decodeIfPresent(String.self, forKey: .completedEpoch), let parsed = Int64(strVal) {
+            self.completedEpoch = parsed
+        } else {
+            self.completedEpoch = nil
+        }
+
+        self.completedUTC = try container.decodeIfPresent(String.self, forKey: .completedUTC)
+        self.username = try container.decodeIfPresent(String.self, forKey: .username)
+    }
+
+    // Memberwise initializer for programmatic construction (used by fallback parser)
+    init(name: String?, completed: String?, completedEpoch: Int64?, completedUTC: String?, username: String?) {
+        self.name = name
+        self.completed = completed
+        self.completedEpoch = completedEpoch
+        self.completedUTC = completedUTC
+        self.username = username
+    }
+
 }
 
 // MARK: - PendingCommand (used for pending and failed arrays)
@@ -155,6 +201,53 @@ struct PendingCommand: Decodable {
         case lastPushEpoch = "last_push_epoch"
         case lastPushUTC = "last_push_utc"
         case username
+    }
+
+    // Tolerant decoding for epoch fields which may be numbers or strings
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.name = try container.decodeIfPresent(String.self, forKey: .name)
+        self.status = try container.decodeIfPresent(String.self, forKey: .status)
+        self.issued = try container.decodeIfPresent(String.self, forKey: .issued)
+
+        if let intVal = try? container.decodeIfPresent(Int64.self, forKey: .issuedEpoch) {
+            self.issuedEpoch = intVal
+        } else if let intVal = try? container.decodeIfPresent(Int.self, forKey: .issuedEpoch) {
+            self.issuedEpoch = Int64(intVal)
+        } else if let strVal = try? container.decodeIfPresent(String.self, forKey: .issuedEpoch), let parsed = Int64(strVal) {
+            self.issuedEpoch = parsed
+        } else {
+            self.issuedEpoch = nil
+        }
+
+        self.issuedUTC = try container.decodeIfPresent(String.self, forKey: .issuedUTC)
+        self.lastPush = try container.decodeIfPresent(String.self, forKey: .lastPush)
+
+        if let intVal = try? container.decodeIfPresent(Int64.self, forKey: .lastPushEpoch) {
+            self.lastPushEpoch = intVal
+        } else if let intVal = try? container.decodeIfPresent(Int.self, forKey: .lastPushEpoch) {
+            self.lastPushEpoch = Int64(intVal)
+        } else if let strVal = try? container.decodeIfPresent(String.self, forKey: .lastPushEpoch), let parsed = Int64(strVal) {
+            self.lastPushEpoch = parsed
+        } else {
+            self.lastPushEpoch = nil
+        }
+
+        self.lastPushUTC = try container.decodeIfPresent(String.self, forKey: .lastPushUTC)
+        self.username = try container.decodeIfPresent(String.self, forKey: .username)
+    }
+
+    // Memberwise initializer for programmatic construction (used by fallback parser)
+    init(name: String?, status: String?, issued: String?, issuedEpoch: Int64?, issuedUTC: String?, lastPush: String?, lastPushEpoch: Int64?, lastPushUTC: String?, username: String?) {
+        self.name = name
+        self.status = status
+        self.issued = issued
+        self.issuedEpoch = issuedEpoch
+        self.issuedUTC = issuedUTC
+        self.lastPush = lastPush
+        self.lastPushEpoch = lastPushEpoch
+        self.lastPushUTC = lastPushUTC
+        self.username = username
     }
 }
 
@@ -226,6 +319,52 @@ struct PolicyLog: Decodable {
         case dateCompletedUTC = "date_completed_utc"
         case status
     }
+
+    // Tolerant decoding for dateCompletedEpoch (string or number)
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // policy_id may be returned as an Int or a String in different API
+        // versions. Try String first, then Int64/Int and convert to String.
+        if let str = try? container.decodeIfPresent(String.self, forKey: .policyID) {
+            self.policyID = str
+        } else if let intVal = try? container.decodeIfPresent(Int64.self, forKey: .policyID) {
+            self.policyID = String(intVal)
+        } else if let intVal = try? container.decodeIfPresent(Int.self, forKey: .policyID) {
+            self.policyID = String(intVal)
+        } else {
+            self.policyID = nil
+        }
+
+        // policy_name and username should usually be strings; be tolerant
+        // in case they're missing or unexpectedly typed by decoding as String.
+        self.policyName = try? container.decodeIfPresent(String.self, forKey: .policyName)
+        self.username = try? container.decodeIfPresent(String.self, forKey: .username)
+        self.dateCompleted = try container.decodeIfPresent(String.self, forKey: .dateCompleted)
+
+        if let intVal = try? container.decodeIfPresent(Int64.self, forKey: .dateCompletedEpoch) {
+            self.dateCompletedEpoch = intVal
+        } else if let intVal = try? container.decodeIfPresent(Int.self, forKey: .dateCompletedEpoch) {
+            self.dateCompletedEpoch = Int64(intVal)
+        } else if let strVal = try? container.decodeIfPresent(String.self, forKey: .dateCompletedEpoch), let parsed = Int64(strVal) {
+            self.dateCompletedEpoch = parsed
+        } else {
+            self.dateCompletedEpoch = nil
+        }
+
+        self.dateCompletedUTC = try container.decodeIfPresent(String.self, forKey: .dateCompletedUTC)
+        self.status = try container.decodeIfPresent(String.self, forKey: .status)
+    }
+
+    // Memberwise initializer for programmatic construction (used by fallback parser)
+    init(policyID: String?, policyName: String?, username: String?, dateCompleted: String?, dateCompletedEpoch: Int64?, dateCompletedUTC: String?, status: String?) {
+        self.policyID = policyID
+        self.policyName = policyName
+        self.username = username
+        self.dateCompleted = dateCompleted
+        self.dateCompletedEpoch = dateCompletedEpoch
+        self.dateCompletedUTC = dateCompletedUTC
+        self.status = status
+    }
 }
 
 // MARK: - UserLocation
@@ -284,5 +423,20 @@ struct CHLocation: Decodable {
         self.room = try container.decodeIfPresent(String.self, forKey: .room)
         self.position = try container.decodeIfPresent(String.self, forKey: .position)
     }
-}
 
+    // Provide an explicit initializer so callers can construct CHLocation
+    // instances when building a best-effort model from JSONDictionary parsing.
+    init(dateTime: String?, dateTimeEpoch: Int64?, dateTimeUTC: String?, username: String?, fullName: String?, emailAddress: String?, phoneNumber: String?, department: String?, building: String?, room: String?, position: String?) {
+        self.dateTime = dateTime
+        self.dateTimeEpoch = dateTimeEpoch
+        self.dateTimeUTC = dateTimeUTC
+        self.username = username
+        self.fullName = fullName
+        self.emailAddress = emailAddress
+        self.phoneNumber = phoneNumber
+        self.department = department
+        self.building = building
+        self.room = room
+        self.position = position
+    }
+}
