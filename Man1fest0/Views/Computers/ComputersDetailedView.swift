@@ -18,6 +18,11 @@ struct ComputersDetailedView: View {
             @State private var eaValue = ""
             @State private var computerName = ""
 
+            // History subset picker state
+            private let historySubsetOptions: [String] = ["general", "commands", "policies", "all", "Custom"]
+            @State private var selectedHistorySubset: String = "general"
+            @State private var customHistorySubset: String = ""
+
             @State private var isLoading: Bool = true
             @State private var lastUpdated: Date? = nil
             @State private var showDeleteAlert: Bool = false
@@ -77,6 +82,38 @@ struct ComputersDetailedView: View {
 
                         Button(action: { progress.showProgress(); progress.waitForABit(); layout.openURL(urlString: "\(self.server)/computers.html?id=\(self.computerID)&o=r", requestType: "computers") }) { HStack(spacing: 8) { Image(systemName: "safari"); Text("Open In Browser") } }
                             .buttonStyle(.borderedProminent).tint(.green)
+                    }
+
+                    // Picker + button to load a subset of computer history
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .center, spacing: 12) {
+                            Picker("History subset", selection: $selectedHistorySubset) {
+                                ForEach(historySubsetOptions, id: \.self) { opt in Text(opt).tag(opt) }
+                            }
+                            .pickerStyle(.menu)
+
+                            if selectedHistorySubset == "Custom" {
+                                TextField("Custom subset", text: $customHistorySubset).textFieldStyle(.roundedBorder).frame(minWidth: 160)
+                            }
+
+                            Button(action: {
+                                var subsetToUse = selectedHistorySubset
+                                if subsetToUse == "Custom" { subsetToUse = customHistorySubset }
+                                guard !subsetToUse.isEmpty else { return }
+                                progress.showProgress(); progress.waitForABit()
+                                Task {
+                                    do {
+                                        try await networkController.getComputerHistorySubset(server: self.server, computerID: self.computerID, subset: subsetToUse)
+                                        await MainActor.run { historyLoadedForComputerID = self.computerID; lastUpdated = Date() }
+                                    } catch {
+                                        print("Failed to fetch computer history subset: \(error)")
+                                        networkController.publishError(error, title: "Failed to load history subset")
+                                    }
+                                    progress.endProgress()
+                                }
+                            }) { HStack { Image(systemName: "clock.arrow.circlepath"); Text("Load History Subset") } }
+                            .buttonStyle(.borderedProminent).tint(.purple)
+                        }
                     }
 
                     Divider()

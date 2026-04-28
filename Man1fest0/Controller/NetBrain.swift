@@ -6330,6 +6330,37 @@ xml = """
         }
     }
 
+    // Fetch a subset of the computer history using the subset path component
+    // Example endpoint: computerhistory/id/<id>/subset/<subset>
+    func getComputerHistorySubset(server: String? = nil, computerID: String, subset: String) async throws {
+        do {
+            let endpoint = "computerhistory/id/" + computerID + "/subset/" + subset
+            let usedServer = server ?? self.server
+            print("getComputerHistorySubset: using server=\(usedServer), endpoint=\(endpoint)")
+
+            // ensure auth token exists
+            if authToken.isEmpty {
+                _ = try await getToken(server: server ?? self.server, username: username, password: password)
+            }
+
+            let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
+
+            let raw = try await rs.fetchRawData(endpoint: endpoint, httpMethod: .get)
+            if let rawStr = String(data: raw, encoding: .utf8) {
+                print("Raw computer history (subset=\(subset)) JSON for id \(computerID):\n\(rawStr)")
+            } else {
+                print("Raw computer history subset response (binary) for id \(computerID), \(raw.count) bytes")
+            }
+
+            let decoded = try JSONDecoder().decode(ComputerHistoryResponse.self, from: raw)
+            self.computerHistory = decoded.computerHistory
+            print("Loaded computer history subset '\(subset)' for id: \(computerID)")
+        } catch {
+            publishError(error, title: "Failed to load computer history subset")
+            throw error
+        }
+    }
+
     // Fetch all computers
   func getAllComputers() async throws {
       do {
