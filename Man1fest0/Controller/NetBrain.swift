@@ -3,48 +3,8 @@ import Foundation
 import SwiftUI
 import AEXML
 
-// Minimal decoding structs for Computer History responses. These mirror the
-// pieces of the API response that the UI references (general, commands,
-// policyLogs). They are intentionally small and will be extended when more
-// fields are needed.
-struct ComputerHistoryResponse: Codable {
-    let computerHistory: ComputerHistory
-}
-
-struct ComputerHistory: Codable {
-    let general: ComputerHistoryGeneral?
-    let commands: ComputerHistoryCommands?
-    let policyLogs: ComputerHistoryPolicyLogs?
-}
-
-struct ComputerHistoryGeneral: Codable {
-    let name: String?
-    let id: String?
-    let serialNumber: String?
-}
-
-struct ComputerHistoryCommands: Codable {
-    let completed: ComputerHistoryCompletedCommands?
-}
-
-struct ComputerHistoryCompletedCommands: Codable {
-    let command: [ComputerHistoryCommand]?
-}
-
-struct ComputerHistoryCommand: Codable {
-    let name: String?
-    let completed: String?
-    let username: String?
-}
-
-struct ComputerHistoryPolicyLogs: Codable {
-    let policyLog: [ComputerHistoryPolicyLog]?
-}
-
-struct ComputerHistoryPolicyLog: Codable {
-    let policyName: String?
-    let status: String?
-}
+// ComputerHistory types are defined in Model/ModelDecodingStructs/ComputerHistory.swift
+// Use those definitions to decode computer history responses.
 
 // AsyncSemaphore for rate limiting in concurrent environments
 actor AsyncSemaphore {
@@ -212,11 +172,8 @@ actor AsyncSemaphore {
     // Full decoded ComputerFull published for detailed UI views
     @Published var computerDetailedFull: ComputerFull? = nil
     @Published var computerHistory: ComputerHistory? = nil
-// <<<<<<< InProg-updatePolicyNameLogical
-// =======
-//     // Raw JSON body returned by the last computer history request (for debugging / UI preview)
+    // Raw JSON of the last computer history response (useful for debugging/preview in UI)
     @Published var lastComputerHistoryRaw: String? = nil
-// >>>>>>> main
     
     //  #############################################################################
     //    ############ GROUPS
@@ -3456,7 +3413,6 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
     
     func updateName(server: String,authToken: String, resourceType: ResourceType, policyName: String, policyID: String) {
         
-// <<<<<<< InProg-updatePolicyNameLogical
         let resourcePath = getURLFormat(data: (resourceType))
         let policyID = policyID
         var xml: String
@@ -3540,8 +3496,6 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         }
 
         // Delegate to the same XML-based update used by updateName
-// =======
-// >>>>>>> main
         let resourcePath = getURLFormat(data: (resourceType))
         var xml: String
         self.separationLine()
@@ -6423,35 +6377,58 @@ xml = """
     }
 
     // Fetch computer history (legacy JSSResource/computerhistory)
-// <<<<<<< InProg-updatePolicyNameLogical
-//     // Accept an optional server parameter so callers can explicitly choose the server
-//     // to query; if nil the NetBrain.server is used.
-//     func getComputerHistory(server: String? = nil, computerID: String) async throws {
-//         do {
-//             let endpoint = "computerhistory/id/" + computerID
-//             let usedServer = server ?? self.server
-//             print("getComputerHistory: using server=\(usedServer), endpoint=\(endpoint)")
-//             // ensure auth token exists
-//             if authToken.isEmpty {
-//                 _ = try await getToken(server: server ?? self.server, username: username, password: password)
-//             }
+    // Accept an optional server parameter so callers can explicitly choose the server
+    // to query; if nil the NetBrain.server is used.
+    func getComputerHistory(server: String? = nil, computerID: String) async throws {
+        do {
+            let endpoint = "computerhistory/id/" + computerID
+            let usedServer = server ?? self.server
+            print("getComputerHistory: using server=\(usedServer), endpoint=\(endpoint)")
+            // ensure auth token exists
+            if authToken.isEmpty {
+                _ = try await getToken(server: server ?? self.server, username: username, password: password)
+            }
 
-//             // Choose which RequestSender to use depending on whether caller specified a server
-//             let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
+            // Build the concrete URL similar to RequestSender.fetchRawData so we can
+            // fetch the raw response body directly and still preserve it for the UI.
+            let trimmedEndpoint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+            let jamfURLQuery: String
+            if trimmedEndpoint.lowercased().hasPrefix("http://") || trimmedEndpoint.lowercased().hasPrefix("https://") {
+                jamfURLQuery = trimmedEndpoint
+            } else if trimmedEndpoint.hasPrefix("/") {
+                jamfURLQuery = usedServer + trimmedEndpoint
+            } else if trimmedEndpoint.hasPrefix("api/") {
+                jamfURLQuery = usedServer + "/" + trimmedEndpoint
+            } else {
+                jamfURLQuery = usedServer + "/JSSResource/" + trimmedEndpoint
+            }
 
-//             // Use RequestSender's typed resultFor to fetch and decode the ComputerHistoryResponse
-//             let req = APIRequest<ComputerHistoryResponse>(endpoint: endpoint, method: HTTPMethod.get)
-//             let decoded = try await rs.resultFor(apiRequest: req)
-//             self.computerHistory = decoded.computerHistory
-//             print("Loaded computer history for id: \(computerID)")
-//         } catch {
-//             publishError(error, title: "Failed to load computer history")
-//             throw error
-//         }
-//     }
+            guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
+            var request = URLRequest(url: url)
+            request.httpMethod = HTTPMethod.get.stringValue
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-//     // Fetch a subset of the computer history using the subset path component
-//     // Example endpoint: computerhistory/id/<id>/subset/<subset>
+            // Fetch raw data so we can preserve the raw JSON for debugging in the UI,
+            // then decode it into the typed response.
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard status == 200 else { throw JamfAPIError.http(status) }
+            // Save raw JSON for optional display in the UI
+            self.lastComputerHistoryRaw = String(data: data, encoding: .utf8)
+            // Decode into the typed response
+            let decoder = JSONDecoder()
+            let decoded = try decoder.decode(ComputerHistoryResponse.self, from: data)
+            self.computerHistory = decoded.computerHistory
+            print("Loaded computer history for id: \(computerID)")
+        } catch {
+            publishError(error, title: "Failed to load computer history")
+            throw error
+        }
+    }
+
+    // Fetch a subset of the computer history using the subset path component
+    // Example endpoint: computerhistory/id/<id>/subset/<subset>
     func getComputerHistorySubset(server: String? = nil, computerID: String, subset: String) async throws {
         do {
             let endpoint = "computerhistory/id/" + computerID + "/subset/" + subset
@@ -6463,256 +6440,35 @@ xml = """
                 _ = try await getToken(server: server ?? self.server, username: username, password: password)
             }
 
-            let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
+            let trimmedEndpoint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+            let jamfURLQuery: String
+            if trimmedEndpoint.lowercased().hasPrefix("http://") || trimmedEndpoint.lowercased().hasPrefix("https://") {
+                jamfURLQuery = trimmedEndpoint
+            } else if trimmedEndpoint.hasPrefix("/") {
+                jamfURLQuery = usedServer + trimmedEndpoint
+            } else if trimmedEndpoint.hasPrefix("api/") {
+                jamfURLQuery = usedServer + "/" + trimmedEndpoint
+            } else {
+                jamfURLQuery = usedServer + "/JSSResource/" + trimmedEndpoint
+            }
 
-            let req = APIRequest<ComputerHistoryResponse>(endpoint: endpoint, method: HTTPMethod.get)
-            let decoded = try await rs.resultFor(apiRequest: req)
+            guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
+            var request = URLRequest(url: url)
+            request.httpMethod = HTTPMethod.get.stringValue
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard status == 200 else { throw JamfAPIError.http(status) }
+            // Save raw JSON for optional display in the UI
+            self.lastComputerHistoryRaw = String(data: data, encoding: .utf8)
+            let decoder = JSONDecoder()
+            let decoded = try decoder.decode(ComputerHistoryResponse.self, from: data)
             self.computerHistory = decoded.computerHistory
             print("Loaded computer history subset '\(subset)' for id: \(computerID)")
         } catch {
             publishError(error, title: "Failed to load computer history subset")
-// =======
-    // This variant includes extra debug logging: it prints the full request URL
-    // used and the raw (undecoded) response body to help diagnose decoding issues.
-    func getComputerHistory(computerID: String) async throws {
-
-        print("Running: getComputerHistory")
-        // Ensure we have a valid auth token
-        if authToken.isEmpty {
-            _ = try await getToken(server: server, username: username, password: password)
-        }
-
-        // Build full URL similarly to RequestSender.resultFor so behavior matches
-        var normalizedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !normalizedServer.lowercased().contains("://") {
-            normalizedServer = "https://" + normalizedServer
-        }
-        let jamfURLQuery = normalizedServer + "/JSSResource/computerhistory/id/" + computerID
-        guard let url = URL(string: jamfURLQuery) else {
-            print("getComputerHistory: failed to build URL for: \(jamfURLQuery)")
-            throw JamfAPIError.badURL
-        }
-
-        print("getComputerHistory: requesting URL -> \(url.absoluteString)")
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            print("getComputerHistory: response status code = \(status)")
-
-            // Print raw response body for debugging (UTF-8 if possible)
-            if data.count > 0 {
-                if let body = String(data: data, encoding: .utf8) {
-                    separationLine()
-                    print("getComputerHistory: raw response body:\n\(body)")
-                    // Store raw body for UI debugging / preview on the main actor
-                    await MainActor.run {
-                        self.lastComputerHistoryRaw = body
-                    }
-                    separationLine()
-                } else {
-                    print("getComputerHistory: raw response body is non-UTF8 (\(data.count) bytes)")
-                }
-            } else {
-                print("getComputerHistory: response body is empty")
-            }
-
-            guard status == 200 else {
-                print("getComputerHistory: unexpected status code: \(status)")
-                throw JamfAPIError.http(status)
-            }
-
-            // The Jamf response wraps the object under "computer_history" so decode
-            // using the generated ComputerHistoryResponse which handles that wrapper.
-            let decoder = JSONDecoder()
-            do {
-                let wrapper = try decoder.decode(ComputerHistoryResponse.self, from: data)
-                // Assign decoded model on the main actor so SwiftUI observes the change reliably
-                await MainActor.run {
-                    self.computerHistory = wrapper.computerHistory
-                }
-                print("Loaded computer history for id: \(computerID)")
-                print("computerHistory is: \(String(describing: self.computerHistory))")
-            } catch {
-                // Save raw body for inspection
-                if self.lastComputerHistoryRaw == nil {
-                    self.lastComputerHistoryRaw = String(data: data, encoding: .utf8)
-                }
-                print("getComputerHistory: decoding error: \(error). Attempting best-effort parse...")
-
-                // Best-effort fallback: parse JSON generically and build a minimal
-                // ComputerHistory so the UI can show at least general and user_location.
-                do {
-                    let obj = try JSONSerialization.jsonObject(with: data, options: [])
-                    if let root = obj as? [String: Any], let ch = root["computer_history"] as? [String: Any] {
-                        // general
-                        var generalObj: CHGeneral? = nil
-                        if let g = ch["general"] as? [String: Any] {
-                            let idVal: Int? = {
-                                if let i = g["id"] as? Int { return i }
-                                if let s = g["id"] as? String, let i = Int(s) { return i }
-                                return nil
-                            }()
-                            let name = g["name"] as? String
-                            let udid = g["udid"] as? String
-                            let serial = g["serial_number"] as? String
-                            let mac = g["mac_address"] as? String
-                            generalObj = CHGeneral(id: idVal, name: name, udid: udid, serialNumber: serial, macAddress: mac)
-                        }
-
-                        // user_location
-                        var userLocObj: CHUserLocation? = nil
-                        if let locArray = ch["user_location"] as? [[String: Any]] {
-                            var locs: [CHLocation] = []
-                            for item in locArray {
-                                let dateTime = item["date_time"] as? String
-                                var epoch: Int64? = nil
-                                if let e = item["date_time_epoch"] as? Int64 { epoch = e }
-                                else if let ei = item["date_time_epoch"] as? Int { epoch = Int64(ei) }
-                                else if let s = item["date_time_epoch"] as? String, let parsed = Int64(s) { epoch = parsed }
-                                let dateUTC = item["date_time_utc"] as? String
-                                let username = item["username"] as? String
-                                let fullName = item["full_name"] as? String
-                                let email = item["email_address"] as? String
-                                let phone = item["phone_number"] as? String
-                                let department = item["department"] as? String
-                                let building = item["building"] as? String
-                                let room = item["room"] as? String
-                                let position = item["position"] as? String
-                                let loc = CHLocation(dateTime: dateTime, dateTimeEpoch: epoch, dateTimeUTC: dateUTC, username: username, fullName: fullName, emailAddress: email, phoneNumber: phone, department: department, building: building, room: room, position: position)
-                                locs.append(loc)
-                            }
-                            userLocObj = CHUserLocation(location: locs)
-                        }
-
-                        // commands: try to extract completed/pending/failed arrays into model structs
-                        var cmds: Commands? = nil
-                        if let commandsObj = ch["commands"] as? [String: Any] {
-                            var completedArr: [CompletedCommand]? = nil
-                            var pendingArr: [PendingCommand]? = nil
-                            var failedArr: [PendingCommand]? = nil
-
-                            if let comp = commandsObj["completed"] as? [[String: Any]] {
-                                var tmp: [CompletedCommand] = []
-                                for item in comp {
-                                    let name = item["name"] as? String
-                                    let completed = item["completed"] as? String
-                                    var epoch: Int64? = nil
-                                    if let e = item["completed_epoch"] as? Int64 { epoch = e }
-                                    else if let ei = item["completed_epoch"] as? Int { epoch = Int64(ei) }
-                                    else if let s = item["completed_epoch"] as? String, let p = Int64(s) { epoch = p }
-                                    let completedUTC = item["completed_utc"] as? String
-                                    let username = item["username"] as? String
-                                    let cc = CompletedCommand(name: name, completed: completed, completedEpoch: epoch, completedUTC: completedUTC, username: username)
-                                    tmp.append(cc)
-                                }
-                                completedArr = tmp
-                            }
-
-                            if let pend = commandsObj["pending"] as? [[String: Any]] {
-                                var tmp: [PendingCommand] = []
-                                for item in pend {
-                                    let name = item["name"] as? String
-                                    let status = item["status"] as? String
-                                    let issued = item["issued"] as? String
-                                    var issuedEpoch: Int64? = nil
-                                    if let e = item["issued_epoch"] as? Int64 { issuedEpoch = e }
-                                    else if let ei = item["issued_epoch"] as? Int { issuedEpoch = Int64(ei) }
-                                    else if let s = item["issued_epoch"] as? String, let p = Int64(s) { issuedEpoch = p }
-                                    let issuedUTC = item["issued_utc"] as? String
-                                    let lastPush = item["last_push"] as? String
-                                    var lastPushEpoch: Int64? = nil
-                                    if let e = item["last_push_epoch"] as? Int64 { lastPushEpoch = e }
-                                    else if let ei = item["last_push_epoch"] as? Int { lastPushEpoch = Int64(ei) }
-                                    else if let s = item["last_push_epoch"] as? String, let p = Int64(s) { lastPushEpoch = p }
-                                    let lastPushUTC = item["last_push_utc"] as? String
-                                    let username = item["username"] as? String
-                                    let pc = PendingCommand(name: name, status: status, issued: issued, issuedEpoch: issuedEpoch, issuedUTC: issuedUTC, lastPush: lastPush, lastPushEpoch: lastPushEpoch, lastPushUTC: lastPushUTC, username: username)
-                                    tmp.append(pc)
-                                }
-                                pendingArr = tmp
-                            }
-
-                            if let fail = commandsObj["failed"] as? [[String: Any]] {
-                                var tmp: [PendingCommand] = []
-                                for item in fail {
-                                    let name = item["name"] as? String
-                                    let status = item["status"] as? String
-                                    let issued = item["issued"] as? String
-                                    var issuedEpoch: Int64? = nil
-                                    if let e = item["issued_epoch"] as? Int64 { issuedEpoch = e }
-                                    else if let ei = item["issued_epoch"] as? Int { issuedEpoch = Int64(ei) }
-                                    else if let s = item["issued_epoch"] as? String, let p = Int64(s) { issuedEpoch = p }
-                                    let issuedUTC = item["issued_utc"] as? String
-                                    let lastPush = item["last_push"] as? String
-                                    var lastPushEpoch: Int64? = nil
-                                    if let e = item["last_push_epoch"] as? Int64 { lastPushEpoch = e }
-                                    else if let ei = item["last_push_epoch"] as? Int { lastPushEpoch = Int64(ei) }
-                                    else if let s = item["last_push_epoch"] as? String, let p = Int64(s) { lastPushEpoch = p }
-                                    let lastPushUTC = item["last_push_utc"] as? String
-                                    let username = item["username"] as? String
-                                    let pc = PendingCommand(name: name, status: status, issued: issued, issuedEpoch: issuedEpoch, issuedUTC: issuedUTC, lastPush: lastPush, lastPushEpoch: lastPushEpoch, lastPushUTC: lastPushUTC, username: username)
-                                    tmp.append(pc)
-                                }
-                                failedArr = tmp
-                            }
-
-                            cmds = Commands(completed: completedArr, pending: pendingArr, failed: failedArr)
-                        }
-
-                        // policy_logs: try to parse array of logs
-                        var pols: PolicyLogs? = nil
-                        if let pl = ch["policy_logs"] as? [[String: Any]] {
-                            var tmp: [PolicyLog] = []
-                            for item in pl {
-                                let pid = item["policy_id"] as? String
-                                let pname = item["policy_name"] as? String
-                                let username = item["username"] as? String
-                                let dateCompleted = item["date_completed"] as? String
-                                var dateCompletedEpoch: Int64? = nil
-                                if let e = item["date_completed_epoch"] as? Int64 { dateCompletedEpoch = e }
-                                else if let ei = item["date_completed_epoch"] as? Int { dateCompletedEpoch = Int64(ei) }
-                                else if let s = item["date_completed_epoch"] as? String, let p = Int64(s) { dateCompletedEpoch = p }
-                                let dateCompletedUTC = item["date_completed_utc"] as? String
-                                let status = item["status"] as? String
-                                let plog = PolicyLog(policyID: pid, policyName: pname, username: username, dateCompleted: dateCompleted, dateCompletedEpoch: dateCompletedEpoch, dateCompletedUTC: dateCompletedUTC, status: status)
-                                tmp.append(plog)
-                            }
-                            pols = PolicyLogs(policyLog: tmp)
-                        }
-
-                        // mac_app_store_applications: create wrapper if present
-                        var macapps: MACAppStoreApplications? = nil
-                        if let _ = ch["mac_app_store_applications"] as? [String: Any] {
-                            macapps = MACAppStoreApplications(installed: [], pending: [], failed: [])
-                        }
-
-                        let bestEffort = ComputerHistory(general: generalObj, computerUsageLogs: nil, audits: nil, policyLogs: pols, commands: cmds, userLocation: userLocObj, macAppStoreApplications: macapps)
-                        await MainActor.run {
-                            self.computerHistory = bestEffort
-                        }
-                        print("Loaded computer history (best-effort) for id: \(computerID)")
-                        print("computerHistory is: \(String(describing: self.computerHistory))")
-                        return
-                    }
-                } catch {
-                    print("Best-effort parse failed: \(error)")
-                }
-
-                // If fallback failed, rethrow original decoding error
-                throw error
-            }
-
-        } catch {
-            publishError(error, title: "Failed to load computer history")
-// >>>>>>> main
             throw error
         }
     }
