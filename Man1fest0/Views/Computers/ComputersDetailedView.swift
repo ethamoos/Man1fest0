@@ -487,23 +487,47 @@ struct ComputersDetailedView: View {
                 }
             }
             Button("Cancel", role: .cancel) { }
-        } message: { Text("This will permanently remove the selected computer record from the server. Are you sure?") }
-            .alert("Update computer username?", isPresented: $showUpdateUsernameConfirm) {
-                Button("Update") {
-                    isUpdatingUsername = true
-                    progress.showProgress()
-                    progress.waitForABit()
-                    Task {
-                        networkController.updateComputerUsername(server: self.server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: self.computerID, newUsername: editUsername)
-                        try? await Task.sleep(nanoseconds: 400_000_000)
-                        do {
-                            try await networkController.getDetailedComputer(userID: self.computerID)
-                            lastUpdated = Date()
-                        } catch let error {
-                            networkController.publishError(error, title: "Failed to refresh computer")
-                        }
-                        progress.endProgress()
-                        isUpdatingUsername = false
+// <<<<<<< InProg-updatePolicyNameLogical
+        } message: {
+            Text("This will permanently remove the selected computer record from the server. Are you sure?")
+        }
+        // Confirmation for username update
+        .alert("Update computer username?", isPresented: $showUpdateUsernameConfirm) {
+            Button("Update", role: .none) {
+                isUpdatingUsername = true
+                progress.showProgress()
+                progress.waitForABit()
+
+                Task {
+                    // perform the update (non-async function)
+                    networkController.updateComputerUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: computerID, newUsername: editUsername)
+                    // small delay to let server process, then refresh detailed record
+                    try? await Task.sleep(nanoseconds: 400_000_000)
+                    do {
+                        try await networkController.getDetailedComputer(userID: computerID)
+                        lastUpdated = Date()
+                    } catch {
+                        print("Failed refreshing detail after username update: \(error)")
+                        networkController.publishError(error, title: "Failed to refresh computer")
+// =======
+//         } message: { Text("This will permanently remove the selected computer record from the server. Are you sure?") }
+//             .alert("Update computer username?", isPresented: $showUpdateUsernameConfirm) {
+//                 Button("Update") {
+//                     isUpdatingUsername = true
+//                     progress.showProgress()
+//                     progress.waitForABit()
+//                     Task {
+//                         networkController.updateComputerUsername(server: self.server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: self.computerID, newUsername: editUsername)
+//                         try? await Task.sleep(nanoseconds: 400_000_000)
+//                         do {
+//                             try await networkController.getDetailedComputer(userID: self.computerID)
+//                             lastUpdated = Date()
+//                         } catch let error {
+//                             networkController.publishError(error, title: "Failed to refresh computer")
+//                         }
+//                         progress.endProgress()
+//                         isUpdatingUsername = false
+// >>>>>>> main
                     }
                 }
                 Button("Cancel", role: .cancel) { }
