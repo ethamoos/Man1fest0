@@ -392,7 +392,7 @@ struct PolicyScriptsTabView: View {
                             
                             HStack {
                                 LazyVGrid(columns: layout.columns) {
-                                    TextField("parameter4", text: $scriptParameter4)
+                                    TextField("parameter4", text: $scriptParameter5)
                                     TextField("parameter5", text: $scriptParameter5)
                                     TextField("parameter6", text: $scriptParameter6)
                                 }

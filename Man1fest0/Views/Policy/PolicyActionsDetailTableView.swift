@@ -51,11 +51,6 @@ struct PolicyActionsDetailTableView: View {
     @State private var basicPoliciesBannerText: String = ""
     // explicit tab selection for the detail TabView
     @State private var selectedDetailTab: Int = 0
-    // Tools tab state for updatePolicyNameLogical
-    @State private var toolsNameAction: String = "removelast" // removelast, replacelast, replaceall
-    @State private var toolsCountString: String = "1"
-    @State private var toolsMatchString: String = ""
-    @State private var toolsReplacementString: String = ""
 
     //  ########################################################################################
     //  SELECTIONS
@@ -311,7 +306,6 @@ struct PolicyActionsDetailTableView: View {
                     Text("Clear Items").tag(1)
                     Text("Scope").tag(2)
                     Text("Export").tag(3)
-                    Text("Tools").tag(4)
                 }
                 .pickerStyle(.segmented)
                 .padding(.bottom, 6)
@@ -342,63 +336,6 @@ struct PolicyActionsDetailTableView: View {
                     )
                 case 3:
                     PolicyDetailExportTabView(server: server, selectedPoliciesInt: selectedPoliciesInt)
-                case 4:
-                    // Tools tab: expose updatePolicyNameLogical functionality
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Policy Name Tools")
-                            .font(.headline)
-
-                        Text("Selected policies: \(selectedPoliciesInt.compactMap { $0 }.count)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-
-                        Picker("Action", selection: $toolsNameAction) {
-                            Text("Remove last chars").tag("removelast")
-                            Text("Replace last chars").tag("replacelast")
-                            Text("Replace all occurrences").tag("replaceall")
-                        }
-                        .pickerStyle(.segmented)
-
-                        HStack(spacing: 8) {
-                            if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
-                                TextField("Count", text: $toolsCountString)
-                                    .frame(width: 100)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                            }
-
-                            if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
-                                TextField("Replacement", text: $toolsReplacementString)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                            }
-
-                            if toolsNameAction == "replaceall" {
-                                TextField("Match", text: $toolsMatchString)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                            }
-                        }
-
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                let ids = selectedPoliciesInt.compactMap { $0 }
-                                guard !ids.isEmpty else { return }
-                                let countInt = Int(toolsCountString) ?? 0
-                                progress.showProgress()
-                                Task {
-                                    for pid in ids {
-                                        let pidString = String(describing: pid)
-                                        networkController.updatePolicyNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyID: pidString, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
-                                        try? await Task.sleep(nanoseconds: 200_000_000)
-                                    }
-                                    progress.endProgress()
-                                }
-                            }) {
-                                Text("Run on Selected")
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(selectedPoliciesInt.compactMap { $0 }.isEmpty)
-                        }
-                    }
                 default:
                     PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: selectedPoliciesInt, policiesSelection: $policiesSelection)
                 }

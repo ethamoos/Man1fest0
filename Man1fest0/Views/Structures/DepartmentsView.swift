@@ -31,36 +31,28 @@ struct DepartmentsView: View {
                 
                 NavigationView {
                     
-                #if os(macOS)
-                    // macOS: show a small search field above the list
-                    VStack(alignment: .leading, spacing: 6) {
-                        TextField("Search departments", text: $searchText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding([.top, .horizontal], 6)
+#if os(macOS)
+//                    List(searchResults, id: \.self, selection: $selection) { department in
+//                        NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
+                            
+                            List(searchResults, selection: $selection) { department in
+                                                     NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
+                            
+                            HStack {
+                                Image(systemName: "rectangle.3.group")
+                                Text(department.name ).font(.system(size: 12.0)).foregroundColor(colorScheme == .dark ? .blue : .blue)
+                            }
+                            .background(Color.gray.opacity(0.05))
+                            .foregroundColor(.blue)
+                            .navigationTitle("Departments")
+                            .frame(width: 600, alignment: .leading)
 
-                        List(searchResults, selection: $selection) { department in
-                            NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
-                            HStack {
-                                Image(systemName: "rectangle.3.group")
-                                Text(department.name ).font(.system(size: 12.0)).foregroundColor(colorScheme == .dark ? .blue : .blue)
-                            }
-                            .background(Color.gray.opacity(0.05))
-                            .foregroundColor(.blue)
-                            }
+
                         }
                     }
-                    .frame(minWidth: 300, maxWidth: .infinity)
-                #else
-                    List(searchResults, id: \.self, selection: $selection) { department in
-                        NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
-                            HStack {
-                                Image(systemName: "rectangle.3.group")
-                                Text(department.name ).font(.system(size: 12.0)).foregroundColor(colorScheme == .dark ? .blue : .blue)
-                            }
-                            .background(Color.gray.opacity(0.05))
-                            .foregroundColor(.blue)
-                        }
-                    }
+                        .frame(minWidth: 300, maxWidth: .infinity)
+#endif
+                #if !os(macOS)
                     .searchable(text: $searchText)
                 #endif
                     
@@ -97,12 +89,17 @@ struct DepartmentsView: View {
     }
     
     var searchResults: [Department] {
+        
         let allDepartments = networkController.departments
-        if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return allDepartments
+        let allDepartmentsArray = Array (allDepartments)
+        
+        if searchText.isEmpty {
+            // print("Search is empty")
+            return networkController.departments
+        } else {
+            print("Search Added")
+            return allDepartmentsArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
-        let lower = searchText.lowercased()
-        return allDepartments.filter { $0.name.lowercased().contains(lower) }
     }
  
     

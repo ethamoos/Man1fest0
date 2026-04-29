@@ -3,49 +3,6 @@ import Foundation
 import SwiftUI
 import AEXML
 
-// Minimal decoding structs for Computer History responses. These mirror the
-// pieces of the API response that the UI references (general, commands,
-// policyLogs). They are intentionally small and will be extended when more
-// fields are needed.
-struct ComputerHistoryResponse: Codable {
-    let computerHistory: ComputerHistory
-}
-
-struct ComputerHistory: Codable {
-    let general: ComputerHistoryGeneral?
-    let commands: ComputerHistoryCommands?
-    let policyLogs: ComputerHistoryPolicyLogs?
-}
-
-struct ComputerHistoryGeneral: Codable {
-    let name: String?
-    let id: String?
-    let serialNumber: String?
-}
-
-struct ComputerHistoryCommands: Codable {
-    let completed: ComputerHistoryCompletedCommands?
-}
-
-struct ComputerHistoryCompletedCommands: Codable {
-    let command: [ComputerHistoryCommand]?
-}
-
-struct ComputerHistoryCommand: Codable {
-    let name: String?
-    let completed: String?
-    let username: String?
-}
-
-struct ComputerHistoryPolicyLogs: Codable {
-    let policyLog: [ComputerHistoryPolicyLog]?
-}
-
-struct ComputerHistoryPolicyLog: Codable {
-    let policyName: String?
-    let status: String?
-}
-
 // AsyncSemaphore for rate limiting in concurrent environments
 actor AsyncSemaphore {
     private var value: Int
@@ -212,11 +169,8 @@ actor AsyncSemaphore {
     // Full decoded ComputerFull published for detailed UI views
     @Published var computerDetailedFull: ComputerFull? = nil
     @Published var computerHistory: ComputerHistory? = nil
-// <<<<<<< InProg-updatePolicyNameLogical
-// =======
-//     // Raw JSON body returned by the last computer history request (for debugging / UI preview)
+    // Raw JSON body returned by the last computer history request (for debugging / UI preview)
     @Published var lastComputerHistoryRaw: String? = nil
-// >>>>>>> main
     
     //  #############################################################################
     //    ############ GROUPS
@@ -476,38 +430,9 @@ actor AsyncSemaphore {
         }
         
         // Decode JSON off the main actor to avoid doing heavy work during a UI layout pass
-        // Add extra debug logging on failure to help diagnose date/formatting issues.
         let decoded: ComputerBasic = try await Task.detached(priority: .userInitiated) {
             let decoder = JSONDecoder()
-            do {
-                return try decoder.decode(ComputerBasic.self, from: data)
-            } catch let decodingError as DecodingError {
-                // Capture raw body for diagnostics
-                let body = String(data: data, encoding: .utf8) ?? "<binary>"
-                print("--- Decoding error in getComputersBasic ---")
-                print("DecodingError: \(decodingError)")
-                print("Response body (truncated 2000 chars):\n\(body.prefix(2000))")
-
-                // Print specific DecodingError details
-                switch decodingError {
-                case .typeMismatch(let type, let context):
-                    print("Type mismatch for type: \(type) at codingPath: \(context.codingPath) — \(context.debugDescription)")
-                case .valueNotFound(let type, let context):
-                    print("Value not found for type: \(type) at codingPath: \(context.codingPath) — \(context.debugDescription)")
-                case .keyNotFound(let key, let context):
-                    print("Key not found: \(key) at codingPath: \(context.codingPath) — \(context.debugDescription)")
-                case .dataCorrupted(let context):
-                    print("Data corrupted at codingPath: \(context.codingPath) — \(context.debugDescription)")
-                @unknown default:
-                    print("Unknown decoding error: \(decodingError)")
-                }
-                throw decodingError
-            } catch {
-                // Non-decoding errors
-                let body = String(data: data, encoding: .utf8) ?? "<binary>"
-                print("Unexpected error decoding ComputerBasic: \(error)\nBody:\n\(body.prefix(2000))")
-                throw error
-            }
+            return try decoder.decode(ComputerBasic.self, from: data)
         }.value
 
         // Assign published properties asynchronously on the main queue to ensure
@@ -3456,7 +3381,6 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
     
     func updateName(server: String,authToken: String, resourceType: ResourceType, policyName: String, policyID: String) {
         
-// <<<<<<< InProg-updatePolicyNameLogical
         let resourcePath = getURLFormat(data: (resourceType))
         let policyID = policyID
         var xml: String
@@ -3490,83 +3414,6 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         else {
             print("Nothing to do")
             
-        }
-    }
-
-    // A logical variant of updateName that derives a new name from the existing
-    // policy name using simple operations, then uploads the resulting name.
-    // Supported actions:
-    // - "removelast": remove the last `count` characters
-    // - "replacelast": remove the last `count` characters and append `replacement`
-    // - "replaceall": replace all occurrences of `match` with `replacement`
-    // If the in-memory detailed policy isn't available the function will log and return.
-    func updatePolicyNameLogical(server: String, authToken: String, resourceType: ResourceType, policyID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
-        // Attempt to obtain the current name from the in-memory detailed policy
-        let currentName = self.policyDetailed?.general?.name ?? ""
-        guard !currentName.isEmpty else {
-            print("updatePolicyNameLogical: current policy name not available in memory for id: \(policyID). Aborting.")
-            return
-        }
-
-        var newName = currentName
-        let lowerAction = action.lowercased()
-        switch lowerAction {
-        case "removelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove))
-            }
-        case "replacelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove)) + replacement
-            } else {
-                // if count is zero, just append the replacement
-                newName += replacement
-            }
-        case "replaceall":
-            if !match.isEmpty {
-                newName = newName.replacingOccurrences(of: match, with: replacement)
-            }
-        default:
-            print("updatePolicyNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
-            return
-        }
-
-        // If nothing changed, there's no need to update
-        if newName == currentName {
-            print("updatePolicyNameLogical: computed name is identical to current name; nothing to do")
-            return
-        }
-
-        // Delegate to the same XML-based update used by updateName
-// =======
-// >>>>>>> main
-        let resourcePath = getURLFormat(data: (resourceType))
-        var xml: String
-        self.separationLine()
-        print("updatePolicyNameLogical - currentName='\(currentName)' newName='\(newName)'")
-
-        xml = """
-                <policy>
-                    <general>
-                        <name>\(newName)</name>
-                    </general>
-                </policy>
-                """
-
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(policyID)
-                print("Running updatePolicyNameLogical - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-                print("Set updateXML to true ")
-                self.updateXML = true
-            }
-        } else {
-            print("updatePolicyNameLogical: invalid server string")
         }
     }
         
@@ -6423,55 +6270,6 @@ xml = """
     }
 
     // Fetch computer history (legacy JSSResource/computerhistory)
-// <<<<<<< InProg-updatePolicyNameLogical
-//     // Accept an optional server parameter so callers can explicitly choose the server
-//     // to query; if nil the NetBrain.server is used.
-//     func getComputerHistory(server: String? = nil, computerID: String) async throws {
-//         do {
-//             let endpoint = "computerhistory/id/" + computerID
-//             let usedServer = server ?? self.server
-//             print("getComputerHistory: using server=\(usedServer), endpoint=\(endpoint)")
-//             // ensure auth token exists
-//             if authToken.isEmpty {
-//                 _ = try await getToken(server: server ?? self.server, username: username, password: password)
-//             }
-
-//             // Choose which RequestSender to use depending on whether caller specified a server
-//             let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
-
-//             // Use RequestSender's typed resultFor to fetch and decode the ComputerHistoryResponse
-//             let req = APIRequest<ComputerHistoryResponse>(endpoint: endpoint, method: HTTPMethod.get)
-//             let decoded = try await rs.resultFor(apiRequest: req)
-//             self.computerHistory = decoded.computerHistory
-//             print("Loaded computer history for id: \(computerID)")
-//         } catch {
-//             publishError(error, title: "Failed to load computer history")
-//             throw error
-//         }
-//     }
-
-//     // Fetch a subset of the computer history using the subset path component
-//     // Example endpoint: computerhistory/id/<id>/subset/<subset>
-    func getComputerHistorySubset(server: String? = nil, computerID: String, subset: String) async throws {
-        do {
-            let endpoint = "computerhistory/id/" + computerID + "/subset/" + subset
-            let usedServer = server ?? self.server
-            print("getComputerHistorySubset: using server=\(usedServer), endpoint=\(endpoint)")
-
-            // ensure auth token exists
-            if authToken.isEmpty {
-                _ = try await getToken(server: server ?? self.server, username: username, password: password)
-            }
-
-            let rs = (server == nil) ? requestSender : RequestSender(server: server!, authToken: authToken)
-
-            let req = APIRequest<ComputerHistoryResponse>(endpoint: endpoint, method: HTTPMethod.get)
-            let decoded = try await rs.resultFor(apiRequest: req)
-            self.computerHistory = decoded.computerHistory
-            print("Loaded computer history subset '\(subset)' for id: \(computerID)")
-        } catch {
-            publishError(error, title: "Failed to load computer history subset")
-// =======
     // This variant includes extra debug logging: it prints the full request URL
     // used and the raw (undecoded) response body to help diagnose decoding issues.
     func getComputerHistory(computerID: String) async throws {
@@ -6712,7 +6510,6 @@ xml = """
 
         } catch {
             publishError(error, title: "Failed to load computer history")
-// >>>>>>> main
             throw error
         }
     }
