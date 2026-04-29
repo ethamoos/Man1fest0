@@ -70,6 +70,7 @@ struct ComputersDetailedView: View {
                         .foregroundColor(.secondary)
                 }
             }
+
             
             
             HStack {
