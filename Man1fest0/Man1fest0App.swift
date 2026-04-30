@@ -178,6 +178,8 @@ struct Man1fest0App: App {
         // Initialize global security settings and inactivity monitor
         self.securitySettings = SecuritySettingsManager()
         self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)
+        // Ensure the file-backed logger is initialized at app launch so a log file exists
+        _ = Logger.shared
     }
     
     // Global security objects provided to the environment
