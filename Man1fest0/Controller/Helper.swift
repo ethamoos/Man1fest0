@@ -58,9 +58,10 @@ final class Logger {
                     fh?.write(d)
                 }
                 print("Logger initialized, log file: \(f.path)")
-                // Also write a small diagnostic file into /tmp so the developer can quickly
-                // confirm that Logger.init ran even if Application Support writes fail.
-                let diagURL = URL(fileURLWithPath: "/tmp/Man1fest0_logger_diagnostic.txt")
+                // Also write a small diagnostic file into the app's temporary directory so the developer
+                // can quickly confirm that Logger.init ran even if Application Support writes fail.
+                let diagDir = FileManager.default.temporaryDirectory
+                let diagURL = diagDir.appendingPathComponent("Man1fest0_logger_diagnostic.txt")
                 let diagLine = "[\(time)] Logger init; bundleID=\(bundleID); logPath=\(f.path); fhPresent=\(fh != nil)\n"
                 if FileManager.default.fileExists(atPath: diagURL.path) {
                     if let dh = try? FileHandle(forWritingTo: diagURL) {
@@ -77,6 +78,40 @@ final class Logger {
         } else {
             print("Logger: unable to determine Application Support directory; bundleID=\(bundleID)")
         }
+
+        // DEV fallback: if we couldn't open the Application Support log, write to /tmp for easy local debugging.
+        // This is guarded by DEBUG so it won't affect production builds.
+#if DEBUG
+            if fh == nil {
+            let tmpDir = FileManager.default.temporaryDirectory
+            let tmp = tmpDir.appendingPathComponent("Man1fest0_dev.log")
+            if !FileManager.default.fileExists(atPath: tmp.path) {
+                FileManager.default.createFile(atPath: tmp.path, contents: nil)
+            }
+            if let tmpFH = try? FileHandle(forWritingTo: tmp) {
+                try? tmpFH.seekToEnd()
+                let time = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withInternetDateTime, .withFractionalSeconds])
+                let startup = "[\(time)] [startup/dev-fallback] Application started\n"
+                if let d = startup.data(using: .utf8) { tmpFH.write(d) }
+                // Also append a diagnostic line to the same diagnostic file used elsewhere
+                let diagLine = "[\(time)] Logger fallback to temp; bundleID=\(bundleID); logPath=\(tmp.path); fhPresent=true\n"
+                let diagURL = FileManager.default.temporaryDirectory.appendingPathComponent("Man1fest0_logger_diagnostic.txt")
+                if FileManager.default.fileExists(atPath: diagURL.path) {
+                    if let dh = try? FileHandle(forWritingTo: diagURL) {
+                        try? dh.seekToEnd()
+                        if let dd = diagLine.data(using: .utf8) { dh.write(dd) }
+                        try? dh.close()
+                    }
+                } else {
+                    try? diagLine.write(to: diagURL, atomically: true, encoding: .utf8)
+                }
+                fh = tmpFH
+                print("Logger fallback to temp: \(tmp.path)")
+            } else {
+                print("Logger: failed to open fallback temp log at \(tmp.path)")
+            }
+        }
+#endif
 
         self.fileHandle = fh
     }
@@ -163,7 +198,8 @@ private let _Man1fest0_logger_module_load: Void = {
     let bundleID = Bundle.main.bundleIdentifier ?? "Man1fest0"
     let time = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withInternetDateTime, .withFractionalSeconds])
     let diag1 = "[\(time)] module_load; bundleID=\(bundleID)\n"
-    let diagURL = URL(fileURLWithPath: "/tmp/Man1fest0_module_load.txt")
+    // Use the process-local temporary directory (sandbox-friendly) for module-load diagnostics
+    let diagURL = FileManager.default.temporaryDirectory.appendingPathComponent("Man1fest0_module_load.txt")
     // Write to /tmp (best-effort); do not throw.
     if FileManager.default.fileExists(atPath: diagURL.path) {
         if let fh = try? FileHandle(forWritingTo: diagURL) {

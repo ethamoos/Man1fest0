@@ -179,6 +179,13 @@ struct Man1fest0App: App {
         self.securitySettings = SecuritySettingsManager()
         self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)
         // Ensure the file-backed logger is initialized at app launch so a log file exists
+        // Print the app temporary directory so we can find sandboxed diagnostic files
+        let tmpDir = FileManager.default.temporaryDirectory.path
+        if let bundleId = Bundle.main.bundleIdentifier {
+            print("[AppInit] bundleID=\(bundleId); tempDir=\(tmpDir)")
+        } else {
+            print("[AppInit] bundleID=nil; tempDir=\(tmpDir)")
+        }
         _ = Logger.shared
     }
     
