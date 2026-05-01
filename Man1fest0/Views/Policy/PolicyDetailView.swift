@@ -216,7 +216,7 @@ struct PolicyDetailView: View {
                     Text("Self Service Status:\t\t\(String(describing: networkController.policyDetailed?.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
+                    Text("Jamf ID:\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
                     // Only show the 'Current Icon' text when there is NO icon set (i.e. filename is nil or empty)
                     if let iconFilename = networkController.policyDetailed?.self_service?.selfServiceIcon?.filename, !iconFilename.isEmpty {
                         // If an icon filename exists, we do not show the textual "Current Icon" line here (the image below represents it).
@@ -357,6 +357,7 @@ struct PolicyDetailView: View {
                             xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
                         } catch {
                             print("Fetching detailed policy as xml failed: \(error)")
+                            // error handling - no UI change here
                         }
                     }
                     
@@ -416,11 +417,13 @@ struct PolicyDetailView: View {
                             .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
                             .buttonStyle(.borderedProminent)
                             .tint(.orange)
+                            TextField(policyName, text: $policyNameClone)
+                                .textSelection(.enabled)
                         }
                     }
             
-                TextField(policyName, text: $policyNameClone)
-                    .textSelection(.enabled)
+                // clone name TextField moved into the button group above
+                // ...existing code...
                 
                 // UI controls to trigger clonePerScript
                 VStack(alignment: .leading, spacing: 6) {
@@ -558,7 +561,31 @@ struct PolicyDetailView: View {
                             .tint(.blue)
                         }
                         
-                       
+                        //  ##########################################################################
+                        //              UPDATE Trigger
+                        //  ##########################################################################
+                        
+                        HStack {
+                            
+                            TextField(policyCustomTrigger, text: $policyCustomTrigger)
+                                .textSelection(.enabled)
+                            
+                            Button(action: {
+                                
+                                progress.showProgress()
+                                progress.waitForABit()
+                                
+                                networkController.updateCustomTrigger(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyCustomTrigger: policyCustomTrigger, policyID: String(describing: policyID))
+                                
+                                networkController.separationLine()
+                                print("Updating Policy Trigger to:\(policyName)")
+                                
+                            }) {
+                                Text("Trigger")
+                            }
+                            .help("Update the custom trigger value for this policy on the server.")
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
 //                        }
 //                    }
                     
@@ -568,7 +595,7 @@ struct PolicyDetailView: View {
                     
 //                    LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
                         
-                        HStack {
+//                        HStack {
 //                            TextField(policyName, text: $policyName)
 //                                .textSelection(.enabled)
                             Button(action: {
@@ -660,32 +687,6 @@ struct PolicyDetailView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                         .disabled(networkController.categories.isEmpty)
-                        
-                        //  ##########################################################################
-                        //              UPDATE Trigger
-                        //  ##########################################################################
-                        
-                            
-                     
-                            Divider()
-                            Button(action: {
-                                
-                                progress.showProgress()
-                                progress.waitForABit()
-                                
-                                networkController.updateCustomTrigger(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, policyCustomTrigger: policyCustomTrigger, policyID: String(describing: policyID))
-                                
-                                networkController.separationLine()
-                                print("Updating Policy Trigger to:\(policyName)")
-                                
-                            }) {
-                                Text("Trigger")
-                            }
-                            .help("Update the custom trigger value for this policy on the server.")
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                        TextField(policyCustomTrigger, text: $policyCustomTrigger)
-                            .textSelection(.enabled)
                     }
                 }
 //            }
