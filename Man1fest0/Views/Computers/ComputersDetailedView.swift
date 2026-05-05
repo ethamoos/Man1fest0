@@ -44,6 +44,7 @@ struct ComputersDetailedView: View {
             // `computerDetailed` record that is also populated by the network controller.
             let nameVal = networkController.computerDetailedFull?.general?.name ?? networkController.computerDetailed?.name ?? ""
             let idVal = networkController.computerDetailedFull?.general?.id ?? String(networkController.computerDetailed?.id ?? 0)
+            let ip_address = networkController.computerDetailedFull?.general?.ip_address ?? ""
             let udidVal = networkController.computerDetailedFull?.general?.udid ?? networkController.computerDetailed?.udid ?? ""
             let serialVal = networkController.computerDetailedFull?.general?.serial_number ?? networkController.computerDetailed?.serialNumber ?? ""
             // model may be available under Hardware.model in some responses; prefer that, then general.model, then lightweight record
@@ -57,6 +58,7 @@ struct ComputersDetailedView: View {
             Text("ID: \(idVal)")
             Text("UDID: \(udidVal)")
             Text("Serial: \(serialVal)")
+            Text("IP Adress: \(ip_address)")
             Text("Model: \(modelVal)")
             Text("Username: \(usernameVal)")
             Text("Department: \(departmentVal)")

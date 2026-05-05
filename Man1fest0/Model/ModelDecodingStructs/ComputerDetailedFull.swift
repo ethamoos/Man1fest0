@@ -18,6 +18,7 @@ struct ComputerFull: Decodable {
         let name: String?
         let udid: String?
         let serial_number: String?
+        let ip_address: String?
         let model: String?
         let username: String?
         let department: String?
@@ -27,7 +28,7 @@ struct ComputerFull: Decodable {
         enum CodingKeys: String, CodingKey {
             case id, name, udid
             case serial_number = "serial_number"
-            case model, username, department, building
+            case model, username, department, building, ip_address
             case report_date_utc = "report_date_utc"
         }
 
@@ -50,6 +51,7 @@ struct ComputerFull: Decodable {
             serial_number = try? container.decodeIfPresent(String.self, forKey: .serial_number)
             model = try? container.decodeIfPresent(String.self, forKey: .model)
             username = try? container.decodeIfPresent(String.self, forKey: .username)
+            ip_address = try? container.decodeIfPresent(String.self, forKey: .ip_address)
             department = try? container.decodeIfPresent(String.self, forKey: .department)
             building = try? container.decodeIfPresent(String.self, forKey: .building)
             report_date_utc = try? container.decodeIfPresent(String.self, forKey: .report_date_utc)
