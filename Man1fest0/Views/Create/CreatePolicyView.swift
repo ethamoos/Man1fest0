@@ -539,6 +539,24 @@ struct CreatePolicyView: View {
     // Extracted packages header to simplify type-checking
     private var packagesHeader: some View {
         VStack(alignment: .leading) {
+            // Search field for packages (binds to searchText)
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                TextField("Search packages", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 360)
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+            .padding(.horizontal)
+
             HStack {
                 Text("All Packages").bold().padding(.leading)
                 Spacer()
