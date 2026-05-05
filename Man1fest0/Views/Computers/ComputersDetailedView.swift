@@ -49,9 +49,18 @@ struct ComputersDetailedView: View {
             let serialVal = networkController.computerDetailedFull?.general?.serial_number ?? networkController.computerDetailed?.serialNumber ?? ""
             // model may be available under Hardware.model in some responses; prefer that, then general.model, then lightweight record
             let modelVal = networkController.computerDetailedFull?.hardware?.model ?? networkController.computerDetailedFull?.general?.model ?? networkController.computerDetailed?.model ?? ""
-            let usernameVal = networkController.computerDetailedFull?.general?.username ?? networkController.computerDetailed?.username ?? ""
-            let departmentVal = networkController.computerDetailedFull?.location?.department ?? networkController.computerDetailed?.department ?? ""
-            let buildingVal = networkController.computerDetailedFull?.location?.building ?? networkController.computerDetailed?.building ?? ""
+            // Prefer values from the Location node when available (some Jamf responses put
+            // username/department/building under <location> rather than <general>).
+            let usernameVal = networkController.computerDetailedFull?.location?.username
+                ?? networkController.computerDetailedFull?.general?.username
+                ?? networkController.computerDetailed?.username
+                ?? ""
+            let departmentVal = networkController.computerDetailedFull?.location?.department
+                ?? networkController.computerDetailed?.department
+                ?? ""
+            let buildingVal = networkController.computerDetailedFull?.location?.building
+                ?? networkController.computerDetailed?.building
+                ?? ""
             let reportDateVal = networkController.computerDetailedFull?.general?.report_date_utc ?? networkController.computerDetailed?.reportDateUTC ?? ""
 
             Text("Name: \(nameVal)")
