@@ -50,8 +50,8 @@ struct ComputersDetailedView: View {
             // model may be available under Hardware.model in some responses; prefer that, then general.model, then lightweight record
             let modelVal = networkController.computerDetailedFull?.hardware?.model ?? networkController.computerDetailedFull?.general?.model ?? networkController.computerDetailed?.model ?? ""
             let usernameVal = networkController.computerDetailedFull?.general?.username ?? networkController.computerDetailed?.username ?? ""
-            let departmentVal = networkController.computerDetailedFull?.general?.department ?? networkController.computerDetailed?.department ?? ""
-            let buildingVal = networkController.computerDetailedFull?.general?.building ?? networkController.computerDetailed?.building ?? ""
+            let departmentVal = networkController.computerDetailedFull?.location?.department ?? networkController.computerDetailed?.department ?? ""
+            let buildingVal = networkController.computerDetailedFull?.location?.building ?? networkController.computerDetailed?.building ?? ""
             let reportDateVal = networkController.computerDetailedFull?.general?.report_date_utc ?? networkController.computerDetailed?.reportDateUTC ?? ""
 
             Text("Name: \(nameVal)")
@@ -66,7 +66,7 @@ struct ComputersDetailedView: View {
             Text("Last checkin: \(reportDateVal)")
             
             let filevaultStatus = hardware?.diskEncryptionConfiguration ?? "Not enabled"
-            let activationLock = security?.activationLock ?? ""
+            let activationLock = security?.activationLock ?? false
             
             Text("Hardware model: \(hardware?.model ?? "")")
             Text("Filevault Status: \(filevaultStatus)")

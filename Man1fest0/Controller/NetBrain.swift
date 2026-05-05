@@ -6245,7 +6245,36 @@ xml = """
             }
             // record the current URL for debugging (RequestSender builds the final URL similarly)
             self.currentURL = server + "/JSSResource/computers/id/" + userID
-            let decodedFull = try await requestSender.resultFor(apiRequest: request)
+            // Attempt decode with detailed DecodingError logging to help diagnose failures
+            let decodedFull: ComputerDetailedFullResponse
+            do {
+                decodedFull = try await requestSender.resultFor(apiRequest: request)
+            } catch let decodeError as DecodingError {
+                // Provide rich diagnostics for common DecodingError cases
+                separationLine()
+                print("DecodingError while parsing ComputerDetailedFullResponse:")
+                switch decodeError {
+                case .typeMismatch(let type, let context):
+                    print("Type mismatch for type: \(type). Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                case .valueNotFound(let value, let context):
+                    print("Value not found for type: \(value). Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                case .keyNotFound(let key, let context):
+                    print("Key not found: \(key.stringValue). Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                case .dataCorrupted(let context):
+                    print("Data corrupted. Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                @unknown default:
+                    print("Unknown decoding error: \(decodeError)")
+                }
+                separationLine()
+                publishError(decodeError, title: "Decoding failure")
+                throw decodeError
+            } catch {
+                // Non-decoding error (network, etc.)
+                separationLine()
+                print("Error while fetching ComputerDetailedFullResponse: \(error)")
+                publishError(error, title: "Failed to load computer detail")
+                throw error
+            }
             // Debug: print entire decoded response so we can inspect what arrived
             separationLine()
 //            print("Decoded ComputerDetailedFullResponse: \(decodedFull)")
@@ -6259,26 +6288,40 @@ xml = """
             // Attempt to map a lightweight ComputerSlim.General-like structure into computerDetailedResponse
             // Map fields available in the full response into the slim response shape
             let gen = decodedFull.computer.general
+            let loc = decodedFull.computer.location
+
             if let gen = gen {
                 // Map to ComputerBasicRecord for existing UI
                 let jamfId = Int(gen.id) ?? 0
-                let detail = ComputerBasicRecord(id: jamfId,
-                                                 name: gen.name ?? "",
-                                                 managed: true,
-                                                 username: gen.username ?? "",
-                                                 model: gen.model ?? "",
-                                                 department: gen.department ?? "",
-                                                 building: gen.building ?? "",
-                                                 macAddress: "",
-                                                 udid: gen.udid ?? "",
-                                                 serialNumber: gen.serial_number ?? "",
-                                                 reportDateUTC: gen.report_date_utc ?? "",
-                                                 reportDateEpoch: 0)
-                self.computerDetailed = detail
-                print("Loaded detailed computer id: \(jamfId)")
+                
+                
+                if let loc = loc {
+                    // Note: parameter order for ComputerBasicRecord is id,name,managed,username,model,department,building,macAddress,udid,serialNumber,reportDateUTC,reportDateEpoch
+                    let detail = ComputerBasicRecord(id: jamfId,
+                                                     name: gen.name ?? "",
+                                                     managed: true,
+                                                     username: gen.username ?? "",
+                                                     model: gen.model ?? "",
+                                                     department: loc.department ?? "",
+                                                     building: loc.building ?? "",
+                                                     macAddress: "",
+                                                     udid: gen.udid ?? "",
+                                                     serialNumber: gen.serial_number ?? "",
+                                                     reportDateUTC: gen.report_date_utc ?? "",
+                                                     reportDateEpoch: 0)
+                    self.computerDetailed = detail
+                    print("Loaded detailed computer id: \(jamfId)")
+                }
             } else {
                 print("Decoded full response had no general section")
             }
+            
+
+            if let loc = loc {
+                print("Location info: department=\(loc.department ?? "(none)"), building=\(loc.building ?? "(none)"), room=\(loc.room ?? "(none)")")
+            }
+            
+            
         } catch {
             publishError(error, title: "Failed to load computer detail")
             throw error
