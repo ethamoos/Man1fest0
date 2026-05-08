@@ -1670,7 +1670,9 @@ print("DEBUG - status code is 200, response is:")
     }
     
     func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
-        let resourcePath = getURLFormat(data: (ResourceType.policy))
+        // Use the provided resourceType to build the correct single-item URL path
+        // callers commonly pass ResourceType.policies which maps to "policies/id/".
+        let resourcePath = getURLFormat(data: resourceType)
         if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID) {
             separationLine()
             print("Running deletePolicy function - url is set as:\(url)")

@@ -49,11 +49,10 @@ struct PoliciesActionView: View {
     
     
     // Selection stored as a Set of Policy objects for use across tabs and actions.
-    // SwiftUI's List selection on macOS prefers an ID type; keep a secondary
-    // Set<Int> of jamfId values and synchronize them.
+    // We manage multi-selection manually with a Set<Policy> and provide a
+    // visible checkbox in each row so users can select multiple items without
+    // relying on modifier keys.
     @State private var policiesSelection = Set<Policy>()
-    // Use the Policy.id (UUID) as the List selection ID so we avoid optional jamfId keypath issues
-    @State private var selectedPolicyUUIDs = Set<UUID>()
     
     @State var searchText = ""
     // Focus for the inline search field so it can be focused via Cmd-F
@@ -183,9 +182,25 @@ struct PoliciesActionView: View {
                 }
                 .padding([.leading, .trailing, .top])
                 
-                List(searchResults, id: \.id, selection: $selectedPolicyUUIDs) { policy in
+                // Use a plain List and handle multi-selection via a checkbox button
+                // on each row. This makes it obvious and easy to select multiple
+                // policies without needing to use command/shift modifiers.
+                List(searchResults, id: \.id) { policy in
 
-                    HStack {
+                    HStack(spacing: 8) {
+                        // Checkbox button to toggle selection
+                        Button(action: {
+                            if policiesSelection.contains(policy) {
+                                policiesSelection.remove(policy)
+                            } else {
+                                policiesSelection.insert(policy)
+                            }
+                        }) {
+                            Image(systemName: policiesSelection.contains(policy) ? "checkmark.square.fill" : "square")
+                                .foregroundColor(policiesSelection.contains(policy) ? .blue : .secondary)
+                        }
+                        .buttonStyle(.plain)
+
                         Image(systemName:"text.justify")
                         Text("\(policy.name)")
                             .lineLimit(2)
@@ -227,34 +242,27 @@ struct PoliciesActionView: View {
                             }
                         }
                     )
-                    // Helpful debug: log taps (does not change selection binding, only for diagnosis)
+                    // Make the row toggle selection when the checkbox or the
+                    // row label is clicked. We avoid interfering with List's
+                    // internal selection handling by not using the `selection:`
+                    // parameter and instead keep the selection in
+                    // `policiesSelection`.
                     .onTapGesture {
-                        print("Row tapped: \(policy.name) id:\(policy.jamfId ?? -1) selected=\(policiesSelection.contains(policy))")
+                        // Toggle selection on row tap for convenience
+                        if policiesSelection.contains(policy) {
+                            policiesSelection.remove(policy)
+                        } else {
+                            policiesSelection.insert(policy)
+                        }
                     }
                 }
                 #if os(macOS)
                 .listStyle(.sidebar)
                 #endif
-                // Keep the UUID-based selection in sync with the Set<Policy> used elsewhere
-                .onChange(of: selectedPolicyUUIDs) { newUUIDs in
-                    // Map UUIDs back to Policy objects from the current policies list
-                    let newSelection = Set(networkController.policies.filter { p in
-                        return newUUIDs.contains(p.id)
-                    })
-                    if newSelection != policiesSelection {
-                        policiesSelection = newSelection
-                    }
-                    let names = newSelection.map { $0.name }
-                    print("selectedPolicyUUIDs changed. uuids=\(newUUIDs) names=\(names)")
-                }
-                // Also ensure programmatic changes to policiesSelection update the UUID set
+                // Keep debug logging when policiesSelection changes
                 .onChange(of: policiesSelection) { newSelection in
-                    let ids = Set(newSelection.map { $0.id })
-                    if ids != selectedPolicyUUIDs {
-                        selectedPolicyUUIDs = ids
-                    }
                     let names = newSelection.map { $0.name }
-                    print("policiesSelection changed. count=\(newSelection.count) uuids=\(ids) names=\(names)")
+                    print("policiesSelection changed. count=\(newSelection.count) names=\(names)")
                 }
                 // .searchable removed to avoid multiple SwiftUI search toolbar items in the same window
                  .onReceive([self.policiesSelection].publisher.first()) { (value) in
@@ -920,10 +928,21 @@ struct PoliciesActionGeneralTab: View {
                             progress.waitForABit()
                             let selectedIds: [Int?] = policiesSelection.map { $0.jamfId }
                             Task {
-                                networkController.processDeletePoliciesGeneral(selection: selectedIds, server: server, authToken: networkController.authToken, resourceType: ResourceType.policies)
-                                // refresh policies after delete
+                                // Filter out any policies that don't have a valid jamfId
+                                let nonNilIds = selectedIds.compactMap { $0 }
+                                if nonNilIds.isEmpty {
+                                    print("No valid policy IDs found to delete. Aborting delete.")
+                                } else {
+                                    networkController.processDeletePoliciesGeneral(selection: selectedIds, server: server, authToken: networkController.authToken, resourceType: ResourceType.policies)
+                                }
+                                // Give the server a short moment to process deletes, then explicitly
+                                // re-fetch the policies list so the UI reflects the server state.
                                 try? await Task.sleep(nanoseconds: 500_000_000)
-                                networkController.refreshPolicies()
+                                try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+                                // Clear local selection now that items were deleted
+                                DispatchQueue.main.async {
+                                    policiesSelection.removeAll()
+                                }
                                 progress.endProgress()
                             }
                           },
