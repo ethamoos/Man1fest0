@@ -194,27 +194,27 @@ struct PoliciesActionView: View {
                         Text("\(policy.name)")
                             .lineLimit(2)
                     }
-                    // Use contrasting text color when selected so it remains readable
-                    .foregroundColor(policiesSelection.contains(policy) ? Color.primary : Color.primary)
-                    // Make the entire row tappable and ensure hit testing covers full width
-                    .contentShape(Rectangle())
-                    // Visible background when selected (stronger blue so it's obvious)
-                    .background(policyRowBackground(isSelected: policiesSelection.contains(policy)))
-                    .overlay(policyRowOverlay(isSelected: policiesSelection.contains(policy)))
-                    // Also apply listRowBackground as a fallback for platform list styling
-                    .listRowBackground(policyRowListBackground(isSelected: policiesSelection.contains(policy)))
-                    // Helpful debug: log taps (does not change selection binding, only for diagnosis)
-                    .onTapGesture {
-                        print("Row tapped: \(policy.name) id:\(policy.jamfId ?? -1) selected=\(policiesSelection.contains(policy))")
-                    }
+                    
+                    .foregroundColor(.blue)
+
+//                    // Use contrasting text color when selected so it remains readable
+//                    .foregroundColor(policiesSelection.contains(policy) ? Color.primary : Color.primary)
+//                    // Make the entire row tappable and ensure hit testing covers full width
+//                    .contentShape(Rectangle())
+//                    // Visible background when selected (stronger blue so it's obvious)
+//                    .background(policyRowBackground(isSelected: policiesSelection.contains(policy)))
+//                    .overlay(policyRowOverlay(isSelected: policiesSelection.contains(policy)))
+//                    // Also apply listRowBackground as a fallback for platform list styling
+//                    .listRowBackground(policyRowListBackground(isSelected: policiesSelection.contains(policy)))
+//                    // Helpful debug: log taps (does not change selection binding, only for diagnosis)
+//                    .onTapGesture {
+//                        print("Row tapped: \(policy.name) id:\(policy.jamfId ?? -1) selected=\(policiesSelection.contains(policy))")
+//                    }
                 }
-                #if os(macOS)
-                .listStyle(.sidebar)
-                #endif
-                // Force a white background for the List (override the default sidebar gray).
-                // We set both a SwiftUI background and AppKit appearance overrides (on macOS)
-                // so the List and its enclosing scroll view show white consistently.
-                .background(Color.white)
+#if os(macOS)
+.listStyle(.plain)
+#endif
+.background(Color(NSColor.windowBackgroundColor))
                 // Keep the UUID-based selection in sync with the Set<Policy> used elsewhere
                 .onChange(of: selectedPolicyUUIDs) { newUUIDs in
                     // Map UUIDs back to Policy objects from the current policies list
