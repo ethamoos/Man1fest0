@@ -2604,7 +2604,7 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     //    replaceScriptParameter
     //    ##################################################
     
-    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, selectedScriptNumber: Int, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String, priority: String) {
+    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, selectedScriptNumber: Int, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String,parameter11: String, priority: String) {
         
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
         let url = URL(string: jamfURLQuery)!
