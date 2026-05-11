@@ -71,10 +71,11 @@ struct PolicyScriptsTabView: View {
     @State private var selection: PolicyScripts? = nil
     @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
     @State var listSelection: PolicyScripts = PolicyScripts(id:(UUID(uuidString: "") ?? UUID()) , jamfId: 0, name: "")
-    @State var pickerSelectedScript = 1
-
+    @State var pickerSelectedScript = 0
     @State private var selectedNumber = 0
-
+    // multi-selection of scripts (store jamfId values)
+    @State private var selectedScriptIDs: Set<Int> = []
+    
     //  ########################################################################################
     
     @State var scriptParameter4: String = ""
@@ -150,11 +151,6 @@ struct PolicyScriptsTabView: View {
                                         Image(systemName: "10.circle").bold()
                                             .foregroundColor(.red)
                                         Text(script.parameter10 ?? "" )
-                                    }
-                                    if script.parameter11 != "" {
-                                        Image(systemName: "11.circle").bold()
-                                            .foregroundColor(.red)
-                                        Text(script.parameter11 ?? "" )
                                     }
                                     if script.priority != "" {
                                         Text(script.priority ?? "" )
@@ -237,25 +233,24 @@ struct PolicyScriptsTabView: View {
                     
                     DisclosureGroup("More Parameters") {
                         
-//                        HStack {
-//                            LazyVGrid(columns: layout.columns) {
-//                                TextField("parameter5", text: $scriptParameter5)
-//                                TextField("parameter6", text: $scriptParameter6)
-//                            }
-//                        }
-                        
                         HStack {
                             LazyVGrid(columns: layout.columns) {
-                                TextField("parameter4", text: $scriptParameter4)
                                 TextField("parameter5", text: $scriptParameter5)
                                 TextField("parameter6", text: $scriptParameter6)
                             }
                         }
+                        
+                            HStack {
+                                LazyVGrid(columns: layout.columns) {
+                                    TextField("parameter4", text: $scriptParameter4)
+                                    TextField("parameter5", text: $scriptParameter5)
+                                    TextField("parameter6", text: $scriptParameter6)
+                                }
+                            }
                         HStack {
                             LazyVGrid(columns: layout.columns) {
                                 TextField("parameter9", text: $scriptParameter9)
                                 TextField("parameter10", text: $scriptParameter10)
-                                TextField("parameter11", text: $scriptParameter11)
                             }
                         }
                         
@@ -287,7 +282,7 @@ struct PolicyScriptsTabView: View {
                     HStack {
                         
                         LazyVGrid(columns: layout.threeColumns, spacing: 10) {
-
+                            
                             
                             // Mirror the filtered picker below: allow filtering by name and guard optional names
                             Picker(selection: $selectedScript, label: Text("Scripts").bold()) {
@@ -322,16 +317,15 @@ struct PolicyScriptsTabView: View {
                         //              Add script
                         //  ################################################################################
                         
+                        // Single-add button (existing behavior)
                         Button(action: {
-                            
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc,xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId),scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5 , scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10,scriptParameter11: scriptParameter11, priority: priority,newPolicyFlag: false)
+                            xmlController.addScriptToPolicy(xmlContent: xmlController.aexmlDoc, xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptName: selectedScript.name, scriptId: String(describing: selectedScript.jamfId), scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5, scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10, scriptParameter11: scriptParameter11, priority: priority, newPolicyFlag: false)
                             
                             print("Adding script:\(selectedScript.name)")
                             print("parameter 4 is :\(scriptParameter4)")
-                            
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "plus.app.fill")
@@ -342,57 +336,89 @@ struct PolicyScriptsTabView: View {
                         .tint(.blue)
                         .help("Add the selected script to this policy with provided parameters.")
                         
-                        
-                        //  ################################################################################
-                        //              Remove script
-                        //  ################################################################################
-                        
-                        
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            // Pass listSelection.jamfId as optional Int? (nil if 0)
-                            let _: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
-                            xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
-                            
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "plus.app.fill")
-                                Text("Remove")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .help("Remove the selected script from this policy.")
-                        //                    .disabled(listedScript.jamfId == 0 && listedScript.name == "")
-                        
-                        //  ################################################################################
-                        //              Remove all scripts in policy
-                        //  ################################################################################
-                        
-                        Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            networkController.separationLine()
-                            print("Removing all scripts in policy:\(String(describing: policyID))")
-                            
-                            xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
-                            
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "minus.square.fill.on.square.fill")
-                                Text("Remove All")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .help("Remove all scripts currently assigned to this policy.")
-                        
                     }
+                        // Bulk add: multi-select list and Add Selected button
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Or select multiple scripts to add:")
+                                .font(.subheadline)
+                                .bold()
+                            
+                            
+                            
+                            // Scrollable list of filtered scripts with checkboxes
+                            ScrollView(.vertical) {
+                                LazyVStack(alignment: .leading, spacing: 6) {
+                                    ForEach(networkController.scripts.filter { script in
+                                        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        guard !query.isEmpty else { return true }
+                                        return script.name.localizedCaseInsensitiveContains(query)
+                                    }, id: \ .jamfId) { script in
+                                        HStack {
+                                            Button(action: {
+                                                if selectedScriptIDs.contains(script.jamfId) {
+                                                    selectedScriptIDs.remove(script.jamfId)
+                                                } else {
+                                                    selectedScriptIDs.insert(script.jamfId)
+                                                }
+                                            }) {
+                                                Image(systemName: selectedScriptIDs.contains(script.jamfId) ? "checkmark.square.fill" : "square")
+                                            }
+                                            .buttonStyle(.plain)
+                                            
+                                            Text(script.name)
+                                            Spacer()
+                                            Text("id: \(script.jamfId)")
+                                                .foregroundColor(.secondary)
+                                        }
+                                        .padding(.vertical, 2)
+                                    }
+                                }
+                            }
+                            .frame(maxHeight: 200)
+
+                        // Action buttons for bulk add / clear selection
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                guard !selectedScriptIDs.isEmpty else { return }
+                                progress.showProgress()
+                                progress.waitForABit()
+
+                                // Collect selected scripts in the same order as networkController.scripts
+                                let selectedScripts = networkController.scripts.filter { selectedScriptIDs.contains($0.jamfId) }
+
+                                xmlController.addMultipleScriptsToPolicy(xmlContent: xmlController.aexmlDoc, xmlContentString: xmlController.currentPolicyAsXML, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyId: String(describing: policyID), scriptsToAdd: selectedScripts, scriptParameter4: scriptParameter4, scriptParameter5: scriptParameter5, scriptParameter6: scriptParameter6, scriptParameter7: scriptParameter7, scriptParameter8: scriptParameter8, scriptParameter9: scriptParameter9, scriptParameter10: scriptParameter10, scriptParameter11: scriptParameter11, priority: priority, newPolicyFlag: false) {
+                                    // completion handler: refresh detailed policy and clear selection
+                                    Task {
+                                        do {
+                                            try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                        } catch {
+                                            print("Failed to refresh detailed policy after adding scripts: \(error)")
+                                        }
+                                        progress.endProgress()
+                                        // Clear the selection after successful upload
+                                        selectedScriptIDs.removeAll()
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.rectangle.on.rectangle")
+                                    Text("Add Selected")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+                            .help("Add all selected scripts to this policy in a single upload.")
+
+                            Button(action: {
+                                selectedScriptIDs.removeAll()
+                            }) {
+                                Text("Clear Selection")
+                            }
+                            .help("Clear currently selected scripts without uploading.")
+                        }
+                        .padding(.top, 6)
+                    }
+//                    }
                 }
                 
                 
@@ -485,6 +511,7 @@ struct PolicyScriptsTabViewDetail: View {
                     HStack { Text("Parameter 9:") ; TextField("parameter9", text: $parameter9) }
                     HStack { Text("Parameter 10:") ; TextField("parameter10", text: $parameter10) }
                     HStack { Text("Parameter 11:") ; TextField("parameter11", text: $parameter11) }
+
                     HStack {
                         Text("Priority:")
                         TextField("Before/After", text: $priority).frame(minWidth: 120)
@@ -528,6 +555,7 @@ struct PolicyScriptsTabViewDetail: View {
                 parameter8 = script.parameter8 ?? ""
                 parameter9 = script.parameter9 ?? ""
                 parameter10 = script.parameter10 ?? ""
+                parameter11 = script.parameter11 ?? ""
                 priority = script.priority ?? ""
             }
         }
