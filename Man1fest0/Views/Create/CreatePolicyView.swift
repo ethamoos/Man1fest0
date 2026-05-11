@@ -225,7 +225,7 @@ struct CreatePolicyView: View {
                             let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
                             let scriptNameLocal = scriptLocal?.name ?? ""
                             let scriptIdString = String(scriptLocal?.jamfId ?? 0)
-
+                            
                             // Prepare selected package ids to pass to XML builder
                             let selectedPackageIdsToAdd = Set(packageMultiSelection)
                             
@@ -264,61 +264,74 @@ struct CreatePolicyView: View {
                         }
                         .toggleStyle(.checkbox)
                     }
+                }
 
 #if os(macOS)
                     // File import controls - Select a local XML file and import as a policy
-                    HStack(spacing: 8) {
-                        Button(action: {
-                            let openURL = importExportBrain.showOpenPanel()
-                            print("openURL path is:\(String(describing: openURL?.path ?? ""))")
-                            if let url = openURL {
-                                self.importFilePath = url.path
-                                // Import the file contents into the shared ImportExportBrain so other views can access it too
-                                importExportBrain.selectedFilename = url.lastPathComponent
-                                do {
-                                    importExportBrain.importedString = try String(contentsOf: url, encoding: .utf8)
-                                    print("Imported file length: \(importExportBrain.importedString.count)")
-                                } catch {
-                                    print("Failed to read file: \(error)")
+                    
+                DisclosureGroup("Import Policy from XML") {
+                    
+//                    LazyVGrid(columns: layout.column, spacing: 5) {
+//                        
+//                        VStack(alignment: .leading) {
+                            
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    let openURL = importExportBrain.showOpenPanel()
+                                    print("openURL path is:\(String(describing: openURL?.path ?? ""))")
+                                    if let url = openURL {
+                                        self.importFilePath = url.path
+                                        // Import the file contents into the shared ImportExportBrain so other views can access it too
+                                        importExportBrain.selectedFilename = url.lastPathComponent
+                                        do {
+                                            importExportBrain.importedString = try String(contentsOf: url, encoding: .utf8)
+                                            print("Imported file length: \(importExportBrain.importedString.count)")
+                                        } catch {
+                                            print("Failed to read file: \(error)")
+                                        }
+                                    }
+                                }) {
+                                    HStack {
+                                        Image(systemName: "doc")
+                                        Text("Select File")
+                                    }
+                                }
+                            
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                // Use the imported string as the XML content and POST it as a new policy
+                                let xml = importExportBrain.importedString
+                                if xml.isEmpty {
+                                    print("No XML imported - cannot import policy")
+                                } else {
+                                    xmlController.createPolicyManual(xmlContent: xml, server: server, resourceType: ResourceType.policyDetail, policyName: newPolicyName, authToken: networkController.authToken)
+                                    layout.separationLine()
+                                    print("Import Policy requested for file:\(importExportBrain.selectedFilename)")
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "square.and.arrow.down")
+                                    Text("Import Policy")
                                 }
                             }
-                        }) {
-                            HStack {
-                                Image(systemName: "doc")
-                                Text("Select File")
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            
+                            
+                            
+                            // show selected file name
+                            if !importExportBrain.selectedFilename.isEmpty {
+                                Text("Selected: \(importExportBrain.selectedFilename)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
                         }
+//                    }
+//                    }
+            }
 
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            // Use the imported string as the XML content and POST it as a new policy
-                            let xml = importExportBrain.importedString
-                            if xml.isEmpty {
-                                print("No XML imported - cannot import policy")
-                            } else {
-                                xmlController.createPolicyManual(xmlContent: xml, server: server, resourceType: ResourceType.policyDetail, policyName: newPolicyName, authToken: networkController.authToken)
-                                layout.separationLine()
-                                print("Import Policy requested for file:\(importExportBrain.selectedFilename)")
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "square.and.arrow.down")
-                                Text("Import Policy")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-
-                        // show selected file name
-                        if !importExportBrain.selectedFilename.isEmpty {
-                            Text("Selected: \(importExportBrain.selectedFilename)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
 #endif
-                }
 
                 
                 VStack(alignment: .leading) {

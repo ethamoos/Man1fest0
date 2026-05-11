@@ -407,20 +407,36 @@ class XmlBrain: ObservableObject {
                 request.httpMethod = "POST"
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                // Ensure Authorization header is present on the request itself
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 request.httpBody = xmldata
                 let config = URLSessionConfiguration.default
+                // keep existing config header as a fallback
                 let authString = "Bearer \(authToken)"
                 config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
-                    guard let httpResponse = response as? HTTPURLResponse,
-                          (200...299).contains(httpResponse.statusCode) else {
-                        print("Bad Credentials")
-                        print(response!)
+                    if let httpResponse = response as? HTTPURLResponse {
+                        let code = httpResponse.statusCode
+                        if (200...299).contains(code) {
+                            DispatchQueue.main.async {
+                                print("Success! Package pushed.")
+                            }
+                            return
+                        } else {
+                            // Provide detailed diagnostics for non-2xx responses (e.g. 409 conflict)
+                            print("createPolicyManual: server returned status code: \(code)")
+                            if let data = data, let body = String(data: data, encoding: .utf8) {
+                                print("Response body:\n\(body)")
+                            } else {
+                                print("No response body")
+                            }
+                            print("Response object: \(httpResponse)")
+                            return
+                        }
+                    } else {
+                        print("createPolicyManual: no HTTPURLResponse, error: \(String(describing: err))")
                         return
-                    }
-                    DispatchQueue.main.async {
-                        print("Success! Package pushed.")
                     }
                 }.resume()
                 
