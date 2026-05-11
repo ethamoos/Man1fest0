@@ -269,7 +269,7 @@ struct PoliciesActionView: View {
                         progress.waitForABit()
                         
                       Task { try await networkController.getAllPackages() }
-                        
+                        networkController.refreshPolicies()
                         getDetailedPolicies(policiesSelection: policiesSelection)
                         print("Refresh button clicked on PoliciesAction View")
                         
@@ -440,8 +440,12 @@ struct PoliciesActionView: View {
                     Text("")
                 }
                 
-                // Add bottom TabView with two tabs: Scope and Packages
+                // Add bottom TabView with three tabs: General, Scope and Packages
                 TabView {
+                    PoliciesActionGeneralTab(policiesSelection: $policiesSelection, server: server)
+                        .tabItem {
+                            Label("General", systemImage: "gearshape")
+                        }
                     PoliciesActionScopeTab(
                         policiesSelection: $policiesSelection,
                         server: server,
@@ -890,6 +894,82 @@ struct PoliciesActionScopeTab: View {
             }
             .padding()
         }
+    }
+}
+
+// General tab for policy actions (includes Delete)
+struct PoliciesActionGeneralTab: View {
+    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var progress: Progress
+    @EnvironmentObject var xmlController: XmlBrain
+
+    @Binding var policiesSelection: Set<Policy>
+    var server: String
+
+    @State private var showingDeleteConfirm = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Policies Action - General")
+                .font(.headline)
+            Text("General actions for selected policies (delete, export, etc).")
+                .font(.subheadline)
+            Divider()
+
+            HStack(spacing: 12) {
+                Button(action: {
+                    // Show delete confirmation
+                    showingDeleteConfirm = true
+                }) {
+                    Label("Delete Selected", systemImage: "trash")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .disabled(policiesSelection.isEmpty)
+                .alert(isPresented: $showingDeleteConfirm) {
+                    Alert(title: Text("Confirm Delete"),
+                          message: Text("Delete the selected policies? This action cannot be undone."),
+                          primaryButton: .destructive(Text("Delete")) {
+                            // perform delete
+                            progress.showProgress()
+                            progress.waitForABit()
+                            let selectedIds: [Int?] = policiesSelection.map { $0.jamfId }
+                            Task {
+                                networkController.processDeletePoliciesGeneral(selection: selectedIds, server: server, authToken: networkController.authToken, resourceType: ResourceType.policies)
+                                // refresh policies after delete
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                networkController.refreshPolicies()
+                                // Clear local selection now that items were deleted
+                                DispatchQueue.main.async {
+                                    policiesSelection.removeAll()
+                                }
+                                progress.endProgress()
+                            }
+                          },
+                          secondaryButton: .cancel())
+                }
+
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    // Export selected policies as XML
+                    for eachItem in policiesSelection {
+                        let currentPolicyID = (eachItem.jamfId ?? 0)
+                        print("Export policy as XML for \(eachItem.name)")
+                        Task {
+                            _ = try? await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+                        }
+                    }
+                }) {
+                    Label("Export XML", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(.bordered)
+            }
+
+            Spacer()
+        }
+        .padding()
     }
 }
 
