@@ -407,36 +407,20 @@ class XmlBrain: ObservableObject {
                 request.httpMethod = "POST"
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
-                // Ensure Authorization header is present on the request itself
-                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 request.httpBody = xmldata
                 let config = URLSessionConfiguration.default
-                // keep existing config header as a fallback
                 let authString = "Bearer \(authToken)"
                 config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
-                    if let httpResponse = response as? HTTPURLResponse {
-                        let code = httpResponse.statusCode
-                        if (200...299).contains(code) {
-                            DispatchQueue.main.async {
-                                print("Success! Package pushed.")
-                            }
-                            return
-                        } else {
-                            // Provide detailed diagnostics for non-2xx responses (e.g. 409 conflict)
-                            print("createPolicyManual: server returned status code: \(code)")
-                            if let data = data, let body = String(data: data, encoding: .utf8) {
-                                print("Response body:\n\(body)")
-                            } else {
-                                print("No response body")
-                            }
-                            print("Response object: \(httpResponse)")
-                            return
-                        }
-                    } else {
-                        print("createPolicyManual: no HTTPURLResponse, error: \(String(describing: err))")
+                    guard let httpResponse = response as? HTTPURLResponse,
+                          (200...299).contains(httpResponse.statusCode) else {
+                        print("Bad Credentials")
+                        print(response!)
                         return
+                    }
+                    DispatchQueue.main.async {
+                        print("Success! Package pushed.")
                     }
                 }.resume()
                 
@@ -2963,34 +2947,40 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     
     
     func removeComputerFromGroup(server: String, authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-        
+
         var xml: String
-        
+
         print("Running removeComputerFromGroup - updating via xml")
         print("computerID is set as:\(computerID)")
         print("computerName is set as:\(computerName)")
         print("groupID is set as:\(groupID)")
-        
+
+        // Jamf accepts computer deletions by id; prefer id to avoid name/encoding issues
         xml = """
                    <computer_group>
                        <computer_deletions>
                                <computer>
-                               <name>﻿\(computerName)</name>
+                                   <id>\(computerID)</id>
                                </computer>
                        </computer_deletions>
                    </computer_group>
                """
-        
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
-                print("Running removeComputerFromGroup function - url is set as:\(url)")
-                print("resourceType is set as:\(resourceType)")
-                // print("xml is set as:\(xml)")
-                // self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
-                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
-//                appendStatus("Connecting to \(url)...")
+
+        // Build URL consistently (avoid leading '/' in path components)
+        let jamfURLQuery = server + "/JSSResource/computergroups/id/\(groupID)"
+        if let url = URL(string: jamfURLQuery) {
+            print("Running removeComputerFromGroup function - url is set as:\(url)")
+            print("resourceType is set as:\(resourceType)")
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
+            // After a short delay, refresh the group's members so the UI reflects the change.
+            if let gid = Int(groupID) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    print("Refreshing group members for group id: \(gid)")
+                    self.getGroupMembersXML(server: server, groupId: gid, authToken: authToken)
+                }
             }
+        } else {
+            print("removeComputerFromGroup: invalid URL for server=\(server) and groupID=\(groupID)")
         }
     }
     

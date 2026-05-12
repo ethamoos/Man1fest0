@@ -22,19 +22,20 @@ struct GroupDetailView: View {
         VStack(alignment: .leading) {
             
             if networkController.compGroupComputers.count >= 1 {
-                
-                Section(header: Text("Group Members for group:\(group.name)").bold()) {
-                    
-                    Spacer()
+//                VStack {
+                Text("Group Members for:\(group.name)").bold()
+//                Section(header: Text("Group Members for group:\(group.name)").bold()) {
+//                    
+//                    Spacer()dis
                     
                     List( networkController.compGroupComputers, id: \.self ) { computer in
                         Text(String(describing: computer.name))
                     }
-                }
+//                }
 
                 // Open in Browser button (matches style used in ScriptsDetailView & ComputerExtAttDetailView)
                 HStack {
-                    Spacer()
+//                    Spacer()
                     Button(action: {
                         let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
                         var base = trimmedServer
@@ -54,7 +55,7 @@ struct GroupDetailView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.green)
                     .padding(.top, 6)
-                    Spacer()
+//                    Spacer()
                 }
                 .padding()
                 .textSelection(.enabled)
