@@ -27,6 +27,8 @@ struct GroupsView: View {
     @State private var searchTextComp = ""
     @State var selectionGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     @State var selectionComp = ComputerBasicRecord(id: 0, name: "", managed: false, username: "", model: "", department: "", building: "", macAddress: "", udid: "", serialNumber: "", reportDateUTC: "", reportDateEpoch: 0)
+    // multi-selection for computers (store ComputerBasicRecord.id values)
+    @State private var selectedComputerIDs: Set<Int> = []
     
     @State var mySelection: String = ""
         
@@ -113,12 +115,24 @@ struct GroupsView: View {
                 HStack{
                     
                     Button(action: {
-                        
+
                         progress.showProgress()
                         progress.waitForABit()
-                        
-                        xmlController.addComputerToGroup(xmlContent: xmlController.computerGroupMembersXML, computerName: networkController.selectedSimpleComputer.name, computerId: String(describing: networkController.selectedSimpleComputer.id), groupId: String(describing: selectionGroup.id), resourceType: ResourceType.computerGroup, server: server, authToken: networkController.authToken)
-                        
+
+                        // If the user has selected multiple computers in the list, add each.
+                        if !selectedComputerIDs.isEmpty {
+                            for cid in selectedComputerIDs {
+                                if let comp = networkController.allComputersBasic.computers.first(where: { $0.id == cid }) {
+                                    xmlController.addComputerToGroup(xmlContent: xmlController.computerGroupMembersXML, computerName: comp.name, computerId: String(describing: comp.id), groupId: String(describing: selectionGroup.id), resourceType: ResourceType.computerGroup, server: server, authToken: networkController.authToken)
+                                }
+                            }
+                            // clear selection after adding
+                            selectedComputerIDs.removeAll()
+                        } else {
+                            // fallback to previously selected single computer
+                            xmlController.addComputerToGroup(xmlContent: xmlController.computerGroupMembersXML, computerName: networkController.selectedSimpleComputer.name, computerId: String(describing: networkController.selectedSimpleComputer.id), groupId: String(describing: selectionGroup.id), resourceType: ResourceType.computerGroup, server: server, authToken: networkController.authToken)
+                        }
+
                     }) {
 #if os(macOS)
                         HStack(spacing: 10) {
@@ -171,7 +185,16 @@ struct GroupsView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         showingWarning = true
-                        xmlController.removeComputerFromGroup(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerGroup, groupID: String(describing: selectionGroup.id), computerID: networkController.selectedSimpleComputer.id, computerName: networkController.selectedSimpleComputer.name)
+                        // If user selected multiple computers in the compact list, remove each; otherwise fallback to single selected
+                        if !selectedComputerIDs.isEmpty {
+                            for cid in selectedComputerIDs {
+                                xmlController.removeComputerFromGroup(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerGroup, groupID: String(describing: selectionGroup.id), computerID: cid, computerName: "")
+                            }
+                            // clear selection after operation
+                            selectedComputerIDs.removeAll()
+                        } else {
+                            xmlController.removeComputerFromGroup(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerGroup, groupID: String(describing: selectionGroup.id), computerID: networkController.selectedSimpleComputer.id, computerName: networkController.selectedSimpleComputer.name)
+                        }
                         
                     }) {
 #if os(macOS)
@@ -224,9 +247,55 @@ struct GroupsView: View {
                 .padding()
             }
             
-            Divider()
-            
-            ComputerView(selectedResourceType: ResourceType.computer, server: server)
+                Divider()
+
+            // Smaller, scrollable multi-select computer list (replaces full ComputerView)
+            VStack(alignment: .leading) {
+                Text("Computers").font(.headline)
+                HStack {
+                    TextField("Filter computers", text: $searchTextComp)
+#if os(macOS)
+                        .textFieldStyle(.plain)
+#else
+                        .textFieldStyle(.roundedBorder)
+#endif
+                        .frame(minWidth: 200)
+                    Spacer()
+                }
+                .padding([.leading, .trailing])
+
+                // Scrollable, compact list with checkboxes for multi-selection
+                ScrollView(.vertical) {
+                    LazyVStack(alignment: .leading, spacing: 6) {
+                        ForEach(networkController.allComputersBasic.computers.filter { comp in
+                            searchTextComp.isEmpty ? true : comp.name.lowercased().contains(searchTextComp.lowercased())
+                        }, id: \ .id) { comp in
+                            HStack {
+                                Button(action: {
+                                    if selectedComputerIDs.contains(comp.id) {
+                                        selectedComputerIDs.remove(comp.id)
+                                    } else {
+                                        selectedComputerIDs.insert(comp.id)
+                                    }
+                                }) {
+                                    Image(systemName: selectedComputerIDs.contains(comp.id) ? "checkmark.square.fill" : "square")
+                                }
+                                .buttonStyle(.plain)
+
+                                VStack(alignment: .leading) {
+                                    Text(comp.name).lineLimit(1)
+                                    Text("id: \(comp.id)").font(.caption).foregroundColor(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding(.vertical, 4)
+                            .padding(.horizontal)
+                        }
+                    }
+                }
+                .frame(maxHeight: 220)
+                .border(Color.gray.opacity(0.2))
+            }
             
         }
         .onAppear() {

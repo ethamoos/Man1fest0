@@ -54,14 +54,7 @@ struct PolicyScriptsTabView: View {
     
     @State var scriptName = ""
     @State var scriptID = ""
-//    @State var scriptParameter4 = ""
-//    @State var scriptParameter5 = ""
-//    @State var scriptParameter6 = ""
-//    @State var scriptParameter7 = ""
-//    @State var scriptParameter8 = ""
-//    @State var scriptParameter9 = ""
-//    @State var scriptParameter10 = ""
-    @State var priority = ""
+
 
     //  ########################################################################################
     //  Selections
@@ -86,8 +79,8 @@ struct PolicyScriptsTabView: View {
     @State var scriptParameter9: String = ""
     @State var scriptParameter10: String = ""
     @State var scriptParameter11: String = ""
-//    @State var priority: String = "Before"
-    
+    @State var priority = ""
+
     
     @State var command: String = ""
     
@@ -171,17 +164,15 @@ struct PolicyScriptsTabView: View {
 #endif
                     }
                     
-                    //  ################################################################################
+                    //  #########################################################################
                     //  Edit scripts parameters
-                    //  ################################################################################
+                    //  #########################################################################
                     
                     //    ##################################################
                     //    replaceScriptParameter
                     //    ##################################################
                     
-                    //            LazyVGrid(columns: columns4) {
-                    
-                    //                if currentScript.parameter4 != "" {
+             
                     
                     HStack {
                         Button(action: {
@@ -211,7 +202,7 @@ struct PolicyScriptsTabView: View {
                         LazyVGrid(columns: layout.threeColumns) {
                             //
                             Picker("Script", selection: $pickerSelectedScript) {
-                                ForEach(0..<10) {
+                                ForEach(1..<10) {
                                     Text("\($0)")
                                 }
                                 Text("You selected: \(pickerSelectedScript)")
@@ -275,9 +266,9 @@ struct PolicyScriptsTabView: View {
                 
                 DisclosureGroup("Add/Remove Scripts") {
                     
-                    //  ################################################################################
+                    //  #########################################################################
                     //              Scripts picker
-                    //  ################################################################################
+                    //  #########################################################################
                     
                     HStack {
                         
@@ -313,9 +304,9 @@ struct PolicyScriptsTabView: View {
                                 .padding(.bottom, 6)
                         }
                         
-                        //  ################################################################################
+                        //  #####################################################################
                         //              Add script
-                        //  ################################################################################
+                        //  #####################################################################
                         
                         // Single-add button (existing behavior)
                         Button(action: {
@@ -424,9 +415,9 @@ struct PolicyScriptsTabView: View {
                 
                 DisclosureGroup("Add Individual Command/s To Run In Policy") {
                     
-                    //  ################################################################################
+                    //  #########################################################################
                     //  Add custom command in policy4
-                    //  ################################################################################
+                    //  #########################################################################
                     
                     
                     TextEditor(text: $command)
@@ -520,7 +511,7 @@ struct PolicyScriptsTabViewDetail: View {
 
                 HStack {
                     Picker("Script Index", selection: $selectedScriptNumber) {
-                        ForEach(0..<10) { i in Text("\(i)") }
+                        ForEach(1..<10) { i in Text("\(i)") }
                     }
                     .pickerStyle(.menu)
 

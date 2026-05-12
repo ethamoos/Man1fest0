@@ -19,7 +19,6 @@ struct GroupDetailView: View {
     
     var body: some View {
         
-        //        Divider()
         VStack(alignment: .leading) {
             
             if networkController.compGroupComputers.count >= 1 {
