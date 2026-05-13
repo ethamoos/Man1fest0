@@ -389,143 +389,147 @@ struct PolicyDetailView: View {
                 //              CLONE
                 //              ##########################################################################
                 
-                DisclosureGroup("Clone Policy") {
+            DisclosureGroup("Clone Policy") {
                 
-                    LazyVGrid(columns: layout.fourColumns, spacing: 20) {
+                LazyVGrid(columns: layout.columnFlex, spacing: 20) {
+                    
+                    HStack {
                         
-                        HStack {
-                            
-                            Button(action: {
-                                print("Cloning policy:\(policyName)")
-                                progress.showProgress()
-                                progress.waitForABit()
-                                if policyNameClone == policyName {
-                                    policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                                    let newPolicyName = "\(policyNameInitial)-1"
-                                    print("No name provided - policy is:\(newPolicyName)")
-                                    policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
-                                } else {
-                                    print("Cloning name is being used and is set as:\(policyNameClone)")
-                                    policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
-                                }
-                            }) {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "dog")
-                                    Text("Clone")
-                                }
+                        Button(action: {
+                            print("Cloning policy:\(policyName)")
+                            progress.showProgress()
+                            progress.waitForABit()
+                            if policyNameClone == policyName {
+                                policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
+                                let newPolicyName = "\(policyNameInitial)-1"
+                                print("No name provided - policy is:\(newPolicyName)")
+                                policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
+                            } else {
+                                print("Cloning name is being used and is set as:\(policyNameClone)")
+                                policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: policyNameClone, authToken: networkController.authToken)
                             }
-                            .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
-                            .buttonStyle(.borderedProminent)
-                            .tint(.orange)
-                            TextField(policyName, text: $policyNameClone)
-                                .textSelection(.enabled)
-                        }
-                    }
-            
-                // clone name TextField moved into the button group above
-                // ...existing code...
-                
-                // UI controls to trigger clonePerScript
-                VStack(alignment: .leading, spacing: 6) {
-                    // Filter input for the picker
-                    TextField("Filter scripts...", text: $scriptFilter)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(maxWidth: 260)
-                        .disabled(cloningInProgress)
-                    
-                    // Compute filtered scripts list from networkController.scripts
-                    if !filteredScriptsForClone.isEmpty {
-                        Picker(selection: $selectedScript, label: Text("Script").bold()) {
-                            ForEach(filteredScriptsForClone, id: \.self) { script in
-                                Text(script.name).tag(script)
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "dog")
+                                Text("Clone")
                             }
                         }
-                        .frame(maxWidth: 260)
-                        .onAppear {
-                            // default to first filtered script if none selected or current selection is not in filtered list
-                            if (selectedScript.jamfId == 0 && selectedScript.name.isEmpty) || !filteredScriptsForClone.contains(selectedScript) {
-                                selectedScript = filteredScriptsForClone.first!
-                            }
-                        }
-                        .onChange(of: networkController.scripts) { _ in
-                            if !filteredScriptsForClone.contains(selectedScript) {
-                                selectedScript = filteredScriptsForClone.first ?? ScriptClassic(name: "", jamfId: 0)
-                            }
-                        }
-                        .disabled(cloningInProgress)
-                    } else {
-                        Text("No scripts match filter")
-                            .foregroundColor(.secondary)
+                        .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        TextField(policyName, text: $policyNameClone)
+                            .textSelection(.enabled)
                     }
                     
-                    HStack(spacing: 8) {
-                        Toggle("Use Parameters", isOn: $cloneUseParameters)
-                            .toggleStyle(SwitchToggleStyle(tint: .blue))
+                    // clone name TextField moved into the button group above
+                    // ...existing code...
+                    
+                    // UI controls to trigger clonePerScript
+                    VStack(alignment: .leading, spacing: 6) {
+                        // Filter input for the picker
+                        TextField("Filter scripts...", text: $scriptFilter)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(maxWidth: 260)
                             .disabled(cloningInProgress)
-                        Toggle("All Parameters", isOn: $cloneAllParameters)
-                            .toggleStyle(SwitchToggleStyle(tint: .blue))
+                        
+                        // Compute filtered scripts list from networkController.scripts
+                        if !filteredScriptsForClone.isEmpty {
+                            Picker(selection: $selectedScript, label: Text("Script").bold()) {
+                                ForEach(filteredScriptsForClone, id: \.self) { script in
+                                    Text(script.name).tag(script)
+                                }
+                            }
+                            .frame(maxWidth: 260)
+                            .onAppear {
+                                // default to first filtered script if none selected or current selection is not in filtered list
+                                if (selectedScript.jamfId == 0 && selectedScript.name.isEmpty) || !filteredScriptsForClone.contains(selectedScript) {
+                                    selectedScript = filteredScriptsForClone.first!
+                                }
+                            }
+                            .onChange(of: networkController.scripts) { _ in
+                                if !filteredScriptsForClone.contains(selectedScript) {
+                                    selectedScript = filteredScriptsForClone.first ?? ScriptClassic(name: "", jamfId: 0)
+                                }
+                            }
                             .disabled(cloningInProgress)
-                    }
-                    
-                    Button(action: {
-                        showingClonePerScriptConfirm = true
-                    }) {
+                        } else {
+                            Text("No scripts match filter")
+                                .foregroundColor(.secondary)
+                        }
+                        
                         HStack(spacing: 8) {
-                            Image(systemName: "doc.on.doc")
-                            Text("Clone per Script")
+                            Toggle("Use Parameters", isOn: $cloneUseParameters)
+                                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                                .disabled(cloningInProgress)
+                            Toggle("All Parameters", isOn: $cloneAllParameters)
+                                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                                .disabled(cloningInProgress)
+                        }
+                        
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                showingClonePerScriptConfirm = true
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "doc.on.doc")
+                                    Text("Clone per Script")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.purple)
+                            .disabled(cloningInProgress || (selectedScript.jamfId == 0 && selectedScript.name.isEmpty))
+                            .alert(isPresented: $showingClonePerScriptConfirm) {
+                                // Determine readable identifier for confirmation text
+                                let idText = selectedScript.jamfId == 0 ? selectedScript.name : String(selectedScript.jamfId)
+                                return Alert(
+                                    title: Text("Clone per Script"),
+                                    message: Text("This will create clones based on script '\(idText)'. Proceed?"),
+                                    primaryButton: .destructive(Text("Yes, clone")) {
+                                        let identifier = selectedScript.jamfId == 0 ? selectedScript.name : String(selectedScript.jamfId)
+                                        clonePerScript(scriptIdentifier: identifier, useParameters: cloneUseParameters, allParameters: cloneAllParameters)
+                                    },
+                                    secondaryButton: .cancel()
+                                )
+                            }
+                            
+                            
+                            // Clone-per-package button: only present when multiple packages are attached
+                            if networkController.packagesAssignedToPolicy.count > 1 {
+                                Button(action: {
+                                    showingClonePerPackageConfirm = true
+                                }) {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "doc.on.doc")
+                                        Text("Clone per Package")
+                                    }
+                                }
+                                .help("Create one cloned policy per package currently assigned to this policy. Each clone will contain exactly one package.")
+                                .buttonStyle(.borderedProminent)
+                                .tint(.purple)
+                                .disabled(cloningInProgress)
+                                .alert(isPresented: $showingClonePerPackageConfirm) {
+                                    Alert(
+                                        title: Text("Clone per Package"),
+                                        message: Text("This will create \(networkController.packagesAssignedToPolicy.count) new policies (one per package). Are you sure?"),
+                                        primaryButton: .destructive(Text("Yes, clone")) {
+                                            clonePerPackage()
+                                        },
+                                        secondaryButton: .cancel()
+                                    )
+                                }
+                            }
+                            
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.purple)
-                    .disabled(cloningInProgress || (selectedScript.jamfId == 0 && selectedScript.name.isEmpty))
-                    .alert(isPresented: $showingClonePerScriptConfirm) {
-                        // Determine readable identifier for confirmation text
-                        let idText = selectedScript.jamfId == 0 ? selectedScript.name : String(selectedScript.jamfId)
-                        return Alert(
-                            title: Text("Clone per Script"),
-                            message: Text("This will create clones based on script '\(idText)'. Proceed?"),
-                            primaryButton: .destructive(Text("Yes, clone")) {
-                                let identifier = selectedScript.jamfId == 0 ? selectedScript.name : String(selectedScript.jamfId)
-                                clonePerScript(scriptIdentifier: identifier, useParameters: cloneUseParameters, allParameters: cloneAllParameters)
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
-                }
-                
-                // Clone-per-package button: only present when multiple packages are attached
-            if networkController.packagesAssignedToPolicy.count > 1 {
-                Button(action: {
-                    showingClonePerPackageConfirm = true
-                }) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "doc.on.doc")
-                        Text("Clone per Package")
-                    }
-                }
-                .help("Create one cloned policy per package currently assigned to this policy. Each clone will contain exactly one package.")
-                .buttonStyle(.borderedProminent)
-                .tint(.purple)
-                .disabled(cloningInProgress)
-                .alert(isPresented: $showingClonePerPackageConfirm) {
-                    Alert(
-                        title: Text("Clone per Package"),
-                        message: Text("This will create \(networkController.packagesAssignedToPolicy.count) new policies (one per package). Are you sure?"),
-                        primaryButton: .destructive(Text("Yes, clone")) {
-                            clonePerPackage()
-                        },
-                        secondaryButton: .cancel()
-                    )
                 }
             }
-                    
+
                     //              ##########################################################################
                     //              CLONE - END
                     //
 //                }
-                     Spacer()
+//                     Spacer()
                  
-         }
             
             //  ##########################################################################
             //              UPDATE NAME
@@ -795,6 +799,9 @@ struct PolicyDetailView: View {
             Task {
                 print("PolicyDetailView appeared - running getDetailedPolicy function")
                 try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                // Ensure packagesAssignedToPolicy is populated now that detailed policy is available
+                networkController.getPackagesAssignedToPolicy()
+                networkController.addExistingPackages()
                 policyName = networkController.policyDetailed?.general?.name ?? ""
                 policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
                 trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
