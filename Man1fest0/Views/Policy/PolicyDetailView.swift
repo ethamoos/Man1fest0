@@ -932,7 +932,7 @@ struct PolicyDetailView: View {
         Task {
             cloningInProgress = true
             defer { cloningInProgress = false }
-
+print("Running: clonePerPackage")
             let baseName = policyNameClone.isEmpty ? (networkController.policyDetailed?.general?.name ?? policyName) : policyNameClone
 
             let packages = networkController.packagesAssignedToPolicy
@@ -975,16 +975,25 @@ struct PolicyDetailView: View {
                     let data = Data(xmlString.utf8)
                     let doc = try AEXMLDocument(xml: data)
 
-                    // Ensure package_configuration exists
-                    if doc.root["package_configuration"].children.isEmpty {
-                        _ = doc.root.addChild(name: "package_configuration")
+                    // Ensure we remove any existing <packages> nodes under any <package_configuration>
+                    // so that clones only contain the single package we add below.
+                    var targetPackageConfiguration: AEXMLElement? = nil
+                    let packageConfs = doc.root.children.filter { $0.name == "package_configuration" }
+                    if packageConfs.count > 0 {
+                        // Remove any existing <packages> child nodes from all package_configuration nodes
+                        for pc in packageConfs {
+                            if pc["packages"].children.count > 0 {
+                                pc["packages"].removeFromParent()
+                            }
+                        }
+                        // Use the first package_configuration as the target to add our new <packages>
+                        targetPackageConfiguration = packageConfs.first
+                    } else {
+                        targetPackageConfiguration = doc.root.addChild(name: "package_configuration")
                     }
 
-                    // Remove any existing <packages> node and create a new one with single package
-                    if doc.root["package_configuration"]["packages"].children.count > 0 {
-                        doc.root["package_configuration"]["packages"].removeFromParent()
-                    }
-                    let packagesNode = doc.root["package_configuration"].addChild(name: "packages")
+                    // Create a new <packages> node under the chosen package_configuration
+                    let packagesNode = targetPackageConfiguration!.addChild(name: "packages")
                     packagesNode.addChild(name: "size", value: "1")
                     let packageNode = packagesNode.addChild(name: "package")
                     packageNode.addChild(name: "id", value: String(pkg.jamfId))
