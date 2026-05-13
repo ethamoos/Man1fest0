@@ -24,6 +24,8 @@ struct ScriptsDetailView: View {
     @State private var replaceText: String = ""
     @State private var matchRanges: [Range<String.Index>] = []
     @State private var currentMatchIndex: Int? = nil
+    @State private var injectMatchText: String = ""
+    @State private var injectInsertText: String = ""
 
     // Environment
     @EnvironmentObject var progress: Progress
@@ -198,7 +200,7 @@ struct ScriptsDetailView: View {
 
             // Notes / Info
             if currentScript.notes != "" || isEditing {
-                DisclosureGroup("Notes") {
+                DisclosureGroup("Groups") {
                     Section(header: Text("Notes").bold()) {
                         if isEditing {
                             TextEditor(text: $notes)
@@ -227,14 +229,14 @@ struct ScriptsDetailView: View {
 
             // Category and Filename fields
             if isEditing {
-                DisclosureGroup("Category") {
+                DisclosureGroup("Info") {
                     Section(header: Text("Category").bold()) {
                         TextField(currentScript.categoryName, text: $category)
                             .padding(4)
                             .border(Color.gray)
                     }
                 }
-                DisclosureGroup("Filename") {
+                DisclosureGroup("Info") {
                     
                     Section(header: Text("Filename").bold()) {
                         TextField("Filename", text: $filename)
@@ -322,6 +324,30 @@ struct ScriptsDetailView: View {
                                     .font(.footnote)
                                     .lineLimit(1)
                                     .foregroundColor(.blue)
+                            }
+                        }
+                        // Inject after controls
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                TextField("Find line (match)", text: $injectMatchText)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(minWidth: 200)
+
+                                TextField("Line to insert", text: $injectInsertText)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(minWidth: 200)
+
+                                Button("Inject After") {
+                                    injectAfterFirst()
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                                Button("Inject After All") {
+                                    injectAfterAll()
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             }
                         }
                     }
@@ -501,6 +527,44 @@ struct ScriptsDetailView: View {
         let trimmed = findText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         bodyText = bodyText.replacingOccurrences(of: trimmed, with: replaceText)
+        updateMatches()
+    }
+
+    private func injectAfterFirst() {
+        let match = injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !match.isEmpty else { return }
+
+        var lines = bodyText.components(separatedBy: "\n")
+        for i in 0..<lines.count {
+            if lines[i].contains(match) {
+                // preserve leading whitespace from the matched line
+                let leading = String(lines[i].prefix { $0 == " " || $0 == "\t" })
+                let insertion = leading + injectInsertText
+                lines.insert(insertion, at: i + 1)
+                bodyText = lines.joined(separator: "\n")
+                updateMatches()
+                return
+            }
+        }
+    }
+
+    private func injectAfterAll() {
+        let match = injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !match.isEmpty else { return }
+
+        var lines = bodyText.components(separatedBy: "\n")
+        var i = 0
+        while i < lines.count {
+            if lines[i].contains(match) {
+                let leading = String(lines[i].prefix { $0 == " " || $0 == "\t" })
+                let insertion = leading + injectInsertText
+                lines.insert(insertion, at: i + 1)
+                i += 2 // skip over the inserted line
+            } else {
+                i += 1
+            }
+        }
+        bodyText = lines.joined(separator: "\n")
         updateMatches()
     }
 

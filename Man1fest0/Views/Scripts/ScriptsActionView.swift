@@ -18,6 +18,8 @@ struct ScriptsActionView: View {
     // Use a set of Jamf IDs for selection — stable across refreshes and API fetches
     @State private var selection = Set<Int>()
     @State private var showingWarning = false
+    @State private var injectMatchText: String = ""
+    @State private var injectInsertText: String = ""
     
     var server: String
 
@@ -110,6 +112,31 @@ struct ScriptsActionView: View {
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
                         .frame(height: 50)
                     }
+                    // Inject after controls for selected scripts
+                    VStack(alignment: .leading) {
+                        Text("Inject After (applies to selected scripts)").fontWeight(.bold)
+                        HStack(spacing: 8) {
+                            TextField("Find line (match)", text: $injectMatchText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(minWidth: 200)
+
+                            TextField("Line to insert", text: $injectInsertText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(minWidth: 200)
+
+                            Button("Inject After") {
+                                applyInjectAfterToSelected(firstOnly: true)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(selection.isEmpty || injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                            Button("Inject After All") {
+                                applyInjectAfterToSelected(firstOnly: false)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(selection.isEmpty || injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
                 }
                 .padding()
 #endif
@@ -154,5 +181,62 @@ struct ScriptsActionView: View {
     // Computed helper: map selected Jamf IDs back to ScriptClassic objects
     private var selectedScripts: [ScriptClassic] {
         return networkController.scripts.filter { selection.contains($0.jamfId) }
+    }
+
+    // Apply injection to selected scripts. If firstOnly is true, insert after first matching line; otherwise insert after every matching line.
+    private func applyInjectAfterToSelected(firstOnly: Bool) {
+        guard !selection.isEmpty else { return }
+        let match = injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let insertLine = injectInsertText
+        guard !match.isEmpty else { return }
+
+        progress.showProgressView = true
+        Task {
+            for script in selectedScripts {
+                do {
+                    try await networkController.getDetailedScript(server: server, scriptID: script.jamfId, authToken: networkController.authToken)
+                    var content = networkController.scriptDetailed.scriptContents
+                    var lines = content.components(separatedBy: "\n")
+                    var modified = false
+
+                    if firstOnly {
+                        for i in 0..<lines.count {
+                            if lines[i].contains(match) {
+                                let leading = String(lines[i].prefix { $0 == " " || $0 == "\t" })
+                                let insertion = leading + insertLine
+                                lines.insert(insertion, at: i + 1)
+                                modified = true
+                                break
+                            }
+                        }
+                    } else {
+                        var i = 0
+                        while i < lines.count {
+                            if lines[i].contains(match) {
+                                let leading = String(lines[i].prefix { $0 == " " || $0 == "\t" })
+                                let insertion = leading + insertLine
+                                lines.insert(insertion, at: i + 1)
+                                i += 2
+                                modified = true
+                            } else {
+                                i += 1
+                            }
+                        }
+                    }
+
+                    if modified {
+                        let newContent = lines.joined(separator: "\n")
+                        // Use details from networkController.scriptDetailed for metadata when updating
+                        try await networkController.updateScript(server: server, scriptName: networkController.scriptDetailed.name, scriptContent: newContent, scriptId: String(describing: script.jamfId), authToken: networkController.authToken, category: networkController.scriptDetailed.categoryName, filename: networkController.scriptDetailed.name, info: networkController.scriptDetailed.info, notes: networkController.scriptDetailed.notes)
+                    }
+                } catch {
+                    print("Failed to inject into script id:\(script.jamfId): \(error)")
+                }
+            }
+
+            // Refresh scripts list after modifications
+            try? await networkController.getAllScripts()
+            progress.showProgressView = false
+        }
     }
 }
