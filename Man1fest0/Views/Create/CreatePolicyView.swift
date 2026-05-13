@@ -147,244 +147,250 @@ struct CreatePolicyView: View {
     @State private var editingTemplate: PolicyTemplate? = nil
     @State private var previewXML: String = ""
     @State private var showPreviewSheet: Bool = false
+    @State private var templatesExpanded: Bool = false
     
     
         
     var body: some View {
         
         VStack(alignment: .leading) {
-            // Templates section
-            DisclosureGroup("Policy Templates") {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        TextField("Template name", text: $newTemplateName)
-                        Button("Save Template") {
-                            saveCurrentAsTemplate()
-                        }
-                        .disabled(newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        Spacer()
-                        Button("Export") { exportTemplatesToDownloads() }
-                        .buttonStyle(.bordered)
-                        Button("Import") { importTemplatesFromFile() }
-                        .buttonStyle(.bordered)
-                    }
-
-                    if templates.isEmpty {
-                        Text("No templates saved for this server").foregroundColor(.secondary)
-                    } else {
-                        ForEach(templates) { t in
-                            HStack {
-                                Text(t.name)
-                                Spacer()
-                                Button("Apply") { applyTemplate(t) }
-                                    .buttonStyle(.bordered)
-                                Button("Edit") { editingTemplate = t }
-                                    .buttonStyle(.bordered)
-                                Button("Delete") { deleteTemplate(t) }
-                                    .buttonStyle(.bordered)
-                                    .tint(.red)
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 6)
-            }
-
-            // Edit sheet for templates
-            .sheet(item: $editingTemplate) { tpl in
-                TemplateEditView(template: tpl, onSave: { updated in
-                    if let idx = templates.firstIndex(where: { $0.id == updated.id }) {
-                        templates[idx] = updated
-                    } else {
-                        templates.append(updated)
-                    }
-                    persistTemplates()
-                    editingTemplate = nil
-                }, onCancel: {
-                    editingTemplate = nil
-                })
-            }
-
-            if networkController.packages.count > 0 {
-                packagesSection
-            }
-        }
-        //              ################################################################################
-        //              Toolbar
-        //              ################################################################################
-#if os(macOS)
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    print("Refresh")
-                    print("Icon selection id is:\(String(describing: selectedIconId))")
-                 
-                    Task {
-                        try await networkController.getAllPackages()
-                      try await networkController.getAllScripts()
-                        try await networkController.getAllDepartments()
-                        try await networkController.getAllCategories()
-                    }
-                    
-                }) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-            }
-        }
-        
-#endif
-        
-        //  ################################################################################
-        //              Toolbar - END
-        //  ################################################################################
-  
-        Divider()
-        
-        //  ################################################################################
-        //              selections
-        //  ################################################################################
-        
-        // Selection row always shown under header so users see selection count
-        HStack(spacing: 8) {
-            Text("Selection:")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            Spacer()
-            Text("Selected: \(packageMultiSelection.count)")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal)
-        .padding(.top, 4)
-        
-        Divider()
-
-        List(Array(packageMultiSelection), id: \.self) { selectedJamfId in
-            Text(networkController.packages.first(where: { $0.jamfId == selectedJamfId })?.name ?? "")
-        }
-        
-        .frame(height: 100)
-        
-        VStack {
             
-            Group {
-                
-            // ####################################################
-            // CREATE NEW POLICY - with multiple packages
-            // ####################################################
-                
-                LazyVGrid(columns: columns, spacing: 5) {
+            ScrollView {
+                //
+                VStack(alignment: .leading, spacing: 20) {
                     
-                    HStack {
-                        Image(systemName:"hammer")
-                        TextField("Policy Name", text: $newPolicyName)
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            // Resolve selection values from the networkController arrays using the selected IDs
-                            // Find the category by jamfId (Int) which is what the Picker tags use
-                            let categoryNameLocal = networkController.categories.first(where: { $0.jamfId == selectedCategoryId })?.name ?? ""
-                            let departmentNameLocal = networkController.departments.first(where: { $0.jamfId == selectedDepartmentId })?.name ?? ""
-                            let iconLocal = networkController.allIconsDetailed.first(where: { $0.id == selectedIconId })
-                            let iconIdString = String(iconLocal?.id ?? 0)
-                            let iconNameLocal = iconLocal?.name ?? ""
-                            let iconUrlLocal = iconLocal?.url ?? ""
-                            let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
-                            let scriptNameLocal = scriptLocal?.name ?? ""
-                            let scriptIdString = String(scriptLocal?.jamfId ?? 0)
-                            
-                            // Prepare selected package ids to pass to XML builder
-                            let selectedPackageIdsToAdd = Set(packageMultiSelection)
-                            
-                            xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken,
-                                                                  server: server,
-                                                                  policyName: newPolicyName,
-                                                                  policyID: newPolicyId,
-                                                                  scriptName: scriptNameLocal,
-                                                                  scriptID: scriptIdString,
-                                                                  packageName: packageName,
-                                                                  packageID: packageID,
-                                                                  SelfServiceEnabled: enableSelfService,
-                                                                  department: departmentNameLocal,
-                                                                  category: categoryNameLocal,
-                                                                  enabledStatus: enableDisable,
-                                                                  iconId: iconIdString,
-                                                                  iconName: iconNameLocal,
-                                                                  iconUrl: iconUrlLocal,
-                                                                  selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages)
-                            
-                            layout.separationLine()
-                            print("Creating New Policy:\(newPolicyName)")
-                        }) {
+                    // New header: nicer title, subtitle and quick actions
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text("Create Policy")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        Button(action: {
-                            // Build preview XML and show sheet
-                            let selectedPackageIdsToAdd = Set(packageMultiSelection)
-                            let categoryNameLocal = networkController.categories.first(where: { $0.jamfId == selectedCategoryId })?.name ?? ""
-                            let departmentNameLocal = networkController.departments.first(where: { $0.jamfId == selectedDepartmentId })?.name ?? ""
-                            let iconLocal = networkController.allIconsDetailed.first(where: { $0.id == selectedIconId })
-                            let iconIdString = String(iconLocal?.id ?? 0)
-                            let iconNameLocal = iconLocal?.name ?? ""
-                            let iconUrlLocal = iconLocal?.url ?? ""
-                            let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
-                            let scriptNameLocal = scriptLocal?.name ?? ""
-                            let scriptIdString = String(scriptLocal?.jamfId ?? 0)
+                                .font(.title)
+                                .fontWeight(.semibold)
+//                                                            .foregroundColor(.secondary)
 
-                            previewXML = xmlController.buildPolicyXML(policyName: newPolicyName, policyID: newPolicyId, scriptName: scriptNameLocal, scriptID: scriptIdString, selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages, SelfServiceEnabled: enableSelfService, department: departmentNameLocal, category: categoryNameLocal, enabledStatus: enableDisable, iconId: iconIdString, iconName: iconNameLocal, iconUrl: iconUrlLocal)
-                            showPreviewSheet = true
-                        }) {
-                            Text("Preview XML")
+                            //                            Text("Create categories, groups, packages and scripts")
+                            //                                .font(.subheadline)
+                            //                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                Task {
+                                    try await networkController.getAllCategories()
+                                    try await networkController.getAllDepartments()
+                                }
+                                
+                            }) {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                            .buttonStyle(.bordered)
+                            
+                            Button(action: {
+                                // open import/export filename if available
+                                // keep as info-only quick action
+                            }) {
+                                Image(systemName: "square.and.arrow.down")
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.03)))
+                    
+                    
+                    
+                        
+                }
+                //                        Spacer()
+                
+                
+                
+                if networkController.packages.count > 0 {
+                    packagesSection
+                }
+            }
+            //              ################################################################################
+            //              Toolbar
+            //              ################################################################################
+#if os(macOS)
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        print("Refresh")
+                        print("Icon selection id is:\(String(describing: selectedIconId))")
+                        
+                        Task {
+                            try await networkController.getAllPackages()
+                            try await networkController.getAllScripts()
+                            try await networkController.getAllDepartments()
+                            try await networkController.getAllCategories()
                         }
                         
-                        Toggle(isOn: $createDepartmentIsChecked) {
-                            Text("New Department")
-                        }
-                        .toggleStyle(.checkbox)
-                        
-                        Toggle(isOn: $enableSelfService) {
-                            Text("Self Service")
-                        }
-                        .toggleStyle(.checkbox)
+                    }) {
+                        Label("Refresh", systemImage: "arrow.clockwise")
                     }
                 }
-
+            }
+            
+#endif
+            
+            //  ################################################################################
+            //              Toolbar - END
+            //  ################################################################################
+            
+            Divider()
+            
+            //  ################################################################################
+            //              selections
+            //  ################################################################################
+            
+            // Selection row always shown under header so users see selection count
+            HStack(spacing: 8) {
+                Text("Selection:")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Spacer()
+                Text("Selected: \(packageMultiSelection.count)")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal)
+            .padding(.top, 4)
+            
+            Divider()
+            
+            if packageMultiSelection.isEmpty {
+                Text("No packages selected")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 6)
+            } else {
+                List(Array(packageMultiSelection), id: \.self) { selectedJamfId in
+                    Text(networkController.packages.first(where: { $0.jamfId == selectedJamfId })?.name ?? "")
+                }
+                .frame(height: selectionListHeight)
+            }
+            
+            VStack {
+                
+                Group {
+                    
+                    // ####################################################
+                    // CREATE NEW POLICY - with multiple packages
+                    // ####################################################
+                    
+                    LazyVGrid(columns: columns, spacing: 5) {
+                        
+                        HStack {
+                            Image(systemName:"hammer")
+                            TextField("Policy Name", text: $newPolicyName)
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                
+                                // Resolve selection values from the networkController arrays using the selected IDs
+                                // Find the category by jamfId (Int) which is what the Picker tags use
+                                let categoryNameLocal = networkController.categories.first(where: { $0.jamfId == selectedCategoryId })?.name ?? ""
+                                let departmentNameLocal = networkController.departments.first(where: { $0.jamfId == selectedDepartmentId })?.name ?? ""
+                                let iconLocal = networkController.allIconsDetailed.first(where: { $0.id == selectedIconId })
+                                let iconIdString = String(iconLocal?.id ?? 0)
+                                let iconNameLocal = iconLocal?.name ?? ""
+                                let iconUrlLocal = iconLocal?.url ?? ""
+                                let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
+                                let scriptNameLocal = scriptLocal?.name ?? ""
+                                let scriptIdString = String(scriptLocal?.jamfId ?? 0)
+                                
+                                // Prepare selected package ids to pass to XML builder
+                                let selectedPackageIdsToAdd = Set(packageMultiSelection)
+                                
+                                xmlController.createNewPolicyViaAEXML(authToken: networkController.authToken,
+                                                                      server: server,
+                                                                      policyName: newPolicyName,
+                                                                      policyID: newPolicyId,
+                                                                      scriptName: scriptNameLocal,
+                                                                      scriptID: scriptIdString,
+                                                                      packageName: packageName,
+                                                                      packageID: packageID,
+                                                                      SelfServiceEnabled: enableSelfService,
+                                                                      department: departmentNameLocal,
+                                                                      category: categoryNameLocal,
+                                                                      enabledStatus: enableDisable,
+                                                                      iconId: iconIdString,
+                                                                      iconName: iconNameLocal,
+                                                                      iconUrl: iconUrlLocal,
+                                                                      selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages)
+                                
+                                layout.separationLine()
+                                print("Creating New Policy:\(newPolicyName)")
+                            }) {
+                                Text("Create Policy")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            Button(action: {
+                                // Build preview XML and show sheet
+                                let selectedPackageIdsToAdd = Set(packageMultiSelection)
+                                let categoryNameLocal = networkController.categories.first(where: { $0.jamfId == selectedCategoryId })?.name ?? ""
+                                let departmentNameLocal = networkController.departments.first(where: { $0.jamfId == selectedDepartmentId })?.name ?? ""
+                                let iconLocal = networkController.allIconsDetailed.first(where: { $0.id == selectedIconId })
+                                let iconIdString = String(iconLocal?.id ?? 0)
+                                let iconNameLocal = iconLocal?.name ?? ""
+                                let iconUrlLocal = iconLocal?.url ?? ""
+                                let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
+                                let scriptNameLocal = scriptLocal?.name ?? ""
+                                let scriptIdString = String(scriptLocal?.jamfId ?? 0)
+                                
+                                previewXML = xmlController.buildPolicyXML(policyName: newPolicyName, policyID: newPolicyId, scriptName: scriptNameLocal, scriptID: scriptIdString, selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages, SelfServiceEnabled: enableSelfService, department: departmentNameLocal, category: categoryNameLocal, enabledStatus: enableDisable, iconId: iconIdString, iconName: iconNameLocal, iconUrl: iconUrlLocal)
+                                showPreviewSheet = true
+                            }) {
+                                Text("Preview XML")
+                            }
+                            
+                            Toggle(isOn: $createDepartmentIsChecked) {
+                                Text("New Dept")
+                            }
+                            .toggleStyle(.checkbox)
+                            
+                            Toggle(isOn: $enableSelfService) {
+                                Text("Self Service")
+                            }
+                            .toggleStyle(.checkbox)
+                        }
+                    }
+                    
 #if os(macOS)
                     // File import controls - Select a local XML file and import as a policy
                     
-                DisclosureGroup("Import Policy from XML") {
-                    
-//                    LazyVGrid(columns: layout.column, spacing: 5) {
-//
-//                        VStack(alignment: .leading) {
-                            
-                            HStack(spacing: 8) {
-                                Button(action: {
-                                    let openURL = importExportBrain.showOpenPanel()
-                                    print("openURL path is:\(String(describing: openURL?.path ?? ""))")
-                                    if let url = openURL {
-                                        self.importFilePath = url.path
-                                        // Import the file contents into the shared ImportExportBrain so other views can access it too
-                                        importExportBrain.selectedFilename = url.lastPathComponent
-                                        do {
-                                            importExportBrain.importedString = try String(contentsOf: url, encoding: .utf8)
-                                            print("Imported file length: \(importExportBrain.importedString.count)")
-                                        } catch {
-                                            print("Failed to read file: \(error)")
-                                        }
-                                    }
-                                }) {
-                                    HStack {
-                                        Image(systemName: "doc")
-                                        Text("Select File")
+                    DisclosureGroup("Import Policy from XML") {
+                        
+                        //                    LazyVGrid(columns: layout.column, spacing: 5) {
+                        //
+                        //                        VStack(alignment: .leading) {
+                        
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                let openURL = importExportBrain.showOpenPanel()
+                                print("openURL path is:\(String(describing: openURL?.path ?? ""))")
+                                if let url = openURL {
+                                    self.importFilePath = url.path
+                                    // Import the file contents into the shared ImportExportBrain so other views can access it too
+                                    importExportBrain.selectedFilename = url.lastPathComponent
+                                    do {
+                                        importExportBrain.importedString = try String(contentsOf: url, encoding: .utf8)
+                                        print("Imported file length: \(importExportBrain.importedString.count)")
+                                    } catch {
+                                        print("Failed to read file: \(error)")
                                     }
                                 }
+                            }) {
+                                HStack {
+                                    Image(systemName: "doc")
+                                    Text("Select File")
+                                }
+                            }
                             
                             Button(action: {
                                 progress.showProgress()
@@ -416,248 +422,312 @@ struct CreatePolicyView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-//                    }
-//                    }
-            }
-
-#endif
-
-                
-                VStack(alignment: .leading) {
+                        //                    }
+                        //                    }
+                    }
                     
-                    LazyVGrid(columns: layout.columnsFlexAdaptiveMedium, spacing: 20) {
-
-                        HStack {
-                            Text("Self-Service").bold()
-                            if #available(macOS 14.0, *) {
-                                Toggle("", isOn: $selfServiceEnable)
-                                    .toggleStyle(SwitchToggleStyle(tint: .red))
-                                    .onChange(of: enableDisable) {
-                                        print("Self-Service is currently:\(selfServiceEnable)")
-                                    }
+                    // Templates section
+                    DisclosureGroup("Policy Templates", isExpanded: $templatesExpanded) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                TextField("Template name", text: $newTemplateName)
+                                Button("Save Template") {
+                                    saveCurrentAsTemplate()
+                                }
+                                .disabled(newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                Spacer()
+                                Button("Export") { exportTemplatesToDownloads() }
+                                    .buttonStyle(.bordered)
+                                Button("Import") { importTemplatesFromFile() }
+                                    .buttonStyle(.bordered)
+                            }
+                            
+                            if templates.isEmpty {
+                                Text("No templates saved for this server").foregroundColor(.secondary)
                             } else {
-                                // Fallback on earlier versions
-                                Toggle("", isOn: $selfServiceEnable)
-                                    .toggleStyle(SwitchToggleStyle(tint: .red))
-                            }
-                        }
-                    }
-                }
-            }
-            
-    // ##########################################################################################
-    //                        Icons
-    // ##########################################################################################
-            
-            Divider()
-
-            // Prominent Icons filter header so it's always visible
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Icons").bold().padding(.bottom, 4)
-                HStack {
-                    TextField("Filter icons", text: $iconFilter)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: .infinity)
-                    if !iconFilter.isEmpty {
-                        Button(action: { iconFilter = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(6)
-                .background(Color.gray.opacity(0.06))
-                .cornerRadius(6)
-            }
-            
-        //  ################################################################################
-        //              selections
-        //  ################################################################################
-        
-        // ##########################################################################################
-        //                        Icons - selector (compact horizontal strip)
-        // ##########################################################################################
-        
-            LazyVGrid(columns: columns, spacing: 30) {
-                VStack(alignment: .leading, spacing: 6) {
-                    // Compact horizontal icon selector (30x30)
-                    ScrollView(.horizontal, showsIndicators: true) {
-                        HStack(spacing: 8) {
-                            ForEach(networkController.allIconsDetailed.filter { icon in
-                                let trimmed = iconFilter.trimmingCharacters(in: .whitespacesAndNewlines)
-                                if trimmed.isEmpty { return true }
-                                return icon.name.localizedCaseInsensitiveContains(trimmed)
-                            }, id: \.id) { icon in
-                                AsyncImage(url: URL(string: icon.url)) { phase in
-                                    switch phase {
-                                    case .success(let image):
-                                        image.resizable().scaledToFill()
-                                    case .failure(_):
-                                        Image(systemName: "photo").resizable().scaledToFit()
-                                    default:
-                                        ProgressView()
+                                ForEach(templates) { t in
+                                    HStack {
+                                        Text(t.name)
+                                        Spacer()
+                                        Button("Apply") { applyTemplate(t) }
+                                            .buttonStyle(.bordered)
+                                        Button("Edit") { editingTemplate = t }
+                                            .buttonStyle(.bordered)
+                                        Button("Delete") { deleteTemplate(t) }
+                                            .buttonStyle(.bordered)
+                                            .tint(.red)
                                     }
                                 }
-                                .frame(width: 30, height: 30)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(selectedIconId == icon.id ? Color.blue : Color.clear, lineWidth: 2))
-                                .onTapGesture {
-                                    selectedIconId = icon.id
-                                    selectedIconString = icon.name
-                                    selectedIconList = icon
-                                }
-                                .help(icon.name)
                             }
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 6)
                     }
-                    .onAppear {
-                        if !networkController.allIconsDetailed.isEmpty {
-                            selectedIconId = networkController.allIconsDetailed.first?.id
-                            selectedIconString = networkController.allIconsDetailed.first?.name ?? ""
-                            selectedIconList = networkController.allIconsDetailed.first ?? Icon(id: 0, url: "", name: "")
-                        } else {
-                            selectedIconId = nil
-                            selectedIconString = ""
+                    
+                    // Edit sheet for templates
+                    .sheet(item: $editingTemplate) { tpl in
+                        TemplateEditView(template: tpl, onSave: { updated in
+                            if let idx = templates.firstIndex(where: { $0.id == updated.id }) {
+                                templates[idx] = updated
+                            } else {
+                                templates.append(updated)
+                            }
+                            persistTemplates()
+                            editingTemplate = nil
+                        }, onCancel: {
+                            editingTemplate = nil
+                        })
+                    }
+                    
+#endif
+                    
+                    
+                    VStack(alignment: .leading) {
+                        
+                        LazyVGrid(columns: layout.columnsFlexAdaptiveMedium, spacing: 20) {
+                            
+                            HStack {
+                                Text("Self-Service").bold()
+                                if #available(macOS 14.0, *) {
+                                    Toggle("", isOn: $selfServiceEnable)
+                                        .toggleStyle(SwitchToggleStyle(tint: .red))
+                                        .onChange(of: enableDisable) {
+                                            print("Self-Service is currently:\(selfServiceEnable)")
+                                        }
+                                } else {
+                                    // Fallback on earlier versions
+                                    Toggle("", isOn: $selfServiceEnable)
+                                        .toggleStyle(SwitchToggleStyle(tint: .red))
+                                }
+                            }
                         }
                     }
-                    .onChange(of: networkController.allIconsDetailed) { newIcons in
-                        if !newIcons.isEmpty {
-                            selectedIconId = newIcons.first?.id
-                            selectedIconString = newIcons.first?.name ?? ""
-                            selectedIconList = newIcons.first ?? Icon(id: 0, url: "", name: "")
-                        } else {
-                            selectedIconId = nil
-                            selectedIconString = ""
+                }
+                
+                // ##########################################################################################
+                //                        Icons
+                // ##########################################################################################
+                
+                if !networkController.allIconsDetailed.isEmpty {
+                    Divider()
+                    
+                    // Prominent Icons filter header so it's always visible
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Icons").bold().padding(.bottom, 4)
+                        HStack {
+                            TextField("Filter icons", text: $iconFilter)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: .infinity)
+                            if !iconFilter.isEmpty {
+                                Button(action: { iconFilter = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
+                        .padding(6)
+                        .background(Color.gray.opacity(0.06))
+                        .cornerRadius(6)
                     }
-                 }
-              }
-            
-            // ##########################################################################################
-            //                        Category
-            // ##########################################################################################
-            Divider()
-
-            Group {
+                }
+                
+                //  ################################################################################
+                //              selections
+                //  ################################################################################
+                
+                // ##########################################################################################
+                //                        Icons - selector (compact horizontal strip)
+                // ##########################################################################################
+                
                 LazyVGrid(columns: columns, spacing: 30) {
                     VStack(alignment: .leading, spacing: 6) {
-                        TextField("Filter categories", text: $categoryFilter)
-                            .textFieldStyle(.roundedBorder)
-                        
-                        Picker(selection: $selectedCategoryId, label: Text("Category")) {
-                            // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
-                            ForEach(networkController.categories.filter { cat in
-                                categoryFilter.isEmpty ? true : cat.name.localizedCaseInsensitiveContains(categoryFilter)
-                            }, id: \.jamfId) { category in
-                                Text(category.name).tag(category.jamfId)
+                        // Compact horizontal icon selector (30x30)
+                        ScrollView(.horizontal, showsIndicators: true) {
+                            HStack(spacing: 8) {
+                                ForEach(networkController.allIconsDetailed.filter { icon in
+                                    let trimmed = iconFilter.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    if trimmed.isEmpty { return true }
+                                    return icon.name.localizedCaseInsensitiveContains(trimmed)
+                                }, id: \.id) { icon in
+                                    AsyncImage(url: URL(string: icon.url)) { phase in
+                                        switch phase {
+                                        case .success(let image):
+                                            image.resizable().scaledToFill()
+                                        case .failure(_):
+                                            Image(systemName: "photo").resizable().scaledToFit()
+                                        default:
+                                            ProgressView()
+                                        }
+                                    }
+                                    .frame(width: 30, height: 30)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(selectedIconId == icon.id ? Color.blue : Color.clear, lineWidth: 2))
+                                    .onTapGesture {
+                                        selectedIconId = icon.id
+                                        selectedIconString = icon.name
+                                        selectedIconList = icon
+                                    }
+                                    .help(icon.name)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .onAppear {
+                            if !networkController.allIconsDetailed.isEmpty {
+                                selectedIconId = networkController.allIconsDetailed.first?.id
+                                selectedIconString = networkController.allIconsDetailed.first?.name ?? ""
+                                selectedIconList = networkController.allIconsDetailed.first ?? Icon(id: 0, url: "", name: "")
+                            } else {
+                                selectedIconId = nil
+                                selectedIconString = ""
                             }
                         }
-                        .onChange(of: networkController.categories) { newCategories in
-                            if selectedCategoryId == nil {
-                                selectedCategoryId = newCategories.first?.jamfId
+                        .onChange(of: networkController.allIconsDetailed) { newIcons in
+                            if !newIcons.isEmpty {
+                                selectedIconId = newIcons.first?.id
+                                selectedIconString = newIcons.first?.name ?? ""
+                                selectedIconList = newIcons.first ?? Icon(id: 0, url: "", name: "")
+                            } else {
+                                selectedIconId = nil
+                                selectedIconString = ""
                             }
                         }
                     }
-                 }
-             }
-             
-             // ##########################################################################################
-             //                        Department
-             // ##########################################################################################
-             Divider()
-
-             Group {
-                 LazyVGrid(columns: columns, spacing: 30) {
-                     VStack(alignment: .leading, spacing: 6) {
-                         TextField("Filter departments", text: $departmentFilter)
-                             .textFieldStyle(.roundedBorder)
-                         
-                         Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
-                             ForEach(networkController.departments.filter { dept in
-                                departmentFilter.isEmpty ? true : dept.name.localizedCaseInsensitiveContains(departmentFilter)
-                             }, id: \.jamfId) { department in
-                                 Text(department.name).tag(department.jamfId)
-                             }
-                         }
-                     }
-                 }
-             }
-             Divider()
-
-             Group {
-                  
-                  LazyVGrid(columns: columns, spacing: 20) {
-                      VStack(alignment: .leading, spacing: 6) {
-                          TextField("Filter scripts", text: $scriptFilter)
-                              .textFieldStyle(.roundedBorder)
-                          
-                          Picker(selection: $selectedScriptId, label: Text("Scripts")) {
-                              ForEach(networkController.scripts.filter { s in
-                                  scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
-                              }, id: \.jamfId) { script in
-                                  Text(script.name).tag(script.jamfId)
-                              }
-                          }
-                          .onChange(of: networkController.scripts) { newScripts in
-                              if selectedScriptId == nil {
-                                  selectedScriptId = newScripts.first?.jamfId
-                              }
-                          }
-                      }
-                  }
-                  
-                  // ######################################################################################
-             }
-        }
-
-        // ######################################################################################
-        //                        onAppear
-        // ######################################################################################
-        .onAppear {
-            print("CreateView appeared - connecting")
-            handleConnect()
-            loadTemplates()
-        }
-        .sheet(isPresented: $showPreviewSheet) {
-            VStack(alignment: .leading) {
-                Text("Preview XML").font(.headline).padding()
-                ScrollView { Text(previewXML).font(.system(.body, design: .monospaced)).padding() }
-                HStack {
-                    Spacer()
-                    Button("Export") {
-                        #if os(macOS)
-                        if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
-                            let filename = "policy-preview-\(Int(Date().timeIntervalSince1970)).xml"
-                            let dest = downloads.appendingPathComponent(filename)
-                            do {
-                                try previewXML.data(using: .utf8)?.write(to: dest)
-                                NSWorkspace.shared.activateFileViewerSelecting([dest])
-                            } catch {
-                                print("Failed to write preview XML: \(error)")
-                            }
-                        }
-                        #endif
-                    }
-                    Button("Close") { showPreviewSheet = false }
                 }
-                .padding()
+                
+                // ##########################################################################################
+                //                        Category
+                // ##########################################################################################
+                Divider()
+                
+                if !networkController.categories.isEmpty {
+                    Group {
+                        LazyVGrid(columns: columns, spacing: 30) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                TextField("Filter categories", text: $categoryFilter)
+                                    .textFieldStyle(.roundedBorder)
+                                
+                                Picker(selection: $selectedCategoryId, label: Text("Category")) {
+                                    // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
+                                    ForEach(networkController.categories.filter { cat in
+                                        categoryFilter.isEmpty ? true : cat.name.localizedCaseInsensitiveContains(categoryFilter)
+                                    }, id: \.jamfId) { category in
+                                        Text(category.name).tag(category.jamfId)
+                                    }
+                                }
+                                .onChange(of: networkController.categories) { newCategories in
+                                    if selectedCategoryId == nil {
+                                        selectedCategoryId = newCategories.first?.jamfId
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // ##########################################################################################
+                //                        Department
+                // ##########################################################################################
+                Divider()
+                
+                if !networkController.departments.isEmpty {
+                    Group {
+                        LazyVGrid(columns: columns, spacing: 30) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                TextField("Filter departments", text: $departmentFilter)
+                                    .textFieldStyle(.roundedBorder)
+                                
+                                Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
+                                    ForEach(networkController.departments.filter { dept in
+                                        departmentFilter.isEmpty ? true : dept.name.localizedCaseInsensitiveContains(departmentFilter)
+                                    }, id: \.jamfId) { department in
+                                        Text(department.name).tag(department.jamfId)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Divider()
+                
+                if !networkController.scripts.isEmpty {
+                    Group {
+                        
+                        LazyVGrid(columns: columns, spacing: 20) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                TextField("Filter scripts", text: $scriptFilter)
+                                    .textFieldStyle(.roundedBorder)
+                                
+                                Picker(selection: $selectedScriptId, label: Text("Scripts")) {
+                                    ForEach(networkController.scripts.filter { s in
+                                        scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
+                                    }, id: \.jamfId) { script in
+                                        Text(script.name).tag(script.jamfId)
+                                    }
+                                }
+                                .onChange(of: networkController.scripts) { newScripts in
+                                    if selectedScriptId == nil {
+                                        selectedScriptId = newScripts.first?.jamfId
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // ######################################################################################
+                    }
+                }
             }
-            .frame(minWidth: 600, minHeight: 400)
-        }
-        .padding()
-
-        if progress.showProgressView == true {
-            ProgressView {
-                Text("Processing")
+            
+            // ######################################################################################
+            //                        onAppear
+            // ######################################################################################
+            .onAppear {
+                print("CreateView appeared - connecting")
+                handleConnect()
+                loadTemplates()
+            }
+            .sheet(isPresented: $showPreviewSheet) {
+                VStack(alignment: .leading) {
+                    Text("Preview XML").font(.headline).padding()
+                    ScrollView { Text(previewXML).font(.system(.body, design: .monospaced)).padding() }
+                    HStack {
+                        Spacer()
+                        Button("Export") {
+#if os(macOS)
+                            if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+                                let filename = "policy-preview-\(Int(Date().timeIntervalSince1970)).xml"
+                                let dest = downloads.appendingPathComponent(filename)
+                                do {
+                                    try previewXML.data(using: .utf8)?.write(to: dest)
+                                    NSWorkspace.shared.activateFileViewerSelecting([dest])
+                                } catch {
+                                    print("Failed to write preview XML: \(error)")
+                                }
+                            }
+#endif
+                        }
+                        Button("Close") { showPreviewSheet = false }
+                    }
                     .padding()
+                }
+                .frame(minWidth: 600, minHeight: 400)
             }
-        } else {
-            Text("")
+            .padding()
+            
+            if progress.showProgressView == true {
+                ProgressView {
+                    Text("Processing")
+                        .padding()
+                }
+            } else {
+                Text("")
+            }
         }
     }
-
+    
+    // MARK: - MAIN VIEW
+    
+    
     func handleConnect() {
         print("Running handleConnect.")
         networkController.fetchStandardData()
@@ -697,9 +767,12 @@ struct CreatePolicyView: View {
         if FileManager.default.fileExists(atPath: file.path) {
             if let data = try? Data(contentsOf: file), let decoded = try? JSONDecoder().decode([PolicyTemplate].self, from: data) {
                 templates = decoded
+                // Expand templates section if templates exist, otherwise keep collapsed
+                templatesExpanded = !templates.isEmpty
             }
         } else {
             templates = []
+            templatesExpanded = false
         }
     }
 
@@ -820,6 +893,20 @@ struct CreatePolicyView: View {
             }
         }
     }
+
+    // Dynamic heights to conserve vertical space when lists are small
+    private var packageListHeight: CGFloat {
+        let rows = max(1, sortedPackages.count)
+        let h = CGFloat(rows) * 28.0 + 80.0
+        return min(400.0, max(120.0, h))
+    }
+
+    private var selectionListHeight: CGFloat {
+        let rows = packageMultiSelection.count
+        if rows == 0 { return 44.0 }
+        let h = CGFloat(rows) * 22.0 + 24.0
+        return min(240.0, max(44.0, h))
+    }
     
     // Added packagesSection composed view (renders header + platform-specific selectable list/table)
     private var packagesSection: some View {
@@ -830,10 +917,10 @@ struct CreatePolicyView: View {
             Group {
                 #if os(macOS)
                 packagesTable
-                    .frame(minHeight: 200)
+                    .frame(height: packageListHeight)
                 #else
                 packagesListView
-                    .frame(minHeight: 200)
+                    .frame(height: packageListHeight)
                 #endif
             }
             .padding(.top, 4)
