@@ -330,6 +330,8 @@ struct CreatePolicyView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
+                            .disabled(newPolicyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        
                             Button(action: {
                                 // Build preview XML and show sheet
                                 let selectedPackageIdsToAdd = Set(packageMultiSelection)
@@ -607,14 +609,16 @@ struct CreatePolicyView: View {
                                 TextField("Filter categories", text: $categoryFilter)
                                     .textFieldStyle(.roundedBorder)
                                 
-                                Picker(selection: $selectedCategoryId, label: Text("Category")) {
-                                    // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
-                                    ForEach(networkController.categories.filter { cat in
-                                        categoryFilter.isEmpty ? true : cat.name.localizedCaseInsensitiveContains(categoryFilter)
-                                    }, id: \.jamfId) { category in
-                                        Text(category.name).tag(category.jamfId)
-                                    }
-                                }
+                                        Picker(selection: $selectedCategoryId, label: Text("Category")) {
+                                            // Allow explicit "None" option
+                                            Text("None").tag(nil as Int?)
+                                            // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
+                                            ForEach(networkController.categories.filter { cat in
+                                                categoryFilter.isEmpty ? true : cat.name.localizedCaseInsensitiveContains(categoryFilter)
+                                            }, id: \.jamfId) { category in
+                                                Text(category.name).tag(category.jamfId as Int?)
+                                            }
+                                        }
                                 .onChange(of: networkController.categories) { newCategories in
                                     if selectedCategoryId == nil {
                                         selectedCategoryId = newCategories.first?.jamfId
@@ -637,13 +641,14 @@ struct CreatePolicyView: View {
                                 TextField("Filter departments", text: $departmentFilter)
                                     .textFieldStyle(.roundedBorder)
                                 
-                                Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
-                                    ForEach(networkController.departments.filter { dept in
-                                        departmentFilter.isEmpty ? true : dept.name.localizedCaseInsensitiveContains(departmentFilter)
-                                    }, id: \.jamfId) { department in
-                                        Text(department.name).tag(department.jamfId)
-                                    }
-                                }
+                                      Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
+                                          Text("None").tag(nil as Int?)
+                                          ForEach(networkController.departments.filter { dept in
+                                             departmentFilter.isEmpty ? true : dept.name.localizedCaseInsensitiveContains(departmentFilter)
+                                          }, id: \.jamfId) { department in
+                                              Text(department.name).tag(department.jamfId as Int?)
+                                          }
+                                      }
                             }
                         }
                     }
@@ -659,10 +664,11 @@ struct CreatePolicyView: View {
                                     .textFieldStyle(.roundedBorder)
                                 
                                 Picker(selection: $selectedScriptId, label: Text("Scripts")) {
+                                    Text("None").tag(nil as Int?)
                                     ForEach(networkController.scripts.filter { s in
                                         scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
                                     }, id: \.jamfId) { script in
-                                        Text(script.name).tag(script.jamfId)
+                                        Text(script.name).tag(script.jamfId as Int?)
                                     }
                                 }
                                 .onChange(of: networkController.scripts) { newScripts in
@@ -949,7 +955,7 @@ struct CreatePolicyView: View {
             }
             .padding(.horizontal)
 
-            HStack {
+                    HStack {
                 Text("All Packages").bold().padding(.leading)
                 Spacer()
                 HStack(spacing: 8) {
@@ -965,6 +971,14 @@ struct CreatePolicyView: View {
                     }
                     .buttonStyle(.plain)
                     .help("Toggle sort direction")
+                    Button(action: {
+                        // Clear package selection
+                        packageMultiSelection.removeAll()
+                        packageSelectionIDs.removeAll()
+                    }) {
+                        Text("Clear")
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
 

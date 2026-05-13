@@ -487,7 +487,7 @@ class XmlBrain: ObservableObject {
             self.aexmlDoc.root.addChild(name: "scope")
 
             let general = self.aexmlDoc.root["general"]
-            let scripts = self.aexmlDoc.root["policy"]["scripts"]
+            let scripts = self.aexmlDoc.root["scripts"]
             let packageConfiguration = self.aexmlDoc.root["package_configuration"]
             let selfService = self.aexmlDoc.root["self_service"]
             let scope = self.aexmlDoc.root["scope"]
@@ -517,6 +517,12 @@ class XmlBrain: ObservableObject {
                 general.addChild(name: "enabled", value: "false")
             }
 
+            // Add category if provided (omit node if empty)
+            if category.isEmpty == false {
+                let catNode = general.addChild(name: "category")
+                catNode.addChild(name: "name", value: category)
+            }
+
             //    ##################################################
             //    SCRIPTS
             //    ##################################################
@@ -524,7 +530,15 @@ class XmlBrain: ObservableObject {
             if scriptName.isEmpty != true {
                 self.separationLine()
                 print("Adding script")
-                scripts.addChild(name: "name", value: scriptName)
+                // Add a proper <script> element containing id/name/priority
+                let scriptElem = scripts.addChild(name: "script")
+                if scriptID.isEmpty == false {
+                    scriptElem.addChild(name: "id", value: scriptID)
+                } else {
+                    scriptElem.addChild(name: "id", value: "0")
+                }
+                scriptElem.addChild(name: "name", value: scriptName)
+                scriptElem.addChild(name: "priority", value: "After")
                 let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
                 _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
             } else {
@@ -584,23 +598,30 @@ class XmlBrain: ObservableObject {
 
             if SelfServiceEnabled != false {
                 self.separationLine()
-                print("Adding script")
+                print("Adding self_service")
                 selfService.addChild(name: "use_for_self_service", value: String(describing: SelfServiceEnabled))
-                selfService.addChild(name: "self_service_icon", value: String(describing: SelfServiceEnabled))
-                let selfServiceEnabled = self.aexmlDoc.root["policy"]["self_service"]["use_for_self_service"]
-
+                // If an icon is provided, add the self_service_icon child with details; otherwise remove self_service
                 if iconName != "" {
-
-                    let selfServiceIcon = self.aexmlDoc.root["policy"]["self_service"]["self_service_icon"]
-                    selfServiceIcon.addChild(name: "filename", value: "")
+                    let selfServiceIcon = selfService.addChild(name: "self_service_icon")
+                    selfServiceIcon.addChild(name: "filename", value: iconName)
                     selfServiceIcon.addChild(name: "id", value: iconId)
-                    selfServiceIcon.addChild(name: "uri", value: "")
-
+                    selfServiceIcon.addChild(name: "uri", value: iconUrl)
                 } else {
-                    print("No SelfServiceEnabled specified - remove this node")
+                    print("No icon specified for self service - removing self_service node")
                     selfService.removeFromParent()
                 }
+            }
 
+            // Add department to scope if provided
+            if department.isEmpty == false {
+                if scope.children.isEmpty {
+                    _ = self.aexmlDoc.root.addChild(name: "scope")
+                }
+                if self.aexmlDoc.root["scope"]["departments"].children.isEmpty {
+                    _ = self.aexmlDoc.root["scope"].addChild(name: "departments")
+                }
+                let deptNode = self.aexmlDoc.root["scope"]["departments"].addChild(name: "department")
+                deptNode.addChild(name: "name", value: department)
             }
             self.newPolicyAsXML = self.aexmlDoc.xml
             self.separationLine()
@@ -639,8 +660,17 @@ class XmlBrain: ObservableObject {
         general.addChild(name: "name", value: policyName)
         general.addChild(name: "enabled", value: enabledStatus ? "true" : "false")
 
+        // Add category if provided
+        if !category.isEmpty {
+            let cat = general.addChild(name: "category")
+            cat.addChild(name: "name", value: category)
+        }
+
         if !scriptName.isEmpty {
-            scripts.addChild(name: "script")
+            let scriptElem = scripts.addChild(name: "script")
+            scriptElem.addChild(name: "id", value: scriptID)
+            scriptElem.addChild(name: "name", value: scriptName)
+            scriptElem.addChild(name: "priority", value: "After")
             _ = scripts.addChild(name: "size", value: "1")
         } else {
             scripts.removeFromParent()
@@ -677,6 +707,15 @@ class XmlBrain: ObservableObject {
                 ssi.addChild(name: "id", value: iconId)
                 ssi.addChild(name: "uri", value: iconUrl)
             }
+        }
+
+        // Add department under scope if provided
+        if !department.isEmpty {
+            if self.aexmlDoc.root["scope"].children.isEmpty {
+                _ = self.aexmlDoc.root["scope"].addChild(name: "departments")
+            }
+            let dept = self.aexmlDoc.root["scope"]["departments"].addChild(name: "department")
+            dept.addChild(name: "name", value: department)
         }
 
         return self.aexmlDoc.root.xml
