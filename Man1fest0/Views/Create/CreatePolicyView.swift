@@ -350,6 +350,86 @@ struct CreatePolicyView: View {
                             }) {
                                 Text("Preview XML")
                             }
+
+                            // Open in Browser - refresh policies first and estimate new policy ID
+                            Button(action: {
+                                progress.showProgress()
+                                Task {
+                                    // Refresh policy list from server before estimating next ID
+                                    do {
+                                        try await networkController.getAllPolicies(server: server)
+                                    } catch {
+                                        print("Failed to refresh policies before opening in browser: \(error)")
+                                    }
+
+                                    // Combine any available policy lists
+                                    let combined = (networkController.allPoliciesConverted + networkController.policies)
+
+                                    // First attempt: try to find a policy by name (exact or contains) matching the policy name the user entered.
+                                    let trimmedName = newPolicyName.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    var opened = false
+                                    if !trimmedName.isEmpty {
+                                        // Prefer exact match (case-insensitive), then contains
+                                        if let exact = combined.first(where: { $0.name.localizedCaseInsensitiveCompare(trimmedName) == .orderedSame }), let id = exact.jamfId {
+                                            let base = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            let uiURL = base.hasSuffix("/") ? "\(base)policies.html?id=\(id)&o=r" : "\(base)/policies.html?id=\(id)&o=r"
+                                            print("Found policy by exact name: opening id \(id) -> \(uiURL)")
+                                            layout.openURL(urlString: uiURL, requestType: "policies")
+                                            opened = true
+                                        } else if let contain = combined.first(where: { $0.name.localizedCaseInsensitiveContains(trimmedName) }), let id = contain.jamfId {
+                                            let base = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            let uiURL = base.hasSuffix("/") ? "\(base)policies.html?id=\(id)&o=r" : "\(base)/policies.html?id=\(id)&o=r"
+                                            print("Found policy by partial name: opening id \(id) -> \(uiURL)")
+                                            layout.openURL(urlString: uiURL, requestType: "policies")
+                                            opened = true
+                                        }
+                                    }
+
+                                    if !opened {
+                                        // No match by name; fall back to numeric estimate based on the highest known ID + 1 (Jamf generally increments IDs)
+                                        let idSet = Set(combined.compactMap { $0.jamfId })
+                                        let maxID = idSet.max() ?? 0
+                                        let estimated = maxID + 1
+
+                                        var base = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if base.hasSuffix("/") { base.removeLast() }
+                                        func makeURL(_ id: Int) -> String { "\(base)/policies.html?id=\(id)&o=r" }
+
+                                        // Silent lookup: probe estimated id and neighbouring ids; if any exists open that one.
+                                        let maxAttempts = 5
+                                        let candidates: [Int] = [estimated] + (1...maxAttempts).flatMap { off in [estimated + off, estimated - off] }
+
+                                        for id in candidates {
+                                            if id <= 0 { continue }
+                                            let uiURL = makeURL(id)
+                                            let exists = await checkURLExists(uiURL)
+                                            if exists {
+                                                print("Opening nearby policy UI at id \(id): \(uiURL)")
+                                                layout.openURL(urlString: uiURL, requestType: "policies")
+                                                opened = true
+                                                break
+                                            }
+                                        }
+
+                                        if !opened {
+                                            // Fallback: open estimated URL anyway
+                                            let uiURL = makeURL(estimated)
+                                            print("Fallback: opening estimated policy URL: \(uiURL)")
+                                            layout.openURL(urlString: uiURL, requestType: "policies")
+                                        }
+                                    }
+
+                                    // End progress indicator
+                                    progress.endProgress()
+                                }
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "safari")
+                                    Text("Open in Browser")
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .help("Open the estimated new policy in the Jamf web UI (tries gaps and neighbours before fallback).")
                             
                             Toggle(isOn: $createDepartmentIsChecked) {
                                 Text("New Dept")
@@ -1047,7 +1127,36 @@ struct CreatePolicyView: View {
          }
       }
     
-    // End of view helpers
+      // Helper: check whether a Jamf UI URL exists (not a 404)
+      private func checkURLExists(_ urlString: String) async -> Bool {
+          guard let url = URL(string: urlString) else { return false }
+          var req = URLRequest(url: url)
+          req.httpMethod = "HEAD"
+          req.timeoutInterval = 8
+          do {
+              let (_, response) = try await URLSession.shared.data(for: req)
+              if let http = response as? HTTPURLResponse {
+                  return http.statusCode < 400
+              }
+          } catch {
+              // Some servers do not support HEAD - fall back to a lightweight GET
+              do {
+                  var req2 = URLRequest(url: url)
+                  req2.httpMethod = "GET"
+                  req2.timeoutInterval = 8
+                  let (_, response2) = try await URLSession.shared.data(for: req2)
+                  if let http2 = response2 as? HTTPURLResponse {
+                      return http2.statusCode < 400
+                  }
+              } catch {
+                  print("checkURLExists error for \(urlString): \(error)")
+                  return false
+              }
+          }
+          return false
+      }
+
+      // End of view helpers
 }
 
 // End of file
