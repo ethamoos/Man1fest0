@@ -215,7 +215,7 @@ struct ScriptsDetailView: View {
 
             if currentScript.info != "" || isEditing {
                 DisclosureGroup("Info") {
-                    Section(header: Text("Info").bold()) {
+//                    Section(header: Text("Info").bold()) {
                         if isEditing {
                             TextEditor(text: $info)
                                 .frame(minHeight: 60)
@@ -223,26 +223,26 @@ struct ScriptsDetailView: View {
                         } else {
                             Text(currentScript.info)
                         }
-                    }
+//                    }
                 }
             }
 
             // Category and Filename fields
             if isEditing {
-                DisclosureGroup("Info") {
-                    Section(header: Text("Category").bold()) {
+                DisclosureGroup("Category") {
+//                    Section(header: Text("Category").bold()) {
                         TextField(currentScript.categoryName, text: $category)
                             .padding(4)
                             .border(Color.gray)
-                    }
+//                    }
                 }
-                DisclosureGroup("Info") {
+                DisclosureGroup("Filename") {
                     
-                    Section(header: Text("Filename").bold()) {
+//                    Section(header: Text("Filename").bold()) {
                         TextField("Filename", text: $filename)
                             .padding(4)
                             .border(Color.gray)
-                    }
+//                    }
                 }
                 }
 

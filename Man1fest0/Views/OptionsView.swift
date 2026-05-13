@@ -239,6 +239,7 @@ struct OptionsView: View {
                                 //  ###########################################################################
                                 //    Config Profiles
                                 //  ###########################################################################
+                                
                                 NavigationLink(destination: ConfigProfileViewMacOS(server: server )) {
                                     Text("Config Profiles")
                                 }
