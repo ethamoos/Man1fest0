@@ -128,12 +128,83 @@ struct CreatePolicyView: View {
     @State var scriptParameter6: String = "Parameter 3"
         
     @State  var tempUUID = (UUID(uuidString: "") ?? UUID())
+
+    // Policy templates stored per-server
+    struct PolicyTemplate: Codable, Identifiable, Equatable {
+        var id: UUID = UUID()
+        var name: String
+        var policyName: String
+        var selectedPackageIds: [Int]
+        var categoryId: Int?
+        var departmentId: Int?
+        var scriptId: Int?
+        var selfServiceEnabled: Bool
+        var iconId: Int?
+    }
+
+    @State private var templates: [PolicyTemplate] = []
+    @State private var newTemplateName: String = ""
+    @State private var editingTemplate: PolicyTemplate? = nil
+    @State private var previewXML: String = ""
+    @State private var showPreviewSheet: Bool = false
     
     
         
     var body: some View {
         
         VStack(alignment: .leading) {
+            // Templates section
+            DisclosureGroup("Policy Templates") {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        TextField("Template name", text: $newTemplateName)
+                        Button("Save Template") {
+                            saveCurrentAsTemplate()
+                        }
+                        .disabled(newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        Spacer()
+                        Button("Export") { exportTemplatesToDownloads() }
+                        .buttonStyle(.bordered)
+                        Button("Import") { importTemplatesFromFile() }
+                        .buttonStyle(.bordered)
+                    }
+
+                    if templates.isEmpty {
+                        Text("No templates saved for this server").foregroundColor(.secondary)
+                    } else {
+                        ForEach(templates) { t in
+                            HStack {
+                                Text(t.name)
+                                Spacer()
+                                Button("Apply") { applyTemplate(t) }
+                                    .buttonStyle(.bordered)
+                                Button("Edit") { editingTemplate = t }
+                                    .buttonStyle(.bordered)
+                                Button("Delete") { deleteTemplate(t) }
+                                    .buttonStyle(.bordered)
+                                    .tint(.red)
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 6)
+            }
+
+            // Edit sheet for templates
+            .sheet(item: $editingTemplate) { tpl in
+                TemplateEditView(template: tpl, onSave: { updated in
+                    if let idx = templates.firstIndex(where: { $0.id == updated.id }) {
+                        templates[idx] = updated
+                    } else {
+                        templates.append(updated)
+                    }
+                    persistTemplates()
+                    editingTemplate = nil
+                }, onCancel: {
+                    editingTemplate = nil
+                })
+            }
+
             if networkController.packages.count > 0 {
                 packagesSection
             }
@@ -253,6 +324,24 @@ struct CreatePolicyView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                        Button(action: {
+                            // Build preview XML and show sheet
+                            let selectedPackageIdsToAdd = Set(packageMultiSelection)
+                            let categoryNameLocal = networkController.categories.first(where: { $0.jamfId == selectedCategoryId })?.name ?? ""
+                            let departmentNameLocal = networkController.departments.first(where: { $0.jamfId == selectedDepartmentId })?.name ?? ""
+                            let iconLocal = networkController.allIconsDetailed.first(where: { $0.id == selectedIconId })
+                            let iconIdString = String(iconLocal?.id ?? 0)
+                            let iconNameLocal = iconLocal?.name ?? ""
+                            let iconUrlLocal = iconLocal?.url ?? ""
+                            let scriptLocal = networkController.scripts.first(where: { $0.jamfId == selectedScriptId })
+                            let scriptNameLocal = scriptLocal?.name ?? ""
+                            let scriptIdString = String(scriptLocal?.jamfId ?? 0)
+
+                            previewXML = xmlController.buildPolicyXML(policyName: newPolicyName, policyID: newPolicyId, scriptName: scriptNameLocal, scriptID: scriptIdString, selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages, SelfServiceEnabled: enableSelfService, department: departmentNameLocal, category: categoryNameLocal, enabledStatus: enableDisable, iconId: iconIdString, iconName: iconNameLocal, iconUrl: iconUrlLocal)
+                            showPreviewSheet = true
+                        }) {
+                            Text("Preview XML")
+                        }
                         
                         Toggle(isOn: $createDepartmentIsChecked) {
                             Text("New Department")
@@ -272,7 +361,7 @@ struct CreatePolicyView: View {
                 DisclosureGroup("Import Policy from XML") {
                     
 //                    LazyVGrid(columns: layout.column, spacing: 5) {
-//                        
+//
 //                        VStack(alignment: .leading) {
                             
                             HStack(spacing: 8) {
@@ -529,6 +618,33 @@ struct CreatePolicyView: View {
         .onAppear {
             print("CreateView appeared - connecting")
             handleConnect()
+            loadTemplates()
+        }
+        .sheet(isPresented: $showPreviewSheet) {
+            VStack(alignment: .leading) {
+                Text("Preview XML").font(.headline).padding()
+                ScrollView { Text(previewXML).font(.system(.body, design: .monospaced)).padding() }
+                HStack {
+                    Spacer()
+                    Button("Export") {
+                        #if os(macOS)
+                        if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+                            let filename = "policy-preview-\(Int(Date().timeIntervalSince1970)).xml"
+                            let dest = downloads.appendingPathComponent(filename)
+                            do {
+                                try previewXML.data(using: .utf8)?.write(to: dest)
+                                NSWorkspace.shared.activateFileViewerSelecting([dest])
+                            } catch {
+                                print("Failed to write preview XML: \(error)")
+                            }
+                        }
+                        #endif
+                    }
+                    Button("Close") { showPreviewSheet = false }
+                }
+                .padding()
+            }
+            .frame(minWidth: 600, minHeight: 400)
         }
         .padding()
 
@@ -552,6 +668,127 @@ struct CreatePolicyView: View {
             print("getAllIconsDetailed has already run")
             print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
         }
+    }
+
+    
+
+    // MARK: - Template persistence (file-based under Application Support)
+    private var templatesDirectoryURL: URL? {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        return appSupport.appendingPathComponent("Man1fest0", isDirectory: true)
+    }
+
+    private func templatesFileURL() -> URL? {
+        guard let dir = templatesDirectoryURL else { return nil }
+        // encode server to filename-safe string
+        let encoded = Data(server.utf8).base64EncodedString()
+        return dir.appendingPathComponent("templates-\(encoded).json")
+    }
+
+    private func ensureTemplatesDirectory() {
+        guard let dir = templatesDirectoryURL else { return }
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+    }
+
+    private func loadTemplates() {
+        guard let file = templatesFileURL() else { return }
+        if FileManager.default.fileExists(atPath: file.path) {
+            if let data = try? Data(contentsOf: file), let decoded = try? JSONDecoder().decode([PolicyTemplate].self, from: data) {
+                templates = decoded
+            }
+        } else {
+            templates = []
+        }
+    }
+
+    private func persistTemplates() {
+        ensureTemplatesDirectory()
+        guard let file = templatesFileURL() else { return }
+        if let encoded = try? JSONEncoder().encode(templates) {
+            try? encoded.write(to: file, options: .atomic)
+        }
+    }
+
+    private func saveCurrentAsTemplate() {
+        let tpl = PolicyTemplate(name: newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines), policyName: newPolicyName, selectedPackageIds: Array(packageMultiSelection), categoryId: selectedCategoryId, departmentId: selectedDepartmentId, scriptId: selectedScriptId, selfServiceEnabled: enableSelfService, iconId: selectedIconId)
+        templates.append(tpl)
+        persistTemplates()
+        newTemplateName = ""
+    }
+
+    private func applyTemplate(_ t: PolicyTemplate) {
+        newPolicyName = t.policyName
+        packageMultiSelection = Set(t.selectedPackageIds)
+        selectedCategoryId = t.categoryId
+        selectedDepartmentId = t.departmentId
+        selectedScriptId = t.scriptId
+        enableSelfService = t.selfServiceEnabled
+        selectedIconId = t.iconId
+    }
+
+    private func deleteTemplate(_ t: PolicyTemplate) {
+        templates.removeAll { $0.id == t.id }
+        persistTemplates()
+    }
+
+    // Export all templates to Downloads for sharing/backups
+    private func exportTemplatesToDownloads() {
+        guard !templates.isEmpty else { return }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted]
+        guard let data = try? encoder.encode(templates) else { return }
+        #if os(macOS)
+        if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+            let filename = "policy-templates-\(Date().timeIntervalSince1970).json"
+            let dest = downloads.appendingPathComponent(filename)
+            do {
+                try data.write(to: dest)
+                NSWorkspace.shared.activateFileViewerSelecting([dest])
+            } catch {
+                print("Failed to export templates: \(error)")
+            }
+        }
+        #else
+        // On other platforms save to Documents
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let filename = "policy-templates-\(Date().timeIntervalSince1970).json"
+            let dest = docs.appendingPathComponent(filename)
+            try? data.write(to: dest)
+        }
+        #endif
+    }
+
+    // Import templates from a JSON file and merge (avoid duplicates by name)
+    private func importTemplatesFromFile() {
+        #if os(macOS)
+        if let url = importExportBrain.showOpenPanel() {
+            do {
+                let data = try Data(contentsOf: url)
+                if let decoded = try? JSONDecoder().decode([PolicyTemplate].self, from: data) {
+                    // merge: if same name exists, replace
+                    for tpl in decoded {
+                        if let idx = templates.firstIndex(where: { $0.name == tpl.name }) {
+                            templates[idx] = tpl
+                        } else {
+                            templates.append(tpl)
+                        }
+                    }
+                    persistTemplates()
+                } else if let single = try? JSONDecoder().decode(PolicyTemplate.self, from: data) {
+                    if let idx = templates.firstIndex(where: { $0.name == single.name }) {
+                        templates[idx] = single
+                    } else {
+                        templates.append(single)
+                    }
+                    persistTemplates()
+                }
+            } catch {
+                print("Failed to import templates: \(error)")
+            }
+        }
+        #endif
     }
 
     var searchResults: [Package] {
@@ -713,3 +950,75 @@ struct CreatePolicyView: View {
 }
 
 // End of file
+
+// Template edit view
+struct TemplateEditView: View {
+    @EnvironmentObject var networkController: NetBrain
+    @State var template: CreatePolicyView.PolicyTemplate
+    var onSave: (CreatePolicyView.PolicyTemplate) -> Void
+    var onCancel: () -> Void
+
+    @State private var selectedPackageIds: Set<Int> = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Edit Template").font(.headline)
+                Spacer()
+            }
+
+            TextField("Template name", text: $template.name)
+            TextField("Policy name", text: $template.policyName)
+
+            // Category picker
+            Picker("Category", selection: Binding(get: { template.categoryId ?? -1 }, set: { template.categoryId = $0 == -1 ? nil : $0 })) {
+                Text("None").tag(-1)
+                ForEach(networkController.categories, id: \.jamfId) { cat in
+                    Text(cat.name).tag(cat.jamfId)
+                }
+            }
+
+            // Department picker
+            Picker("Department", selection: Binding(get: { template.departmentId ?? -1 }, set: { template.departmentId = $0 == -1 ? nil : $0 })) {
+                Text("None").tag(-1)
+                ForEach(networkController.departments, id: \.jamfId) { dept in
+                    Text(dept.name).tag(dept.jamfId)
+                }
+            }
+
+            // Script picker
+            Picker("Script", selection: Binding(get: { template.scriptId ?? -1 }, set: { template.scriptId = $0 == -1 ? nil : $0 })) {
+                Text("None").tag(-1)
+                ForEach(networkController.scripts, id: \.jamfId) { s in
+                    Text(s.name).tag(s.jamfId)
+                }
+            }
+
+            Toggle("Self Service Enabled", isOn: $template.selfServiceEnabled)
+
+            // Packages multi-select
+            Text("Packages to include").font(.subheadline)
+            List(networkController.packages, id: \.jamfId) { pkg in
+                HStack {
+                    Text(pkg.name)
+                    Spacer()
+                    let bound = Binding(get: { template.selectedPackageIds.contains(pkg.jamfId) }, set: { val in
+                        if val { template.selectedPackageIds.append(pkg.jamfId) } else { template.selectedPackageIds.removeAll { $0 == pkg.jamfId } }
+                    })
+                    Toggle("", isOn: bound).labelsHidden()
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel") { onCancel() }
+                Button("Save") {
+                    onSave(template)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding()
+        .frame(minWidth: 600, minHeight: 500)
+    }
+}

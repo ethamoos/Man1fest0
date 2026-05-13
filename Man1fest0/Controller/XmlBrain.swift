@@ -407,20 +407,36 @@ class XmlBrain: ObservableObject {
                 request.httpMethod = "POST"
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                // Ensure Authorization header is present on the request itself
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 request.httpBody = xmldata
                 let config = URLSessionConfiguration.default
+                // keep existing config header as a fallback
                 let authString = "Bearer \(authToken)"
                 config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
-                    guard let httpResponse = response as? HTTPURLResponse,
-                          (200...299).contains(httpResponse.statusCode) else {
-                        print("Bad Credentials")
-                        print(response!)
+                    if let httpResponse = response as? HTTPURLResponse {
+                        let code = httpResponse.statusCode
+                        if (200...299).contains(code) {
+                            DispatchQueue.main.async {
+                                print("Success! Package pushed.")
+                            }
+                            return
+                        } else {
+                            // Provide detailed diagnostics for non-2xx responses (e.g. 409 conflict)
+                            print("createPolicyManual: server returned status code: \(code)")
+                            if let data = data, let body = String(data: data, encoding: .utf8) {
+                                print("Response body:\n\(body)")
+                            } else {
+                                print("No response body")
+                            }
+                            print("Response object: \(httpResponse)")
+                            return
+                        }
+                    } else {
+                        print("createPolicyManual: no HTTPURLResponse, error: \(String(describing: err))")
                         return
-                    }
-                    DispatchQueue.main.async {
-                        print("Success! Package pushed.")
                     }
                 }.resume()
                 
@@ -597,6 +613,74 @@ class XmlBrain: ObservableObject {
         }
     // ...existing code...
     
+
+    // Build policy XML as a string (useful for previewing without posting)
+    func buildPolicyXML(policyName: String, policyID: String = "0", scriptName: String = "", scriptID: String = "0", selectedPackageIds: Set<Int> = Set<Int>(), packages: [Package], SelfServiceEnabled: Bool = false, department: String = "", category: String = "", enabledStatus: Bool = true, iconId: String = "", iconName: String = "", iconUrl: String = "") -> String {
+        let xml = """
+        <policy>
+        </policy>
+        """
+
+        self.readXMLDataFromStringXmlBrain(xmlContent: xml)
+
+        // Create nodes
+        if self.aexmlDoc.root.children.isEmpty {
+            self.aexmlDoc.root.addChild(name: "general")
+            self.aexmlDoc.root.addChild(name: "package_configuration")
+            self.aexmlDoc.root.addChild(name: "scripts")
+            self.aexmlDoc.root.addChild(name: "self_service")
+            self.aexmlDoc.root.addChild(name: "scope")
+        }
+
+        let general = self.aexmlDoc.root["general"]
+        let scripts = self.aexmlDoc.root["scripts"]
+
+        general.addChild(name: "id", value: policyID)
+        general.addChild(name: "name", value: policyName)
+        general.addChild(name: "enabled", value: enabledStatus ? "true" : "false")
+
+        if !scriptName.isEmpty {
+            scripts.addChild(name: "script")
+            _ = scripts.addChild(name: "size", value: "1")
+        } else {
+            scripts.removeFromParent()
+        }
+
+        // Packages
+        if !selectedPackageIds.isEmpty {
+            if self.aexmlDoc.root["package_configuration"].children.isEmpty {
+                _ = self.aexmlDoc.root.addChild(name: "package_configuration")
+            }
+            if self.aexmlDoc.root["package_configuration"]["packages"].children.isEmpty {
+                _ = self.aexmlDoc.root["package_configuration"].addChild(name: "packages")
+            }
+            for pkgId in selectedPackageIds {
+                let pkgName = packages.first(where: { $0.jamfId == pkgId })?.name ?? ""
+                let pkg = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "package")
+                pkg.addChild(name: "id", value: String(pkgId))
+                pkg.addChild(name: "name", value: pkgName)
+                pkg.addChild(name: "action", value: "Install")
+                pkg.addChild(name: "fut", value: "false")
+                pkg.addChild(name: "feu", value: "false")
+                pkg.addChild(name: "update_autorun", value: "false")
+            }
+            _ = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "size", value: String(describing: selectedPackageIds.count))
+        }
+
+        // Self service
+        if SelfServiceEnabled {
+            let selfService = self.aexmlDoc.root["self_service"]
+            selfService.addChild(name: "use_for_self_service", value: String(describing: SelfServiceEnabled))
+            if !iconName.isEmpty {
+                let ssi = self.aexmlDoc.root["self_service"]["self_service_icon"]
+                ssi.addChild(name: "filename", value: iconName)
+                ssi.addChild(name: "id", value: iconId)
+                ssi.addChild(name: "uri", value: iconUrl)
+            }
+        }
+
+        return self.aexmlDoc.root.xml
+    }
     
     
     
@@ -1122,156 +1206,82 @@ class XmlBrain: ObservableObject {
     
     
     func addScriptToPolicy(xmlContent: AEXMLDocument, xmlContentString: String,authToken: String,   resourceType: ResourceType, server: String, policyId: String, scriptName: String, scriptId: String, scriptParameter4: String, scriptParameter5: String, scriptParameter6: String, scriptParameter7: String, scriptParameter8: String, scriptParameter9: String,scriptParameter10: String,scriptParameter11: String, priority: String, newPolicyFlag: Bool ) {
-
-        // Ensure we operate on the provided document rather than the global one
-        let doc = xmlContent
-
+        
+        //        if newPolicyFlag == false {
+        //            self.separationLine()
+        //            print("Is not new policy - converting xml to AEXML Document format")
+        //            self.readXMLDataFromStringXmlBrain(xmlContent: xmlContentString)
+        //        }
+        
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
         let url = URL(string: jamfURLQuery)!
         self.separationLine()
         print("Running addScriptToPolicy")
-        print("xmlContent is:\(doc.xml)")
+        print("xmlContent is:\(xmlContent.xml)")
         print("url is:\(url)")
         print("scriptName is:\(scriptName)")
         print("scriptId is:\(scriptId)")
-
-        // Ensure scripts parent node exists
-        if doc.root["scripts"].name.isEmpty {
-            _ = doc.root.addChild(name: "scripts")
+        let scripts = self.aexmlDoc.root["scripts"].addChild(name: "script")
+        //  print("Confirm current number of scripts as:\(numberOfScripts)")
+        //  self.aexmlDoc.root["scripts"].addChild(name: "size", value: String(describing:numberOfScripts))
+        scripts.addChild(name: "id", value: scriptId)
+        scripts.addChild(name: "name", value: scriptName)
+        scripts.addChild(name: "priority", value: "After")
+        
+        if scriptParameter4 != "" {
+            print("scriptParameter4 value supplied:\(scriptParameter4)")
+            scripts.addChild(name: "parameter4", value: scriptParameter4)
         }
-
-        let scriptsRoot = doc.root["scripts"]
-
-        // Create new script entry
-        let newScript = scriptsRoot.addChild(name: "script")
-        newScript.addChild(name: "id", value: scriptId)
-        newScript.addChild(name: "name", value: scriptName)
-        newScript.addChild(name: "priority", value: priority.isEmpty ? "After" : priority)
-
-        if scriptParameter4 != "" { newScript.addChild(name: "parameter4", value: scriptParameter4) }
-        if scriptParameter5 != "" { newScript.addChild(name: "parameter5", value: scriptParameter5) }
-        if scriptParameter6 != "" { newScript.addChild(name: "parameter6", value: scriptParameter6) }
-        if scriptParameter7 != "" { newScript.addChild(name: "parameter7", value: scriptParameter7) }
-        if scriptParameter8 != "" { newScript.addChild(name: "parameter8", value: scriptParameter8) }
-        if scriptParameter9 != "" { newScript.addChild(name: "parameter9", value: scriptParameter9) }
-        if scriptParameter10 != "" { newScript.addChild(name: "parameter10", value: scriptParameter10) }
-        if scriptParameter11 != "" { newScript.addChild(name: "parameter11", value: scriptParameter11) }
-
-        // Recompute size: count child elements named "script"
-        let currentScripts = scriptsRoot.children.filter { $0.name == "script" }
-        // Remove existing size element if present
-        if scriptsRoot["size"].name.isEmpty == false {
-            // remove previous size element
-            let _ = scriptsRoot["size"].removeFromParent()
+        if scriptParameter5 != "" {
+            print("scriptParameter5 value supplied:\(scriptParameter5)")
+            scripts.addChild(name: "parameter5", value: scriptParameter5)
         }
-        _ = scriptsRoot.addChild(name: "size", value: String(describing: currentScripts.count))
-
+        if scriptParameter6 != "" {
+            print("scriptParameter6 value supplied:\(scriptParameter6)")
+            scripts.addChild(name: "parameter6", value: scriptParameter6)
+        }
+        if scriptParameter7 != "" {
+            print("scriptParameter7 value supplied:\(scriptParameter7)")
+            scripts.addChild(name: "parameter7", value: scriptParameter7)
+        }
+        if scriptParameter8 != "" {
+            print("scriptParameter8 value supplied:\(scriptParameter8)")
+            scripts.addChild(name: "parameter8", value: scriptParameter8)
+        }
+        if scriptParameter9 != "" {
+            print("scriptParameter9 value supplied:\(scriptParameter9)")
+            scripts.addChild(name: "parameter9", value: scriptParameter9)
+        }
+        if scriptParameter10 != "" {
+            print("scriptParameter10 value supplied:\(scriptParameter10)")
+            scripts.addChild(name: "parameter10", value: scriptParameter10)
+        }
+        if scriptParameter11 != "" {
+            print("scriptParameter11 value supplied:\(scriptParameter11)")
+            scripts.addChild(name: "parameter11", value: scriptParameter11)
+        }
+        
+        //        packages.addChild(name: "action", value: "Install")
+        //        print("updatedContent is:\(self.aexmlDoc.root.xml)")
+        
+        let scriptCount = scripts.count
+        print("scriptCount is:\(scriptCount)")
+        let updatedScriptCount = scriptCount+1
+        print("updatedScriptCount is:\(updatedScriptCount)")
+        self.aexmlDoc.root["scripts"].addChild(name: "size", value: String(describing:updatedScriptCount))
+        
         if newPolicyFlag == true {
             self.separationLine()
             print("Is new policy - not posting package data to Jamf at this point")
         } else {
             self.separationLine()
             print("Is not new policy - posting updated package data to Jamf")
-            // Use a direct URLSession task so callers can perform completion handling if desired
-            var request = URLRequest(url: url)
-            request.httpMethod = "PUT"
-            request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-            request.setValue("application/xml", forHTTPHeaderField: "Accept")
-            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-            request.httpBody = doc.xml.data(using: .utf8)
-            let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    print("addScriptToPolicy request error: \(error)")
-                    return
-                }
-                if let http = response as? HTTPURLResponse {
-                    print("addScriptToPolicy response status: \(http.statusCode)")
-                }
-                if let d = data, let s = String(data: d, encoding: .utf8) {
-                    print("addScriptToPolicy response body:\n\(s)")
-                }
-            }
-            task.resume()
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent.xml, httpMethod: "PUT")
         }
-
+        
         print("addScriptToPolicy - updatedContent is:")
-        print(doc.xml)
-    }
-
-    // Batch add multiple scripts in one request
-    func addMultipleScriptsToPolicy(xmlContent: AEXMLDocument, xmlContentString: String, authToken: String, resourceType: ResourceType, server: String, policyId: String, scriptsToAdd: [ScriptClassic], scriptParameter4: String, scriptParameter5: String, scriptParameter6: String, scriptParameter7: String, scriptParameter8: String, scriptParameter9: String, scriptParameter10: String, scriptParameter11: String, priority: String, newPolicyFlag: Bool, completion: (() -> Void)? = nil) {
-
-        let doc = xmlContent
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        guard let url = URL(string: jamfURLQuery) else {
-            print("addMultipleScriptsToPolicy: invalid URL")
-            completion?()
-            return
-        }
-
-        self.separationLine()
-        print("Running addMultipleScriptsToPolicy for \(scriptsToAdd.count) scripts")
-
-        // Ensure scripts parent node exists
-        if doc.root["scripts"].name.isEmpty {
-            _ = doc.root.addChild(name: "scripts")
-        }
-        let scriptsRoot = doc.root["scripts"]
-
-        for script in scriptsToAdd {
-            let newScript = scriptsRoot.addChild(name: "script")
-            newScript.addChild(name: "id", value: String(describing: script.jamfId))
-            newScript.addChild(name: "name", value: script.name)
-            newScript.addChild(name: "priority", value: priority.isEmpty ? "After" : priority)
-            if scriptParameter4 != "" { newScript.addChild(name: "parameter4", value: scriptParameter4) }
-            if scriptParameter5 != "" { newScript.addChild(name: "parameter5", value: scriptParameter5) }
-            if scriptParameter6 != "" { newScript.addChild(name: "parameter6", value: scriptParameter6) }
-            if scriptParameter7 != "" { newScript.addChild(name: "parameter7", value: scriptParameter7) }
-            if scriptParameter8 != "" { newScript.addChild(name: "parameter8", value: scriptParameter8) }
-            if scriptParameter9 != "" { newScript.addChild(name: "parameter9", value: scriptParameter9) }
-            if scriptParameter10 != "" { newScript.addChild(name: "parameter10", value: scriptParameter10) }
-            if scriptParameter11 != "" { newScript.addChild(name: "parameter11", value: scriptParameter11) }
-        }
-
-        // Recompute size
-        let currentScripts = scriptsRoot.children.filter { $0.name == "script" }
-        if scriptsRoot["size"].name.isEmpty == false {
-            let _ = scriptsRoot["size"].removeFromParent()
-        }
-        _ = scriptsRoot.addChild(name: "size", value: String(describing: currentScripts.count))
-
-        if newPolicyFlag == true {
-            print("New policy flag - not posting to Jamf")
-            completion?()
-            return
-        }
-
-        // Build request and post
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/xml", forHTTPHeaderField: "Accept")
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        let bodyData = doc.xml.data(using: .utf8)
-        request.httpBody = bodyData
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("addMultipleScriptsToPolicy request error: \(error)")
-                DispatchQueue.main.async { completion?() }
-                return
-            }
-            if let http = response as? HTTPURLResponse {
-                print("addMultipleScriptsToPolicy response status: \(http.statusCode)")
-            }
-            if let d = data, let s = String(data: d, encoding: .utf8) {
-                print("addMultipleScriptsToPolicy response body:\n\(s)")
-            }
-            DispatchQueue.main.async {
-                completion?()
-            }
-        }
-        task.resume()
+        print(xmlContent.xml)
+        //        print(self.aexmlDoc.root.xml)
     }
     
     // ######################################################################################
@@ -2784,19 +2794,6 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
             print("currentScript is set as:\(currentScript.xml)")
         }
         
-        if parameter11.isEmpty != true {
-            let selectedScriptParameter11 = self.aexmlDoc.root["scripts"].children[Int(selectedScriptNumber)]["parameter11"]
-            self.separationLine()
-            print("Parameter11 is set - Remove selectedScriptParameter11")
-            let removeSelectedScriptParameter10: () = selectedScriptParameter11.removeFromParent()
-            self.separationLine()
-            print("currentScript is set as:\(currentScript.xml)")
-            print("Replace the attribute with parameter:\(parameter11)")
-            _ = selectedScript.addChild(name: "parameter11", value: parameter11)
-            self.separationLine()
-            print("currentScript is set as:\(currentScript.xml)")
-        }
-        
         if priority.isEmpty != true {
             self.separationLine()
             print("priority is set - Remove priority")
@@ -2947,40 +2944,34 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     
     
     func removeComputerFromGroup(server: String, authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
-
+        
         var xml: String
-
+        
         print("Running removeComputerFromGroup - updating via xml")
         print("computerID is set as:\(computerID)")
         print("computerName is set as:\(computerName)")
         print("groupID is set as:\(groupID)")
-
-        // Jamf accepts computer deletions by id; prefer id to avoid name/encoding issues
+        
         xml = """
                    <computer_group>
                        <computer_deletions>
                                <computer>
-                                   <id>\(computerID)</id>
+                               <name>﻿\(computerName)</name>
                                </computer>
                        </computer_deletions>
                    </computer_group>
                """
-
-        // Build URL consistently (avoid leading '/' in path components)
-        let jamfURLQuery = server + "/JSSResource/computergroups/id/\(groupID)"
-        if let url = URL(string: jamfURLQuery) {
-            print("Running removeComputerFromGroup function - url is set as:\(url)")
-            print("resourceType is set as:\(resourceType)")
-            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
-            // After a short delay, refresh the group's members so the UI reflects the change.
-            if let gid = Int(groupID) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    print("Refreshing group members for group id: \(gid)")
-                    self.getGroupMembersXML(server: server, groupId: gid, authToken: authToken)
-                }
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running removeComputerFromGroup function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                // print("xml is set as:\(xml)")
+                // self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xml, httpMethod: "PUT")
+//                appendStatus("Connecting to \(url)...")
             }
-        } else {
-            print("removeComputerFromGroup: invalid URL for server=\(server) and groupID=\(groupID)")
         }
     }
     
