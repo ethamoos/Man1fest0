@@ -1056,7 +1056,7 @@ print("DEBUG - status code is 200, response is:")
             }
         } else {
             self.separationLine()
-            print("No getPackagesAssignedToPolicy response yet")
+            print("No getPackagesAssignedToPolicy response yet")    
         }
     }
     
@@ -4175,8 +4175,8 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         xml = """
                    <computer_group>
                        <computers>
-                               <computer>
-                               <name>﻿\(computerName)</name>
+                                                      <computer>
+                                                      <name>\(computerName)</name>
                                </computer>
                        </computers>
                    </computer_group>
@@ -4210,7 +4210,7 @@ xml = """
                 <id>\(computerID)</id>
             </computer>
         </computer_additions>
-    </computer_group>'
+    </computer_group>
 """
         
         if URL(string: server) != nil {
