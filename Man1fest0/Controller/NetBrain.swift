@@ -4225,6 +4225,34 @@ xml = """
             }
         }
     }
+
+    // Remove a computer from a static computer group via XML
+    func updateGroupRemoveID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int) {
+        var xml: String
+        print("Running updateGroupRemoveID - updating via xml")
+        print("computerID is set as:\(computerID)")
+        print("groupID is set as:\(groupID)")
+
+        xml = """
+    <computer_group>
+        <computer_deletions>
+            <computer>
+                <id>\(computerID)</id>
+            </computer>
+        </computer_deletions>
+    </computer_group>
+"""
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running update group remove function - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
     
     
      func updateGroupNameID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int, computerName: String) {
@@ -4347,6 +4375,29 @@ xml = """
             let computerID = String(describing:eachItem)
             print("Current computerID is:\(computerID)")
             updateGroupID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
+            print("List is:\(computerProcessList)")
+            count = count + 1
+            print("Count is now:\(count)")
+        }
+        separationLine()
+        print("Finished - Set processingComplete to true")
+        self.processingComplete = true
+        print(String(describing: self.processingComplete))
+    }
+
+    func processRemoveComputersFromGroupAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String, resourceType: ResourceType, computerGroup: ComputerGroup) async {
+        separationLine()
+        print("Running: processRemoveComputersFromGroup")
+        print("Set is:\(selection)")
+        var count = 1
+
+        for eachItem in selection {
+            separationLine()
+            print("Count is currently:\(count)")
+            print("Items as Dictionary is \(eachItem)")
+            let computerID = String(describing:eachItem)
+            print("Current computerID is:\(computerID)")
+            updateGroupRemoveID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
             print("List is:\(computerProcessList)")
             count = count + 1
             print("Count is now:\(count)")

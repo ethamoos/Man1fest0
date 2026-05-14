@@ -7,6 +7,11 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 
 struct GroupDetailView: View {
     
@@ -34,33 +39,36 @@ struct GroupDetailView: View {
     @State private var importDebugLogging: Bool = false
     @State private var enableFuzzyMatching: Bool = true
     @State private var fuzzyThreshold: Double = 0.75
+    // UI state: show spinner while matching is in progress
+    @State private var isMatching: Bool = false
+    // last parsed tokens (from Run Match) so we can re-run/compute group-only removals
+    @State private var lastParsedTokens: [String] = []
+    // confirmation state for destructive removal
+    @State private var showRemoveConfirm: Bool = false
+    @State private var pendingRemoveSelection: Set<Int> = []
     
     var body: some View {
-        
-        VStack(alignment: .leading) {
+        ZStack(alignment: .center) {
+            VStack(alignment: .leading) {
             
-            if networkController.compGroupComputers.count >= 1 {
-//                VStack {
                 Text("Group Members for:\(group.name)").bold()
-//                Section(header: Text("Group Members for group:\(group.name)").bold()) {
-//                    
-//                    Spacer()dis
-                    
+
+                if networkController.compGroupComputers.count >= 1 {
                     List( networkController.compGroupComputers, id: \.self ) { computer in
                         Text(String(describing: computer.name))
                     }
-//                }
+                } else {
+                    Text("No members found")
+                }
 
-                // Open in Browser button (matches style used in ScriptsDetailView & ComputerExtAttDetailView)
+                // Open in Browser & Import CSV buttons (always available; Open in Browser may still point to empty group)
                 HStack {
-//                    Spacer()
                     Button(action: {
                         let trimmedServer = server.trimmingCharacters(in: .whitespacesAndNewlines)
                         var base = trimmedServer
                         if base.hasSuffix("/") { base.removeLast() }
                         // Construct Jamf UI URL for this group
-                        let uiURL =
-                        "\(base)/staticComputerGroups.html?id=\(group.id)&o=r"
+                        let uiURL = "\(base)/staticComputerGroups.html?id=\(group.id)&o=r"
                         print("Opening group UI URL: \(uiURL)")
                         layout.openURL(urlString: uiURL)
                     }) {
@@ -73,6 +81,7 @@ struct GroupDetailView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.green)
                     .padding(.top, 6)
+
                     Button(action: {
                         showingFileImporter = true
                     }) {
@@ -83,19 +92,41 @@ struct GroupDetailView: View {
                     }
                     .buttonStyle(.bordered)
                     .padding(.top, 6)
-//                    Spacer()
                 }
                 .padding()
                 .textSelection(.enabled)
-                
-            } else {
-                Text("No members found")
-            }
             
 //            Spacer()
         
                 
         }
+            // Matching overlay
+            if isMatching {
+                Color.black.opacity(0.25)
+                    .edgesIgnoringSafeArea(.all)
+                VStack(spacing: 12) {
+                    ProgressView("Matching…")
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .scaleEffect(1.2)
+                    if importDebugLogging {
+                        Text("Matching in progress — this may take a while...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(20)
+                .background(RoundedRectangle(cornerRadius: 8).fill(
+                    {
+#if os(macOS)
+                        return Color(NSColor.windowBackgroundColor)
+#else
+                        return Color(UIColor.systemBackground)
+#endif
+                    }()
+                ))
+                .shadow(radius: 8)
+            }
+        } // end ZStack
         .onAppear {
             Task {
                 await runGetGroupMembers(selection: group, authToken: networkController.authToken)
@@ -283,6 +314,25 @@ struct GroupDetailView: View {
                 HStack {
                     Spacer()
                     Button("Cancel") { showingImportReview = false }
+                    Button("Remove Imported (match group)") {
+                        // Compute selection against current group members and confirm
+                        let sel = computeSelectionAgainstGroup(tokens: lastParsedTokens)
+                        if sel.isEmpty {
+                            if importDebugLogging { print("No group members matched for imported tokens") }
+                        } else {
+                            pendingRemoveSelection = sel
+                            showRemoveConfirm = true
+                        }
+                    }
+                    .disabled(lastParsedTokens.isEmpty)
+                    Button("Remove Selected from Group") {
+                        showingImportReview = false
+                        Task {
+                            await networkController.processRemoveComputersFromGroupAsync(selection: Set(importSelection), server: server, authToken: networkController.authToken, resourceType: .computerGroup, computerGroup: group)
+                            await runGetGroupMembers(selection: group, authToken: networkController.authToken)
+                        }
+                    }
+                    .disabled(importSelection.isEmpty)
                     Button("Add Selected to Group") {
                         showingImportReview = false
                         Task {
@@ -296,6 +346,15 @@ struct GroupDetailView: View {
                 .padding()
             }
             .frame(minWidth: 400, minHeight: 300)
+            .alert(isPresented: $showRemoveConfirm) {
+                Alert(title: Text("Confirm removal"), message: Text("Remove \(pendingRemoveSelection.count) devices from group?"), primaryButton: .destructive(Text("Remove")) {
+                    Task {
+                        showingImportReview = false
+                        await networkController.processRemoveComputersFromGroupAsync(selection: pendingRemoveSelection, server: server, authToken: networkController.authToken, resourceType: .computerGroup, computerGroup: group)
+                        await runGetGroupMembers(selection: group, authToken: networkController.authToken)
+                    }
+                }, secondaryButton: .cancel())
+            }
         }
         .padding()
         .textSelection(.enabled)
@@ -380,6 +439,9 @@ struct GroupDetailView: View {
 
     @MainActor
     private func parseCSVAndMatch(content: String) {
+
+        // show spinner while matching
+        self.isMatching = true
 
         var matches: [ComputerBasicRecord] = []
         var unmatched: [String] = []
@@ -509,6 +571,8 @@ struct GroupDetailView: View {
             self.importSelection = sel
             if self.importDebugLogging { print("Updating UI: selectedIDs=\(sel.count) -> \(sel)") }
             self.showingImportReview = true
+            // matching finished
+            self.isMatching = false
         }
     }
 
@@ -600,9 +664,71 @@ struct GroupDetailView: View {
         return nil
     }
 
+    // Compute a Set of matching IDs by matching tokens only against the group's current members
+    private func computeSelectionAgainstGroup(tokens: [String]) -> Set<Int> {
+        var sel = Set<Int>()
+        let groupList = networkController.compGroupComputers
+        if groupList.isEmpty { return sel }
+
+        // Build quick lookup maps for exact matches
+        var nameMap: [String: Int] = [:]
+        var nameNormMap: [String: Int] = [:]
+        var serialMap: [String: Int] = [:]
+
+        for comp in groupList {
+            let name = comp.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let nameLower = name.lowercased()
+            nameMap[nameLower] = comp.id
+            nameNormMap[normalizeToken(name)] = comp.id
+            let serial = comp.serialNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+            serialMap[serial.lowercased()] = comp.id
+            serialMap[normalizeToken(serial)] = comp.id
+        }
+
+        for raw in tokens {
+            let token = sanitizeToken(raw)
+            if token.isEmpty { continue }
+            let tokenLower = token.lowercased()
+            let tokenNorm = normalizeToken(token)
+
+            // exact serial
+            if let id = serialMap[tokenLower] ?? serialMap[tokenNorm] {
+                sel.insert(id); continue
+            }
+
+            // exact name
+            if let id = nameMap[tokenLower] ?? nameNormMap[tokenNorm] {
+                sel.insert(id); continue
+            }
+
+            // partial name match
+            for comp in groupList {
+                let nameLower = comp.name.lowercased()
+                if nameLower.contains(tokenLower) || tokenLower.contains(nameLower) {
+                    sel.insert(comp.id); break
+                }
+            }
+        }
+
+        return sel
+    }
+
     // Match an array of identifier tokens (serials/names) against inventory
     @MainActor
     private func parseTokensAndMatch(tokens: [String]) {
+        // store tokens so we can reuse (e.g., group-only removal)
+        self.lastParsedTokens = tokens
+        // show spinner while matching
+        self.isMatching = true
+        // When debugging, print token contents + scalar values to help detect invisible chars
+        if importDebugLogging {
+            print("[parseTokensAndMatch] Raw incoming tokens: \(tokens)")
+            for t in tokens {
+                let s = sanitizeToken(t)
+                let scalars = s.unicodeScalars.map { String(format: "%04X", $0.value) }.joined(separator: " ")
+                print("  token raw='\(t)' -> sanitized='\(s)' scalars=[\(scalars)]")
+            }
+        }
         var matches: [ComputerBasicRecord] = []
         var unmatched: [String] = []
         var selectedIDs: Set<Int> = []
@@ -624,6 +750,10 @@ struct GroupDetailView: View {
                     }
                 } catch {
                     print("Failed to fetch computers before matching: \(error)")
+                    DispatchQueue.main.async {
+                        // stop spinner on failure
+                        self.isMatching = false
+                    }
                 }
             }
             return
@@ -794,6 +924,8 @@ struct GroupDetailView: View {
             self.importSelection = sel
             if self.importDebugLogging { print("Updating UI: selectedIDs=\(sel.count) -> \(sel)") }
             self.showingImportReview = true
+            // matching finished
+            self.isMatching = false
         }
     }
 
