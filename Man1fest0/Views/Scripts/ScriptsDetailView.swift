@@ -40,7 +40,8 @@ struct ScriptsDetailView: View {
     var body: some View {
         let currentScript = networkController.scriptDetailed
 
-        VStack(alignment: .leading, spacing: 12) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
             // Header / Top bar
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -418,6 +419,7 @@ struct ScriptsDetailView: View {
             .textSelection(.enabled)
 
             Spacer()
+            }
         }
         .padding()
         .onAppear() {
