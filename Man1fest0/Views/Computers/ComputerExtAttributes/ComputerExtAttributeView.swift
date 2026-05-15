@@ -28,7 +28,21 @@ struct ComputerExtAttributeView: View {
             NavigationView {
                     
                 VStack {
-                    
+
+                    // Search / filter field
+                    HStack(spacing: 8) {
+                        TextField("Filter", text: $searchText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(minWidth: 200)
+
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
+                        .help("Clear filter")
+                    }
+                    .padding([.leading, .trailing, .top])
+
 //                    if #available(macOS 13.0, *) {
 #if os(macOS)
                         List(searchResults, id: \.self, selection: $selection) { computerEA in
@@ -90,11 +104,13 @@ struct ComputerExtAttributeView: View {
     
     
     var searchResults: [ComputerExtensionAttribute] {
-        if searchText.isEmpty {
-            return extensionAttributeController.allComputerExtensionAttributesDict
-        } else {
-            return extensionAttributeController.allComputerExtensionAttributesDict
+        let all = extensionAttributeController.allComputerExtensionAttributesDict
+        guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return all
         }
+
+        let query = searchText.lowercased()
+        return all.filter { $0.name.lowercased().contains(query) }
     }
 }
 

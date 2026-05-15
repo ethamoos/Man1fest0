@@ -48,6 +48,21 @@ struct ScriptDetailTableView: View {
     @State private var sortOrderScript = [KeyPathComparator(\ScriptClassic.name, order: .reverse)]
     @State var searchText = ""
     @State private var showingDeleteConfirmation = false
+    // Find & Replace state
+    @State private var findText: String = ""
+    @State private var replaceText: String = ""
+    @State private var replacementResultMessage: String = ""
+    @State private var caseInsensitive: Bool = true
+    @State private var useRegex: Bool = false
+    @State private var wholeWord: Bool = false
+    @State private var showReplaceConfirmation: Bool = false
+    @State private var pendingReplaceAll: Bool = true
+    // Inject state (insert lines after a matched line)
+    @State private var injectMatchText: String = ""
+    @State private var injectInsertText: String = ""
+    @State private var injectResultMessage: String = ""
+    @State private var showInjectConfirmation: Bool = false
+    @State private var pendingInjectAll: Bool = true
     
     //  ########################################################################################
     //  ########################################################################################
@@ -155,6 +170,116 @@ struct ScriptDetailTableView: View {
                     }
                 }
                 .frame(minHeight: 80)
+            }
+
+            DisclosureGroup("Find/Replace/Inject") {
+                // Find & Replace
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Find & Replace").fontWeight(.semibold)
+                    HStack {
+                        TextField("Find", text: $findText)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("Replace", text: $replaceText)
+                            .textFieldStyle(.roundedBorder)
+                    }
+
+                    HStack(spacing: 12) {
+                        Toggle("Case-insensitive", isOn: $caseInsensitive)
+                        Toggle("Use Regex", isOn: $useRegex)
+                        Toggle("Whole word", isOn: $wholeWord)
+                    }
+
+                    HStack(spacing: 12) {
+                        Button("Replace All in Selected") {
+                            if selection.count > 1 {
+                                pendingReplaceAll = true
+                                showReplaceConfirmation = true
+                            } else {
+                                Task { await replaceInSelectedScripts(replaceAll: true) }
+                            }
+                        }
+                        .disabled(selection.isEmpty || findText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .buttonStyle(.bordered)
+
+                        Button("Replace First in Selected") {
+                            if selection.count > 1 {
+                                pendingReplaceAll = false
+                                showReplaceConfirmation = true
+                            } else {
+                                Task { await replaceInSelectedScripts(replaceAll: false) }
+                            }
+                        }
+                        .disabled(selection.isEmpty || findText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .buttonStyle(.bordered)
+                    }
+
+                    if !replacementResultMessage.isEmpty {
+                        Text(replacementResultMessage).font(.caption).foregroundColor(.secondary)
+                    }
+                }
+
+                Divider()
+
+                // Inject controls
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Inject").fontWeight(.semibold)
+                    HStack {
+                        TextField("Find line (match)", text: $injectMatchText)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("Line to insert", text: $injectInsertText)
+                            .textFieldStyle(.roundedBorder)
+                    }
+
+                    HStack(spacing: 12) {
+                        Button("Insert After First") {
+                            if selection.count > 1 {
+                                pendingInjectAll = false
+                                showInjectConfirmation = true
+                            } else {
+                                Task { await injectAfterFirstAcrossSelected() }
+                            }
+                        }
+                        .disabled(selection.isEmpty || injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .buttonStyle(.bordered)
+
+                        Button("Insert After All") {
+                            if selection.count > 1 {
+                                pendingInjectAll = true
+                                showInjectConfirmation = true
+                            } else {
+                                Task { await injectAfterAllAcrossSelected() }
+                            }
+                        }
+                        .disabled(selection.isEmpty || injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .buttonStyle(.bordered)
+                    }
+
+                    if !injectResultMessage.isEmpty {
+                        Text(injectResultMessage).font(.caption).foregroundColor(.secondary)
+                    }
+                }
+            }
+            // confirmation for multi-script replace
+            .alert("Confirm Replace", isPresented: $showReplaceConfirmation) {
+                Button("Proceed", role: .destructive) {
+                    Task { await replaceInSelectedScripts(replaceAll: pendingReplaceAll) }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You're about to perform replacements across multiple scripts. This action cannot be undone. Proceed?")
+            }
+            // confirmation for multi-script inject
+            .alert("Confirm Inject", isPresented: $showInjectConfirmation) {
+                Button("Proceed", role: .destructive) {
+                    if pendingInjectAll {
+                        Task { await injectAfterAllAcrossSelected() }
+                    } else {
+                        Task { await injectAfterFirstAcrossSelected() }
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You're about to perform injections across multiple scripts. This action cannot be undone. Proceed?")
             }
         }
         .padding()
@@ -276,6 +401,196 @@ struct ScriptDetailTableView: View {
             // feedback
             progress.showProgressView = false
         }
+    }
+
+    // Perform find & replace across selected scripts
+    private func replaceInSelectedScripts(replaceAll: Bool) async {
+        guard !selection.isEmpty else { return }
+        let match = findText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !match.isEmpty else { return }
+
+        replacementResultMessage = "Working..."
+        progress.showProgressView = true
+        progress.waitForABit()
+
+        var totalReplacements = 0
+
+        for script in selectedScripts {
+            do {
+                try await networkController.getDetailedScript(server: server, scriptID: script.jamfId, authToken: networkController.authToken)
+                var contents = networkController.scriptDetailed.scriptContents
+
+                var changed = false
+
+                if useRegex || wholeWord {
+                    // Build regex pattern
+                    var pattern = match
+                    if !useRegex {
+                        pattern = NSRegularExpression.escapedPattern(for: match)
+                    }
+                    if wholeWord {
+                        pattern = "\\b" + pattern + "\\b"
+                    }
+                    let options: NSRegularExpression.Options = caseInsensitive ? [.caseInsensitive] : []
+                    let re = try NSRegularExpression(pattern: pattern, options: options)
+
+                    if replaceAll {
+                        let range = NSRange(contents.startIndex..., in: contents)
+                        let matches = re.numberOfMatches(in: contents, options: [], range: range)
+                        if matches > 0 {
+                            let new = re.stringByReplacingMatches(in: contents, options: [], range: range, withTemplate: replaceText)
+                            contents = new
+                            totalReplacements += matches
+                            changed = true
+                        }
+                    } else {
+                        if let m = re.firstMatch(in: contents, options: [], range: NSRange(contents.startIndex..., in: contents)) {
+                            if let swiftRange = Range(m.range, in: contents) {
+                                contents.replaceSubrange(swiftRange, with: replaceText)
+                                totalReplacements += 1
+                                changed = true
+                            }
+                        }
+                    }
+                } else {
+                    // Simple string replacement with optional case-insensitive behavior
+                    if caseInsensitive {
+                        let lowerContents = contents.lowercased()
+                        let lowerMatch = match.lowercased()
+                        if replaceAll {
+                            let occurrences = lowerContents.components(separatedBy: lowerMatch).count - 1
+                            if occurrences > 0 {
+                                contents = contents.replacingOccurrences(of: match, with: replaceText, options: .caseInsensitive, range: nil)
+                                totalReplacements += occurrences
+                                changed = true
+                            }
+                        } else {
+                            if let range = lowerContents.range(of: lowerMatch) {
+                                let start = lowerContents.distance(from: lowerContents.startIndex, to: range.lowerBound)
+                                let length = lowerContents.distance(from: range.lowerBound, to: range.upperBound)
+                                let nsStart = contents.index(contents.startIndex, offsetBy: start)
+                                let nsEnd = contents.index(nsStart, offsetBy: length)
+                                let nsRange = nsStart..<nsEnd
+                                contents.replaceSubrange(nsRange, with: replaceText)
+                                totalReplacements += 1
+                                changed = true
+                            }
+                        }
+                    } else {
+                        if replaceAll {
+                            let occurrences = contents.components(separatedBy: match).count - 1
+                            if occurrences > 0 {
+                                contents = contents.replacingOccurrences(of: match, with: replaceText)
+                                totalReplacements += occurrences
+                                changed = true
+                            }
+                        } else {
+                            if let range = contents.range(of: match) {
+                                contents.replaceSubrange(range, with: replaceText)
+                                totalReplacements += 1
+                                changed = true
+                            }
+                        }
+                    }
+                }
+
+                if changed {
+                    // Save updated script back to server
+                    try await networkController.updateScript(server: server, scriptName: networkController.scriptDetailed.name, scriptContent: contents, scriptId: String(script.jamfId), authToken: networkController.authToken, category: networkController.scriptDetailed.categoryName, filename: networkController.scriptDetailed.name, info: networkController.scriptDetailed.info, notes: networkController.scriptDetailed.notes)
+                }
+            } catch {
+                print("Find/Replace failed for script \(script.jamfId): \(error)")
+            }
+        }
+
+        progress.showProgressView = false
+        replacementResultMessage = "Replacements made: \(totalReplacements)"
+        // clear message after a few seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            replacementResultMessage = ""
+        }
+    }
+
+    // Inject: insert a line after the first matching line in each selected script
+    private func injectAfterFirstAcrossSelected() async {
+        guard !selection.isEmpty else { return }
+        let match = injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !match.isEmpty else { return }
+
+        injectResultMessage = "Working..."
+        progress.showProgressView = true
+        progress.waitForABit()
+
+        var totalInserts = 0
+
+        for script in selectedScripts {
+            do {
+                try await networkController.getDetailedScript(server: server, scriptID: script.jamfId, authToken: networkController.authToken)
+                var contents = networkController.scriptDetailed.scriptContents
+
+                let matchLower = match.lowercased()
+                var lines = contents.components(separatedBy: "\n")
+                if let idx = lines.firstIndex(where: { $0.lowercased().contains(matchLower) }) {
+                    // insert after idx
+                    let insertion = injectInsertText
+                    lines.insert(insertion, at: idx + 1)
+                    let newContents = lines.joined(separator: "\n")
+                    try await networkController.updateScript(server: server, scriptName: networkController.scriptDetailed.name, scriptContent: newContents, scriptId: String(script.jamfId), authToken: networkController.authToken, category: networkController.scriptDetailed.categoryName, filename: networkController.scriptDetailed.name, info: networkController.scriptDetailed.info, notes: networkController.scriptDetailed.notes)
+                    totalInserts += 1
+                }
+            } catch {
+                print("Inject failed for script \(script.jamfId): \(error)")
+            }
+        }
+
+        progress.showProgressView = false
+        injectResultMessage = "Inserted in: \(totalInserts) scripts"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { injectResultMessage = "" }
+    }
+
+    // Inject: insert a line after all matching lines in each selected script
+    private func injectAfterAllAcrossSelected() async {
+        guard !selection.isEmpty else { return }
+        let match = injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !match.isEmpty else { return }
+
+        injectResultMessage = "Working..."
+        progress.showProgressView = true
+        progress.waitForABit()
+
+        var totalInserts = 0
+
+        for script in selectedScripts {
+            do {
+                try await networkController.getDetailedScript(server: server, scriptID: script.jamfId, authToken: networkController.authToken)
+                var contents = networkController.scriptDetailed.scriptContents
+
+                let matchLower = match.lowercased()
+                var lines = contents.components(separatedBy: "\n")
+                // find all indices where line contains match
+                var indices: [Int] = []
+                for (i, line) in lines.enumerated() {
+                    if line.lowercased().contains(matchLower) {
+                        indices.append(i)
+                    }
+                }
+                if !indices.isEmpty {
+                    // insert after each index, iterate from end to preserve indexes
+                    for idx in indices.reversed() {
+                        lines.insert(injectInsertText, at: idx + 1)
+                        totalInserts += 1
+                    }
+                    let newContents = lines.joined(separator: "\n")
+                    try await networkController.updateScript(server: server, scriptName: networkController.scriptDetailed.name, scriptContent: newContents, scriptId: String(script.jamfId), authToken: networkController.authToken, category: networkController.scriptDetailed.categoryName, filename: networkController.scriptDetailed.name, info: networkController.scriptDetailed.info, notes: networkController.scriptDetailed.notes)
+                }
+            } catch {
+                print("Inject failed for script \(script.jamfId): \(error)")
+            }
+        }
+
+        progress.showProgressView = false
+        injectResultMessage = "Inserted lines: \(totalInserts)"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { injectResultMessage = "" }
     }
 
     // MARK: - Helpers (filename sanitization & saving) - adapted from ScriptsDetailView

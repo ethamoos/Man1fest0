@@ -85,17 +85,13 @@ struct PolicyView: View {
                                         try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: selection.jamfId ?? 0))
                                     }
                                     print("Refreshing all policies")
-                                    
                                     Task { try await networkController.getAllPolicies(server: server) }
-                                    
-                                    
                                     print("Refresh getPolicyAsXML")
                                     xmlController.getPolicyAsXML(server: server, policyID: Int(selection.jamfId ?? 0), authToken: networkController.authToken)
                                 } else {
-                                    
-                                    print("Refresh policyView - get all policies")
+                                    print("Policy View - No Policy is selected")
+                                    print("Refreshing all policies")
                                     Task { try await networkController.getAllPolicies(server: server) }
-
                                 }
                             }) {
                                 HStack(spacing: 10) {

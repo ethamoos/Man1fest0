@@ -71,7 +71,8 @@ struct PolicyScriptsTabView: View {
     @State private var selection: PolicyScripts? = nil
     @State var selectedScript: ScriptClassic = ScriptClassic(name: "", jamfId: 0)
     @State var listSelection: PolicyScripts = PolicyScripts(id:(UUID(uuidString: "") ?? UUID()) , jamfId: 0, name: "")
-    @State var pickerSelectedScript = 0
+    @State var pickerSelectedScript = 1
+
     @State private var selectedNumber = 0
 
     //  ########################################################################################
@@ -105,12 +106,15 @@ struct PolicyScriptsTabView: View {
                     //              List scripts
                     // ################################################################################
                     
-                    if (localPolicyDetailed ?? networkController.policyDetailed)?.scripts?.count ?? 0 > 0 {
-                        Text("Assigned Scripts:\((localPolicyDetailed ?? networkController.policyDetailed)?.scripts?.count ?? 0)").bold()
+                    // Compute a local, simple value for scripts to avoid a very complex
+                    // inline expression that the Swift compiler struggles to type-check.
+                    let scripts: [PolicyScripts] = (localPolicyDetailed ?? networkController.policyDetailed)?.scripts ?? []
+
+                    if scripts.count > 0 {
+                        Text("Assigned Scripts:\(scripts.count)").bold()
 #if os(macOS)
                         
-                        
-                        List((localPolicyDetailed ?? networkController.policyDetailed)?.scripts ?? [PolicyScripts](), id: \.self, selection: $listSelection) { script in
+                        List(scripts, id: \.self, selection: $listSelection) { script in
                             NavigationLink(destination: PolicyScriptsTabViewDetail(script: script, policyID: policyID, server: server)) {
                                 HStack {
                                     
@@ -149,6 +153,11 @@ struct PolicyScriptsTabView: View {
                                         Image(systemName: "10.circle").bold()
                                             .foregroundColor(.red)
                                         Text(script.parameter10 ?? "" )
+                                    }
+                                    if script.parameter11 != "" {
+                                        Image(systemName: "11.circle").bold()
+                                            .foregroundColor(.red)
+                                        Text(script.parameter11 ?? "" )
                                     }
                                     if script.priority != "" {
                                         Text(script.priority ?? "" )
@@ -189,7 +198,7 @@ struct PolicyScriptsTabView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             
-                            xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: scriptParameter4, parameter5: scriptParameter5, parameter6: scriptParameter6, parameter7: scriptParameter7, parameter8: scriptParameter8, parameter9: scriptParameter9, parameter10: scriptParameter10, priority: priority )
+                            xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: scriptParameter4, parameter5: scriptParameter5, parameter6: scriptParameter6, parameter7: scriptParameter7, parameter8: scriptParameter8, parameter9: scriptParameter9, parameter10: scriptParameter10, parameter11: scriptParameter11, priority: priority )
                             
                             // Refresh detailed policy to reflect script parameter changes
                             Task {
@@ -231,24 +240,25 @@ struct PolicyScriptsTabView: View {
                     
                     DisclosureGroup("More Parameters") {
                         
+//                        HStack {
+//                            LazyVGrid(columns: layout.columns) {
+//                                TextField("parameter5", text: $scriptParameter5)
+//                                TextField("parameter6", text: $scriptParameter6)
+//                            }
+//                        }
+                        
                         HStack {
                             LazyVGrid(columns: layout.columns) {
+                                TextField("parameter4", text: $scriptParameter4)
                                 TextField("parameter5", text: $scriptParameter5)
                                 TextField("parameter6", text: $scriptParameter6)
                             }
                         }
-                        
-                            HStack {
-                                LazyVGrid(columns: layout.columns) {
-                                    TextField("parameter4", text: $scriptParameter4)
-                                    TextField("parameter5", text: $scriptParameter5)
-                                    TextField("parameter6", text: $scriptParameter6)
-                                }
-                            }
                         HStack {
                             LazyVGrid(columns: layout.columns) {
                                 TextField("parameter9", text: $scriptParameter9)
                                 TextField("parameter10", text: $scriptParameter10)
+                                TextField("parameter11", text: $scriptParameter11)
                             }
                         }
                         
@@ -460,6 +470,7 @@ struct PolicyScriptsTabViewDetail: View {
     @State private var parameter8: String = ""
     @State private var parameter9: String = ""
     @State private var parameter10: String = ""
+    @State private var parameter11: String = ""
     @State private var priority: String = ""
     @State private var selectedScriptNumber: Int = 0
 
@@ -476,7 +487,7 @@ struct PolicyScriptsTabViewDetail: View {
                     HStack { Text("Parameter 8:") ; TextField("parameter8", text: $parameter8) }
                     HStack { Text("Parameter 9:") ; TextField("parameter9", text: $parameter9) }
                     HStack { Text("Parameter 10:") ; TextField("parameter10", text: $parameter10) }
-
+                    HStack { Text("Parameter 11:") ; TextField("parameter11", text: $parameter11) }
                     HStack {
                         Text("Priority:")
                         TextField("Before/After", text: $priority).frame(minWidth: 120)
@@ -495,7 +506,7 @@ struct PolicyScriptsTabViewDetail: View {
                         progress.showProgress()
                         progress.waitForABit()
 
-                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: selectedScriptNumber, parameter4: parameter4, parameter5: parameter5, parameter6: parameter6, parameter7: parameter7, parameter8: parameter8, parameter9: parameter9, parameter10: parameter10, priority: priority)
+                        xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: selectedScriptNumber, parameter4: parameter4, parameter5: parameter5, parameter6: parameter6, parameter7: parameter7, parameter8: parameter8, parameter9: parameter9, parameter10: parameter10, parameter11: parameter11, priority: priority)
 
                         Task {
                             do {

@@ -20,6 +20,12 @@ struct ScriptsDetailView: View {
     @State private var showSavedToast: Bool = false
     @State private var showingDeleteConfirmation = false
     @State private var showDeletedToast: Bool = false
+    @State private var findText: String = ""
+    @State private var replaceText: String = ""
+    @State private var matchRanges: [Range<String.Index>] = []
+    @State private var currentMatchIndex: Int? = nil
+    @State private var injectMatchText: String = ""
+    @State private var injectInsertText: String = ""
 
     // Environment
     @EnvironmentObject var progress: Progress
@@ -194,43 +200,51 @@ struct ScriptsDetailView: View {
 
             // Notes / Info
             if currentScript.notes != "" || isEditing {
-                Section(header: Text("Notes").bold()) {
-                    if isEditing {
-                        TextEditor(text: $notes)
-                            .frame(minHeight: 60)
-                            .border(Color.gray)
-                    } else {
-                        Text(currentScript.notes)
+                DisclosureGroup("Groups") {
+                    Section(header: Text("Notes").bold()) {
+                        if isEditing {
+                            TextEditor(text: $notes)
+                                .frame(minHeight: 60)
+                                .border(Color.gray)
+                        } else {
+                            Text(currentScript.notes)
+                        }
                     }
                 }
             }
 
             if currentScript.info != "" || isEditing {
-                Section(header: Text("Info").bold()) {
-                    if isEditing {
-                        TextEditor(text: $info)
-                            .frame(minHeight: 60)
-                            .border(Color.gray)
-                    } else {
-                        Text(currentScript.info)
-                    }
+                DisclosureGroup("Info") {
+//                    Section(header: Text("Info").bold()) {
+                        if isEditing {
+                            TextEditor(text: $info)
+                                .frame(minHeight: 60)
+                                .border(Color.gray)
+                        } else {
+                            Text(currentScript.info)
+                        }
+//                    }
                 }
             }
 
             // Category and Filename fields
             if isEditing {
-                Section(header: Text("Category").bold()) {
-                    TextField(currentScript.categoryName, text: $category)
-                        .padding(4)
-                        .border(Color.gray)
+                DisclosureGroup("Category") {
+//                    Section(header: Text("Category").bold()) {
+                        TextField(currentScript.categoryName, text: $category)
+                            .padding(4)
+                            .border(Color.gray)
+//                    }
                 }
-
-                Section(header: Text("Filename").bold()) {
-                    TextField("Filename", text: $filename)
-                        .padding(4)
-                        .border(Color.gray)
+                DisclosureGroup("Filename") {
+                    
+//                    Section(header: Text("Filename").bold()) {
+                        TextField("Filename", text: $filename)
+                            .padding(4)
+                            .border(Color.gray)
+//                    }
                 }
-            }
+                }
 
             Divider()
 
@@ -261,6 +275,84 @@ struct ScriptsDetailView: View {
                     .border(Color.gray.opacity(0.3))
                     .frame(minHeight: 240)
                 } else {
+                    // Find & Replace controls
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            TextField("Find", text: $findText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(minWidth: 200)
+
+                            TextField("Replace", text: $replaceText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(minWidth: 200)
+
+                            Button("Find Next") {
+                                updateMatches()
+                                goToNextMatch()
+                            }
+                            .buttonStyle(.bordered)
+
+                            Button("Replace") {
+                                replaceCurrent()
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(findText.isEmpty || matchRanges.isEmpty)
+
+                            Button("Replace All") {
+                                replaceAll()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(findText.isEmpty)
+                        }
+
+                        HStack(spacing: 12) {
+                            if let current = currentMatchIndex {
+                                Text("Match \(current + 1) of \(matchRanges.count)")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text("Matches: \(matchRanges.count)")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            if let current = currentMatchIndex, !matchRanges.isEmpty {
+                                // show a small preview of the current match (context +/- 20 chars)
+                                let range = matchRanges[current]
+                                let preview = previewForRange(range)
+                                Text("…\(preview)…")
+                                    .font(.footnote)
+                                    .lineLimit(1)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        // Inject after controls
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                TextField("Find line (match)", text: $injectMatchText)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(minWidth: 200)
+
+                                TextField("Line to insert", text: $injectInsertText)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(minWidth: 200)
+
+                                Button("Inject After") {
+                                    injectAfterFirst()
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                                Button("Inject After All") {
+                                    injectAfterAll()
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            }
+                        }
+                    }
+                    .padding([.horizontal, .bottom], 6)
+
                     TextEditor(text: $bodyText)
                         .font(.system(.body, design: .monospaced))
                         .disableAutocorrection(true)
@@ -388,6 +480,100 @@ struct ScriptsDetailView: View {
         }
     #endif
     }
+
+    // MARK: - Find & Replace Helpers
+    private func updateMatches() {
+        let query = findText
+        matchRanges.removeAll()
+        currentMatchIndex = nil
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        var searchStart = bodyText.startIndex
+        while searchStart < bodyText.endIndex,
+              let range = bodyText.range(of: trimmed, options: [], range: searchStart..<bodyText.endIndex) {
+            matchRanges.append(range)
+            searchStart = range.upperBound
+        }
+
+        if !matchRanges.isEmpty {
+            currentMatchIndex = 0
+        }
+    }
+
+    private func goToNextMatch() {
+        guard !matchRanges.isEmpty else { return }
+        if let idx = currentMatchIndex {
+            currentMatchIndex = (idx + 1) % matchRanges.count
+        } else {
+            currentMatchIndex = 0
+        }
+    }
+
+    private func replaceCurrent() {
+        guard let idx = currentMatchIndex, idx >= 0, idx < matchRanges.count else { return }
+        let range = matchRanges[idx]
+        bodyText.replaceSubrange(range, with: replaceText)
+        // After modifying bodyText, recompute matches and attempt to set currentMatchIndex sensibly
+        updateMatches()
+        if !matchRanges.isEmpty {
+            currentMatchIndex = min(idx, matchRanges.count - 1)
+        } else {
+            currentMatchIndex = nil
+        }
+    }
+
+    private func replaceAll() {
+        let trimmed = findText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        bodyText = bodyText.replacingOccurrences(of: trimmed, with: replaceText)
+        updateMatches()
+    }
+
+    private func injectAfterFirst() {
+        let match = injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !match.isEmpty else { return }
+
+        var lines = bodyText.components(separatedBy: "\n")
+        for i in 0..<lines.count {
+            if lines[i].contains(match) {
+                // preserve leading whitespace from the matched line
+                let leading = String(lines[i].prefix { $0 == " " || $0 == "\t" })
+                let insertion = leading + injectInsertText
+                lines.insert(insertion, at: i + 1)
+                bodyText = lines.joined(separator: "\n")
+                updateMatches()
+                return
+            }
+        }
+    }
+
+    private func injectAfterAll() {
+        let match = injectMatchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !match.isEmpty else { return }
+
+        var lines = bodyText.components(separatedBy: "\n")
+        var i = 0
+        while i < lines.count {
+            if lines[i].contains(match) {
+                let leading = String(lines[i].prefix { $0 == " " || $0 == "\t" })
+                let insertion = leading + injectInsertText
+                lines.insert(insertion, at: i + 1)
+                i += 2 // skip over the inserted line
+            } else {
+                i += 1
+            }
+        }
+        bodyText = lines.joined(separator: "\n")
+        updateMatches()
+    }
+
+    private func previewForRange(_ range: Range<String.Index>) -> String {
+        let beforeStart = bodyText.index(range.lowerBound, offsetBy: -20, limitedBy: bodyText.startIndex) ?? bodyText.startIndex
+        let afterEnd = bodyText.index(range.upperBound, offsetBy: 20, limitedBy: bodyText.endIndex) ?? bodyText.endIndex
+        return String(bodyText[beforeStart..<afterEnd]).replacingOccurrences(of: "\n", with: " ")
+    }
+
 }
 
 //struct PackagesDetailView_Previews: PreviewProvider {

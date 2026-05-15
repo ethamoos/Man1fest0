@@ -407,20 +407,36 @@ class XmlBrain: ObservableObject {
                 request.httpMethod = "POST"
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                // Ensure Authorization header is present on the request itself
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 request.httpBody = xmldata
                 let config = URLSessionConfiguration.default
+                // keep existing config header as a fallback
                 let authString = "Bearer \(authToken)"
                 config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
-                    guard let httpResponse = response as? HTTPURLResponse,
-                          (200...299).contains(httpResponse.statusCode) else {
-                        print("Bad Credentials")
-                        print(response!)
+                    if let httpResponse = response as? HTTPURLResponse {
+                        let code = httpResponse.statusCode
+                        if (200...299).contains(code) {
+                            DispatchQueue.main.async {
+                                print("Success! Package pushed.")
+                            }
+                            return
+                        } else {
+                            // Provide detailed diagnostics for non-2xx responses (e.g. 409 conflict)
+                            print("createPolicyManual: server returned status code: \(code)")
+                            if let data = data, let body = String(data: data, encoding: .utf8) {
+                                print("Response body:\n\(body)")
+                            } else {
+                                print("No response body")
+                            }
+                            print("Response object: \(httpResponse)")
+                            return
+                        }
+                    } else {
+                        print("createPolicyManual: no HTTPURLResponse, error: \(String(describing: err))")
                         return
-                    }
-                    DispatchQueue.main.async {
-                        print("Success! Package pushed.")
                     }
                 }.resume()
                 
@@ -471,7 +487,7 @@ class XmlBrain: ObservableObject {
             self.aexmlDoc.root.addChild(name: "scope")
 
             let general = self.aexmlDoc.root["general"]
-            let scripts = self.aexmlDoc.root["policy"]["scripts"]
+            let scripts = self.aexmlDoc.root["scripts"]
             let packageConfiguration = self.aexmlDoc.root["package_configuration"]
             let selfService = self.aexmlDoc.root["self_service"]
             let scope = self.aexmlDoc.root["scope"]
@@ -501,6 +517,12 @@ class XmlBrain: ObservableObject {
                 general.addChild(name: "enabled", value: "false")
             }
 
+            // Add category if provided (omit node if empty)
+            if category.isEmpty == false {
+                let catNode = general.addChild(name: "category")
+                catNode.addChild(name: "name", value: category)
+            }
+
             //    ##################################################
             //    SCRIPTS
             //    ##################################################
@@ -508,7 +530,15 @@ class XmlBrain: ObservableObject {
             if scriptName.isEmpty != true {
                 self.separationLine()
                 print("Adding script")
-                scripts.addChild(name: "name", value: scriptName)
+                // Add a proper <script> element containing id/name/priority
+                let scriptElem = scripts.addChild(name: "script")
+                if scriptID.isEmpty == false {
+                    scriptElem.addChild(name: "id", value: scriptID)
+                } else {
+                    scriptElem.addChild(name: "id", value: "0")
+                }
+                scriptElem.addChild(name: "name", value: scriptName)
+                scriptElem.addChild(name: "priority", value: "After")
                 let numberOfScripts = self.aexmlDoc.root["scripts"]["script"].count
                 _ = scripts.addChild(name: "size", value: String(describing: numberOfScripts))
             } else {
@@ -568,23 +598,30 @@ class XmlBrain: ObservableObject {
 
             if SelfServiceEnabled != false {
                 self.separationLine()
-                print("Adding script")
+                print("Adding self_service")
                 selfService.addChild(name: "use_for_self_service", value: String(describing: SelfServiceEnabled))
-                selfService.addChild(name: "self_service_icon", value: String(describing: SelfServiceEnabled))
-                let selfServiceEnabled = self.aexmlDoc.root["policy"]["self_service"]["use_for_self_service"]
-
+                // If an icon is provided, add the self_service_icon child with details; otherwise remove self_service
                 if iconName != "" {
-
-                    let selfServiceIcon = self.aexmlDoc.root["policy"]["self_service"]["self_service_icon"]
-                    selfServiceIcon.addChild(name: "filename", value: "")
+                    let selfServiceIcon = selfService.addChild(name: "self_service_icon")
+                    selfServiceIcon.addChild(name: "filename", value: iconName)
                     selfServiceIcon.addChild(name: "id", value: iconId)
-                    selfServiceIcon.addChild(name: "uri", value: "")
-
+                    selfServiceIcon.addChild(name: "uri", value: iconUrl)
                 } else {
-                    print("No SelfServiceEnabled specified - remove this node")
+                    print("No icon specified for self service - removing self_service node")
                     selfService.removeFromParent()
                 }
+            }
 
+            // Add department to scope if provided
+            if department.isEmpty == false {
+                if scope.children.isEmpty {
+                    _ = self.aexmlDoc.root.addChild(name: "scope")
+                }
+                if self.aexmlDoc.root["scope"]["departments"].children.isEmpty {
+                    _ = self.aexmlDoc.root["scope"].addChild(name: "departments")
+                }
+                let deptNode = self.aexmlDoc.root["scope"]["departments"].addChild(name: "department")
+                deptNode.addChild(name: "name", value: department)
             }
             self.newPolicyAsXML = self.aexmlDoc.xml
             self.separationLine()
@@ -597,6 +634,92 @@ class XmlBrain: ObservableObject {
         }
     // ...existing code...
     
+
+    // Build policy XML as a string (useful for previewing without posting)
+    func buildPolicyXML(policyName: String, policyID: String = "0", scriptName: String = "", scriptID: String = "0", selectedPackageIds: Set<Int> = Set<Int>(), packages: [Package], SelfServiceEnabled: Bool = false, department: String = "", category: String = "", enabledStatus: Bool = true, iconId: String = "", iconName: String = "", iconUrl: String = "") -> String {
+        let xml = """
+        <policy>
+        </policy>
+        """
+
+        self.readXMLDataFromStringXmlBrain(xmlContent: xml)
+
+        // Create nodes
+        if self.aexmlDoc.root.children.isEmpty {
+            self.aexmlDoc.root.addChild(name: "general")
+            self.aexmlDoc.root.addChild(name: "package_configuration")
+            self.aexmlDoc.root.addChild(name: "scripts")
+            self.aexmlDoc.root.addChild(name: "self_service")
+            self.aexmlDoc.root.addChild(name: "scope")
+        }
+
+        let general = self.aexmlDoc.root["general"]
+        let scripts = self.aexmlDoc.root["scripts"]
+
+        general.addChild(name: "id", value: policyID)
+        general.addChild(name: "name", value: policyName)
+        general.addChild(name: "enabled", value: enabledStatus ? "true" : "false")
+
+        // Add category if provided
+        if !category.isEmpty {
+            let cat = general.addChild(name: "category")
+            cat.addChild(name: "name", value: category)
+        }
+
+        if !scriptName.isEmpty {
+            let scriptElem = scripts.addChild(name: "script")
+            scriptElem.addChild(name: "id", value: scriptID)
+            scriptElem.addChild(name: "name", value: scriptName)
+            scriptElem.addChild(name: "priority", value: "After")
+            _ = scripts.addChild(name: "size", value: "1")
+        } else {
+            scripts.removeFromParent()
+        }
+
+        // Packages
+        if !selectedPackageIds.isEmpty {
+            if self.aexmlDoc.root["package_configuration"].children.isEmpty {
+                _ = self.aexmlDoc.root.addChild(name: "package_configuration")
+            }
+            if self.aexmlDoc.root["package_configuration"]["packages"].children.isEmpty {
+                _ = self.aexmlDoc.root["package_configuration"].addChild(name: "packages")
+            }
+            for pkgId in selectedPackageIds {
+                let pkgName = packages.first(where: { $0.jamfId == pkgId })?.name ?? ""
+                let pkg = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "package")
+                pkg.addChild(name: "id", value: String(pkgId))
+                pkg.addChild(name: "name", value: pkgName)
+                pkg.addChild(name: "action", value: "Install")
+                pkg.addChild(name: "fut", value: "false")
+                pkg.addChild(name: "feu", value: "false")
+                pkg.addChild(name: "update_autorun", value: "false")
+            }
+            _ = self.aexmlDoc.root["package_configuration"]["packages"].addChild(name: "size", value: String(describing: selectedPackageIds.count))
+        }
+
+        // Self service
+        if SelfServiceEnabled {
+            let selfService = self.aexmlDoc.root["self_service"]
+            selfService.addChild(name: "use_for_self_service", value: String(describing: SelfServiceEnabled))
+            if !iconName.isEmpty {
+                let ssi = self.aexmlDoc.root["self_service"]["self_service_icon"]
+                ssi.addChild(name: "filename", value: iconName)
+                ssi.addChild(name: "id", value: iconId)
+                ssi.addChild(name: "uri", value: iconUrl)
+            }
+        }
+
+        // Add department under scope if provided
+        if !department.isEmpty {
+            if self.aexmlDoc.root["scope"].children.isEmpty {
+                _ = self.aexmlDoc.root["scope"].addChild(name: "departments")
+            }
+            let dept = self.aexmlDoc.root["scope"]["departments"].addChild(name: "department")
+            dept.addChild(name: "name", value: department)
+        }
+
+        return self.aexmlDoc.root.xml
+    }
     
     
     
@@ -2604,7 +2727,7 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     //    replaceScriptParameter
     //    ##################################################
     
-    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, selectedScriptNumber: Int, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String, priority: String) {
+    func replaceScriptParameter(authToken: String, resourceType: ResourceType, server: String, policyID: String, currentPolicyAsXML: String, selectedScriptNumber: Int, parameter4: String,parameter5: String,parameter6: String,parameter7: String,parameter8: String,parameter9: String,parameter10: String,parameter11: String, priority: String) {
         
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
         let url = URL(string: jamfURLQuery)!

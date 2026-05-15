@@ -1056,7 +1056,7 @@ print("DEBUG - status code is 200, response is:")
             }
         } else {
             self.separationLine()
-            print("No getPackagesAssignedToPolicy response yet")
+            print("No getPackagesAssignedToPolicy response yet")    
         }
     }
     
@@ -1670,7 +1670,9 @@ print("DEBUG - status code is 200, response is:")
     }
     
     func deletePolicy(server: String, resourceType: ResourceType, itemID: String, authToken: String) {
-        let resourcePath = getURLFormat(data: (ResourceType.policy))
+        // Use the provided resourceType to build the correct single-item URL path
+        // callers commonly pass ResourceType.policies which maps to "policies/id/".
+        let resourcePath = getURLFormat(data: resourceType)
         if let url = buildJSSResourceURL(server: server, resourcePath: resourcePath, itemID: itemID) {
             separationLine()
             print("Running deletePolicy function - url is set as:\(url)")
@@ -4173,8 +4175,8 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         xml = """
                    <computer_group>
                        <computers>
-                               <computer>
-                               <name>﻿\(computerName)</name>
+                                                      <computer>
+                                                      <name>\(computerName)</name>
                                </computer>
                        </computers>
                    </computer_group>
@@ -4208,7 +4210,7 @@ xml = """
                 <id>\(computerID)</id>
             </computer>
         </computer_additions>
-    </computer_group>'
+    </computer_group>
 """
         
         if URL(string: server) != nil {
@@ -4219,6 +4221,94 @@ xml = """
                 // print("xml is set as:\(xml)")
                             
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+
+    // Remove a computer from a static computer group via XML
+    func updateGroupRemoveID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int) {
+        var xml: String
+        print("Running updateGroupRemoveID - updating via xml")
+        print("computerID is set as:\(computerID)")
+        print("groupID is set as:\(groupID)")
+
+        xml = """
+    <computer_group>
+        <computer_deletions>
+            <computer>
+                <id>\(computerID)</id>
+            </computer>
+        </computer_deletions>
+    </computer_group>
+"""
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running updateGroupRemoveID - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                print("XML body:\n\(xml)")
+
+                // Build request and send with explicit logging of response body and status
+                var request = URLRequest(url: url)
+                request.httpMethod = "PUT"
+                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+                request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+                request.httpBody = xml.data(using: .utf8)
+
+                let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                    if let error = error {
+                        print("updateGroupRemoveID - network error for id \(computerID): \(error)")
+                        return
+                    }
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    let body = data.flatMap { String(data: $0, encoding: .utf8) } ?? "<no body>"
+                    print("updateGroupRemoveID response for id \(computerID): status=\(status) body=\n\(body)")
+                }
+                task.resume()
+
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+
+    // Batch remove multiple computers from a static group with a single PUT
+    func updateGroupRemoveBatch(server: String, authToken: String, resourceType: ResourceType, groupID: String, computerIDs: [Int]) {
+        guard !computerIDs.isEmpty else { return }
+        var xml = "<computer_group>\n        <computer_deletions>\n"
+        for id in computerIDs {
+            xml += "            <computer>\n                <id>\(id)</id>\n            </computer>\n"
+        }
+        xml += "        </computer_deletions>\n    </computer_group>"
+
+        print("Running updateGroupRemoveBatch - groupID=\(groupID) ids=\(computerIDs)")
+        print("XML body:\n\(xml)")
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running updateGroupRemoveBatch - url is set as:\(url)")
+
+                var request = URLRequest(url: url)
+                request.httpMethod = "PUT"
+                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+                request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+                request.httpBody = xml.data(using: .utf8)
+
+                let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                    if let error = error {
+                        print("updateGroupRemoveBatch - network error: \(error)")
+                        return
+                    }
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    let body = data.flatMap { String(data: $0, encoding: .utf8) } ?? "<no body>"
+                    print("updateGroupRemoveBatch response: status=\(status) body=\n\(body)")
+                }
+                task.resume()
+
                 appendStatus("Connecting to \(url)...")
             }
         }
@@ -4348,6 +4438,35 @@ xml = """
             print("List is:\(computerProcessList)")
             count = count + 1
             print("Count is now:\(count)")
+        }
+        separationLine()
+        print("Finished - Set processingComplete to true")
+        self.processingComplete = true
+        print(String(describing: self.processingComplete))
+    }
+
+    func processRemoveComputersFromGroupAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String, resourceType: ResourceType, computerGroup: ComputerGroup) async {
+        separationLine()
+        print("Running: processRemoveComputersFromGroup")
+        print("Set is:\(selection)")
+        var count = 1
+        // If many items, send a single batch request to the group endpoint
+        if selection.count > 1 {
+            let ids = selection.map { Int(String(describing: $0)) ?? 0 }
+            print("Using batch remove for \(ids.count) items")
+            updateGroupRemoveBatch(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing: computerGroup.id), computerIDs: ids)
+        } else {
+            for eachItem in selection {
+                separationLine()
+                print("Count is currently:\(count)")
+                print("Items as Dictionary is \(eachItem)")
+                let computerID = String(describing:eachItem)
+                print("Current computerID is:\(computerID)")
+                updateGroupRemoveID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
+                print("List is:\(computerProcessList)")
+                count = count + 1
+                print("Count is now:\(count)")
+            }
         }
         separationLine()
         print("Finished - Set processingComplete to true")
@@ -5425,8 +5544,10 @@ xml = """
                 print("Data is:\(response)")
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             } else {
+                
                 if let error = error {
-                    var text = "\n\nError encountered:"
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    var text = "\n\nError encountered: Status code is:\(statusCode)"
                     text += " \(error)."
                     print(text)
                 }
@@ -6245,7 +6366,36 @@ xml = """
             }
             // record the current URL for debugging (RequestSender builds the final URL similarly)
             self.currentURL = server + "/JSSResource/computers/id/" + userID
-            let decodedFull = try await requestSender.resultFor(apiRequest: request)
+            // Attempt decode with detailed DecodingError logging to help diagnose failures
+            let decodedFull: ComputerDetailedFullResponse
+            do {
+                decodedFull = try await requestSender.resultFor(apiRequest: request)
+            } catch let decodeError as DecodingError {
+                // Provide rich diagnostics for common DecodingError cases
+                separationLine()
+                print("DecodingError while parsing ComputerDetailedFullResponse:")
+                switch decodeError {
+                case .typeMismatch(let type, let context):
+                    print("Type mismatch for type: \(type). Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                case .valueNotFound(let value, let context):
+                    print("Value not found for type: \(value). Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                case .keyNotFound(let key, let context):
+                    print("Key not found: \(key.stringValue). Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                case .dataCorrupted(let context):
+                    print("Data corrupted. Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
+                @unknown default:
+                    print("Unknown decoding error: \(decodeError)")
+                }
+                separationLine()
+                publishError(decodeError, title: "Decoding failure")
+                throw decodeError
+            } catch {
+                // Non-decoding error (network, etc.)
+                separationLine()
+                print("Error while fetching ComputerDetailedFullResponse: \(error)")
+                publishError(error, title: "Failed to load computer detail")
+                throw error
+            }
             // Debug: print entire decoded response so we can inspect what arrived
             separationLine()
 //            print("Decoded ComputerDetailedFullResponse: \(decodedFull)")
@@ -6259,26 +6409,40 @@ xml = """
             // Attempt to map a lightweight ComputerSlim.General-like structure into computerDetailedResponse
             // Map fields available in the full response into the slim response shape
             let gen = decodedFull.computer.general
+            let loc = decodedFull.computer.location
+
             if let gen = gen {
                 // Map to ComputerBasicRecord for existing UI
                 let jamfId = Int(gen.id) ?? 0
-                let detail = ComputerBasicRecord(id: jamfId,
-                                                 name: gen.name ?? "",
-                                                 managed: true,
-                                                 username: gen.username ?? "",
-                                                 model: gen.model ?? "",
-                                                 department: gen.department ?? "",
-                                                 building: gen.building ?? "",
-                                                 macAddress: "",
-                                                 udid: gen.udid ?? "",
-                                                 serialNumber: gen.serial_number ?? "",
-                                                 reportDateUTC: gen.report_date_utc ?? "",
-                                                 reportDateEpoch: 0)
-                self.computerDetailed = detail
-                print("Loaded detailed computer id: \(jamfId)")
+                
+                
+                if let loc = loc {
+                    // Note: parameter order for ComputerBasicRecord is id,name,managed,username,model,department,building,macAddress,udid,serialNumber,reportDateUTC,reportDateEpoch
+                    let detail = ComputerBasicRecord(id: jamfId,
+                                                     name: gen.name ?? "",
+                                                     managed: true,
+                                                     username: gen.username ?? "",
+                                                     model: gen.model ?? "",
+                                                     department: loc.department ?? "",
+                                                     building: loc.building ?? "",
+                                                     macAddress: "",
+                                                     udid: gen.udid ?? "",
+                                                     serialNumber: gen.serial_number ?? "",
+                                                     reportDateUTC: gen.report_date_utc ?? "",
+                                                     reportDateEpoch: 0)
+                    self.computerDetailed = detail
+                    print("Loaded detailed computer id: \(jamfId)")
+                }
             } else {
                 print("Decoded full response had no general section")
             }
+            
+
+            if let loc = loc {
+                print("Location info: department=\(loc.department ?? "(none)"), building=\(loc.building ?? "(none)"), room=\(loc.room ?? "(none)")")
+            }
+            
+            
         } catch {
             publishError(error, title: "Failed to load computer detail")
             throw error

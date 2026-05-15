@@ -33,30 +33,6 @@ struct GroupsSmartDetailView: View {
 
             Divider()
 
-            HStack(spacing: 12) {
-#if os(macOS)
-                Button(action: {
-                    openInBrowser()
-                }) {
-                    HStack {
-                        Image(systemName: "safari")
-                        Text("Open in Browser")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-#else
-                Button(action: {
-                    openInBrowser()
-                }) {
-                    HStack {
-                        Image(systemName: "safari")
-                        Text("Open in Browser")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-#endif
-                Spacer()
-            }
 
             if xmlController.compGroupComputers.count >= 1 {
 
@@ -84,7 +60,7 @@ struct GroupsSmartDetailView: View {
                         var base = trimmedServer
                         if base.hasSuffix("/") { base.removeLast() }
                         // Construct Jamf UI URL for this group
-                        let uiURL = "\(base)/staticComputerGroups.html?id=\(group.id)&o=r"
+                        let uiURL = "\(base)/smartComputerGroups.html?id=\(group.id)&o=r"
                         print("Opening group UI URL: \(uiURL)")
                         layout.openURL(urlString: uiURL)
                     }) {

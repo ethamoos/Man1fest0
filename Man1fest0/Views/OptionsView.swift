@@ -239,6 +239,7 @@ struct OptionsView: View {
                                 //  ###########################################################################
                                 //    Config Profiles
                                 //  ###########################################################################
+                                
                                 NavigationLink(destination: ConfigProfileViewMacOS(server: server )) {
                                     Text("Config Profiles")
                                 }
@@ -411,12 +412,24 @@ struct OptionsView: View {
                         }
 //                    }
                     }
-                 
-                    ToolbarItem(id: "Status") {
+                    
+                    ToolbarItem(id: "Address") {
                             VStack(alignment: .leading, spacing: 1) {
                             HStack {
                                 Text(server)
                                     .foregroundColor(.green)
+//                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
+//                                    .foregroundColor(.green)
+                               
+                            }
+                        }
+                    }
+                 
+                    ToolbarItem(id: "Status") {
+                            VStack(alignment: .leading, spacing: 1) {
+                            HStack {
+//                                Text(server)
+//                                    .foregroundColor(.green)
                                 Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
                                     .foregroundColor(.green)
                                

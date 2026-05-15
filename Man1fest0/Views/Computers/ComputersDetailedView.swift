@@ -40,18 +40,42 @@ struct ComputersDetailedView: View {
             let hardware = networkController.computerDetailedFull?.hardware
             let security = networkController.computerDetailedFull?.security
             
-            Text("Name: \(general?.name ?? "")")
-            Text("ID: \(general?.id ?? "")")
-            Text("UDID: \(general?.udid ?? "")")
-            Text("Serial: \(general?.serial_number ?? "")")
-            Text("Model: \(general?.model ?? "")")
-            Text("Username: \(general?.username ?? "")")
-            Text("Department: \(general?.department ?? "")")
-            Text("Building: \(general?.building ?? "")")
-            Text("Last checkin: \(general?.report_date_utc ?? "")")
+            // Prefer values from the full decoded model but fall back to the lightweight
+            // `computerDetailed` record that is also populated by the network controller.
+            let nameVal = networkController.computerDetailedFull?.general?.name ?? networkController.computerDetailed?.name ?? ""
+            let idVal = networkController.computerDetailedFull?.general?.id ?? String(networkController.computerDetailed?.id ?? 0)
+            let ip_address = networkController.computerDetailedFull?.general?.ip_address ?? ""
+            let udidVal = networkController.computerDetailedFull?.general?.udid ?? networkController.computerDetailed?.udid ?? ""
+            let serialVal = networkController.computerDetailedFull?.general?.serial_number ?? networkController.computerDetailed?.serialNumber ?? ""
+            // model may be available under Hardware.model in some responses; prefer that, then general.model, then lightweight record
+            let modelVal = networkController.computerDetailedFull?.hardware?.model ?? networkController.computerDetailedFull?.general?.model ?? networkController.computerDetailed?.model ?? ""
+            // Prefer values from the Location node when available (some Jamf responses put
+            // username/department/building under <location> rather than <general>).
+            let usernameVal = networkController.computerDetailedFull?.location?.username
+                ?? networkController.computerDetailedFull?.general?.username
+                ?? networkController.computerDetailed?.username
+                ?? ""
+            let departmentVal = networkController.computerDetailedFull?.location?.department
+                ?? networkController.computerDetailed?.department
+                ?? ""
+            let buildingVal = networkController.computerDetailedFull?.location?.building
+                ?? networkController.computerDetailed?.building
+                ?? ""
+            let reportDateVal = networkController.computerDetailedFull?.general?.report_date_utc ?? networkController.computerDetailed?.reportDateUTC ?? ""
+
+            Text("Name: \(nameVal)")
+            Text("ID: \(idVal)")
+            Text("UDID: \(udidVal)")
+            Text("Serial: \(serialVal)")
+            Text("IP Adress: \(ip_address)")
+            Text("Model: \(modelVal)")
+            Text("Username: \(usernameVal)")
+            Text("Department: \(departmentVal)")
+            Text("Building: \(buildingVal)")
+            Text("Last checkin: \(reportDateVal)")
             
             let filevaultStatus = hardware?.diskEncryptionConfiguration ?? "Not enabled"
-            let activationLock = security?.activationLock ?? ""
+            let activationLock = security?.activationLock ?? false
             
             Text("Hardware model: \(hardware?.model ?? "")")
             Text("Filevault Status: \(filevaultStatus)")
@@ -167,7 +191,7 @@ struct ComputersDetailedView: View {
     private func commandsView(_ cmds: Commands) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if let completed = cmds.completed, !completed.isEmpty {
-                Text("Completed MDM Commands").font(.headline)
+                Text("Completed Commands").font(.headline)
                 ForEach(completed.indices, id: \.self) { i in
                     let cmd = completed[i]
                     VStack(alignment: .leading) {
@@ -340,8 +364,8 @@ struct ComputersDetailedView: View {
                 Picker(selection: $historyInnerTab, label: Text("")) {
                     Text("All").tag(0)
                     Text("Policies").tag(1)
-                    Text("MDM Commands").tag(2)
-                    Text("App Store Apps").tag(3)
+                    Text("Commands").tag(2)
+                    Text("Mac Apps").tag(3)
                     Text("Locations").tag(4)
                     Text("Audits").tag(5)
                 }

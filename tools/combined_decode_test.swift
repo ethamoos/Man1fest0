@@ -1,7 +1,11 @@
-// Minimal full computer detail decoding structs for UI use
+// Combined model + test file for decoding ComputerDetailedFullResponse
+// This file is auto-generated for local decoding tests.
 import Foundation
 
-// Matches Jamf's 'computers/id/<id>' JSON which contains a top-level "computer" object
+// --- BEGIN model (ComputerDetailedFull.swift) ---
+
+// Minimal full computer detail decoding structs for UI use
+// (content copied from ModelDecodingStructs/ComputerDetailedFull.swift)
 struct ComputerDetailedFullResponse: Decodable {
     let computer: ComputerFull
 }
@@ -227,37 +231,29 @@ struct ComputerFull: Decodable {
     }
     
     struct ConfigurationProfiles: Decodable {
-        // API may return either an array of profile objects or an object with metadata.
-        let profiles: [Profile]?
+        // API may return an array or an object with size; accept either
+        let items: [String]?
         let size: String?
 
-        struct Profile: Decodable {
-            let id: Int?
-            let name: String?
-            let uuid: String?
-            let is_removable: Bool?
-        }
-
         init(from decoder: Decoder) throws {
-            // First try to decode as an array of Profile objects
-            if let single = try? decoder.singleValueContainer(),
-               let arr = try? single.decode([Profile].self) {
-                profiles = arr
+            // try array
+            let single = try? decoder.singleValueContainer()
+            if let arr = try? single?.decode([String].self) {
+                items = arr
                 size = nil
                 return
             }
-
-            // Otherwise try to decode as an object with a size field (and possibly items in other formats)
+            // try object with size
             let container = try decoder.container(keyedBy: CodingKeys.self)
             size = try? container.decodeIfPresent(String.self, forKey: .size)
-            // If there is an "items" or similarly-named array it can be decoded here if needed.
-            profiles = nil
+            items = nil
         }
 
         enum CodingKeys: String, CodingKey {
             case size
         }
     }
+    
     struct IPhones: Decodable {
         let items: [String]?
         let size: String?
@@ -293,8 +289,58 @@ struct ComputerFull: Decodable {
             activationLock = (try? container.decodeIfPresent(Bool.self, forKey: .activation_lock)) ?? (try? container.decodeIfPresent(Bool.self, forKey: .activationLock))
         }
     }
-
+    
     enum CodingKeys: String, CodingKey {
         case general, location, hardware, security, software, extension_attributes, group_accounts = "groups_accounts", configuration_profiles, iphones
     }
+}
+
+// --- END model ---
+
+// --- BEGIN test runner ---
+
+let fm = FileManager.default
+let args = CommandLine.arguments
+let path: String
+if args.count > 1 {
+    path = args[1]
+} else {
+    path = "./tools/sample_computer.json"
+}
+
+guard fm.fileExists(atPath: path) else {
+    print("Test JSON file not found at path: \(path)")
+    exit(2)
+}
+
+let url = URL(fileURLWithPath: path)
+let data = try Data(contentsOf: url)
+
+let decoder = JSONDecoder()
+
+do {
+    let resp = try decoder.decode(ComputerDetailedFullResponse.self, from: data)
+    print("Decode succeeded. Dumping structure:\n")
+    dump(resp)
+} catch {
+    print("Decoding failed: \(error)\n")
+    if let dec = error as? DecodingError {
+        switch dec {
+        case .typeMismatch(let type, let context):
+            print("typeMismatch: ")
+            print("  type: \(type)")
+            print("  context: \(context)")
+        case .valueNotFound(let value, let context):
+            print("valueNotFound: \(value) \(context)")
+        case .keyNotFound(let key, let context):
+            print("keyNotFound: \(key) \(context)")
+        case .dataCorrupted(let ctx):
+            print("dataCorrupted: \(ctx)")
+        @unknown default:
+            print("unknown decoding error: \(dec)")
+        }
+    } else {
+        print(error)
+    }
+    exit(1)
 }

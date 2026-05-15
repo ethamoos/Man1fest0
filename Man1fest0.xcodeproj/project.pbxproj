@@ -353,7 +353,6 @@
 		A86AF37F2C3FE2C2009349C4 /* Computers */ = {
 			isa = PBXGroup;
 			children = (
-				A885D1532F5ABF21002CB073 /* Groups */,
 				A861F25629D7447A0075D622 /* ComputersView.swift */,
 				A861F25829D7448E0075D622 /* ComputersDetailedView.swift */,
 				A8B312EF2F87B4A200DF685C /* ComputerBasicView.swift */,
@@ -362,6 +361,7 @@
 				A8020CC42F921BD200F3778D /* Computer Searches */,
 				E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */,
 				A8020CC52F921BE700F3778D /* ComputerExtAttributes */,
+				A885D1532F5ABF21002CB073 /* Groups */,
 			);
 			path = Computers;
 			sourceTree = "<group>";
@@ -918,7 +918,7 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.74.1;
+				CURRENT_PROJECT_VERSION = 1.75.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -965,7 +965,7 @@
 				CODE_SIGN_ENTITLEMENTS = Man1fest0/Man1fest0.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.74.1;
+				CURRENT_PROJECT_VERSION = 1.75.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Man1fest0/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;

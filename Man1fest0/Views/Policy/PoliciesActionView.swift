@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+#if os(macOS)
+import AppKit
+#endif
+
 
 struct PoliciesActionView: View {
     
@@ -190,51 +194,27 @@ struct PoliciesActionView: View {
                         Text("\(policy.name)")
                             .lineLimit(2)
                     }
-                    // Use contrasting text color when selected so it remains readable
-                    .foregroundColor(policiesSelection.contains(policy) ? Color.primary : Color.primary)
-                    // Make the entire row tappable and ensure hit testing covers full width
-                    .contentShape(Rectangle())
-                    // Visible background when selected (stronger blue so it's obvious)
-                    .background(
-                        Group {
-                            if policiesSelection.contains(policy) {
-                                // Use a single blue highlight for selected rows
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.blue.opacity(0.25))
-                                    .padding(.vertical, -6)
-                            } else {
-                                Color.clear
-                            }
-                        }
-                    )
-                    .overlay(
-                        Group {
-                            if policiesSelection.contains(policy) {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.blue.opacity(0.6), lineWidth: 1)
-                                    .padding(.vertical, -6)
-                            }
-                        }
-                    )
-                    // Also apply listRowBackground as a fallback for platform list styling
-                    .listRowBackground(
-                        Group {
-                            if policiesSelection.contains(policy) {
-                                // subtle blue fill as a fallback
-                                RoundedRectangle(cornerRadius: 6).fill(Color.blue.opacity(0.12))
-                            } else {
-                                Color.clear
-                            }
-                        }
-                    )
-                    // Helpful debug: log taps (does not change selection binding, only for diagnosis)
-                    .onTapGesture {
-                        print("Row tapped: \(policy.name) id:\(policy.jamfId ?? -1) selected=\(policiesSelection.contains(policy))")
-                    }
+                    
+                    .foregroundColor(.blue)
+
+//                    // Use contrasting text color when selected so it remains readable
+//                    .foregroundColor(policiesSelection.contains(policy) ? Color.primary : Color.primary)
+//                    // Make the entire row tappable and ensure hit testing covers full width
+//                    .contentShape(Rectangle())
+//                    // Visible background when selected (stronger blue so it's obvious)
+//                    .background(policyRowBackground(isSelected: policiesSelection.contains(policy)))
+//                    .overlay(policyRowOverlay(isSelected: policiesSelection.contains(policy)))
+//                    // Also apply listRowBackground as a fallback for platform list styling
+//                    .listRowBackground(policyRowListBackground(isSelected: policiesSelection.contains(policy)))
+//                    // Helpful debug: log taps (does not change selection binding, only for diagnosis)
+//                    .onTapGesture {
+//                        print("Row tapped: \(policy.name) id:\(policy.jamfId ?? -1) selected=\(policiesSelection.contains(policy))")
+//                    }
                 }
-                #if os(macOS)
-                .listStyle(.sidebar)
-                #endif
+#if os(macOS)
+.listStyle(.plain)
+#endif
+.background(Color(NSColor.windowBackgroundColor))
                 // Keep the UUID-based selection in sync with the Set<Policy> used elsewhere
                 .onChange(of: selectedPolicyUUIDs) { newUUIDs in
                     // Map UUIDs back to Policy objects from the current policies list
@@ -289,7 +269,7 @@ struct PoliciesActionView: View {
                         progress.waitForABit()
                         
                       Task { try await networkController.getAllPackages() }
-                        
+                        networkController.refreshPolicies()
                         getDetailedPolicies(policiesSelection: policiesSelection)
                         print("Refresh button clicked on PoliciesAction View")
                         
@@ -460,8 +440,12 @@ struct PoliciesActionView: View {
                     Text("")
                 }
                 
-                // Add bottom TabView with two tabs: Scope and Packages
+                // Add bottom TabView with three tabs: General, Scope and Packages
                 TabView {
+                    PoliciesActionGeneralTab(policiesSelection: $policiesSelection, server: server)
+                        .tabItem {
+                            Label("General", systemImage: "gearshape")
+                        }
                     PoliciesActionScopeTab(
                         policiesSelection: $policiesSelection,
                         server: server,
@@ -516,10 +500,15 @@ struct PoliciesActionView: View {
                 try await scopingController.getLdapServers(server: server, authToken: networkController.authToken)
             }
             
-                networkController.refreshPolicies()
-                networkController.refreshCategories()
-                networkController.refreshComputers()
-                networkController.refreshDepartments()
+                    networkController.refreshPolicies()
+                    networkController.refreshCategories()
+                    networkController.refreshComputers()
+                    networkController.refreshDepartments()
+
+                    // Ensure List background is white on macOS: we set the SwiftUI List's
+                    // background to Color.white above. If you need a more targeted
+                    // AppKit-level override use NSScrollView.appearance() adjustments,
+                    // but those are global and were removed to avoid impacting other views.
 
         }
         .frame(minWidth: 200, minHeight: 100, alignment: .leading)
@@ -527,6 +516,38 @@ struct PoliciesActionView: View {
     
     private func getAllPolicies() {
         print("Clicking Button")
+    }
+
+    // MARK: - Row styling helpers
+    @ViewBuilder
+    private func policyRowBackground(isSelected: Bool) -> some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.blue.opacity(0.25))
+                .padding(.vertical, -6)
+        } else {
+            Color.clear
+        }
+    }
+
+    @ViewBuilder
+    private func policyRowOverlay(isSelected: Bool) -> some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.blue.opacity(0.6), lineWidth: 1)
+                .padding(.vertical, -6)
+        } else {
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func policyRowListBackground(isSelected: Bool) -> some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 6).fill(Color.blue.opacity(0.12))
+        } else {
+            Color.clear
+        }
     }
     
     var searchResults: [Policy] {
@@ -873,6 +894,82 @@ struct PoliciesActionScopeTab: View {
             }
             .padding()
         }
+    }
+}
+
+// General tab for policy actions (includes Delete)
+struct PoliciesActionGeneralTab: View {
+    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var layout: Layout
+    @EnvironmentObject var progress: Progress
+    @EnvironmentObject var xmlController: XmlBrain
+
+    @Binding var policiesSelection: Set<Policy>
+    var server: String
+
+    @State private var showingDeleteConfirm = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Policies Action - General")
+                .font(.headline)
+            Text("General actions for selected policies (delete, export, etc).")
+                .font(.subheadline)
+            Divider()
+
+            HStack(spacing: 12) {
+                Button(action: {
+                    // Show delete confirmation
+                    showingDeleteConfirm = true
+                }) {
+                    Label("Delete Selected", systemImage: "trash")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .disabled(policiesSelection.isEmpty)
+                .alert(isPresented: $showingDeleteConfirm) {
+                    Alert(title: Text("Confirm Delete"),
+                          message: Text("Delete the selected policies? This action cannot be undone."),
+                          primaryButton: .destructive(Text("Delete")) {
+                            // perform delete
+                            progress.showProgress()
+                            progress.waitForABit()
+                            let selectedIds: [Int?] = policiesSelection.map { $0.jamfId }
+                            Task {
+                                networkController.processDeletePoliciesGeneral(selection: selectedIds, server: server, authToken: networkController.authToken, resourceType: ResourceType.policies)
+                                // refresh policies after delete
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                networkController.refreshPolicies()
+                                // Clear local selection now that items were deleted
+                                DispatchQueue.main.async {
+                                    policiesSelection.removeAll()
+                                }
+                                progress.endProgress()
+                            }
+                          },
+                          secondaryButton: .cancel())
+                }
+
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    // Export selected policies as XML
+                    for eachItem in policiesSelection {
+                        let currentPolicyID = (eachItem.jamfId ?? 0)
+                        print("Export policy as XML for \(eachItem.name)")
+                        Task {
+                            _ = try? await xmlController.getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: networkController.authToken)
+                        }
+                    }
+                }) {
+                    Label("Export XML", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(.bordered)
+            }
+
+            Spacer()
+        }
+        .padding()
     }
 }
 
