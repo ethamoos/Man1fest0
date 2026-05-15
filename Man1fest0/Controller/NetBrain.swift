@@ -1056,7 +1056,7 @@ print("DEBUG - status code is 200, response is:")
             }
         } else {
             self.separationLine()
-            print("No getPackagesAssignedToPolicy response yet")
+            print("No getPackagesAssignedToPolicy response yet")    
         }
     }
     
@@ -4175,8 +4175,8 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         xml = """
                    <computer_group>
                        <computers>
-                               <computer>
-                               <name>﻿\(computerName)</name>
+                                                      <computer>
+                                                      <name>\(computerName)</name>
                                </computer>
                        </computers>
                    </computer_group>
@@ -4210,7 +4210,7 @@ xml = """
                 <id>\(computerID)</id>
             </computer>
         </computer_additions>
-    </computer_group>'
+    </computer_group>
 """
         
         if URL(string: server) != nil {
@@ -4221,6 +4221,94 @@ xml = """
                 // print("xml is set as:\(xml)")
                             
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: ResourceType.policyDetail, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+
+    // Remove a computer from a static computer group via XML
+    func updateGroupRemoveID(server: String,authToken: String, resourceType: ResourceType, groupID: String, computerID: Int) {
+        var xml: String
+        print("Running updateGroupRemoveID - updating via xml")
+        print("computerID is set as:\(computerID)")
+        print("groupID is set as:\(groupID)")
+
+        xml = """
+    <computer_group>
+        <computer_deletions>
+            <computer>
+                <id>\(computerID)</id>
+            </computer>
+        </computer_deletions>
+    </computer_group>
+"""
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running updateGroupRemoveID - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                print("XML body:\n\(xml)")
+
+                // Build request and send with explicit logging of response body and status
+                var request = URLRequest(url: url)
+                request.httpMethod = "PUT"
+                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+                request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+                request.httpBody = xml.data(using: .utf8)
+
+                let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                    if let error = error {
+                        print("updateGroupRemoveID - network error for id \(computerID): \(error)")
+                        return
+                    }
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    let body = data.flatMap { String(data: $0, encoding: .utf8) } ?? "<no body>"
+                    print("updateGroupRemoveID response for id \(computerID): status=\(status) body=\n\(body)")
+                }
+                task.resume()
+
+                appendStatus("Connecting to \(url)...")
+            }
+        }
+    }
+
+    // Batch remove multiple computers from a static group with a single PUT
+    func updateGroupRemoveBatch(server: String, authToken: String, resourceType: ResourceType, groupID: String, computerIDs: [Int]) {
+        guard !computerIDs.isEmpty else { return }
+        var xml = "<computer_group>\n        <computer_deletions>\n"
+        for id in computerIDs {
+            xml += "            <computer>\n                <id>\(id)</id>\n            </computer>\n"
+        }
+        xml += "        </computer_deletions>\n    </computer_group>"
+
+        print("Running updateGroupRemoveBatch - groupID=\(groupID) ids=\(computerIDs)")
+        print("XML body:\n\(xml)")
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("/computergroups/id").appendingPathComponent(groupID)
+                print("Running updateGroupRemoveBatch - url is set as:\(url)")
+
+                var request = URLRequest(url: url)
+                request.httpMethod = "PUT"
+                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+                request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+                request.httpBody = xml.data(using: .utf8)
+
+                let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                    if let error = error {
+                        print("updateGroupRemoveBatch - network error: \(error)")
+                        return
+                    }
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    let body = data.flatMap { String(data: $0, encoding: .utf8) } ?? "<no body>"
+                    print("updateGroupRemoveBatch response: status=\(status) body=\n\(body)")
+                }
+                task.resume()
+
                 appendStatus("Connecting to \(url)...")
             }
         }
@@ -4350,6 +4438,35 @@ xml = """
             print("List is:\(computerProcessList)")
             count = count + 1
             print("Count is now:\(count)")
+        }
+        separationLine()
+        print("Finished - Set processingComplete to true")
+        self.processingComplete = true
+        print(String(describing: self.processingComplete))
+    }
+
+    func processRemoveComputersFromGroupAsync(selection: Set<ComputerBasicRecord.ID>, server: String, authToken: String, resourceType: ResourceType, computerGroup: ComputerGroup) async {
+        separationLine()
+        print("Running: processRemoveComputersFromGroup")
+        print("Set is:\(selection)")
+        var count = 1
+        // If many items, send a single batch request to the group endpoint
+        if selection.count > 1 {
+            let ids = selection.map { Int(String(describing: $0)) ?? 0 }
+            print("Using batch remove for \(ids.count) items")
+            updateGroupRemoveBatch(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing: computerGroup.id), computerIDs: ids)
+        } else {
+            for eachItem in selection {
+                separationLine()
+                print("Count is currently:\(count)")
+                print("Items as Dictionary is \(eachItem)")
+                let computerID = String(describing:eachItem)
+                print("Current computerID is:\(computerID)")
+                updateGroupRemoveID(server: server, authToken: authToken, resourceType: resourceType, groupID: String(describing:computerGroup.id), computerID: Int(computerID) ?? 0 )
+                print("List is:\(computerProcessList)")
+                count = count + 1
+                print("Count is now:\(count)")
+            }
         }
         separationLine()
         print("Finished - Set processingComplete to true")
@@ -5427,8 +5544,10 @@ xml = """
                 print("Data is:\(response)")
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             } else {
+                
                 if let error = error {
-                    var text = "\n\nError encountered:"
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    var text = "\n\nError encountered: Status code is:\(statusCode)"
                     text += " \(error)."
                     print(text)
                 }
