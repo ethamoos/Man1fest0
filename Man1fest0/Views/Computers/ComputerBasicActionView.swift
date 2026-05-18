@@ -70,7 +70,6 @@ struct ComputerBasicActionView: View {
                 Text("This will set the username attribute for the selected computers on the server. Continue?")
             }
         }
-
         private var headerView: some View {
             HStack(alignment: .center) {
                 VStack(alignment: .leading) {
@@ -117,7 +116,9 @@ struct ComputerBasicActionView: View {
                 if networkController.allComputersBasic.computers.count > 0 {
                     NavigationView {
 #if os(macOS)
-                        List(searchResults, id: \.self, selection: $selection) { computer in
+                        // Use the computer's integer `id` for the List selection so it matches
+                        // the `selection: Set<Int>` binding used elsewhere in this view.
+                        List(searchResults, id: \.id, selection: $selection) { computer in
                             HStack {
                                 Image(systemName: "desktopcomputer")
                                     .foregroundColor(.accentColor)
@@ -160,7 +161,7 @@ struct ComputerBasicActionView: View {
             }
         }
 
-        private var actionPanelView: some View {
+        var actionPanelView: some View {
             VStack(alignment: .leading, spacing: 12) {
                 Button(action: {
                     progress.showProgress()
@@ -278,11 +279,28 @@ struct ComputerBasicActionView: View {
                                     progress.showProgress()
                                     progress.waitForABit()
                                     let ids = selection.map { String($0) }
+                                    print("Run on Selected pressed. selection=\(selection) ids=\(ids)")
+
+                                    // Ensure we have the detailed computer loaded before attempting
+                                    // to compute a logical new name (updateComputerNameLogical relies
+                                    // on in-memory detailed objects). Fetch the detailed record
+                                    // for each selected id, then call the updater.
                                     Task {
                                         for id in ids {
+                                            do {
+                                                try await networkController.getDetailedComputer(userID: id)
+                                            } catch {
+                                                print("Failed to load detailed computer for id \(id): \(error)")
+                                            }
+
+                                            // Now attempt the logical rename which reads the in-memory detail
                                             networkController.updateComputerNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+
+                                            // Small pause between operations to avoid overwhelming the server
                                             try? await Task.sleep(nanoseconds: 200_000_000)
                                         }
+                                        // Optionally refresh the basic list after changes
+                                        do { try await networkController.getComputersBasic(server: server, authToken: networkController.authToken) } catch { print("Failed to refresh computers after rename: \(error)") }
                                         progress.endProgress()
                                     }
                                 }) {
@@ -343,21 +361,35 @@ struct ComputerBasicActionView: View {
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
 
-                .onAppear {
-                    if networkController.allComputersBasic.computers.count == 0 {
-                        print("Fetching computers")
-                        Task {
-                            try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
-                        }
+                // Show a global processing spinner when the shared Progress controller
+                // indicates work is in progress. Other action views use the same
+                // pattern so the user sees consistent feedback.
+                if progress.showProgressView == true {
+                    ProgressView {
+                        Text("Processing")
+                            .padding()
                     }
+                    .padding()
+                }
+            }
+            // Attach the onAppear to the VStack (the returned view) rather than to
+            // the conditional inside it. Attaching inside the `if` made the
+            // compiler interpret the modifier as being applied to a control-flow
+            // statement rather than a View, causing the error.
+            .onAppear {
+                if networkController.allComputersBasic.computers.count == 0 {
+                    print("Fetching computers")
                     Task {
-                        try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                        try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
                     }
-                    if let first = networkController.allComputerGroups.first {
-                        selectionCompGroup = first
-                    } else {
-                        selectionCompGroup = nil
-                    }
+                }
+                Task {
+                    try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                }
+                if let first = networkController.allComputerGroups.first {
+                    selectionCompGroup = first
+                } else {
+                    selectionCompGroup = nil
                 }
             }
         }
@@ -375,11 +407,13 @@ struct ComputerBasicActionView: View {
             }
         }
         
-    }
-
 
     //struct TestView_Previews: PreviewProvider {
     //    static var previews: some View {
     //        TestView()
     //    }
     //}
+
+//}
+
+}
