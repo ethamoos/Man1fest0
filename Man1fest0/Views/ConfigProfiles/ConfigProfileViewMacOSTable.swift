@@ -105,15 +105,17 @@ struct ConfigProfileViewMacOSTable: View {
                                         progress.showProgress()
                                         progress.waitForABit()
                                         Task {
-                                            if let profiles = networkController.allConfigProfiles.computerConfigurations {
-                                                let selected = profiles.filter { selectionID.contains($0.id) }
-                                                for prof in selected {
-                                                    if let pid = prof.jamfId {
-                                                        networkController.updateConfigProfileNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, profileID: String(pid), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
-                                                        try? await Task.sleep(nanoseconds: 200_000_000)
+                                                if let profiles = networkController.allConfigProfiles.computerConfigurations {
+                                                    let selected = profiles.filter { selectionID.contains($0.id) }
+                                                    let controller = networkController
+                                                    let authToken = networkController.authToken
+                                                    for prof in selected {
+                                                        if let pid = prof.jamfId {
+                                                            await controller.updateConfigProfileNameLogical(server: server, authToken: authToken, resourceType: ResourceType.configProfileDetailedMacOS, profileID: String(pid), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                                            try? await Task.sleep(nanoseconds: 200_000_000)
+                                                        }
                                                     }
                                                 }
-                                            }
                                             progress.endProgress()
                                         }
                                     }) {

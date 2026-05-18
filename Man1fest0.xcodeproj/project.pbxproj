@@ -115,7 +115,8 @@
 		E4CE369329D3372400533707 /* PolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE368D29D3372400533707 /* PolicyView.swift */; };
 		E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */; };
 		E4D434502C7FBDF600E90BAE /* ComputersBasicTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */; };
-/* End PBXBuildFile section */
+
+	/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeToMan1fest0.swift; sourceTree = "<group>"; };
@@ -229,7 +230,8 @@
 		E4CE368E29D3372400533707 /* PolicyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyDetailView.swift; sourceTree = "<group>"; };
 		E4CE57C62AD9AF680038A88A /* PackageUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackageUsageView.swift; sourceTree = "<group>"; };
 		E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputersBasicTableView.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+
+	/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		A8B252A92ECB37FF0095C43B /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
@@ -531,7 +533,7 @@
 				A88768982EE2DD3E009D97B9 /* Helper.swift */,
 				A86CB8602D3E595B00D8F22F /* ImportExportBrain.swift */,
 				A8DECD592BD7FA2700D79A11 /* Layout.swift */,
-				E4CE368429D336C100533707 /* NetBrain.swift */,
+					E4CE368429D336C100533707 /* NetBrain.swift */,
 				A8BC96A52E68224A0078AF53 /* PhotoViewModel.swift */,
 				A8B35B0F2AE822FF0007B5BE /* Progress.swift */,
 				E48D59D52C5965AA00E1E35B /* PolicyBrain.swift */,

@@ -36,6 +36,316 @@ actor AsyncSemaphore {
     }
 }
 
+// Added helper copied from NetBrain+ScriptNameTools.swift but kept here to ensure it's compiled
+@MainActor
+extension NetBrain {
+    /// Logical rename helper for scripts - placed in NetBrain.swift to ensure availability in the build.
+    func updateScriptNameLogical_v2(server: String, authToken: String, resourceType: ResourceType, scriptID: String, action: String, count: Int, match: String, replacement: String) async {
+        do {
+            let jamfURLQuery = server + "/JSSResource/scripts/id/" + "\(scriptID)"
+            guard let url = URL(string: jamfURLQuery) else { return }
+
+            // GET existing script XML
+            var getReq = URLRequest(url: url)
+            getReq.httpMethod = "GET"
+            getReq.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            getReq.setValue("application/xml", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await URLSession.shared.data(for: getReq)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                print("updateScriptNameLogical_v2: failed to fetch script XML - status \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                return
+            }
+
+            let xmlString = String(data: data, encoding: .utf8) ?? ""
+            let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+
+            // Script XML uses <script><general><name>
+            let currentName = doc.root["general"]["name"].string
+            var newName = currentName
+
+            switch action {
+            case "removelast":
+                if count >= currentName.count {
+                    newName = ""
+                } else if count > 0 {
+                    newName = String(currentName.dropLast(count))
+                }
+            case "replacelast":
+                if count >= currentName.count {
+                    newName = replacement
+                } else if count > 0 {
+                    newName = String(currentName.dropLast(count)) + replacement
+                } else {
+                    newName = replacement
+                }
+            case "replaceall":
+                newName = currentName.replacingOccurrences(of: match, with: replacement)
+            case "removefirst":
+                if count >= currentName.count {
+                    newName = ""
+                } else if count > 0 {
+                    newName = String(currentName.dropFirst(count))
+                }
+            case "replacefirst":
+                if count >= currentName.count {
+                    newName = replacement
+                } else if count > 0 {
+                    newName = replacement + String(currentName.dropFirst(count))
+                } else {
+                    newName = replacement
+                }
+            case "addlast":
+                newName = currentName + replacement
+            case "addfirst":
+                newName = replacement + currentName
+            default:
+                print("updateScriptNameLogical_v2: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
+                return
+            }
+
+            // If nothing changed, skip update
+            if newName == currentName {
+                print("updateScriptNameLogical_v2: computed name is identical to current name; nothing to do")
+                return
+            }
+
+            // Replace the <name> element in the XML
+            if let nameElem = doc.root["general"]["name"].last {
+                nameElem.removeFromParent()
+            }
+            _ = doc.root["general"].addChild(name: "name", value: newName)
+
+            // PUT updated XML back to server
+            var putReq = URLRequest(url: url)
+            putReq.httpMethod = "PUT"
+            putReq.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+            putReq.setValue("application/xml", forHTTPHeaderField: "Accept")
+            putReq.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            putReq.httpBody = doc.xml.data(using: .utf8)
+
+            let (_, putResp) = try await URLSession.shared.data(for: putReq)
+            let status = (putResp as? HTTPURLResponse)?.statusCode ?? -1
+            if (200...299).contains(status) {
+                print("updateScriptNameLogical_v2: updated script \(scriptID) name to: \(newName)")
+            } else {
+                print("updateScriptNameLogical_v2: failed to update script - status: \(status)")
+            }
+        } catch {
+            print("updateScriptNameLogical_v2 failed: \(error)")
+        }
+    }
+}
+
+// Ensure config profile and package rename helpers are available at compile-time by
+// including them directly in NetBrain.swift. Some project setups can omit free-form
+// extension files from the target; placing these helpers here guarantees they're
+// compiled into the module.
+@MainActor
+extension NetBrain {
+    // Logical rename helper for macOS configuration profiles
+    func updateConfigProfileNameLogical(server: String, authToken: String, resourceType: ResourceType, profileID: String, action: String, count: Int, match: String, replacement: String) async {
+        do {
+            let jamfURLQuery = server + "/JSSResource/osxconfigurationprofiles/id/" + "\(profileID)"
+            guard let url = URL(string: jamfURLQuery) else { return }
+
+            // GET existing config profile XML
+            var getReq = URLRequest(url: url)
+            getReq.httpMethod = "GET"
+            getReq.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            getReq.setValue("application/xml", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await URLSession.shared.data(for: getReq)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                print("updateConfigProfileNameLogical: failed to fetch profile XML - status \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                return
+            }
+
+            let xmlString = String(data: data, encoding: .utf8) ?? ""
+            let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+
+            // Expecting name at <general><name> commonly; fall back to other locations
+            var currentName = doc.root["general"]["name"].string
+            var nameLocation: (parent: AEXMLElement, key: String)? = nil
+
+            if !currentName.isEmpty {
+                nameLocation = (parent: doc.root["general"], key: "name")
+            } else if !doc.root["name"].string.isEmpty {
+                currentName = doc.root["name"].string
+                nameLocation = (parent: doc.root, key: "name")
+            } else if !doc.root["osx_configuration_profile"]["general"]["name"].string.isEmpty {
+                currentName = doc.root["osx_configuration_profile"]["general"]["name"].string
+                nameLocation = (parent: doc.root["osx_configuration_profile"]["general"], key: "name")
+            }
+
+            var newName = currentName
+
+            switch action.lowercased() {
+            case "removelast":
+                if count >= currentName.count { newName = "" }
+                else if count > 0 { newName = String(currentName.dropLast(count)) }
+            case "replacelast":
+                if count >= currentName.count { newName = replacement }
+                else if count > 0 { newName = String(currentName.dropLast(count)) + replacement }
+                else { newName = replacement }
+            case "removefirst":
+                if count >= currentName.count { newName = "" }
+                else if count > 0 { newName = String(currentName.dropFirst(count)) }
+            case "replacefirst":
+                if count >= currentName.count { newName = replacement }
+                else if count > 0 { newName = replacement + String(currentName.dropFirst(count)) }
+                else { newName = replacement }
+            case "addlast":
+                newName = currentName + replacement
+            case "addfirst":
+                newName = replacement + currentName
+            case "replaceall":
+                newName = currentName.replacingOccurrences(of: match, with: replacement)
+            default:
+                print("updateConfigProfileNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
+                return
+            }
+
+            if newName == currentName {
+                print("updateConfigProfileNameLogical: computed name is identical to current name; nothing to do")
+                return
+            }
+
+            if let loc = nameLocation {
+                if let elem = loc.parent[loc.key].last { elem.removeFromParent() }
+                _ = loc.parent.addChild(name: loc.key, value: newName)
+            } else {
+                if let elem = doc.root["general"]["name"].last { elem.removeFromParent() }
+                _ = doc.root["general"].addChild(name: "name", value: newName)
+            }
+
+            // PUT updated XML back to server
+            var putReq = URLRequest(url: url)
+            putReq.httpMethod = "PUT"
+            putReq.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+            putReq.setValue("application/xml", forHTTPHeaderField: "Accept")
+            putReq.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            putReq.httpBody = doc.xml.data(using: .utf8)
+
+            let (_, putResp) = try await URLSession.shared.data(for: putReq)
+            let status = (putResp as? HTTPURLResponse)?.statusCode ?? -1
+            if (200...299).contains(status) {
+                print("updateConfigProfileNameLogical: updated profile \(profileID) name to: \(newName)")
+            } else {
+                print("updateConfigProfileNameLogical: failed to update profile - status: \(status)")
+            }
+        } catch {
+            print("updateConfigProfileNameLogical failed: \(error)")
+        }
+    }
+
+    // Logical rename helper for packages
+    func updatePackageNameLogical(server: String, authToken: String, resourceType: ResourceType, packageID: String, action: String, count: Int, match: String, replacement: String) async {
+        do {
+            let jamfURLQuery = server + "/JSSResource/packages/id/" + "\(packageID)"
+            guard let url = URL(string: jamfURLQuery) else { return }
+
+            // GET existing package XML
+            var getReq = URLRequest(url: url)
+            getReq.httpMethod = "GET"
+            getReq.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            getReq.setValue("application/xml", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await URLSession.shared.data(for: getReq)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                print("updatePackageNameLogical: failed to fetch package XML - status \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                return
+            }
+
+            let xmlString = String(data: data, encoding: .utf8) ?? ""
+            let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
+
+            // Try common locations for the name element
+            var currentName = doc.root["general"]["name"].string
+            var nameLocation: (parent: AEXMLElement, key: String)? = nil
+
+            if !currentName.isEmpty {
+                nameLocation = (parent: doc.root["general"], key: "name")
+            } else if !doc.root["name"].string.isEmpty {
+                currentName = doc.root["name"].string
+                nameLocation = (parent: doc.root, key: "name")
+            } else if !doc.root["package"]["name"].string.isEmpty {
+                currentName = doc.root["package"]["name"].string
+                nameLocation = (parent: doc.root["package"], key: "name")
+            } else if !doc.root["package"]["general"]["name"].string.isEmpty {
+                currentName = doc.root["package"]["general"]["name"].string
+                nameLocation = (parent: doc.root["package"]["general"], key: "name")
+            }
+
+            var newName = currentName
+
+            switch action.lowercased() {
+            case "removelast":
+                if count >= currentName.count { newName = "" }
+                else if count > 0 { newName = String(currentName.dropLast(count)) }
+            case "replacelast":
+                if count >= currentName.count { newName = replacement }
+                else if count > 0 { newName = String(currentName.dropLast(count)) + replacement }
+                else { newName = replacement }
+            case "removefirst":
+                if count >= currentName.count { newName = "" }
+                else if count > 0 { newName = String(currentName.dropFirst(count)) }
+            case "replacefirst":
+                if count >= currentName.count { newName = replacement }
+                else if count > 0 { newName = replacement + String(currentName.dropFirst(count)) }
+                else { newName = replacement }
+            case "addlast":
+                newName = currentName + replacement
+            case "addfirst":
+                newName = replacement + currentName
+            case "replaceall":
+                newName = currentName.replacingOccurrences(of: match, with: replacement)
+            default:
+                print("updatePackageNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
+                return
+            }
+
+            if newName == currentName {
+                print("updatePackageNameLogical: computed name is identical to current name; nothing to do")
+                return
+            }
+
+            if let loc = nameLocation {
+                if let elem = loc.parent[loc.key].last { elem.removeFromParent() }
+                _ = loc.parent.addChild(name: loc.key, value: newName)
+            } else {
+                let pkg = doc.root["package"]
+                if !pkg["name"].string.isEmpty {
+                    if let elem = pkg["name"].last { elem.removeFromParent() }
+                    _ = pkg.addChild(name: "name", value: newName)
+                } else {
+                    if let elem = doc.root["name"].last { elem.removeFromParent() }
+                    _ = doc.root.addChild(name: "name", value: newName)
+                }
+            }
+
+            // PUT updated XML back to server
+            var putReq = URLRequest(url: url)
+            putReq.httpMethod = "PUT"
+            putReq.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+            putReq.setValue("application/xml", forHTTPHeaderField: "Accept")
+            putReq.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            putReq.httpBody = doc.xml.data(using: .utf8)
+
+            let (_, putResp) = try await URLSession.shared.data(for: putReq)
+            let status = (putResp as? HTTPURLResponse)?.statusCode ?? -1
+            if (200...299).contains(status) {
+                print("updatePackageNameLogical: updated package \(packageID) name to: \(newName)")
+            } else {
+                print("updatePackageNameLogical: failed to update package - status: \(status)")
+            }
+        } catch {
+            print("updatePackageNameLogical failed: \(error)")
+        }
+    }
+}
+
+
 @MainActor class NetBrain: ObservableObject {
     
     // #########################################################################
@@ -326,9 +636,6 @@ actor AsyncSemaphore {
     // This value is persisted to UserDefaults under the key "policyRequestDelay" so it can be
     // adjusted by the user via preferences (or programmatically by the UI).
     @Published var policyRequestDelay: TimeInterval
-    // Configurable per-item delay used by batch operations (seconds).
-    // Persisted to UserDefaults under key "perItemDelay" so users can adjust it.
-    @Published var perItemDelay: TimeInterval
     // Configurable number of concurrent detail fetches for policies. Persisted to UserDefaults
     // under the key "policyFetchConcurrency" so the user can adjust it in preferences.
     @Published var policyFetchConcurrency: Int
@@ -349,22 +656,8 @@ actor AsyncSemaphore {
         // load concurrency setting (default to 4)
         let persistedConcurrency = UserDefaults.standard.integer(forKey: "policyFetchConcurrency")
         self.policyFetchConcurrency = persistedConcurrency > 0 ? persistedConcurrency : 4
-        // load persisted per-item delay (batch operations). Default to 0.2s
-        let persistedPerItem = UserDefaults.standard.double(forKey: "perItemDelay")
-        self.perItemDelay = persistedPerItem > 0 ? persistedPerItem : 0.2
-        print("NetBrain initialized: policyRequestDelay = \(self.policyRequestDelay) seconds (\(formatDuration(self.policyRequestDelay))) | perItemDelay = \(self.perItemDelay)s")
+        print("NetBrain initialized: policyRequestDelay = \(self.policyRequestDelay) seconds (\(formatDuration(self.policyRequestDelay)))")
     }
-
-    // Setter for per-item delay used by batch operations. Persist and update UI state.
-    func setPerItemDelay(_ seconds: TimeInterval) {
-        guard seconds >= 0 else { return }
-        self.perItemDelay = seconds
-        UserDefaults.standard.set(seconds, forKey: "perItemDelay")
-        separationLine()
-        print("Per-item batch delay updated to \(seconds) seconds (\(formatDuration(seconds))). Persisted to UserDefaults key 'perItemDelay'.")
-    }
-
-    func getPerItemDelay() -> TimeInterval { self.perItemDelay }
 
     // Public setter to update and persist the delay. Call from a preferences view or programmatically.
     func setPolicyRequestDelay(_ seconds: TimeInterval) {
@@ -1073,7 +1366,7 @@ print("DEBUG - status code is 200, response is:")
             }
         } else {
             self.separationLine()
-            print("No getPackagesAssignedToPolicy response yet")
+            print("No getPackagesAssignedToPolicy response yet")    
         }
     }
     
@@ -2452,16 +2745,6 @@ print("DEBUG - status code is 200, response is:")
         scriptDetailed = try decoder.decode(Script.self, from: data)
         //        print("scriptDetailed is set to:\(scriptDetailed)")
     }
-
-    // Ensure a detailed script is available in cache. If missing or for a different ID,
-    // attempt to fetch it from the server. This helper is safe to call from async contexts
-    // to guarantee networkController.scriptDetailed is populated before callers rely on it.
-    func ensureDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
-        // If we don't have a cached detail or it's for a different script, fetch it
-        if scriptDetailed.id.isEmpty || scriptDetailed.id != String(scriptID) || scriptDetailed.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            try await getDetailedScript(server: server, scriptID: scriptID, authToken: authToken)
-        }
-    }
     
     
   
@@ -2499,14 +2782,6 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
     print("Running func: updateScript")
     print("scriptName is set to:\(scriptName)")
     print("scriptID is set to:\(scriptId)")
-
-    // If the caller didn't provide a script name and we don't have cached metadata,
-    // attempt to fetch the detailed script so we have category/filename/info/notes available.
-    if scriptName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        if self.scriptDetailed.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || self.scriptDetailed.id.isEmpty {
-            try? await self.getDetailedScript(server: server, scriptID: Int(scriptId) ?? 0, authToken: authToken)
-        }
-    }
 
     let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
     self.currentURL = jamfURLQuery
@@ -3441,6 +3716,88 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         // Delegate to existing updater
         updateComputerUsername(server: server, authToken: authToken, resourceType: resourceType, computerID: jamfIDString, newUsername: usernameToSet)
     }
+
+    // A logical variant of updateComputerName that derives a new name from the existing
+    // computer name using simple operations (remove/replace/add), then uploads the
+    // resulting name. Mirrors updatePolicyNameLogical but targets computers.
+    func updateComputerNameLogical(server: String, authToken: String, resourceType: ResourceType, computerID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
+        // Try to obtain current name from in-memory detailed objects
+        let currentName = self.computerDetailed?.name ?? self.computerDetailedFull?.general?.name ?? ""
+        guard !currentName.isEmpty else {
+            print("updateComputerNameLogical: current computer name not available in memory for id: \(computerID). Aborting.")
+            return
+        }
+
+        var newName = currentName
+        let lowerAction = action.lowercased()
+        switch lowerAction {
+        case "removelast":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropLast(remove))
+            }
+        case "replacelast":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropLast(remove)) + replacement
+            } else {
+                newName += replacement
+            }
+        case "removefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropFirst(remove))
+            }
+        case "replacefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = replacement + String(newName.dropFirst(remove))
+            } else {
+                newName = replacement + newName
+            }
+        case "addlast":
+            newName += replacement
+        case "addfirst":
+            newName = replacement + newName
+        case "replaceall":
+            if !match.isEmpty {
+                newName = newName.replacingOccurrences(of: match, with: replacement)
+            }
+        default:
+            print("updateComputerNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
+            return
+        }
+
+        if newName == currentName {
+            print("updateComputerNameLogical: computed name is identical to current name; nothing to do")
+            return
+        }
+
+        let resourcePath = getURLFormat(data: (resourceType))
+        var xml: String
+        self.separationLine()
+        print("updateComputerNameLogical - currentName='\(currentName)' newName='\(newName)'")
+
+        xml = """
+                <computer>
+                    <general>
+                        <name>\(newName)</name>
+                    </general>
+                </computer>
+                """
+
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(computerID)
+                print("Running updateComputerNameLogical - url is set as:\(url)")
+                print("resourceType is set as:\(resourceType)")
+                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
+                appendStatus("Connecting to \(url)...")
+                print("Set updateXML to true ")
+                self.updateXML = true
+            }
+        }
+    }
     
     
     //    #################################################################################
@@ -3517,12 +3874,29 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
                 // if count is zero, just append the replacement
                 newName += replacement
             }
+        case "removefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropFirst(remove))
+            }
+        case "replacefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = replacement + String(newName.dropFirst(remove))
+            } else {
+                // count zero means prepend
+                newName = replacement + newName
+            }
+        case "addlast":
+            newName += replacement
+        case "addfirst":
+            newName = replacement + newName
         case "replaceall":
             if !match.isEmpty {
                 newName = newName.replacingOccurrences(of: match, with: replacement)
             }
         default:
-            print("updatePolicyNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            print("updatePolicyNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
             return
         }
 
@@ -3558,314 +3932,6 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
             }
         } else {
             print("updatePolicyNameLogical: invalid server string")
-        }
-    }
-
-    // Generic logical rename helpers for other resource types (scripts, packages, computers, config profiles)
-    // Supported actions: "removelast", "replacelast", "replaceall"
-    // Make this async so callers can await; the function will attempt to fetch a missing
-    // detailed script entry if needed before computing a logical name change.
-    func updateScriptNameLogical(server: String, authToken: String, resourceType: ResourceType, scriptID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") async {
-        // Attempt to obtain the current name from in-memory scriptDetailed or the scripts summary
-        var detailedScriptName = self.scriptDetailed.name
-        var summaryScriptName = self.scripts.first(where: { String($0.jamfId) == scriptID })?.name
-        // If we don't have a name, try fetching the detailed script (best-effort)
-        if (detailedScriptName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) && (summaryScriptName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) {
-            // attempt to fetch; ignore errors here and fall back to summary
-            try? await ensureDetailedScript(server: server, scriptID: Int(scriptID) ?? 0, authToken: authToken)
-            detailedScriptName = self.scriptDetailed.name
-            summaryScriptName = summaryScriptName ?? self.scripts.first(where: { String($0.jamfId) == scriptID })?.name
-        }
-        let currentName = !detailedScriptName.isEmpty ? detailedScriptName : (summaryScriptName ?? "")
-        guard !currentName.isEmpty else {
-            print("updateScriptNameLogical: current script name not available in memory for id: \(scriptID). Aborting.")
-            return
-        }
-
-        var newName = currentName
-        let lowerAction = action.lowercased()
-        switch lowerAction {
-        case "removelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove))
-            }
-        case "replacelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove)) + replacement
-            } else {
-                newName += replacement
-            }
-        case "removefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropFirst(remove))
-            }
-        case "replacefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = replacement + String(newName.dropFirst(remove))
-            } else {
-                newName = replacement + newName
-            }
-        case "addlast":
-            newName = newName + replacement
-        case "addfirst":
-            newName = replacement + newName
-        case "replaceall":
-            if !match.isEmpty {
-                newName = newName.replacingOccurrences(of: match, with: replacement)
-            }
-        default:
-            print("updateScriptNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
-            return
-        }
-
-        if newName == currentName {
-            print("updateScriptNameLogical: computed name is identical to current name; nothing to do")
-            return
-        }
-
-        // Build minimal XML to update name
-        let xml = """
-                <script>
-                    <name>
-                    \(newName)
-                    </name>
-                </script>
-                """
-
-        if let serverURL = URL(string: server) {
-            let urlString = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("scripts").appendingPathComponent("id").appendingPathComponent(scriptID).absoluteString
-            if let url = URL(string: urlString) {
-                print("Running updateScriptNameLogical - url is set as:\(url)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-                self.updateXML = true
-            } else {
-                print("updateScriptNameLogical: invalid URL constructed: \(urlString)")
-            }
-        } else {
-            print("updateScriptNameLogical: invalid server string")
-        }
-    }
-
-    func updatePackageNameLogical(server: String, authToken: String, resourceType: ResourceType, packageID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
-        let currentName = self.packages.first(where: { String($0.jamfId) == packageID })?.name ?? ""
-        guard !currentName.isEmpty else {
-            print("updatePackageNameLogical: current package name not available in memory for id: \(packageID). Aborting.")
-            return
-        }
-
-        var newName = currentName
-        let lowerAction = action.lowercased()
-        switch lowerAction {
-        case "removelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove))
-            }
-        case "replacelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove)) + replacement
-            } else {
-                newName += replacement
-            }
-        case "removefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropFirst(remove))
-            }
-        case "replacefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = replacement + String(newName.dropFirst(remove))
-            } else {
-                newName = replacement + newName
-            }
-        case "addlast":
-            newName = newName + replacement
-        case "addfirst":
-            newName = replacement + newName
-        case "replaceall":
-            if !match.isEmpty {
-                newName = newName.replacingOccurrences(of: match, with: replacement)
-            }
-        default:
-            print("updatePackageNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
-            return
-        }
-
-        if newName == currentName {
-            print("updatePackageNameLogical: computed name is identical to current name; nothing to do")
-            return
-        }
-
-        let xml = """
-                <package>
-                    <name>\(newName)</name>
-                </package>
-                """
-
-        if let serverURL = URL(string: server) {
-            let urlString = serverURL.appendingPathComponent("JSSResource").appendingPathComponent("packages").appendingPathComponent("id").appendingPathComponent(packageID).absoluteString
-            if let url = URL(string: urlString) {
-                print("Running updatePackageNameLogical - url is set as:\(url)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-                self.updateXML = true
-            } else {
-                print("updatePackageNameLogical: invalid URL constructed: \(urlString)")
-            }
-        } else {
-            print("updatePackageNameLogical: invalid server string")
-        }
-    }
-
-    func updateComputerNameLogical(server: String, authToken: String, resourceType: ResourceType, computerID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
-        // Attempt to derive current name from in-memory caches (broken into parts to help the compiler)
-        let nameFromComputers = self.computers.first(where: { String($0.jamfId ?? 0) == computerID })?.name
-        let nameFromComputersBasic = self.computersBasic.first(where: { String($0.jamfId) == computerID })?.name
-        let nameFromDetailedFull = self.computerDetailedFull?.general?.name
-        let nameFromDetailed = self.computerDetailed?.name
-        let currentName = nameFromComputers ?? nameFromComputersBasic ?? nameFromDetailedFull ?? nameFromDetailed ?? ""
-
-        guard !currentName.isEmpty else {
-            print("updateComputerNameLogical: current computer name not available in memory for id: \(computerID). Aborting.")
-            return
-        }
-
-        var newName = currentName
-        let lowerAction = action.lowercased()
-        switch lowerAction {
-        case "removelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove))
-            }
-        case "replacelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove)) + replacement
-            } else {
-                newName += replacement
-            }
-        case "removefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropFirst(remove))
-            }
-        case "replacefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = replacement + String(newName.dropFirst(remove))
-            } else {
-                newName = replacement + newName
-            }
-        case "addlast":
-            newName = newName + replacement
-        case "addfirst":
-            newName = replacement + newName
-        case "replaceall":
-            if !match.isEmpty {
-                newName = newName.replacingOccurrences(of: match, with: replacement)
-            }
-        default:
-            print("updateComputerNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
-            return
-        }
-
-        if newName == currentName {
-            print("updateComputerNameLogical: computed name is identical to current name; nothing to do")
-            return
-        }
-
-        // Reuse helper that already constructs the proper <computer><general><name>.. format
-        updateComputerName(server: server, authToken: authToken, resourceType: resourceType, computerName: newName, computerID: computerID)
-    }
-
-    func updateConfigProfileNameLogical(server: String, authToken: String, resourceType: ResourceType, profileID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
-        // Try to get name from cached config profiles list or detailed object
-        let currentName = self.allConfigProfiles.computerConfigurations?.first(where: { String($0.jamfId ?? 0) == profileID })?.name
-            ?? self.OSXConfigProfileDetailed?.general?.name
-            ?? ""
-
-        guard !currentName.isEmpty else {
-            print("updateConfigProfileNameLogical: current profile name not available in memory for id: \(profileID). Aborting.")
-            return
-        }
-
-        var newName = currentName
-        let lowerAction = action.lowercased()
-        switch lowerAction {
-        case "removelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove))
-            }
-        case "replacelast":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropLast(remove)) + replacement
-            } else {
-                newName += replacement
-            }
-        case "removefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = String(newName.dropFirst(remove))
-            }
-        case "replacefirst":
-            if count > 0 {
-                let remove = min(count, newName.count)
-                newName = replacement + String(newName.dropFirst(remove))
-            } else {
-                newName = replacement + newName
-            }
-        case "addlast":
-            newName = newName + replacement
-        case "addfirst":
-            newName = replacement + newName
-        case "replaceall":
-            if !match.isEmpty {
-                newName = newName.replacingOccurrences(of: match, with: replacement)
-            }
-        default:
-            print("updateConfigProfileNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
-            return
-        }
-
-        if newName == currentName {
-            print("updateConfigProfileNameLogical: computed name is identical to current name; nothing to do")
-            return
-        }
-
-        // Build minimal XML for config profile name update. Jamf expects <os_x_configuration_profile> wrapper
-        let xml = """
-        <os_x_configuration_profile>
-            <general>
-                <name>
-                \(newName)
-                </name>
-            </general>
-        </os_x_configuration_profile>
-        """
-
-        if let serverURL = URL(string: server) {
-            let resourcePath = getURLFormat(data: .configProfileDetailedMacOS)
-            let urlString = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(profileID).absoluteString
-            if let url = URL(string: urlString) {
-                print("Running updateConfigProfileNameLogical - url is set as:\(url)")
-                sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
-                appendStatus("Connecting to \(url)...")
-                self.updateXML = true
-            } else {
-                print("updateConfigProfileNameLogical: invalid URL constructed: \(urlString)")
-            }
-        } else {
-            print("updateConfigProfileNameLogical: invalid server string")
         }
     }
         

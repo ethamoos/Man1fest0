@@ -28,7 +28,7 @@ struct ComputerBasicActionView: View {
         //  ########################################################################################
         
         @State private var selectionCompGroup: ComputerGroup? = nil
-        @State var selection = Set<ComputerBasicRecord>()
+        @State var selection = Set<Int>()
         @State private var usernameToSet: String = ""
         @State private var showUsernameUpdateConfirm: Bool = false
         @State private var isUpdatingUsername: Bool = false
@@ -41,329 +41,20 @@ struct ComputerBasicActionView: View {
         @State private var selectedEAName = ""
         @State private var eaValue = ""
         
+        // Split the large view into smaller computed subviews so the compiler can type-check efficiently.
         var body: some View {
-            
             VStack(alignment: .leading) {
-                
-                // Header
-                HStack(alignment: .center) {
-                    VStack(alignment: .leading) {
-                        Text("Computers")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        Text("Browse and manage computers")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        Task {
-                            try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
-                        }
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    // Open selected computers in the Jamf web UI
-                    Button(action: {
-                        guard !selection.isEmpty else { return }
-                        progress.showProgress()
-                        progress.waitForABit()
-
-                        let ids = selection.map { String($0.id) }
-                        for id in ids {
-                            layout.openURL(urlString: "\(server)/computers.html?id=\(id)&o=r", requestType: "computers")
-                        }
-                    }) {
-                        Image(systemName: "safari")
-                    }
-                    .buttonStyle(.bordered)
-                 }
-                .padding(.bottom, 6)
-                .padding(.horizontal)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
-                
-                if networkController.allComputersBasic.computers.count > 0 {
-                    
-                    NavigationView {
-    #if os(macOS)
-                        List(searchResults, id: \.self, selection: $selection) { computer in
-                            HStack {
-                                Image(systemName: "desktopcomputer")
-                                    .foregroundColor(.accentColor)
-                                Text(computer.name)
-                                    .font(.system(size: 13.0))
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        .searchable(text: $searchText)
-                        .listStyle(SidebarListStyle())
-    #else
-                        List(searchResults, id: \.self) { computer in
-                            HStack {
-                                Image(systemName: "desktopcomputer")
-                                    .foregroundColor(.accentColor)
-                                Text(computer.name)
-                                    .font(.system(size: 13.0))
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        .searchable(text: $searchText)
-    #endif
-                        Text("\(networkController.computers.count) total computers")
-                    }
-                    
-                    Text("\(networkController.computers.count) total computers")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 6)
-                        .navigationViewStyle(DefaultNavigationViewStyle())
-                    
-                    //  ##########################################################################
-                    //  processUpdateAddComputersToGroup
-                    //  ##########################################################################
-                    
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        // Call the real update group function and show progress
-                        guard let compGroup = selectionCompGroup else {
-                            // No group selected - nothing to do
-                            return
-                        }
-                        
-                        // Request group members XML then call addMultipleComputersToGroup when the XML is available.
-                        Task {
-                            xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
-                            
-                            var attempts = 0
-                            while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
-                                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
-                                attempts += 1
-                            }
-                            
-                            if xmlController.computerGroupMembersXML.isEmpty {
-                                print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
-                            } else {
-                                print("Got groupMembers XML")
-                            }
-                            
-                            xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
-                                                                      computers: selection,
-                                                                      authToken: networkController.authToken,
-                                                                      groupId: String(compGroup.id),
-                                                                      resourceType: ResourceType.computerGroup,
-                                                                      server: server)
-                        }
-                        
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Add Selection To Group")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    
-                    HStack(spacing: 10) {
-                        TextField("Filter", text: $computerGroupFilter)
-                            // Keep the text field to its intrinsic size and avoid stretching
-                            .fixedSize()
-                            .frame(minWidth: 160)
-                        Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
-                            ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
-                                Text(group.name)
-                                    .tag(group as ComputerGroup?)
-                            }
-                        }
-                        // Use a compact menu-style picker so it doesn't expand to fill the HStack
-                        .pickerStyle(MenuPickerStyle())
-                        .fixedSize()
-                     }
-                     
-                    Divider()
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Update Extension Attribute")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-
-                        // Update Username for selected computers
-                        VStack(alignment: .leading) {
-                            HStack {
-                                TextField("Username to set", text: $usernameToSet)
-                                    .textFieldStyle(.roundedBorder)
-                                Button(action: {
-                                    // show confirmation alert
-                                    guard !selection.isEmpty else { return }
-                                    showUsernameUpdateConfirm = true
-                                }) {
-                                    HStack {
-                                        Image(systemName: "person.fill.questionmark")
-                                        Text("Set Username for \(selection.count) computers")
-                                    }
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.blue)
-                                .disabled(usernameToSet.isEmpty || selection.isEmpty || isUpdatingUsername)
-                            }
-                        }
-                        // overlay a small progress indicator while updating
-                        .overlay(
-                            Group {
-                                if isUpdatingUsername {
-                                    ProgressView("Updating...")
-                                        .progressViewStyle(CircularProgressViewStyle())
-                                        .padding(8)
-                                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.windowBackgroundColor).opacity(0.85)))
-                                }
-                            }
-                        )
-
-                        // Rename tools for selected computers
-                        DisclosureGroup("Rename Tools") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Picker("Action", selection: $toolsNameAction) {
-                                    Text("Remove last chars").tag("removelast")
-                                    Text("Remove first chars").tag("removefirst")
-                                    Text("Replace last chars").tag("replacelast")
-                                    Text("Replace first chars").tag("replacefirst")
-                                    Text("Replace all occurrences").tag("replaceall")
-                                    Text("Add last characters").tag("addlast")
-                                    Text("Add first characters").tag("addfirst")
-                                }
-                                .pickerStyle(.segmented)
-
-                                HStack(spacing: 8) {
-                                    if toolsNameAction == "removelast" || toolsNameAction == "replacelast" || toolsNameAction == "removefirst" || toolsNameAction == "replacefirst" {
-                                        TextField("Count", text: $toolsCountString)
-                                            .frame(width: 80)
-                                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    }
-                                    if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" || toolsNameAction == "replacefirst" || toolsNameAction == "addlast" || toolsNameAction == "addfirst" {
-                                        TextField("Replacement", text: $toolsReplacementString)
-                                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    }
-                                    if toolsNameAction == "replaceall" {
-                                        TextField("Match", text: $toolsMatchString)
-                                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    }
-                                    Spacer()
-                                    Button(action: {
-                                        let countInt = Int(toolsCountString) ?? 0
-                                        progress.showProgress()
-                                        progress.waitForABit()
-                                        let ids = selection.map { String($0.id) }
-                                        Task {
-                                            for id in ids {
-                                                networkController.updateComputerNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
-                                                try? await Task.sleep(nanoseconds: 200_000_000)
-                                            }
-                                            progress.endProgress()
-                                        }
-                                    }) {
-                                        Text("Run on Selected")
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .disabled(selection.isEmpty)
-                                }
-                            }
-                            .padding()
-                        }
-
-                        HStack {
-                            Text("Extension Attribute:")
-                            Picker("", selection: $selectedEAName) {
-                                Text("Select...").tag("")
-                                ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
-                                    Text(ea.name).tag(ea.name)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
-                        
-                        HStack {
-                            Text("Value:")
-                            TextField("EA Value", text: $eaValue)
-                                .textFieldStyle(.roundedBorder)
-                        }
-                        
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            let computerIds = Set(selection.map { $0.id })
-                            Task {
-                                do {
-                                    try await extensionAttributeController.updateComputerEAValueMultipleComputers(
-                                        server: server,
-                                        authToken: networkController.authToken,
-                                        computerIds: computerIds,
-                                        extAttName: selectedEAName,
-                                        updateValue: eaValue
-                                    )
-                                } catch {
-                                    print("Failed to update EA: \(error)")
-                                }
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                Text("Update EA Value for \(selection.count) computers")
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                        .disabled(selectedEAName.isEmpty || selection.isEmpty)
-                    }
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
-                     
-                    .onAppear {
-                        
-                        if networkController.allComputersBasic.computers.count == 0 {
-                            print("Fetching computers")
-                            Task {
-                                try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
-                            }
-                        }
-                        
-                        
-                        Task {
-                            try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
-                        }
-                        
-                        if let first = networkController.allComputerGroups.first {
-                            selectionCompGroup = first
-                        } else {
-                            selectionCompGroup = nil
-                        }
-                    }
-                    
-                } else {
-                    
-                    ProgressView {
-                        Text("Loading data")
-                            .font(.title)
-                            .progressViewStyle(.horizontal)
-                    }
-                    .padding()
-                    Spacer()
-                }
+                headerView
+                listAndStatsView
+                actionPanelView
             }
             .padding()
-            // Username update confirmation alert
             .alert("Set username for selected computers?", isPresented: $showUsernameUpdateConfirm) {
                 Button("Set") {
                     isUpdatingUsername = true
                     progress.showProgress()
                     progress.waitForABit()
-                    let ids = selection.map { String($0.id) }
+                    let ids = selection.map { String($0) }
                     Task {
                         for id in ids {
                             networkController.updateComputerUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, newUsername: usernameToSet)
@@ -377,6 +68,297 @@ struct ComputerBasicActionView: View {
                 Button("Cancel", role: .cancel) { }
             } message: {
                 Text("This will set the username attribute for the selected computers on the server. Continue?")
+            }
+        }
+
+        private var headerView: some View {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading) {
+                    Text("Computers")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Browse and manage computers")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    Task {
+                        try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                    }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+
+                Button(action: {
+                    guard !selection.isEmpty else { return }
+                    progress.showProgress()
+                    progress.waitForABit()
+
+                    let ids = selection.map { String($0) }
+                    for id in ids {
+                        layout.openURL(urlString: "\(server)/computers.html?id=\(id)&o=r", requestType: "computers")
+                    }
+                }) {
+                    Image(systemName: "safari")
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.bottom, 6)
+            .padding(.horizontal)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
+        }
+
+        private var listAndStatsView: some View {
+            Group {
+                if networkController.allComputersBasic.computers.count > 0 {
+                    NavigationView {
+#if os(macOS)
+                        List(searchResults, id: \.self, selection: $selection) { computer in
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .searchable(text: $searchText)
+                        .listStyle(SidebarListStyle())
+#else
+                        List(searchResults, id: \.self) { computer in
+                            HStack {
+                                Image(systemName: "desktopcomputer")
+                                    .foregroundColor(.accentColor)
+                                Text(computer.name)
+                                    .font(.system(size: 13.0))
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .searchable(text: $searchText)
+#endif
+                        Text("\(networkController.computers.count) total computers")
+                    }
+
+                    Text("\(networkController.computers.count) total computers")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 6)
+                        .navigationViewStyle(DefaultNavigationViewStyle())
+                } else {
+                    ProgressView {
+                        Text("Loading data")
+                            .font(.title)
+                            .progressViewStyle(.horizontal)
+                    }
+                    .padding()
+                    Spacer()
+                }
+            }
+        }
+
+        private var actionPanelView: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                Button(action: {
+                    progress.showProgress()
+                    progress.waitForABit()
+                    guard let compGroup = selectionCompGroup else { return }
+                    Task {
+                        xmlController.getGroupMembersXML(server: server, groupId: compGroup.id, authToken: networkController.authToken)
+                        var attempts = 0
+                        while xmlController.computerGroupMembersXML.isEmpty && attempts < 15 {
+                            try? await Task.sleep(nanoseconds: 200_000_000)
+                            attempts += 1
+                        }
+                        if xmlController.computerGroupMembersXML.isEmpty {
+                            print("Warning: did not receive group members XML in time; proceeding with whatever XML is available")
+                        } else {
+                            print("Got groupMembers XML")
+                        }
+                        let selectedRecords = Set(networkController.allComputersBasic.computers.filter { selection.contains($0.id) })
+                        xmlController.addMultipleComputersToGroup(xmlContent: xmlController.computerGroupMembersXML,
+                                                                  computers: selectedRecords,
+                                                                  authToken: networkController.authToken,
+                                                                  groupId: String(compGroup.id),
+                                                                  resourceType: ResourceType.computerGroup,
+                                                                  server: server)
+                    }
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Add Selection To Group")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+
+                HStack(spacing: 10) {
+                    TextField("Filter", text: $computerGroupFilter)
+                        .fixedSize()
+                        .frame(minWidth: 160)
+                    Picker(selection: $selectionCompGroup, label: Text("Group:").bold()) {
+                        ForEach(networkController.allComputerGroups.filter({ computerGroupFilter.isEmpty ? true : $0.name.contains(computerGroupFilter) }), id: \.self) { group in
+                            Text(group.name)
+                                .tag(group as ComputerGroup?)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .fixedSize()
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Update Extension Attribute")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    VStack(alignment: .leading) {
+                        HStack {
+                            TextField("Username to set", text: $usernameToSet)
+                                .textFieldStyle(.roundedBorder)
+                            Button(action: {
+                                guard !selection.isEmpty else { return }
+                                showUsernameUpdateConfirm = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "person.fill.questionmark")
+                                    Text("Set Username for \(selection.count) computers")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .disabled(usernameToSet.isEmpty || selection.isEmpty || isUpdatingUsername)
+                        }
+                    }
+                    .overlay(
+                        Group {
+                            if isUpdatingUsername {
+                                ProgressView("Updating...")
+                                    .progressViewStyle(CircularProgressViewStyle())
+                                    .padding(8)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.windowBackgroundColor).opacity(0.85)))
+                            }
+                        }
+                    )
+
+                    DisclosureGroup("Rename Tools") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Picker("Action", selection: $toolsNameAction) {
+                                Text("Remove last chars").tag("removelast")
+                                Text("Remove first chars").tag("removefirst")
+                                Text("Replace last chars").tag("replacelast")
+                                Text("Replace first chars").tag("replacefirst")
+                                Text("Replace all occurrences").tag("replaceall")
+                                Text("Add last characters").tag("addlast")
+                                Text("Add first characters").tag("addfirst")
+                            }
+                            .pickerStyle(.segmented)
+
+                            HStack(spacing: 8) {
+                                if toolsNameAction == "removelast" || toolsNameAction == "replacelast" || toolsNameAction == "removefirst" || toolsNameAction == "replacefirst" {
+                                    TextField("Count", text: $toolsCountString)
+                                        .frame(width: 80)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                }
+                                if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" || toolsNameAction == "replacefirst" || toolsNameAction == "addlast" || toolsNameAction == "addfirst" {
+                                    TextField("Replacement", text: $toolsReplacementString)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                }
+                                if toolsNameAction == "replaceall" {
+                                    TextField("Match", text: $toolsMatchString)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                }
+                                Spacer()
+                                Button(action: {
+                                    let countInt = Int(toolsCountString) ?? 0
+                                    progress.showProgress()
+                                    progress.waitForABit()
+                                    let ids = selection.map { String($0) }
+                                    Task {
+                                        for id in ids {
+                                            networkController.updateComputerNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                            try? await Task.sleep(nanoseconds: 200_000_000)
+                                        }
+                                        progress.endProgress()
+                                    }
+                                }) {
+                                    Text("Run on Selected")
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(selection.isEmpty)
+                            }
+                        }
+                        .padding()
+                    }
+
+                    HStack {
+                        Text("Extension Attribute:")
+                        Picker("", selection: $selectedEAName) {
+                            Text("Select...").tag("")
+                            ForEach(extensionAttributeController.allComputerExtensionAttributesDict, id: \.self) { ea in
+                                Text(ea.name).tag(ea.name)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    HStack {
+                        Text("Value:")
+                        TextField("EA Value", text: $eaValue)
+                            .textFieldStyle(.roundedBorder)
+                    }
+
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        let computerIds = Set(selection)
+                        Task {
+                            do {
+                                try await extensionAttributeController.updateComputerEAValueMultipleComputers(
+                                    server: server,
+                                    authToken: networkController.authToken,
+                                    computerIds: computerIds,
+                                    extAttName: selectedEAName,
+                                    updateValue: eaValue
+                                )
+                            } catch {
+                                print("Failed to update EA: \(error)")
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                            Text("Update EA Value for \(selection.count) computers")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .disabled(selectedEAName.isEmpty || selection.isEmpty)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+
+                .onAppear {
+                    if networkController.allComputersBasic.computers.count == 0 {
+                        print("Fetching computers")
+                        Task {
+                            try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                        }
+                    }
+                    Task {
+                        try await networkController.getAllGroups(server: server, authToken: networkController.authToken)
+                    }
+                    if let first = networkController.allComputerGroups.first {
+                        selectionCompGroup = first
+                    } else {
+                        selectionCompGroup = nil
+                    }
+                }
             }
         }
 

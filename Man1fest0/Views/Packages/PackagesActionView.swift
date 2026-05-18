@@ -180,8 +180,10 @@ struct PackagesActionView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             Task {
+                                let controller = networkController
+                                let authToken = networkController.authToken
                                 for pkg in selection {
-                                    networkController.updatePackageNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.package, packageID: String(pkg.jamfId ?? 0), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                    await controller.updatePackageNameLogical(server: server, authToken: authToken, resourceType: ResourceType.package, packageID: String(pkg.jamfId ?? 0), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
                                     try? await Task.sleep(nanoseconds: 200_000_000)
                                 }
                                 progress.endProgress()

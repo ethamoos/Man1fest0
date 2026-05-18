@@ -1,5 +1,7 @@
+// SecuritySettingsManager with persistent save-on-change behavior
 import Foundation
 import SwiftUI
+import Combine
 #if os(macOS)
 import AppKit
 #endif
@@ -12,6 +14,8 @@ class SecuritySettingsManager: ObservableObject {
     @Published var inactivityTimeout: InactivityTimeout = .fiveMinutes
     @Published var useKeychainForPassword: Bool = false
     @Published var requirePasswordOnWake: Bool = true
+    // Combine cancellables for internal observation
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Inactivity Timeout Enum
     enum InactivityTimeout: Int, CaseIterable, Identifiable {
@@ -71,18 +75,43 @@ class SecuritySettingsManager: ObservableObject {
 
         loadSettings()
 
+        // Persist individual preference changes immediately so settings
+        // remain consistent across app sessions without requiring an explicit
+        // "Done" action or app termination.
+        // Observe published properties and save when they change.
+        $inactivityTimeout
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.saveSettings() }
+            }
+            .store(in: &cancellables)
+
+        $useKeychainForPassword
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.saveSettings() }
+            }
+            .store(in: &cancellables)
+
+        $requirePasswordOnWake
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.saveSettings() }
+            }
+            .store(in: &cancellables)
+
         // Persist settings on application termination / backgrounding so
         // preferences are not lost when the app shuts down.
 #if canImport(UIKit)
         NotificationCenter.default.addObserver(forName: UIApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.saveSettings()
+            Task { @MainActor in self?.saveSettings() }
         }
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.saveSettings()
+            Task { @MainActor in self?.saveSettings() }
         }
 #else
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.saveSettings()
+            Task { @MainActor in self?.saveSettings() }
         }
 #endif
     }

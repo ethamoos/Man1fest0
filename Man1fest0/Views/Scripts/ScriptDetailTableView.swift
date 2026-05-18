@@ -200,20 +200,13 @@ struct ScriptDetailTableView: View {
                         Spacer()
                         Button(action: {
                             // If multiple selected, show confirmation before proceeding
-                            if selection.count > 1 {
-                                showRenameConfirmation = true
-                                return
-                            }
-                            let countInt = Int(toolsCountString) ?? 0
-                            progress.showProgress()
-                            Task {
-                                for script in selectedScripts {
-                                    await networkController.updateScriptNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.script, scriptID: String(script.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
-                                    // per-item delay configured in NetBrain
-                                    try? await Task.sleep(nanoseconds: UInt64(networkController.perItemDelay * 1_000_000_000))
+                                if selection.count > 1 {
+                                    showRenameConfirmation = true
+                                    return
                                 }
-                                progress.endProgress()
-                            }
+                                let countInt = Int(toolsCountString) ?? 0
+                                // Delegate the async work to a helper method to avoid property-wrapper resolution issues inside ViewBuilder closures
+                                runRenameForSelected(countInt: countInt)
                         }) {
                             Text("Run on Selected")
                         }
@@ -228,14 +221,7 @@ struct ScriptDetailTableView: View {
             .alert("Confirm Rename", isPresented: $showRenameConfirmation) {
                 Button("Proceed", role: .destructive) {
                     let countInt = Int(toolsCountString) ?? 0
-                    progress.showProgress()
-                    Task {
-                        for script in selectedScripts {
-                            await networkController.updateScriptNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.script, scriptID: String(script.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
-                            try? await Task.sleep(nanoseconds: UInt64(networkController.perItemDelay * 1_000_000_000))
-                        }
-                        progress.endProgress()
-                    }
+                    runRenameForSelected(countInt: countInt)
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
@@ -441,6 +427,22 @@ struct ScriptDetailTableView: View {
             // clear selection after delete request
             selection.removeAll()
             progress.showProgressView = false
+        }
+    }
+
+    // Helper: run the logical rename operation for all selected scripts
+    private func runRenameForSelected(countInt: Int) {
+        progress.showProgress()
+        progress.waitForABit()
+        let controller = networkController
+        let authToken = networkController.authToken
+        Task {
+            for script in selectedScripts {
+                await controller.updateScriptNameLogical_v2(server: server, authToken: authToken, resourceType: ResourceType.script, scriptID: String(script.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                // use the configured policy request delay accessor (perItemDelay doesn't exist on NetBrain)
+                try? await Task.sleep(nanoseconds: UInt64(controller.getPolicyRequestDelay() * 1_000_000_000))
+            }
+            progress.endProgress()
         }
     }
 
