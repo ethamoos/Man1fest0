@@ -354,19 +354,23 @@ struct PolicyActionsDetailTableView: View {
 
                         Picker("Action", selection: $toolsNameAction) {
                             Text("Remove last chars").tag("removelast")
+                            Text("Remove first chars").tag("removefirst")
                             Text("Replace last chars").tag("replacelast")
+                            Text("Replace first chars").tag("replacefirst")
                             Text("Replace all occurrences").tag("replaceall")
+                            Text("Add last characters").tag("addlast")
+                            Text("Add first characters").tag("addfirst")
                         }
                         .pickerStyle(.segmented)
 
                         HStack(spacing: 8) {
-                            if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
+                            if toolsNameAction == "removelast" || toolsNameAction == "replacelast" || toolsNameAction == "removefirst" || toolsNameAction == "replacefirst" {
                                 TextField("Count", text: $toolsCountString)
                                     .frame(width: 100)
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                             }
 
-                            if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
+                            if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" || toolsNameAction == "replacefirst" || toolsNameAction == "addlast" || toolsNameAction == "addfirst" {
                                 TextField("Replacement", text: $toolsReplacementString)
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                             }

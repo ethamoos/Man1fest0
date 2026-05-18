@@ -326,6 +326,9 @@ actor AsyncSemaphore {
     // This value is persisted to UserDefaults under the key "policyRequestDelay" so it can be
     // adjusted by the user via preferences (or programmatically by the UI).
     @Published var policyRequestDelay: TimeInterval
+    // Configurable per-item delay used by batch operations (seconds).
+    // Persisted to UserDefaults under key "perItemDelay" so users can adjust it.
+    @Published var perItemDelay: TimeInterval
     // Configurable number of concurrent detail fetches for policies. Persisted to UserDefaults
     // under the key "policyFetchConcurrency" so the user can adjust it in preferences.
     @Published var policyFetchConcurrency: Int
@@ -346,8 +349,22 @@ actor AsyncSemaphore {
         // load concurrency setting (default to 4)
         let persistedConcurrency = UserDefaults.standard.integer(forKey: "policyFetchConcurrency")
         self.policyFetchConcurrency = persistedConcurrency > 0 ? persistedConcurrency : 4
-        print("NetBrain initialized: policyRequestDelay = \(self.policyRequestDelay) seconds (\(formatDuration(self.policyRequestDelay)))")
+        // load persisted per-item delay (batch operations). Default to 0.2s
+        let persistedPerItem = UserDefaults.standard.double(forKey: "perItemDelay")
+        self.perItemDelay = persistedPerItem > 0 ? persistedPerItem : 0.2
+        print("NetBrain initialized: policyRequestDelay = \(self.policyRequestDelay) seconds (\(formatDuration(self.policyRequestDelay))) | perItemDelay = \(self.perItemDelay)s")
     }
+
+    // Setter for per-item delay used by batch operations. Persist and update UI state.
+    func setPerItemDelay(_ seconds: TimeInterval) {
+        guard seconds >= 0 else { return }
+        self.perItemDelay = seconds
+        UserDefaults.standard.set(seconds, forKey: "perItemDelay")
+        separationLine()
+        print("Per-item batch delay updated to \(seconds) seconds (\(formatDuration(seconds))). Persisted to UserDefaults key 'perItemDelay'.")
+    }
+
+    func getPerItemDelay() -> TimeInterval { self.perItemDelay }
 
     // Public setter to update and persist the delay. Call from a preferences view or programmatically.
     func setPolicyRequestDelay(_ seconds: TimeInterval) {
@@ -2435,6 +2452,16 @@ print("DEBUG - status code is 200, response is:")
         scriptDetailed = try decoder.decode(Script.self, from: data)
         //        print("scriptDetailed is set to:\(scriptDetailed)")
     }
+
+    // Ensure a detailed script is available in cache. If missing or for a different ID,
+    // attempt to fetch it from the server. This helper is safe to call from async contexts
+    // to guarantee networkController.scriptDetailed is populated before callers rely on it.
+    func ensureDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
+        // If we don't have a cached detail or it's for a different script, fetch it
+        if scriptDetailed.id.isEmpty || scriptDetailed.id != String(scriptID) || scriptDetailed.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            try await getDetailedScript(server: server, scriptID: scriptID, authToken: authToken)
+        }
+    }
     
     
   
@@ -2472,6 +2499,14 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
     print("Running func: updateScript")
     print("scriptName is set to:\(scriptName)")
     print("scriptID is set to:\(scriptId)")
+
+    // If the caller didn't provide a script name and we don't have cached metadata,
+    // attempt to fetch the detailed script so we have category/filename/info/notes available.
+    if scriptName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if self.scriptDetailed.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || self.scriptDetailed.id.isEmpty {
+            try? await self.getDetailedScript(server: server, scriptID: Int(scriptId) ?? 0, authToken: authToken)
+        }
+    }
 
     let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
     self.currentURL = jamfURLQuery
@@ -3528,10 +3563,19 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
 
     // Generic logical rename helpers for other resource types (scripts, packages, computers, config profiles)
     // Supported actions: "removelast", "replacelast", "replaceall"
-    func updateScriptNameLogical(server: String, authToken: String, resourceType: ResourceType, scriptID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
+    // Make this async so callers can await; the function will attempt to fetch a missing
+    // detailed script entry if needed before computing a logical name change.
+    func updateScriptNameLogical(server: String, authToken: String, resourceType: ResourceType, scriptID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") async {
         // Attempt to obtain the current name from in-memory scriptDetailed or the scripts summary
-        let detailedScriptName = self.scriptDetailed.name
-        let summaryScriptName = self.scripts.first(where: { String($0.jamfId) == scriptID })?.name
+        var detailedScriptName = self.scriptDetailed.name
+        var summaryScriptName = self.scripts.first(where: { String($0.jamfId) == scriptID })?.name
+        // If we don't have a name, try fetching the detailed script (best-effort)
+        if (detailedScriptName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) && (summaryScriptName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) {
+            // attempt to fetch; ignore errors here and fall back to summary
+            try? await ensureDetailedScript(server: server, scriptID: Int(scriptID) ?? 0, authToken: authToken)
+            detailedScriptName = self.scriptDetailed.name
+            summaryScriptName = summaryScriptName ?? self.scripts.first(where: { String($0.jamfId) == scriptID })?.name
+        }
         let currentName = !detailedScriptName.isEmpty ? detailedScriptName : (summaryScriptName ?? "")
         guard !currentName.isEmpty else {
             print("updateScriptNameLogical: current script name not available in memory for id: \(scriptID). Aborting.")
@@ -3553,12 +3597,28 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
             } else {
                 newName += replacement
             }
+        case "removefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropFirst(remove))
+            }
+        case "replacefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = replacement + String(newName.dropFirst(remove))
+            } else {
+                newName = replacement + newName
+            }
+        case "addlast":
+            newName = newName + replacement
+        case "addfirst":
+            newName = replacement + newName
         case "replaceall":
             if !match.isEmpty {
                 newName = newName.replacingOccurrences(of: match, with: replacement)
             }
         default:
-            print("updateScriptNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            print("updateScriptNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
             return
         }
 
@@ -3613,12 +3673,28 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
             } else {
                 newName += replacement
             }
+        case "removefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropFirst(remove))
+            }
+        case "replacefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = replacement + String(newName.dropFirst(remove))
+            } else {
+                newName = replacement + newName
+            }
+        case "addlast":
+            newName = newName + replacement
+        case "addfirst":
+            newName = replacement + newName
         case "replaceall":
             if !match.isEmpty {
                 newName = newName.replacingOccurrences(of: match, with: replacement)
             }
         default:
-            print("updatePackageNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            print("updatePackageNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
             return
         }
 
@@ -3676,12 +3752,28 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
             } else {
                 newName += replacement
             }
+        case "removefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropFirst(remove))
+            }
+        case "replacefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = replacement + String(newName.dropFirst(remove))
+            } else {
+                newName = replacement + newName
+            }
+        case "addlast":
+            newName = newName + replacement
+        case "addfirst":
+            newName = replacement + newName
         case "replaceall":
             if !match.isEmpty {
                 newName = newName.replacingOccurrences(of: match, with: replacement)
             }
         default:
-            print("updateComputerNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            print("updateComputerNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
             return
         }
 
@@ -3720,12 +3812,28 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
             } else {
                 newName += replacement
             }
+        case "removefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropFirst(remove))
+            }
+        case "replacefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = replacement + String(newName.dropFirst(remove))
+            } else {
+                newName = replacement + newName
+            }
+        case "addlast":
+            newName = newName + replacement
+        case "addfirst":
+            newName = replacement + newName
         case "replaceall":
             if !match.isEmpty {
                 newName = newName.replacingOccurrences(of: match, with: replacement)
             }
         default:
-            print("updateConfigProfileNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            print("updateConfigProfileNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
             return
         }
 

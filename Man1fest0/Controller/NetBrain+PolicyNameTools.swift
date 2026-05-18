@@ -29,7 +29,7 @@ extension NetBrain {
                 let currentName = doc.root["general"]["name"].string
                 var newName = currentName
 
-                switch action {
+                switch action.lowercased() {
                 case "removelast":
                     if count >= currentName.count {
                         newName = ""
@@ -44,10 +44,28 @@ extension NetBrain {
                     } else {
                         newName = replacement
                     }
+                case "removefirst":
+                    if count >= currentName.count {
+                        newName = ""
+                    } else if count > 0 {
+                        newName = String(currentName.dropFirst(count))
+                    }
+                case "replacefirst":
+                    if count >= currentName.count {
+                        newName = replacement
+                    } else if count > 0 {
+                        newName = replacement + String(currentName.dropFirst(count))
+                    } else {
+                        newName = replacement + currentName
+                    }
+                case "addlast":
+                    newName = currentName + replacement
+                case "addfirst":
+                    newName = replacement + currentName
                 case "replaceall":
                     newName = currentName.replacingOccurrences(of: match, with: replacement)
                 default:
-                    print("updatePolicyNameLogical: unknown action \(action)")
+                    print("updatePolicyNameLogical: unknown action \(action). Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
                     return
                 }
 

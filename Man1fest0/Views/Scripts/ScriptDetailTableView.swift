@@ -63,6 +63,8 @@ struct ScriptDetailTableView: View {
     @State private var injectResultMessage: String = ""
     @State private var showInjectConfirmation: Bool = false
     @State private var pendingInjectAll: Bool = true
+    // Rename confirmation
+    @State private var showRenameConfirmation: Bool = false
     // Rename tools (logical rename similar to policies)
     @State private var toolsNameAction: String = "removelast" // removelast, replacelast, replaceall
     @State private var toolsCountString: String = "1"
@@ -172,18 +174,22 @@ struct ScriptDetailTableView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Action", selection: $toolsNameAction) {
                         Text("Remove last chars").tag("removelast")
+                        Text("Remove first chars").tag("removefirst")
                         Text("Replace last chars").tag("replacelast")
+                        Text("Replace first chars").tag("replacefirst")
                         Text("Replace all occurrences").tag("replaceall")
+                        Text("Add last characters").tag("addlast")
+                        Text("Add first characters").tag("addfirst")
                     }
                     .pickerStyle(.segmented)
 
                     HStack(spacing: 8) {
-                        if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
+                        if toolsNameAction == "removelast" || toolsNameAction == "replacelast" || toolsNameAction == "removefirst" || toolsNameAction == "replacefirst" {
                             TextField("Count", text: $toolsCountString)
                                 .frame(width: 80)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                         }
-                        if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
+                        if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" || toolsNameAction == "replacefirst" || toolsNameAction == "addlast" || toolsNameAction == "addfirst" {
                             TextField("Replacement", text: $toolsReplacementString)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                         }
@@ -193,12 +199,18 @@ struct ScriptDetailTableView: View {
                         }
                         Spacer()
                         Button(action: {
+                            // If multiple selected, show confirmation before proceeding
+                            if selection.count > 1 {
+                                showRenameConfirmation = true
+                                return
+                            }
                             let countInt = Int(toolsCountString) ?? 0
                             progress.showProgress()
                             Task {
                                 for script in selectedScripts {
-                                    networkController.updateScriptNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.script, scriptID: String(script.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
-                                    try? await Task.sleep(nanoseconds: 200_000_000)
+                                    await networkController.updateScriptNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.script, scriptID: String(script.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                    // per-item delay configured in NetBrain
+                                    try? await Task.sleep(nanoseconds: UInt64(networkController.perItemDelay * 1_000_000_000))
                                 }
                                 progress.endProgress()
                             }
@@ -210,6 +222,24 @@ struct ScriptDetailTableView: View {
                     }
                 }
                 .padding(.vertical, 6)
+            }
+
+            // confirmation for multi-script rename
+            .alert("Confirm Rename", isPresented: $showRenameConfirmation) {
+                Button("Proceed", role: .destructive) {
+                    let countInt = Int(toolsCountString) ?? 0
+                    progress.showProgress()
+                    Task {
+                        for script in selectedScripts {
+                            await networkController.updateScriptNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.script, scriptID: String(script.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                            try? await Task.sleep(nanoseconds: UInt64(networkController.perItemDelay * 1_000_000_000))
+                        }
+                        progress.endProgress()
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You're about to perform renames across multiple scripts. This action cannot be undone. Proceed?")
             }
 
             // Show the selected scripts by matching selection UUIDs back to the current script list

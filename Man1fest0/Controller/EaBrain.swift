@@ -253,12 +253,28 @@ import AEXML
             } else {
                 newName += replacement
             }
+        case "removefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropFirst(remove))
+            }
+        case "replacefirst":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = replacement + String(newName.dropFirst(remove))
+            } else {
+                newName = replacement + newName
+            }
+        case "addlast":
+            newName = newName + replacement
+        case "addfirst":
+            newName = replacement + newName
         case "replaceall":
             if !match.isEmpty {
                 newName = newName.replacingOccurrences(of: match, with: replacement)
             }
         default:
-            print("updateComputerExtensionAttributeNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            print("updateComputerExtensionAttributeNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, removefirst, replacefirst, addlast, addfirst, replaceall")
             return
         }
 
