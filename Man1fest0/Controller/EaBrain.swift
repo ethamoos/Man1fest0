@@ -228,6 +228,49 @@ import AEXML
             print("updateComputerExtensionAttribute response body:\n\(body)")
         }
     }
+
+    // Logical rename for Computer Extension Attribute name (supports removelast, replacelast, replaceall)
+    func updateComputerExtensionAttributeNameLogical(server: String, authToken: String, extAtId: String, action: String, count: Int = 0, match: String = "", replacement: String = "") async throws {
+        // Try to obtain current name from detailed or summary caches
+        let currentName = self.computerExtensionAttributeDetailed.name.isEmpty ? self.allComputerExtensionAttributesDict.first(where: { String($0.id) == extAtId })?.name ?? "" : self.computerExtensionAttributeDetailed.name
+        guard !currentName.isEmpty else {
+            print("updateComputerExtensionAttributeNameLogical: current EA name not available in memory for id: \(extAtId). Aborting.")
+            return
+        }
+
+        var newName = currentName
+        let lowerAction = action.lowercased()
+        switch lowerAction {
+        case "removelast":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropLast(remove))
+            }
+        case "replacelast":
+            if count > 0 {
+                let remove = min(count, newName.count)
+                newName = String(newName.dropLast(remove)) + replacement
+            } else {
+                newName += replacement
+            }
+        case "replaceall":
+            if !match.isEmpty {
+                newName = newName.replacingOccurrences(of: match, with: replacement)
+            }
+        default:
+            print("updateComputerExtensionAttributeNameLogical: unknown action '\(action)'. Supported: removelast, replacelast, replaceall")
+            return
+        }
+
+        if newName == currentName {
+            print("updateComputerExtensionAttributeNameLogical: computed name is identical to current name; nothing to do")
+            return
+        }
+
+        // Reuse updateComputerExtensionAttribute to submit the changed name (preserve enabled flag if available)
+        let enabledFlag = self.computerExtensionAttributeDetailed.enabled
+        try await updateComputerExtensionAttribute(server: server, authToken: authToken, extAtId: extAtId, extAtName: newName, enabled: enabledFlag, resourceType: .computerExtensionAttribute)
+    }
     
     func updateComputerEAValue(server: String, authToken: String, computerId: Int, extAttName: String, updateValue: String) async throws {
         let name = extAttName.trimmingCharacters(in: .whitespacesAndNewlines)

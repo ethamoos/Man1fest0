@@ -32,6 +32,11 @@ struct ComputerBasicActionView: View {
         @State private var usernameToSet: String = ""
         @State private var showUsernameUpdateConfirm: Bool = false
         @State private var isUpdatingUsername: Bool = false
+            // Rename tools for computers
+            @State private var toolsNameAction: String = "removelast"
+            @State private var toolsCountString: String = "1"
+            @State private var toolsMatchString: String = ""
+            @State private var toolsReplacementString: String = ""
         
         @State private var selectedEAName = ""
         @State private var eaValue = ""
@@ -219,6 +224,53 @@ struct ComputerBasicActionView: View {
                                 }
                             }
                         )
+
+                        // Rename tools for selected computers
+                        DisclosureGroup("Rename Tools") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Picker("Action", selection: $toolsNameAction) {
+                                    Text("Remove last chars").tag("removelast")
+                                    Text("Replace last chars").tag("replacelast")
+                                    Text("Replace all occurrences").tag("replaceall")
+                                }
+                                .pickerStyle(.segmented)
+
+                                HStack(spacing: 8) {
+                                    if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
+                                        TextField("Count", text: $toolsCountString)
+                                            .frame(width: 80)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
+                                        TextField("Replacement", text: $toolsReplacementString)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    if toolsNameAction == "replaceall" {
+                                        TextField("Match", text: $toolsMatchString)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        let countInt = Int(toolsCountString) ?? 0
+                                        progress.showProgress()
+                                        progress.waitForABit()
+                                        let ids = selection.map { String($0.id) }
+                                        Task {
+                                            for id in ids {
+                                                networkController.updateComputerNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                                try? await Task.sleep(nanoseconds: 200_000_000)
+                                            }
+                                            progress.endProgress()
+                                        }
+                                    }) {
+                                        Text("Run on Selected")
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .disabled(selection.isEmpty)
+                                }
+                            }
+                            .padding()
+                        }
 
                         HStack {
                             Text("Extension Attribute:")

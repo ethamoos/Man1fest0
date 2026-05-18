@@ -63,6 +63,11 @@ struct ScriptDetailTableView: View {
     @State private var injectResultMessage: String = ""
     @State private var showInjectConfirmation: Bool = false
     @State private var pendingInjectAll: Bool = true
+    // Rename tools (logical rename similar to policies)
+    @State private var toolsNameAction: String = "removelast" // removelast, replacelast, replaceall
+    @State private var toolsCountString: String = "1"
+    @State private var toolsMatchString: String = ""
+    @State private var toolsReplacementString: String = ""
     
     //  ########################################################################################
     //  ########################################################################################
@@ -161,6 +166,51 @@ struct ScriptDetailTableView: View {
                 .tint(.blue)
             }
             .padding(.vertical, 6)
+
+            // Rename tools for selected scripts
+            DisclosureGroup("Rename Tools") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("Action", selection: $toolsNameAction) {
+                        Text("Remove last chars").tag("removelast")
+                        Text("Replace last chars").tag("replacelast")
+                        Text("Replace all occurrences").tag("replaceall")
+                    }
+                    .pickerStyle(.segmented)
+
+                    HStack(spacing: 8) {
+                        if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
+                            TextField("Count", text: $toolsCountString)
+                                .frame(width: 80)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
+                            TextField("Replacement", text: $toolsReplacementString)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        if toolsNameAction == "replaceall" {
+                            TextField("Match", text: $toolsMatchString)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        Spacer()
+                        Button(action: {
+                            let countInt = Int(toolsCountString) ?? 0
+                            progress.showProgress()
+                            Task {
+                                for script in selectedScripts {
+                                    networkController.updateScriptNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.script, scriptID: String(script.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                    try? await Task.sleep(nanoseconds: 200_000_000)
+                                }
+                                progress.endProgress()
+                            }
+                        }) {
+                            Text("Run on Selected")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(selection.isEmpty)
+                    }
+                }
+                .padding(.vertical, 6)
+            }
 
             // Show the selected scripts by matching selection UUIDs back to the current script list
             if !selection.isEmpty {

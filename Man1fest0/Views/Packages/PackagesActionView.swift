@@ -37,6 +37,11 @@ struct PackagesActionView: View {
     }
     
     @State var selection = Set<Package>()
+    // Rename tools
+    @State private var toolsNameAction: String = "removelast"
+    @State private var toolsCountString: String = "1"
+    @State private var toolsMatchString: String = ""
+    @State private var toolsReplacementString: String = ""
     
     
     var body: some View {
@@ -141,6 +146,52 @@ struct PackagesActionView: View {
                 //              CATEGORY
                 //              ####################################################################
                 
+            // Rename tools for packages
+            DisclosureGroup("Rename Tools") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("Action", selection: $toolsNameAction) {
+                        Text("Remove last chars").tag("removelast")
+                        Text("Replace last chars").tag("replacelast")
+                        Text("Replace all occurrences").tag("replaceall")
+                    }
+                    .pickerStyle(.segmented)
+
+                    HStack(spacing: 8) {
+                        if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
+                            TextField("Count", text: $toolsCountString)
+                                .frame(width: 80)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
+                            TextField("Replacement", text: $toolsReplacementString)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        if toolsNameAction == "replaceall" {
+                            TextField("Match", text: $toolsMatchString)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        Spacer()
+                        Button(action: {
+                            let countInt = Int(toolsCountString) ?? 0
+                            progress.showProgress()
+                            progress.waitForABit()
+                            Task {
+                                for pkg in selection {
+                                    networkController.updatePackageNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.package, packageID: String(pkg.jamfId ?? 0), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                    try? await Task.sleep(nanoseconds: 200_000_000)
+                                }
+                                progress.endProgress()
+                            }
+                        }) {
+                            Text("Run on Selected")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(selection.isEmpty)
+                    }
+                }
+                .padding()
+            }
+
             LazyVGrid(columns: layout.columnsFlex) {
                 HStack {
                     

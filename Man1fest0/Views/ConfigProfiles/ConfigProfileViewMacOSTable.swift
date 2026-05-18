@@ -20,6 +20,11 @@ struct ConfigProfileViewMacOSTable: View {
     @State private var showingWarning = false
     
     @State private var selectionID = Set<ConfigProfileSummary.ID>()
+    // Rename tools for config profiles
+    @State private var toolsNameAction: String = "removelast"
+    @State private var toolsCountString: String = "1"
+    @State private var toolsMatchString: String = ""
+    @State private var toolsReplacementString: String = ""
     @State private var selectedDevice = ""
     @State private var selectedCommand = ""
     @State var selectedGroup: ComputerGroup = ComputerGroup(id: 0, name: "", isSmart: false)
@@ -65,6 +70,56 @@ struct ConfigProfileViewMacOSTable: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                        
+                        // Rename tools
+                        DisclosureGroup("Rename Tools") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Picker("Action", selection: $toolsNameAction) {
+                                    Text("Remove last chars").tag("removelast")
+                                    Text("Replace last chars").tag("replacelast")
+                                    Text("Replace all occurrences").tag("replaceall")
+                                }
+                                .pickerStyle(.segmented)
+
+                                HStack(spacing: 8) {
+                                    if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
+                                        TextField("Count", text: $toolsCountString)
+                                            .frame(width: 80)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
+                                        TextField("Replacement", text: $toolsReplacementString)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    if toolsNameAction == "replaceall" {
+                                        TextField("Match", text: $toolsMatchString)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        let countInt = Int(toolsCountString) ?? 0
+                                        progress.showProgress()
+                                        progress.waitForABit()
+                                        Task {
+                                            if let profiles = networkController.allConfigProfiles.computerConfigurations {
+                                                let selected = profiles.filter { selectionID.contains($0.id) }
+                                                for prof in selected {
+                                                    if let pid = prof.jamfId {
+                                                        networkController.updateConfigProfileNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, profileID: String(pid), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                                        try? await Task.sleep(nanoseconds: 200_000_000)
+                                                    }
+                                                }
+                                            }
+                                            progress.endProgress()
+                                        }
+                                    }) {
+                                        Text("Run on Selected")
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                }
+                            }
+                            .padding()
+                        }
                         
                         
                         LazyVGrid(columns: layout.columnsFlex) {

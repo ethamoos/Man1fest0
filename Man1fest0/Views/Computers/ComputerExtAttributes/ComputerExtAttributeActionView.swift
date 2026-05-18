@@ -20,6 +20,11 @@ struct ComputerExtAttributeActionView: View {
     @State var searchText: String = ""
     @State var selection = Set<ComputerExtensionAttribute>()
     @State private var showingWarning = false
+    // Rename tools for Extension Attributes
+    @State private var toolsNameAction: String = "removelast"
+    @State private var toolsCountString: String = "1"
+    @State private var toolsMatchString: String = ""
+    @State private var toolsReplacementString: String = ""
 
     var body: some View {
         
@@ -65,11 +70,60 @@ struct ComputerExtAttributeActionView: View {
                     Divider()
                     VStack(alignment: .leading) {
                         Text("Selections").fontWeight(.bold)
-                        
+
                         List(Array(selection), id: \.self) { computerEA in
                             Text(computerEA.name )
                         }
                         .frame(height: 50)
+
+                        DisclosureGroup("Rename Tools") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Picker("Action", selection: $toolsNameAction) {
+                                    Text("Remove last chars").tag("removelast")
+                                    Text("Replace last chars").tag("replacelast")
+                                    Text("Replace all occurrences").tag("replaceall")
+                                }
+                                .pickerStyle(.segmented)
+
+                                HStack(spacing: 8) {
+                                    if toolsNameAction == "removelast" || toolsNameAction == "replacelast" {
+                                        TextField("Count", text: $toolsCountString)
+                                            .frame(width: 80)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" {
+                                        TextField("Replacement", text: $toolsReplacementString)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    if toolsNameAction == "replaceall" {
+                                        TextField("Match", text: $toolsMatchString)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        let countInt = Int(toolsCountString) ?? 0
+                                        progress.showProgress()
+                                        progress.waitForABit()
+                                        Task {
+                                            for ea in Array(selection) {
+                                                do {
+                                                    try await extensionAttributeController.updateComputerExtensionAttributeNameLogical(server: server, authToken: networkController.authToken, extAtId: String(ea.id), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                                } catch {
+                                                    print("Failed to rename EA \(ea.id): \(error)")
+                                                }
+                                                try? await Task.sleep(nanoseconds: 200_000_000)
+                                            }
+                                            progress.endProgress()
+                                        }
+                                    }) {
+                                        Text("Run on Selected")
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .disabled(selection.isEmpty)
+                                }
+                            }
+                            .padding()
+                        }
                     }
 #else
                     List(searchResults, id: \.self) { computerEA in
