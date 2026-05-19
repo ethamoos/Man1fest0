@@ -44,6 +44,8 @@ struct PackageUsageView: View {
     @State private var toolsMatchString: String = ""
     @State private var toolsReplacementString: String = ""
     @State private var showPackageRenameConfirmation: Bool = false
+    // Color for prominent disclosure chevron in rename tools
+    @State private var renameDisclosureColorName: String = "blue"
 
     // Computed property: are detailed policies fully downloaded?
     private var detailedPoliciesComplete: Bool {
@@ -376,8 +378,35 @@ struct PackageUsageView: View {
                 }
                 .padding(.top)
 
-                // Package rename tools
-                DisclosureGroup("Rename Tools") {
+                // Package rename tools (prominent disclosure)
+                ProminentDisclosure(indicatorColor: prominentDisclosureColorForName(renameDisclosureColorName)) {
+                    HStack(spacing: 8) {
+                        Text("Rename Tools")
+                            .font(.headline)
+                        Spacer()
+                        Menu {
+                            ForEach(["blue","green","red","orange","purple","gray"], id: \.self) { name in
+                                Button(action: { renameDisclosureColorName = name }) {
+                                    HStack {
+                                        Circle()
+                                            .fill(prominentDisclosureColorForName(name))
+                                            .frame(width: 10, height: 10)
+                                        Text(name.capitalized)
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(prominentDisclosureColorForName(renameDisclosureColorName))
+                                    .frame(width: 12, height: 12)
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                        }
+                        .menuStyle(BorderlessButtonMenuStyle())
+                    }
+                } content: {
                     VStack(alignment: .leading, spacing: 8) {
                         Picker("Action", selection: $toolsNameAction) {
                             Text("Remove last chars").tag("removelast")
@@ -522,6 +551,9 @@ struct PackageUsageView: View {
                 Task {
                     try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
                     
+                    Task {
+                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    }
                 }
                 if networkController.allPoliciesDetailed.count == networkController.policies.count {
                     print("Detailed policies have downloaded - analyse usage")
@@ -544,6 +576,7 @@ struct PackageUsageView: View {
                 print("fetchedDetailedPolicies has run - ignoring")
             }
         }
+
     }
 
     // Run logical rename for selected packages

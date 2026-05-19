@@ -284,10 +284,11 @@ struct PolicyScopeTabView: View {
 
     private var scopingActionsView: some View {
         
-                    DisclosureGroup("Enable Bulk Scoping") {
-
-        
-        VStack(alignment: .leading) {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Enable Bulk Scoping")
+                            .font(.headline)
+                    } content: {
+                        VStack(alignment: .leading) {
             HStack {
                 Button(action: {
                     showingWarningAllComputers = true
@@ -626,8 +627,11 @@ struct PolicyScopeTabView: View {
     }
 
     private var editLimitationsEditorView: some View {
-        DisclosureGroup("Edit Limitations") {
-        VStack(alignment: .leading) {
+        ProminentDisclosure(indicatorColor: .accentColor) {
+            Text("Edit Limitations")
+                .font(.headline)
+        } content: {
+            VStack(alignment: .leading) {
 //            LazyVGrid(columns: layout.threeColumnsFlex, spacing: 10) {
             HStack(spacing: 5) {
                 //                        Picker(selection: $ldapSearchCustomGroupSelection, label: Text("Search Results:")) {
@@ -728,7 +732,10 @@ struct PolicyScopeTabView: View {
                 }
 
                 // Edit Exclusions
-                DisclosureGroup("Edit Exclusions") {
+                ProminentDisclosure(indicatorColor: .accentColor) {
+                    Text("Edit Exclusions")
+                        .font(.headline)
+                } content: {
                     VStack(alignment: .leading) {
                         // Excluded computer groups
                         if ((localPolicyDetailed ?? networkController.policyDetailed)?.scope?.exclusions?.computerGroups?.count ?? 0) == 0 {

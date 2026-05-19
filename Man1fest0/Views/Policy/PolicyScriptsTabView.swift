@@ -226,9 +226,11 @@ struct PolicyScriptsTabView: View {
                         }
                     }
                     
-                    DisclosureGroup("More Parameters") {
-                      
-                        
+                    // Replaced DisclosureGroup("More Parameters") with ProminentDisclosure
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("More Parameters")
+                            .font(.headline)
+                    } content: {
                         HStack {
                             LazyVGrid(columns: layout.columns) {
                                 TextField("parameter4", text: $scriptParameter4)
@@ -251,7 +253,11 @@ struct PolicyScriptsTabView: View {
                         }
                     }
                     
-                    DisclosureGroup("Notes") {
+                    // Replaced DisclosureGroup("Notes") with ProminentDisclosure
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Notes")
+                            .font(.headline)
+                    } content: {
                         VStack() {
                             NotesView()
                         }
@@ -263,7 +269,11 @@ struct PolicyScriptsTabView: View {
                 }
                 
                 
-                DisclosureGroup("Add/Remove Scripts") {
+                // Replaced DisclosureGroup("Add/Remove Scripts") with ProminentDisclosure
+                ProminentDisclosure(indicatorColor: .accentColor) {
+                    Text("Add/Remove Scripts")
+                        .font(.headline)
+                } content: {
                     
                     //  ################################################################################
                     //              Scripts picker
@@ -381,20 +391,23 @@ struct PolicyScriptsTabView: View {
                 }
                 
                 
-                DisclosureGroup("Add Individual Command/s To Run In Policy") {
-                    
+                // Replaced DisclosureGroup("Add Individual Command/s To Run In Policy") with ProminentDisclosure
+                ProminentDisclosure(indicatorColor: .accentColor) {
+                    Text("Add Individual Command/s To Run In Policy")
+                        .font(.headline)
+                } content: {
+
                     //  ################################################################################
                     //  Add custom command in policy4
                     //  ################################################################################
-                    
-                    
+
                     TextEditor(text: $command)
                         .frame(minHeight: 20)
                         .frame(maxHeight: 40)
                         .border(Color.gray)
-              
+
                     Button(action: {
-                        
+
                         progress.showProgress()
                         progress.waitForABit()
                         networkController.separationLine()

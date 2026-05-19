@@ -29,6 +29,8 @@ struct ConfigProfileViewMacOSTable: View {
     @State private var selectedCommand = ""
     @State var selectedGroup: ComputerGroup = ComputerGroup(id: 0, name: "", isSmart: false)
     @State var selectedCategory: Category? = Category(jamfId: 0, name: "")
+    // Color for prominent disclosure chevron in rename tools
+    @State private var renameDisclosureColorName: String = "blue"
 
     
     var body: some View {
@@ -72,7 +74,28 @@ struct ConfigProfileViewMacOSTable: View {
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
                         
                         // Rename tools
-                        DisclosureGroup("Rename Tools") {
+                        ProminentDisclosure(indicatorColor: prominentDisclosureColorForName(renameDisclosureColorName)) {
+                            HStack(spacing: 8) {
+                                Text("Rename Tools").font(.headline)
+                                Spacer()
+                                Menu {
+                                    ForEach(["blue","green","red","orange","purple","gray"], id: \.self) { name in
+                                        Button(action: { renameDisclosureColorName = name }) {
+                                            HStack {
+                                                Circle().fill(prominentDisclosureColorForName(name)).frame(width: 10, height: 10)
+                                                Text(name.capitalized)
+                                            }
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Circle().fill(prominentDisclosureColorForName(renameDisclosureColorName)).frame(width: 12, height: 12)
+                                        Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
+                                    }
+                                }
+                                .menuStyle(BorderlessButtonMenuStyle())
+                            }
+                        } content: {
                             VStack(alignment: .leading, spacing: 8) {
                                 Picker("Action", selection: $toolsNameAction) {
                                     Text("Remove last chars").tag("removelast")

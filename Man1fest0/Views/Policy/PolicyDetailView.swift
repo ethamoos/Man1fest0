@@ -389,8 +389,10 @@ struct PolicyDetailView: View {
                 //              CLONE
                 //              ##########################################################################
                 
-            DisclosureGroup("Clone Policy") {
-                
+            ProminentDisclosure(indicatorColor: .accentColor) {
+                Text("Clone Policy")
+                    .font(.headline)
+            } content: {
                 LazyVGrid(columns: layout.columnFlex, spacing: 20) {
                     
                     HStack {

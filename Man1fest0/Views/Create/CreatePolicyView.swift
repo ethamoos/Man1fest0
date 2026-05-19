@@ -351,89 +351,6 @@ struct CreatePolicyView: View {
                                 Text("Preview XML")
                             }
 
-                            // Open in Browser - refresh policies first and estimate new policy ID
-                            Button(action: {
-                                progress.showProgress()
-                                Task {
-                                    // Refresh policy list from server before estimating next ID
-                                    do {
-                                        try await networkController.getAllPolicies(server: server)
-                                    } catch {
-                                        print("Failed to refresh policies before opening in browser: \(error)")
-                                    }
-
-                                    // Combine any available policy lists
-                                    let combined = (networkController.allPoliciesConverted + networkController.policies)
-
-                                    // First attempt: try to find a policy by name (exact or contains) matching the policy name the user entered.
-                                    let trimmedName = newPolicyName.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    var opened = false
-                                    if !trimmedName.isEmpty {
-                                        // Prefer exact match (case-insensitive), then contains
-                                        if let exact = combined.first(where: { $0.name.localizedCaseInsensitiveCompare(trimmedName) == .orderedSame }), let id = exact.jamfId {
-                                            let base = server.trimmingCharacters(in: .whitespacesAndNewlines)
-                                            let uiURL = base.hasSuffix("/") ? "\(base)policies.html?id=\(id)&o=r" : "\(base)/policies.html?id=\(id)&o=r"
-                                            print("Found policy by exact name: opening id \(id) -> \(uiURL)")
-                                            layout.openURL(urlString: uiURL, requestType: "policies")
-                                            opened = true
-                                        } else if let contain = combined.first(where: { $0.name.localizedCaseInsensitiveContains(trimmedName) }), let id = contain.jamfId {
-                                            let base = server.trimmingCharacters(in: .whitespacesAndNewlines)
-                                            let uiURL = base.hasSuffix("/") ? "\(base)policies.html?id=\(id)&o=r" : "\(base)/policies.html?id=\(id)&o=r"
-                                            print("Found policy by partial name: opening id \(id) -> \(uiURL)")
-                                            layout.openURL(urlString: uiURL, requestType: "policies")
-                                            opened = true
-                                        }
-                                    }
-
-                                    if !opened {
-                                        // No match by name; fall back to numeric estimate based on the highest known ID + 1 (Jamf generally increments IDs)
-                                        let idSet = Set(combined.compactMap { $0.jamfId })
-                                        let maxID = idSet.max() ?? 0
-                                        let estimated = maxID + 1
-
-                                        var base = server.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        if base.hasSuffix("/") { base.removeLast() }
-                                        func makeURL(_ id: Int) -> String { "\(base)/policies.html?id=\(id)&o=r" }
-
-                                        // Silent lookup: probe estimated id and neighbouring ids; if any exists open that one.
-                                        let maxAttempts = 5
-                                        let candidates: [Int] = [estimated] + (1...maxAttempts).flatMap { off in [estimated + off, estimated - off] }
-
-                                        for id in candidates {
-                                            if id <= 0 { continue }
-                                            let uiURL = makeURL(id)
-                                            let exists = await checkURLExists(uiURL)
-                                            if exists {
-                                                print("Opening nearby policy UI at id \(id): \(uiURL)")
-                                                layout.openURL(urlString: uiURL, requestType: "policies")
-                                                opened = true
-                                                break
-                                            }
-                                        }
-
-                                        if !opened {
-                                            // Fallback: open estimated URL anyway
-                                            let uiURL = makeURL(estimated)
-                                            print("Fallback: opening estimated policy URL: \(uiURL)")
-                                            layout.openURL(urlString: uiURL, requestType: "policies")
-                                        }
-                                    }
-
-                                    // End progress indicator
-                                    progress.endProgress()
-                                }
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "safari")
-                                    Text("Open in Browser")
-                                }
-                            }
-//                            .buttonStyle(.bordered)
-                            .help("Open the estimated new policy in the Jamf web UI (tries gaps and neighbours before fallback).")
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-                            .padding(.top, 6)
-                            
                             Toggle(isOn: $createDepartmentIsChecked) {
                                 Text("New Dept")
                             }
@@ -443,13 +360,19 @@ struct CreatePolicyView: View {
                                 Text("Self Service")
                             }
                             .toggleStyle(.checkbox)
+                            
+                            
+                            
+                           
                         }
                     }
                     
 #if os(macOS)
                     // File import controls - Select a local XML file and import as a policy
                     
-                    DisclosureGroup("Import Policy from XML") {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Import Policy from XML").font(.headline)
+                    } content: {
                         
                         //                    LazyVGrid(columns: layout.column, spacing: 5) {
                         //
@@ -512,7 +435,9 @@ struct CreatePolicyView: View {
                     }
                     
                     // Templates section
-                    DisclosureGroup("Policy Templates", isExpanded: $templatesExpanded) {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Policy Templates").font(.headline)
+                    } content: {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 TextField("Template name", text: $newTemplateName)
@@ -583,6 +508,9 @@ struct CreatePolicyView: View {
                                     Toggle("", isOn: $selfServiceEnable)
                                         .toggleStyle(SwitchToggleStyle(tint: .red))
                                 }
+                                
+                                
+                                
                             }
                         }
                     }

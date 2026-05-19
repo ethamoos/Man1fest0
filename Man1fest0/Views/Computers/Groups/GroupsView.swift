@@ -113,10 +113,12 @@ struct GroupsView: View {
 //            VStack(alignment: .leading) {
 //            VStack() {
                 
-                // Smaller, scrollable multi-select computer list (replaces full ComputerView)
+                    // Smaller, scrollable multi-select computer list (replaces full ComputerView)
                 VStack(alignment: .leading) {
 //                    Text("Add/Remove Computers").font(.headline)
-                    DisclosureGroup("Add/Remove Computers") {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Add/Remove Computers").font(.headline)
+                    } content: {
 
                     
                     HStack {

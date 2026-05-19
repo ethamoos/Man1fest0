@@ -67,6 +67,8 @@ struct ScriptUsageView: View {
     @State private var toolsMatchString: String = ""
     @State private var toolsReplacementString: String = ""
     @State private var showScriptRenameConfirmation: Bool = false
+    // Color for prominent disclosure chevron in rename tools
+    @State private var renameDisclosureColorName: String = "blue"
 
     // Small helper views to reduce type-checking complexity in large body
     @ViewBuilder
@@ -553,7 +555,34 @@ struct ScriptUsageView: View {
             .padding()
 
             // Rename tools for scripts (operate on selected script names)
-            DisclosureGroup("Rename Tools") {
+            ProminentDisclosure(indicatorColor: prominentDisclosureColorForName(renameDisclosureColorName)) {
+                HStack(spacing: 8) {
+                    Text("Rename Tools")
+                        .font(.headline)
+                    Spacer()
+                    Menu {
+                        ForEach(["blue","green","red","orange","purple","gray"], id: \.self) { name in
+                            Button(action: { renameDisclosureColorName = name }) {
+                                HStack {
+                                    Circle()
+                                        .fill(prominentDisclosureColorForName(name))
+                                        .frame(width: 10, height: 10)
+                                    Text(name.capitalized)
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(prominentDisclosureColorForName(renameDisclosureColorName))
+                                .frame(width: 12, height: 12)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                    }
+                    .menuStyle(BorderlessButtonMenuStyle())
+                }
+            } content: {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Action", selection: $toolsNameAction) {
                         Text("Remove last chars").tag("removelast")
@@ -583,11 +612,21 @@ struct ScriptUsageView: View {
                         Spacer()
                         Button(action: {
                             let countInt = Int(toolsCountString) ?? 0
-                            if selection.count > 1 {
-                                showScriptRenameConfirmation = true
-                                return
+                            progress.showProgress()
+                            progress.waitForABit()
+                            Task {
+                                for id in selection {
+                                    do {
+                                        try await networkController.getDetailedScript(scriptID: String(id))
+                                    } catch {
+                                        print("Failed to load detailed script for id \(id): \(error)")
+                                    }
+                                    networkController.updateScriptNameLogical(server: server, authToken: networkController.authToken, scriptID: String(id), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                    try? await Task.sleep(nanoseconds: 200_000_000)
+                                }
+                                do { try await networkController.getScripts(server: server, authToken: networkController.authToken) } catch { print("Failed to refresh scripts after rename: \(error)") }
+                                progress.endProgress()
                             }
-                            runScriptRenameForSelected(countInt: countInt)
                         }) {
                             Text("Run on Selected")
                         }
@@ -595,7 +634,7 @@ struct ScriptUsageView: View {
                         .disabled(selection.isEmpty)
                     }
                 }
-                .padding(.vertical, 6)
+                .padding()
             }
             .alert("Confirm Rename", isPresented: $showScriptRenameConfirmation) {
                 Button("Proceed", role: .destructive) {
@@ -642,18 +681,8 @@ struct ScriptUsageView: View {
                     print("Waiting for detailed policies to download")
                     progress.showExtendedProgress()
                     progress.currentProgress = 0.25
-                    Task {
-                        progress.showExtendedProgress()
-                        // Ensure we have policies detailed; if not, trigger them
-                        if networkController.allPoliciesDetailed.isEmpty {
-                            try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
-                        }
-                        // Recompute scripts assigned/unassigned
-                        policyController.getScriptsInUse(allPoliciesDetailed: networkController.allPoliciesDetailed)
-                        policyController.getScriptValues(allScripts: networkController.scripts)
-                        // small delay to ensure UI updates
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                        progress.endExtendedProgress()
+                    if backgroundTasks.unassignedPackagesArray.count > 0 {
+                        progress.currentProgress = 0.5
                     }
                     print("End extended progress")
                     progress.endExtendedProgress()

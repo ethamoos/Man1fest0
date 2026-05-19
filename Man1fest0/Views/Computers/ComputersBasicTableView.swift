@@ -74,175 +74,176 @@ struct ComputersBasicTableView: View {
             
             if networkController.allComputersBasic.computers.count > 0 {
 
-                // Inline refresh button (removed ambiguous .toolbar usage)
-                HStack {
+                ProminentDisclosure(indicatorColor: .accentColor) {
+                    Text("Import CSV")
+                        .font(.headline)
+                } content: {
+
+                    // CSV Import buttons
                     Button(action: {
-                        
-                        Task {
-                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
-                        }
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        print("Refresh")
+                        showingFileImporter = true
                     }) {
                         HStack(spacing: 10) {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Refresh")
+                            Image(systemName: "tray.and.arrow.down")
+                            Text("Import CSV")
                         }
                     }
                     .buttonStyle(.bordered)
-                    Spacer()
-                }
 
-                Table(searchResults, selection: $selection, sortOrder: $sortOrder) {
-                    
-                    TableColumn("Name", value: \.name)
-                    TableColumn("User", value: \.username)
-                    TableColumn("ID") {
-                        computer in
-                        Text(String(computer.id))
-                    }
-                    TableColumn("Department", value: \.department)
-                    TableColumn("Building", value: \.building)
-                    TableColumn("Model", value: \.model)
-                    TableColumn("Serial", value: \.serialNumber)
-                    TableColumn("Checkin", value: \.reportDateUTC)
-                }
-                .searchable(text: $searchText)
-                .onChange(of: sortOrder) { newOrder in
-                    // Optionally, sort searchResults if needed
-                    // If sorting is required, implement sorting logic here
-                }
-                
-            } else {
-                
-                ProgressView {
-                    Text("Loading data")
-                        .font(.title)
-                }
-                .padding()
-                Spacer()
-            }
-            
-            Divider()
-            
-            VStack(alignment: .leading, spacing: 10) {
-                Text("\(networkController.allComputersBasic.computers.count) total computers")
-                Text("You have:\(selection.count) selections")
-            }
-            .padding()
-            
-            Divider()
-            
-            //              ##########################################################################
-            //              DELETE AND PROCESS SELECTION
-            //              ##########################################################################
-            
-            VStack(alignment: .leading, spacing: 10) {
-                
-                HStack {
-                    
                     Button(action: {
-                        showingWarning = true
-                        progress.showProgress()
-                        progress.waitForABit()
-                        print("Set showProgressView to true")
-                        print(progress.showProgressView)
-                        print("Check processingComplete")
+                        applyCSVSelection()
                     }) {
-                        Text("Delete Selection/s")
+                        HStack(spacing: 10) {
+                            Image(systemName: "checkmark.circle")
+                            Text("Select Imported")
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
-                    .alert(isPresented: $showingWarning) {
-                        Alert(
-                            title: Text("Caution!"),
-                            message: Text("This action will delete data.\n Always ensure that you have a backup!"),
-                            primaryButton: .destructive(Text("I understand!")) {
-                                // Run async deletes and refresh once complete
-                                Task {
-                                    await networkController.processDeleteComputersBasicAsync(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.computer)
+                    .buttonStyle(.bordered)
+                    .disabled(csvComputerIdentifiers.isEmpty)
+
+                    // Attach the fileImporter to this HStack
+                    .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [UTType.commaSeparatedText, UTType.plainText], allowsMultipleSelection: false) { result in
+                        switch result {
+                        case .success(let urls):
+                            if let url = urls.first {
+                                selectedCSVURL = url
+                                do {
+                                    try loadCSVFromSelectedURL()
+                                    csvLoadError = nil
+                                } catch {
+                                    csvLoadError = error.localizedDescription
                                 }
-                                print("Yes tapped - started async delete")
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
-                    
-                    
-                    Button(action: {
-                        
-                        Task {
-                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
-                        }
-                        
-                        print("Refresh")
-                        progress.showProgress()
-                        progress.waitForABit()
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Refresh")
+                            }
+                        case .failure(let err):
+                            csvLoadError = err.localizedDescription
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    
-                    // Open selected computers in the Jamf web UI
-                    Button(action: {
-                        guard !selection.isEmpty else { return }
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        // Iterate selections and open each computer in the browser
-                        for id in selection {
-                            let idString = String(describing: id)
-                            layout.openURL(urlString: "\(server)/computers.html?id=\(idString)&o=r", requestType: "computers")
-                        }
-                    }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "safari")
-                            Text("Open Selection In Browser")
+
+                    // Show small status for CSV import
+                    if !csvComputerIdentifiers.isEmpty {
+                        Text("Imported tokens: \(csvComputerIdentifiers.count) items")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                    if let err = csvLoadError {
+                        Text(err).foregroundColor(.red).font(.footnote)
+                    }
+
+                    // CSV column mapping & preview
+                    VStack(alignment: .leading, spacing: 6) {
+                        if !csvRawRows.isEmpty {
+                            HStack {
+                                Toggle("Has header row", isOn: $csvHasHeader)
+                                    .onChange(of: csvHasHeader) { _ in
+                                        interpretRawRows()
+                                    }
+                                Spacer()
+                                Text("Rows: \(csvRows.count)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            // Column picker (use headers if available)
+                            HStack {
+                                Text("Identifier column:")
+                                Picker("Column", selection: $csvSelectedColumnIndex) {
+                                    ForEach(0..<max(1, csvAvailableColumnCount), id: \.self) { idx in
+                                        if csvHasHeader && idx < csvHeaders.count {
+                                            Text(csvHeaders[idx]).tag(idx)
+                                        } else {
+                                            Text("Column \(idx)").tag(idx)
+                                        }
+                                    }
+                                }
+                                .pickerStyle(.menu)
+
+                                Button("Generate Tokens") {
+                                    generateTokensFromSelectedColumn()
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(csvRows.isEmpty)
+
+                                Button("Apply Column to Selection") {
+                                    generateTokensFromSelectedColumn()
+                                    applyCSVSelection()
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(csvRows.isEmpty)
+                            }
+
+                            // Preview list with toggles to include/exclude rows — delegated to a small subview to avoid ForEach overloads in parent view
+                            CSVPreviewView(csvRows: csvRows, csvRowIncluded: $csvRowIncluded, csvSelectedColumnIndex: csvSelectedColumnIndex)
+                                .frame(maxHeight: 200)
+
+                            // Token preview and manual edit/remove
+                            if !csvComputerIdentifiers.isEmpty {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text("Token preview (") + Text("\(csvComputerIdentifiers.count)").font(.caption).foregroundColor(.secondary) + Text(")")
+                                        Spacer()
+                                        Button("Regenerate Tokens") {
+                                            generateTokensFromSelectedColumn()
+                                        }
+                                        .buttonStyle(.bordered)
+                                    }
+
+                                    ScrollView(.vertical, showsIndicators: true) {
+                                        LazyVStack(alignment: .leading, spacing: 6) {
+                                            ForEach(csvComputerIdentifiers, id: \.self) { token in
+                                                HStack(spacing: 8) {
+                                                    Text(token)
+                                                        .font(.caption)
+                                                        .lineLimit(1)
+                                                        .truncationMode(.middle)
+                                                    Spacer()
+                                                    Button(action: {
+                                                        // remove this token
+                                                        csvComputerIdentifiers.removeAll(where: { $0 == token })
+                                                    }) {
+                                                        Image(systemName: "trash")
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
+                                                .padding(.vertical, 2)
+                                            }
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                    .frame(maxHeight: 140)
+                                }
+                                .padding(.top, 6)
+                            }
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    .disabled(selection.isEmpty)
+
+                    //              ##########################################################################
+                    //              New Computer Name to SELECTION
+                    //              ##########################################################################
+
+                    LazyVGrid(columns: layout.columnsFlex, spacing: 20) {
+
+                        HStack {
+                            TextField("New Computer Name", text: $newComputerName)
+                                .textSelection(.enabled)
+
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                print("Set showProgressView to true")
+                                print(progress.showProgressView)
+                                print("Check processingComplete")
+                                print(String(describing: networkController.processingComplete))
+                                print("Running:processDeleteComputers")
+                                networkController.processUpdateComputerName(selection: selection, server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerName: newComputerName)
+                            }) {
+                                Text("Name Selections")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    }
                 }
-                    
-                DisclosureGroup("Import CSV") {
-                        
-                        
-                        
-                        // CSV Import buttons
-                        Button(action: {
-                            showingFileImporter = true
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "tray.and.arrow.down")
-                                Text("Import CSV")
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        
-                        Button(action: {
-                            applyCSVSelection()
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "checkmark.circle")
-                                Text("Select Imported")
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(csvComputerIdentifiers.isEmpty)
-                        
-                        // Attach the fileImporter to this HStack
-                        .fileImporter(isPresented: $showingFileImporter, allowedContentTypes: [UTType.commaSeparatedText, UTType.plainText], allowsMultipleSelection: false) { result in
-                            switch result {
-                            case .success(let urls):
-                                if let url = urls.first {
                                     selectedCSVURL = url
                                     do {
                                         try loadCSVFromSelectedURL()

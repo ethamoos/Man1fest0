@@ -205,7 +205,9 @@ struct ScriptsDetailView: View {
 
             // When editing, show Find/Replace/Inject tools inside a DisclosureGroup
             if isEditing {
-                DisclosureGroup("Find/Replace/Inject") {
+                ProminentDisclosure(indicatorColor: .accentColor) {
+                    Text("Find/Replace/Inject").font(.headline)
+                } content: {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Find & Replace").fontWeight(.semibold)
                         HStack {
