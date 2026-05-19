@@ -80,6 +80,8 @@
 		A8ECB7BF2C88478600FAFDC2 /* CommandBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8ECB7BE2C88478600FAFDC2 /* CommandBrain.swift */; };
 		A8ECB7C12C88492700FAFDC2 /* PushBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8ECB7C02C88492700FAFDC2 /* PushBrain.swift */; };
 		A8F16D702C621E5700CC0751 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F16D6F2C621E5700CC0751 /* ViewModifiers.swift */; };
+		A8F4BCD02FBCC019006D5E68 /* ProminentDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F4BCCF2FBCC019006D5E68 /* ProminentDisclosure.swift */; };
+		A8F4BCD22FBCC023006D5E68 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F4BCD12FBCC023006D5E68 /* CachedAsyncImage.swift */; };
 		A8FB5F8B2AEA59120061D5F7 /* Basher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F8A2AEA59120061D5F7 /* Basher.swift */; };
 		A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */; };
 		A8FBD3492F5755CB001B8518 /* InactivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FBD3462F5755CB001B8518 /* InactivityMonitor.swift */; };
@@ -192,6 +194,8 @@
 		A8ECB7BE2C88478600FAFDC2 /* CommandBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandBrain.swift; sourceTree = "<group>"; };
 		A8ECB7C02C88492700FAFDC2 /* PushBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushBrain.swift; sourceTree = "<group>"; };
 		A8F16D6F2C621E5700CC0751 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
+		A8F4BCCF2FBCC019006D5E68 /* ProminentDisclosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProminentDisclosure.swift; sourceTree = "<group>"; };
+		A8F4BCD12FBCC023006D5E68 /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
 		A8FB5F8A2AEA59120061D5F7 /* Basher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Basher.swift; sourceTree = "<group>"; };
 		A8FB5F902AEA891E0061D5F7 /* ASyncFileDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASyncFileDownloader.swift; sourceTree = "<group>"; };
 		A8FBD3462F5755CB001B8518 /* InactivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityMonitor.swift; sourceTree = "<group>"; };
@@ -383,6 +387,8 @@
 		A87260E02C99793A005A5562 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				A8F4BCCF2FBCC019006D5E68 /* ProminentDisclosure.swift */,
+				A8F4BCD12FBCC023006D5E68 /* CachedAsyncImage.swift */,
 				E485CCA32C9CC24400B4CBE4 /* PolicyDetailView_iOS.swift */,
 			);
 			path = Shared;
@@ -730,8 +736,10 @@
 				A83898132C6686F3003D3F95 /* Buttons.swift in Sources */,
 				A813124629D4B52800BB1C9F /* PackagesDetailView.swift in Sources */,
 				A8B276812AD733700016CEE2 /* DownloadsView.swift in Sources */,
+				A8F4BCD02FBCC019006D5E68 /* ProminentDisclosure.swift in Sources */,
 				E485CCA42C9CC24400B4CBE4 /* PolicyDetailView_iOS.swift in Sources */,
 				A8B312F02F87B4A500DF685C /* ComputerBasicView.swift in Sources */,
+				A8F4BCD22FBCC023006D5E68 /* CachedAsyncImage.swift in Sources */,
 				A8359CE72AE70D2400438AFA /* PoliciesActionView.swift in Sources */,
 				A83C94582D79D9BD00F639A1 /* ResponseCodes.swift in Sources */,
 				A8C1E2632EC3AB6800DEDBF8 /* Breakout.swift in Sources */,

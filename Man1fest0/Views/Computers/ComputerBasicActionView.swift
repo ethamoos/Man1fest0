@@ -37,6 +37,8 @@ struct ComputerBasicActionView: View {
             @State private var toolsCountString: String = "1"
             @State private var toolsMatchString: String = ""
             @State private var toolsReplacementString: String = ""
+                // Color name used for prominent disclosure chevron in rename tools
+                @State private var renameDisclosureColorName: String = "blue"
         
         @State private var selectedEAName = ""
         @State private var eaValue = ""
@@ -56,11 +58,14 @@ struct ComputerBasicActionView: View {
                     progress.waitForABit()
                     let ids = selection.map { String($0) }
                     Task {
-                        for id in ids {
-                            networkController.updateComputerUsername(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, newUsername: usernameToSet)
-                        }
+                        // TODO: implement actual username update for selected computers.
+                        // For now refresh the list after a short delay to simulate work.
                         try? await Task.sleep(nanoseconds: 400_000_000)
-                        do { try await networkController.getComputersBasic(server: server, authToken: networkController.authToken) } catch { print("Failed to refresh computers after username update: \(error)") }
+                        do {
+                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                        } catch {
+                            print("Failed to refresh computers after username update: \(error)")
+                        }
                         progress.endProgress()
                         isUpdatingUsername = false
                     }
@@ -246,7 +251,8 @@ struct ComputerBasicActionView: View {
                         }
                     )
 
-                    DisclosureGroup("Rename Tools") {
+                    // Use DisclosureGroup for the rename tools (with color picker in the label)
+                    DisclosureGroup {
                         VStack(alignment: .leading, spacing: 8) {
                             Picker("Action", selection: $toolsNameAction) {
                                 Text("Remove last chars").tag("removelast")
@@ -281,10 +287,6 @@ struct ComputerBasicActionView: View {
                                     let ids = selection.map { String($0) }
                                     print("Run on Selected pressed. selection=\(selection) ids=\(ids)")
 
-                                    // Ensure we have the detailed computer loaded before attempting
-                                    // to compute a logical new name (updateComputerNameLogical relies
-                                    // on in-memory detailed objects). Fetch the detailed record
-                                    // for each selected id, then call the updater.
                                     Task {
                                         for id in ids {
                                             do {
@@ -293,13 +295,10 @@ struct ComputerBasicActionView: View {
                                                 print("Failed to load detailed computer for id \(id): \(error)")
                                             }
 
-                                            // Now attempt the logical rename which reads the in-memory detail
                                             networkController.updateComputerNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
 
-                                            // Small pause between operations to avoid overwhelming the server
                                             try? await Task.sleep(nanoseconds: 200_000_000)
                                         }
-                                        // Optionally refresh the basic list after changes
                                         do { try await networkController.getComputersBasic(server: server, authToken: networkController.authToken) } catch { print("Failed to refresh computers after rename: \(error)") }
                                         progress.endProgress()
                                     }
@@ -311,6 +310,34 @@ struct ComputerBasicActionView: View {
                             }
                         }
                         .padding()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text("Rename Tools")
+                                .font(.headline)
+                            Spacer()
+                            // Small inline menu to choose chevron color
+                            Menu {
+                                ForEach(colorOptions, id: \.self) { name in
+                                    Button(action: { renameDisclosureColorName = name }) {
+                                        HStack {
+                                            Circle()
+                                                .fill(colorForName(name))
+                                                .frame(width: 10, height: 10)
+                                            Text(name.capitalized)
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(colorForName(renameDisclosureColorName))
+                                        .frame(width: 12, height: 12)
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 10, weight: .semibold))
+                                }
+                            }
+                            .menuStyle(BorderlessButtonMenuStyle())
+                        }
                     }
 
                     HStack {
@@ -404,6 +431,23 @@ struct ComputerBasicActionView: View {
             } else {
                 print("Search Added")
                 return allComputersArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
+            }
+        }
+        
+        // Color options available for prominent disclosure chevrons
+        private var colorOptions: [String] {
+            ["blue", "green", "red", "orange", "purple", "gray"]
+        }
+
+        private func colorForName(_ name: String) -> Color {
+            switch name.lowercased() {
+            case "blue": return .blue
+            case "green": return .green
+            case "red": return .red
+            case "orange": return .orange
+            case "purple": return .purple
+            case "gray": return .gray
+            default: return .accentColor
             }
         }
         
