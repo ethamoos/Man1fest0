@@ -70,6 +70,8 @@ struct ScriptDetailTableView: View {
     @State private var toolsCountString: String = "1"
     @State private var toolsMatchString: String = ""
     @State private var toolsReplacementString: String = ""
+    // Color for prominent disclosure chevron in rename tools
+    @State private var renameDisclosureColorName: String = "blue"
     
     //  ########################################################################################
     //  ########################################################################################
@@ -169,8 +171,43 @@ struct ScriptDetailTableView: View {
             }
             .padding(.vertical, 6)
 
-            // Rename tools for selected scripts
-            DisclosureGroup("Rename Tools") {
+            // Rename tools for selected scripts (prominent disclosure)
+            ProminentDisclosure(indicatorColor: prominentDisclosureColorForName(renameDisclosureColorName)) {
+                HStack(spacing: 8) {
+                    Text("Rename Tools")
+                        .font(.headline)
+                    Spacer()
+                    Menu {
+                        ForEach(["blue","green","red","orange","purple","gray"], id: \.self) { name in
+                            Button(action: { renameDisclosureColorName = name }) {
+                                HStack {
+                                    Circle()
+                                        .fill({ switch name.lowercased() {
+                                            case "blue": return Color.blue
+                                            case "green": return Color.green
+                                            case "red": return Color.red
+                                            case "orange": return Color.orange
+                                            case "purple": return Color.purple
+                                            case "gray": return Color.gray
+                                            default: return Color.accentColor
+                                        } }())
+                                        .frame(width: 10, height: 10)
+                                    Text(name.capitalized)
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(prominentDisclosureColorForName(renameDisclosureColorName))
+                                .frame(width: 12, height: 12)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                    }
+                    .menuStyle(BorderlessButtonMenuStyle())
+                }
+            } content: {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Action", selection: $toolsNameAction) {
                         Text("Remove last chars").tag("removelast")
@@ -238,7 +275,10 @@ struct ScriptDetailTableView: View {
                 .frame(minHeight: 80)
             }
 
-            DisclosureGroup("Find/Replace/Inject") {
+            ProminentDisclosure(indicatorColor: .accentColor) {
+                Text("Find/Replace/Inject")
+                    .font(.headline)
+            } content: {
                 // Find & Replace
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Find & Replace").fontWeight(.semibold)
