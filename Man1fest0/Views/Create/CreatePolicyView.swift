@@ -428,8 +428,11 @@ struct CreatePolicyView: View {
                                     Text("Open in Browser")
                                 }
                             }
-                            .buttonStyle(.bordered)
+//                            .buttonStyle(.bordered)
                             .help("Open the estimated new policy in the Jamf web UI (tries gaps and neighbours before fallback).")
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+                            .padding(.top, 6)
                             
                             Toggle(isOn: $createDepartmentIsChecked) {
                                 Text("New Dept")

@@ -255,7 +255,10 @@ struct ComputerSearchesView: View {
                                     }
                                 }
                             }
-                            .buttonStyle(.bordered)
+//                            .buttonStyle(.bordered)
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+                            .padding(.top, 6)
                             
                             Button("Delete Selection") {
                                 Task {
