@@ -583,6 +583,8 @@ struct PackageTableView: View {
     
     func fetchData() {
         
+        print("fetchData function called")
+        
         if  networkController.categories.isEmpty {
             print("No category data - fetching")
               Task { try await networkController.getAllCategories() }

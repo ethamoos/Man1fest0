@@ -38,6 +38,13 @@ struct PackageUsageView: View {
     // Manual override to force-enable Analyse Data (temporary, for debugging / network flakiness)
     @State private var forceEnableAnalyse: Bool = false
 
+    // Rename tools state for packages
+    @State private var toolsNameAction: String = "removelast"
+    @State private var toolsCountString: String = "1"
+    @State private var toolsMatchString: String = ""
+    @State private var toolsReplacementString: String = ""
+    @State private var showPackageRenameConfirmation: Bool = false
+
     // Computed property: are detailed policies fully downloaded?
     private var detailedPoliciesComplete: Bool {
         let expected = networkController.detailedPoliciesProgress.expected
@@ -369,6 +376,61 @@ struct PackageUsageView: View {
                 }
                 .padding(.top)
 
+                // Package rename tools
+                DisclosureGroup("Rename Tools") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Action", selection: $toolsNameAction) {
+                            Text("Remove last chars").tag("removelast")
+                            Text("Remove first chars").tag("removefirst")
+                            Text("Replace last chars").tag("replacelast")
+                            Text("Replace first chars").tag("replacefirst")
+                            Text("Replace all occurrences").tag("replaceall")
+                            Text("Add last characters").tag("addlast")
+                            Text("Add first characters").tag("addfirst")
+                        }
+                        .pickerStyle(.segmented)
+
+                        HStack(spacing: 8) {
+                            if toolsNameAction == "removelast" || toolsNameAction == "replacelast" || toolsNameAction == "removefirst" || toolsNameAction == "replacefirst" {
+                                TextField("Count", text: $toolsCountString)
+                                    .frame(width: 80)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+                            if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" || toolsNameAction == "replacefirst" || toolsNameAction == "addlast" || toolsNameAction == "addfirst" {
+                                TextField("Replacement", text: $toolsReplacementString)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+                            if toolsNameAction == "replaceall" {
+                                TextField("Match", text: $toolsMatchString)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+                            Spacer()
+                            Button(action: {
+                                let countInt = Int(toolsCountString) ?? 0
+                                if selection.count > 1 {
+                                    showPackageRenameConfirmation = true
+                                    return
+                                }
+                                runPackageRenameForSelected(countInt: countInt)
+                            }) {
+                                Text("Run on Selected")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(selection.isEmpty)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                }
+                .alert("Confirm Rename", isPresented: $showPackageRenameConfirmation) {
+                    Button("Proceed", role: .destructive) {
+                        let countInt = Int(toolsCountString) ?? 0
+                        runPackageRenameForSelected(countInt: countInt)
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("You're about to perform renames across multiple packages. This action cannot be undone. Proceed?")
+                }
+
                 // Summary card
                 Form {
                     Group {
@@ -459,6 +521,7 @@ struct PackageUsageView: View {
                 print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
                 Task {
                     try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    
                 }
                 if networkController.allPoliciesDetailed.count == networkController.policies.count {
                     print("Detailed policies have downloaded - analyse usage")
@@ -483,6 +546,34 @@ struct PackageUsageView: View {
         }
     }
 
+    // Run logical rename for selected packages
+    func runPackageRenameForSelected(countInt: Int) {
+        progress.showProgress()
+        progress.waitForABit()
+        let controller = networkController
+        let authToken = networkController.authToken
+        Task {
+            // Resolve selected package names to Jamf IDs using backgroundTasks map
+            let selectedNames = Array(selection)
+            var ids: [String] = []
+            for name in selectedNames {
+                if let id = backgroundTasks.allPackagesByNameDict[name] {
+                    ids.append(id)
+                    continue
+                }
+                // fallback: try networkController lookup
+                if let pkg = networkController.allPackages.first(where: { $0.name == name }) {
+                    ids.append(String(describing: pkg.jamfId))
+                }
+            }
+            for pkgId in ids {
+                await controller.updatePackageNameLogical(server: server, authToken: authToken, resourceType: ResourceType.package, packageID: pkgId, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                try? await Task.sleep(nanoseconds: UInt64(controller.getPolicyRequestDelay() * 1_000_000_000))
+            }
+            progress.endProgress()
+        }
+    }
+
     var searchResults: [Package] {
         
         let allPackages = networkController.allPackages
@@ -496,8 +587,8 @@ struct PackageUsageView: View {
             return allPackagesArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
     }
-}
 
+}
 
 //
 //struct PackageUsageViewJson_Previews: PreviewProvider {

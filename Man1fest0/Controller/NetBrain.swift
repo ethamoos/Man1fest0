@@ -60,8 +60,30 @@ extension NetBrain {
             let xmlString = String(data: data, encoding: .utf8) ?? ""
             let doc = try AEXMLDocument(xml: Data(xmlString.utf8))
 
-            // Script XML uses <script><general><name>
-            let currentName = doc.root["general"]["name"].string
+            // Script XML can use different layouts depending on API/version. Try
+            // several common locations and remember where the <name> element
+            // lives so we can replace it correctly.
+            var currentName = ""
+            var nameLocation: (parent: AEXMLElement, key: String)? = nil
+
+            if !doc.root["general"]["name"].string.isEmpty {
+                currentName = doc.root["general"]["name"].string
+                nameLocation = (parent: doc.root["general"], key: "name")
+            } else if !doc.root["name"].string.isEmpty {
+                currentName = doc.root["name"].string
+                nameLocation = (parent: doc.root, key: "name")
+            } else if !doc.root["script"]["general"]["name"].string.isEmpty {
+                currentName = doc.root["script"]["general"]["name"].string
+                nameLocation = (parent: doc.root["script"]["general"], key: "name")
+            } else if !doc.root["script"]["name"].string.isEmpty {
+                currentName = doc.root["script"]["name"].string
+                nameLocation = (parent: doc.root["script"], key: "name")
+            } else {
+                // As a last resort try the raw xml lookup for any <name> element
+                currentName = doc.root["name"].string
+            }
+
+            print("Current name is:\(currentName)")
             var newName = currentName
 
             switch action {
@@ -110,11 +132,15 @@ extension NetBrain {
                 return
             }
 
-            // Replace the <name> element in the XML
-            if let nameElem = doc.root["general"]["name"].last {
-                nameElem.removeFromParent()
+            // Replace the <name> element in the XML at the discovered location
+            if let loc = nameLocation {
+                if let elem = loc.parent[loc.key].last { elem.removeFromParent() }
+                _ = loc.parent.addChild(name: loc.key, value: newName)
+            } else {
+                // Fallback: ensure there's a top-level <name> under the root
+                if let elem = doc.root["name"].last { elem.removeFromParent() }
+                _ = doc.root.addChild(name: "name", value: newName)
             }
-            _ = doc.root["general"].addChild(name: "name", value: newName)
 
             // PUT updated XML back to server
             var putReq = URLRequest(url: url)
@@ -123,6 +149,10 @@ extension NetBrain {
             putReq.setValue("application/xml", forHTTPHeaderField: "Accept")
             putReq.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
             putReq.httpBody = doc.xml.data(using: .utf8)
+            
+            print("updateScriptNameLogical_v2: sending update with new name: \(newName)")
+            print("Parameters are: action=\(action), count=\(count), match='\(match)', replacement='\(replacement)'")
+            print("DEBUG: Script body is:\(doc.xml)")
 
             let (_, putResp) = try await URLSession.shared.data(for: putReq)
             let status = (putResp as? HTTPURLResponse)?.statusCode ?? -1

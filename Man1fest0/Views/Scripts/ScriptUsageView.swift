@@ -61,6 +61,13 @@ struct ScriptUsageView: View {
     // Filter text for the assigned scripts list
     @State var assignedFilter: String = ""
 
+    // Rename tools state for scripts
+    @State private var toolsNameAction: String = "removelast"
+    @State private var toolsCountString: String = "1"
+    @State private var toolsMatchString: String = ""
+    @State private var toolsReplacementString: String = ""
+    @State private var showScriptRenameConfirmation: Bool = false
+
     // Small helper views to reduce type-checking complexity in large body
     @ViewBuilder
     private func allScriptRow(_ script: ScriptClassic) -> some View {
@@ -544,6 +551,62 @@ struct ScriptUsageView: View {
                 .tint(.blue)
             }
             .padding()
+
+            // Rename tools for scripts (operate on selected script names)
+            DisclosureGroup("Rename Tools") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("Action", selection: $toolsNameAction) {
+                        Text("Remove last chars").tag("removelast")
+                        Text("Remove first chars").tag("removefirst")
+                        Text("Replace last chars").tag("replacelast")
+                        Text("Replace first chars").tag("replacefirst")
+                        Text("Replace all occurrences").tag("replaceall")
+                        Text("Add last characters").tag("addlast")
+                        Text("Add first characters").tag("addfirst")
+                    }
+                    .pickerStyle(.segmented)
+
+                    HStack(spacing: 8) {
+                        if toolsNameAction == "removelast" || toolsNameAction == "replacelast" || toolsNameAction == "removefirst" || toolsNameAction == "replacefirst" {
+                            TextField("Count", text: $toolsCountString)
+                                .frame(width: 80)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" || toolsNameAction == "replacefirst" || toolsNameAction == "addlast" || toolsNameAction == "addfirst" {
+                            TextField("Replacement", text: $toolsReplacementString)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        if toolsNameAction == "replaceall" {
+                            TextField("Match", text: $toolsMatchString)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        Spacer()
+                        Button(action: {
+                            let countInt = Int(toolsCountString) ?? 0
+                            if selection.count > 1 {
+                                showScriptRenameConfirmation = true
+                                return
+                            }
+                            runScriptRenameForSelected(countInt: countInt)
+                        }) {
+                            Text("Run on Selected")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(selection.isEmpty)
+                    }
+                }
+                .padding(.vertical, 6)
+            }
+            .alert("Confirm Rename", isPresented: $showScriptRenameConfirmation) {
+                Button("Proceed", role: .destructive) {
+                    let countInt = Int(toolsCountString) ?? 0
+                    runScriptRenameForSelected(countInt: countInt)
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("You're about to perform renames across multiple scripts. This action cannot be undone. Proceed?")
+            }
+
             .background(Color(NSColor.windowBackgroundColor))
         }
         .frame(minWidth: 800, minHeight: 600)
@@ -555,12 +618,55 @@ struct ScriptUsageView: View {
                 do {
                     try await networkController.getAllScripts()
                     try await networkController.getAllPolicies(server: server)
+                    
                 } catch {
                     print("Failed to load scripts/policies: \(error)")
                     networkController.publishError(error, title: "Failed to load scripts/policies")
                 }
                 progress.endProgress()
+                
             }
+            
+            
+            if networkController.fetchedDetailedPolicies == false {
+                
+                print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
+                Task {
+                    try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    
+                }
+                if networkController.allPoliciesDetailed.count == networkController.policies.count {
+                    print("Detailed policies have downloaded - analyse usage")
+               
+                } else {
+                    print("Waiting for detailed policies to download")
+                    progress.showExtendedProgress()
+                    progress.currentProgress = 0.25
+                    Task {
+                        progress.showExtendedProgress()
+                        // Ensure we have policies detailed; if not, trigger them
+                        if networkController.allPoliciesDetailed.isEmpty {
+                            try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+                        }
+                        // Recompute scripts assigned/unassigned
+                        policyController.getScriptsInUse(allPoliciesDetailed: networkController.allPoliciesDetailed)
+                        policyController.getScriptValues(allScripts: networkController.scripts)
+                        // small delay to ensure UI updates
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        progress.endExtendedProgress()
+                    }
+                    print("End extended progress")
+                    progress.endExtendedProgress()
+                }
+
+                print("Setting: fetchedDetailedPolicies to true")
+                networkController.fetchedDetailedPolicies = true
+                
+            } else {
+                print("fetchedDetailedPolicies has run - ignoring")
+            }
+            
+            
         }
         .onChange(of: networkController.scripts) { _ in
             // Scripts list updated: recompute local value maps
@@ -770,6 +876,51 @@ struct ScriptUsageView: View {
         await MainActor.run {
             getScriptValues()
             progress.endProgress()
+        }
+    }
+
+    // Run logical rename for selected scripts (resolve names->ids then call NetBrain helper)
+    private func runScriptRenameForSelected(countInt: Int) {
+        progress.showProgress()
+        progress.waitForABit()
+        let controller = networkController
+        let authToken = networkController.authToken
+        Task {
+            // Resolve selected names to Jamf IDs
+            let selectedNames = Array(selection)
+            var ids: [String] = []
+            for raw in selectedNames {
+                let key = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let id = allScriptsByNameDict[key] {
+                    ids.append(id)
+                    continue
+                }
+                if let id = policyController.allScriptsByNameDict[key] {
+                    ids.append(id)
+                    continue
+                }
+                if let s = networkController.scripts.first(where: { $0.name == key }) {
+                    ids.append(String(describing: s.jamfId))
+                    continue
+                }
+                if Int(key) != nil {
+                    ids.append(key)
+                    continue
+                }
+                print("Warning: could not resolve script id for selected item '\(key)'")
+            }
+
+            for id in ids {
+                await controller.updateScriptNameLogical_v2(server: server, authToken: authToken, resourceType: ResourceType.script, scriptID: id, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                try? await Task.sleep(nanoseconds: UInt64(controller.getPolicyRequestDelay() * 1_000_000_000))
+            }
+
+            // Refresh scripts and local maps
+            try? await controller.getAllScripts()
+            await MainActor.run {
+                getScriptValues()
+                progress.endProgress()
+            }
         }
     }
 
