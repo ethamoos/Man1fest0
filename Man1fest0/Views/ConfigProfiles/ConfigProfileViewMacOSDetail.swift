@@ -17,14 +17,10 @@ struct ConfigProfileViewMacOSDetail: View {
     // selection is a lightweight summary (ConfigProfileSummary)
     @State var selection: ConfigProfileSummary
     @State private var selectedDevice = 0
-    //    @State private var selectedCommand = ""
-    // Make currentProfile optional so we can represent "not loaded" state
     @State private var currentProfile: OSXConfigProfileDetailed? = nil
     
     @State var server: String
     
-    //    @State var deviceTypes = [ "computer", "mobile" ]
-    //    @State var flushCommands = [ "Pending", "Failed", "Pending+Failed" ]
     
     @State private var showingWarning = false
     
@@ -165,7 +161,6 @@ struct ConfigProfileViewMacOSDetail: View {
                     }
                 }
                 
-                
                 Button(action: {
                     progress.showProgress()
                     progress.waitForABit()
@@ -203,7 +198,6 @@ struct ConfigProfileViewMacOSDetail: View {
                             Image(systemName: "safari")
                             Text("Open in Browser")
                         }
-                        
                     }
                     .help("Open this configuration profile in the Jamf web interface in your default browser.")
                     .buttonStyle(.borderedProminent)
@@ -214,7 +208,6 @@ struct ConfigProfileViewMacOSDetail: View {
             }
             .padding()
             .textSelection(.enabled)
-            
             Spacer()
         }
         

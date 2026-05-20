@@ -47,12 +47,19 @@ struct ConfigProfileViewMacOS: View {
     }
     
     var searchResults: [ConfigProfileSummary] {
-        if searchText.isEmpty {
-            return networkController.allConfigProfiles.computerConfigurations!.sorted { $0.name < $1.name }
-        } else {
-            print("Search is currently:\(searchText)")
-            return networkController.allConfigProfiles.computerConfigurations!.filter { $0.name.contains(searchText) }
+        // Safely unwrap the profiles array
+        let profiles = networkController.allConfigProfiles.computerConfigurations ?? []
+
+        // If no search text, return the full sorted list (case-insensitive)
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query.isEmpty {
+            return profiles.sorted { $0.name.lowercased() < $1.name.lowercased() }
         }
+
+        // Otherwise filter case-insensitively and return sorted results
+        return profiles
+            .filter { $0.name.lowercased().contains(query.lowercased()) }
+            .sorted { $0.name.lowercased() < $1.name.lowercased() }
     }
 }
 
