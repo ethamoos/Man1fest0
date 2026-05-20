@@ -216,7 +216,7 @@ struct PolicyDetailView: View {
                     Text("Self Service Status:\t\t\(String(describing: networkController.policyDetailed?.self_service?.useForSelfService ?? true))\n")
                     Text("Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? "")\n")
                     Text("Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? "")\n")
-                    Text("Jamf ID:\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
+                    Text("Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n" )
                     // Only show the 'Current Icon' text when there is NO icon set (i.e. filename is nil or empty)
                     if let iconFilename = networkController.policyDetailed?.self_service?.selfServiceIcon?.filename, !iconFilename.isEmpty {
                         // If an icon filename exists, we do not show the textual "Current Icon" line here (the image below represents it).
