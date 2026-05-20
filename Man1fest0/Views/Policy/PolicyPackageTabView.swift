@@ -48,6 +48,8 @@ struct PolicyPackageTabView: View {
     
     @State private var fut: Bool = false
     @State private var feu: Bool = false
+    // Confirmation for removing all packages
+    @State private var showingRemoveAllPackagesConfirm: Bool = false
     
     
 
@@ -209,15 +211,8 @@ struct PolicyPackageTabView: View {
                         .help("If checked, use FEU (Fill Existing Up) behavior when assigning the package.")
                     
                     Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        networkController.separationLine()
-                        print("Clearing all packages in policy:\(String(describing: policyID))")
-                        
-                        xmlController.removePackagesFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
-
+                        // Ask for confirmation before removing all packages
+                        showingRemoveAllPackagesConfirm = true
                     }) {
                         HStack(spacing: 10) {
                             Text("Remove All")
@@ -226,6 +221,18 @@ struct PolicyPackageTabView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .help("Remove all packages currently assigned to this policy.")
+                    .alert("Remove all packages?", isPresented: $showingRemoveAllPackagesConfirm) {
+                        Button("Proceed", role: .destructive) {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.separationLine()
+                            print("Confirmed: Clearing all packages in policy:\(String(describing: policyID))")
+                            xmlController.removePackagesFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                        }
+                        Button("Cancel", role: .cancel) { }
+                    } message: {
+                        Text("This will remove all packages from the policy. This action cannot be undone. Proceed?")
+                    }
                     
                      Button(action: {
                         

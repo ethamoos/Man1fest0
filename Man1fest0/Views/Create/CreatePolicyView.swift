@@ -142,9 +142,107 @@ struct CreatePolicyView: View {
         var iconId: Int?
     }
 
+    // Local layout constants and helpers
+    private let selectionListHeight: CGFloat = 100
+    private let packageListHeight: CGFloat = 300
+    private let columns: [GridItem] = [GridItem(.flexible())]
+
+    // Compose the packages section used in the main body
+    private var packagesSection: some View {
+        VStack(spacing: 8) {
+            packagesHeader
+            Group {
+                #if os(macOS)
+                packagesTable
+                #else
+                packagesListView
+                #endif
+            }
+            .frame(height: packageListHeight)
+        }
+    }
+
+    // Sorted packages according to local sort selections
+    private var sortedPackages: [Package] {
+        let src = networkController.packages
+        switch packageSortBy {
+        case .name:
+            return src.sorted { packageSortAscending ? $0.name.lowercased() < $1.name.lowercased() : $0.name.lowercased() > $1.name.lowercased() }
+        case .id:
+            return src.sorted { packageSortAscending ? $0.jamfId < $1.jamfId : $0.jamfId > $1.jamfId }
+        }
+    }
+
+    // Template persistence helpers (simple implementations)
+    private func saveCurrentAsTemplate() {
+        let tpl = PolicyTemplate(name: newTemplateName,
+                                 policyName: newPolicyName,
+                                 selectedPackageIds: Array(packageMultiSelection),
+                                 categoryId: selectedCategoryId,
+                                 departmentId: selectedDepartmentId,
+                                 scriptId: selectedScriptId,
+                                 selfServiceEnabled: selfServiceEnable,
+                                 iconId: selectedIconId)
+        templates.append(tpl)
+        persistTemplates()
+        newTemplateName = ""
+    }
+
+    private func exportTemplatesToDownloads() {
+        do {
+            let data = try JSONEncoder().encode(templates)
+            if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+                let out = downloads.appendingPathComponent("Man1fest0_templates_\(Date().timeIntervalSince1970).json")
+                try data.write(to: out)
+                print("Exported templates to: \(out.path)")
+            }
+        } catch {
+            print("Failed exporting templates: \(error)")
+        }
+    }
+
+    private func importTemplatesFromFile() {
+        guard !importFilePath.isEmpty else { return }
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: importFilePath))
+            let imported = try JSONDecoder().decode([PolicyTemplate].self, from: data)
+            templates.append(contentsOf: imported)
+            persistTemplates()
+        } catch {
+            print("Failed to import templates: \(error)")
+        }
+    }
+
+    private func applyTemplate(_ t: PolicyTemplate) {
+        newPolicyName = t.policyName
+        packageMultiSelection = Set(t.selectedPackageIds)
+        selectedCategoryId = t.categoryId
+        selectedDepartmentId = t.departmentId
+        selectedScriptId = t.scriptId
+        enableSelfService = t.selfServiceEnabled
+        selectedIconId = t.iconId
+    }
+
+    private func deleteTemplate(_ tpl: PolicyTemplate) {
+        templates.removeAll { $0.id == tpl.id }
+        persistTemplates()
+    }
+
+    private func persistTemplates() {
+        do {
+            let key = "com.man1fest0.templates.\(server)"
+            let data = try JSONEncoder().encode(templates)
+            UserDefaults.standard.set(data, forKey: key)
+        } catch {
+            print("Failed to persist templates: \(error)")
+        }
+    }
+
     @State private var templates: [PolicyTemplate] = []
     @State private var newTemplateName: String = ""
     @State private var editingTemplate: PolicyTemplate? = nil
+    // Template pending deletion (used to show confirmation alert)
+    @State private var templateToDelete: PolicyTemplate? = nil
     @State private var previewXML: String = ""
     @State private var showPreviewSheet: Bool = false
     @State private var templatesExpanded: Bool = false
@@ -351,89 +449,6 @@ struct CreatePolicyView: View {
                                 Text("Preview XML")
                             }
 
-                            // Open in Browser - refresh policies first and estimate new policy ID
-                            Button(action: {
-                                progress.showProgress()
-                                Task {
-                                    // Refresh policy list from server before estimating next ID
-                                    do {
-                                        try await networkController.getAllPolicies(server: server)
-                                    } catch {
-                                        print("Failed to refresh policies before opening in browser: \(error)")
-                                    }
-
-                                    // Combine any available policy lists
-                                    let combined = (networkController.allPoliciesConverted + networkController.policies)
-
-                                    // First attempt: try to find a policy by name (exact or contains) matching the policy name the user entered.
-                                    let trimmedName = newPolicyName.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    var opened = false
-                                    if !trimmedName.isEmpty {
-                                        // Prefer exact match (case-insensitive), then contains
-                                        if let exact = combined.first(where: { $0.name.localizedCaseInsensitiveCompare(trimmedName) == .orderedSame }), let id = exact.jamfId {
-                                            let base = server.trimmingCharacters(in: .whitespacesAndNewlines)
-                                            let uiURL = base.hasSuffix("/") ? "\(base)policies.html?id=\(id)&o=r" : "\(base)/policies.html?id=\(id)&o=r"
-                                            print("Found policy by exact name: opening id \(id) -> \(uiURL)")
-                                            layout.openURL(urlString: uiURL, requestType: "policies")
-                                            opened = true
-                                        } else if let contain = combined.first(where: { $0.name.localizedCaseInsensitiveContains(trimmedName) }), let id = contain.jamfId {
-                                            let base = server.trimmingCharacters(in: .whitespacesAndNewlines)
-                                            let uiURL = base.hasSuffix("/") ? "\(base)policies.html?id=\(id)&o=r" : "\(base)/policies.html?id=\(id)&o=r"
-                                            print("Found policy by partial name: opening id \(id) -> \(uiURL)")
-                                            layout.openURL(urlString: uiURL, requestType: "policies")
-                                            opened = true
-                                        }
-                                    }
-
-                                    if !opened {
-                                        // No match by name; fall back to numeric estimate based on the highest known ID + 1 (Jamf generally increments IDs)
-                                        let idSet = Set(combined.compactMap { $0.jamfId })
-                                        let maxID = idSet.max() ?? 0
-                                        let estimated = maxID + 1
-
-                                        var base = server.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        if base.hasSuffix("/") { base.removeLast() }
-                                        func makeURL(_ id: Int) -> String { "\(base)/policies.html?id=\(id)&o=r" }
-
-                                        // Silent lookup: probe estimated id and neighbouring ids; if any exists open that one.
-                                        let maxAttempts = 5
-                                        let candidates: [Int] = [estimated] + (1...maxAttempts).flatMap { off in [estimated + off, estimated - off] }
-
-                                        for id in candidates {
-                                            if id <= 0 { continue }
-                                            let uiURL = makeURL(id)
-                                            let exists = await checkURLExists(uiURL)
-                                            if exists {
-                                                print("Opening nearby policy UI at id \(id): \(uiURL)")
-                                                layout.openURL(urlString: uiURL, requestType: "policies")
-                                                opened = true
-                                                break
-                                            }
-                                        }
-
-                                        if !opened {
-                                            // Fallback: open estimated URL anyway
-                                            let uiURL = makeURL(estimated)
-                                            print("Fallback: opening estimated policy URL: \(uiURL)")
-                                            layout.openURL(urlString: uiURL, requestType: "policies")
-                                        }
-                                    }
-
-                                    // End progress indicator
-                                    progress.endProgress()
-                                }
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "safari")
-                                    Text("Open in Browser")
-                                }
-                            }
-//                            .buttonStyle(.bordered)
-                            .help("Open the estimated new policy in the Jamf web UI (tries gaps and neighbours before fallback).")
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-                            .padding(.top, 6)
-                            
                             Toggle(isOn: $createDepartmentIsChecked) {
                                 Text("New Dept")
                             }
@@ -443,13 +458,16 @@ struct CreatePolicyView: View {
                                 Text("Self Service")
                             }
                             .toggleStyle(.checkbox)
+                            
                         }
                     }
                     
 #if os(macOS)
                     // File import controls - Select a local XML file and import as a policy
                     
-                    DisclosureGroup("Import Policy from XML") {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Import Policy from XML").font(.headline)
+                    } content: {
                         
                         //                    LazyVGrid(columns: layout.column, spacing: 5) {
                         //
@@ -512,7 +530,9 @@ struct CreatePolicyView: View {
                     }
                     
                     // Templates section
-                    DisclosureGroup("Policy Templates", isExpanded: $templatesExpanded) {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Policy Templates").font(.headline)
+                    } content: {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 TextField("Template name", text: $newTemplateName)
@@ -538,12 +558,23 @@ struct CreatePolicyView: View {
                                             .buttonStyle(.bordered)
                                         Button("Edit") { editingTemplate = t }
                                             .buttonStyle(.bordered)
-                                        Button("Delete") { deleteTemplate(t) }
+                                        Button("Delete") {
+                                            // Ask for confirmation before deleting template
+                                            templateToDelete = t
+                                        }
                                             .buttonStyle(.bordered)
                                             .tint(.red)
                                     }
                                 }
                             }
+                        }
+                        // Confirmation alert for deleting a saved template
+                        .alert(item: $templateToDelete) { tpl in
+                            Alert(title: Text("Confirm Delete"),
+                                  message: Text("Delete template '\(tpl.name)'? This action cannot be undone."),
+                                  primaryButton: .destructive(Text("Delete")) {
+                                deleteTemplate(tpl)
+                            }, secondaryButton: .cancel())
                         }
                         .padding(.vertical, 6)
                     }
@@ -583,438 +614,25 @@ struct CreatePolicyView: View {
                                     Toggle("", isOn: $selfServiceEnable)
                                         .toggleStyle(SwitchToggleStyle(tint: .red))
                                 }
-                            }
-                        }
-                    }
+                            } // end HStack
+                        } // end LazyVGrid
+                    } // end VStack(alignment: .leading)
+                    } // end Group
+                } // end VStack
+
+                // Platform-specific selectable view: native macOS Table or iOS List
+                Group {
+                    #if os(macOS)
+                    packagesTable
+                        .frame(height: packageListHeight)
+                    #else
+                    packagesListView
+                        .frame(height: packageListHeight)
+                    #endif
                 }
-                
-                // ##########################################################################################
-                //                        Icons
-                // ##########################################################################################
-                
-                if !networkController.allIconsDetailed.isEmpty {
-                    Divider()
-                    
-                    // Prominent Icons filter header so it's always visible
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Icons").bold().padding(.bottom, 4)
-                        HStack {
-                            TextField("Filter icons", text: $iconFilter)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: .infinity)
-                            if !iconFilter.isEmpty {
-                                Button(action: { iconFilter = "" }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.secondary)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(6)
-                        .background(Color.gray.opacity(0.06))
-                        .cornerRadius(6)
-                    }
-                }
-                
-                //  ################################################################################
-                //              selections
-                //  ################################################################################
-                
-                // ##########################################################################################
-                //                        Icons - selector (compact horizontal strip)
-                // ##########################################################################################
-                
-                LazyVGrid(columns: columns, spacing: 30) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        // Compact horizontal icon selector (30x30)
-                        ScrollView(.horizontal, showsIndicators: true) {
-                            HStack(spacing: 8) {
-                                ForEach(networkController.allIconsDetailed.filter { icon in
-                                    let trimmed = iconFilter.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    if trimmed.isEmpty { return true }
-                                    return icon.name.localizedCaseInsensitiveContains(trimmed)
-                                }, id: \.id) { icon in
-                                    AsyncImage(url: URL(string: icon.url)) { phase in
-                                        switch phase {
-                                        case .success(let image):
-                                            image.resizable().scaledToFill()
-                                        case .failure(_):
-                                            Image(systemName: "photo").resizable().scaledToFit()
-                                        default:
-                                            ProgressView()
-                                        }
-                                    }
-                                    .frame(width: 30, height: 30)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(selectedIconId == icon.id ? Color.blue : Color.clear, lineWidth: 2))
-                                    .onTapGesture {
-                                        selectedIconId = icon.id
-                                        selectedIconString = icon.name
-                                        selectedIconList = icon
-                                    }
-                                    .help(icon.name)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        .onAppear {
-                            if !networkController.allIconsDetailed.isEmpty {
-                                selectedIconId = networkController.allIconsDetailed.first?.id
-                                selectedIconString = networkController.allIconsDetailed.first?.name ?? ""
-                                selectedIconList = networkController.allIconsDetailed.first ?? Icon(id: 0, url: "", name: "")
-                            } else {
-                                selectedIconId = nil
-                                selectedIconString = ""
-                            }
-                        }
-                        .onChange(of: networkController.allIconsDetailed) { newIcons in
-                            if !newIcons.isEmpty {
-                                selectedIconId = newIcons.first?.id
-                                selectedIconString = newIcons.first?.name ?? ""
-                                selectedIconList = newIcons.first ?? Icon(id: 0, url: "", name: "")
-                            } else {
-                                selectedIconId = nil
-                                selectedIconString = ""
-                            }
-                        }
-                    }
-                }
-                
-                // ##########################################################################################
-                //                        Category
-                // ##########################################################################################
-                Divider()
-                
-                if !networkController.categories.isEmpty {
-                    Group {
-                        LazyVGrid(columns: columns, spacing: 30) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                TextField("Filter categories", text: $categoryFilter)
-                                    .textFieldStyle(.roundedBorder)
-                                
-                                        Picker(selection: $selectedCategoryId, label: Text("Category")) {
-                                            // Allow explicit "None" option
-                                            Text("None").tag(nil as Int?)
-                                            // Use jamfId (Int) for tags so the Picker selection (an Int?) matches the tags.
-                                            ForEach(networkController.categories.filter { cat in
-                                                categoryFilter.isEmpty ? true : cat.name.localizedCaseInsensitiveContains(categoryFilter)
-                                            }, id: \.jamfId) { category in
-                                                Text(category.name).tag(category.jamfId as Int?)
-                                            }
-                                        }
-                                .onChange(of: networkController.categories) { newCategories in
-                                    if selectedCategoryId == nil {
-                                        selectedCategoryId = newCategories.first?.jamfId
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // ##########################################################################################
-                //                        Department
-                // ##########################################################################################
-                Divider()
-                
-                if !networkController.departments.isEmpty {
-                    Group {
-                        LazyVGrid(columns: columns, spacing: 30) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                TextField("Filter departments", text: $departmentFilter)
-                                    .textFieldStyle(.roundedBorder)
-                                
-                                      Picker(selection: $selectedDepartmentId, label: Text("Department:")) {
-                                          Text("None").tag(nil as Int?)
-                                          ForEach(networkController.departments.filter { dept in
-                                             departmentFilter.isEmpty ? true : dept.name.localizedCaseInsensitiveContains(departmentFilter)
-                                          }, id: \.jamfId) { department in
-                                              Text(department.name).tag(department.jamfId as Int?)
-                                          }
-                                      }
-                            }
-                        }
-                    }
-                }
-                Divider()
-                
-                if !networkController.scripts.isEmpty {
-                    Group {
-                        
-                        LazyVGrid(columns: columns, spacing: 20) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                TextField("Filter scripts", text: $scriptFilter)
-                                    .textFieldStyle(.roundedBorder)
-                                
-                                Picker(selection: $selectedScriptId, label: Text("Scripts")) {
-                                    Text("None").tag(nil as Int?)
-                                    ForEach(networkController.scripts.filter { s in
-                                        scriptFilter.isEmpty ? true : s.name.localizedCaseInsensitiveContains(scriptFilter)
-                                    }, id: \.jamfId) { script in
-                                        Text(script.name).tag(script.jamfId as Int?)
-                                    }
-                                }
-                                .onChange(of: networkController.scripts) { newScripts in
-                                    if selectedScriptId == nil {
-                                        selectedScriptId = newScripts.first?.jamfId
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // ######################################################################################
-                    }
-                }
-            }
-            
-            // ######################################################################################
-            //                        onAppear
-            // ######################################################################################
-            .onAppear {
-                print("CreateView appeared - connecting")
-                handleConnect()
-                loadTemplates()
-            }
-            .sheet(isPresented: $showPreviewSheet) {
-                VStack(alignment: .leading) {
-                    Text("Preview XML").font(.headline).padding()
-                    ScrollView { Text(previewXML).font(.system(.body, design: .monospaced)).padding() }
-                    HStack {
-                        Spacer()
-                        Button("Export") {
-#if os(macOS)
-                            if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
-                                let filename = "policy-preview-\(Int(Date().timeIntervalSince1970)).xml"
-                                let dest = downloads.appendingPathComponent(filename)
-                                do {
-                                    try previewXML.data(using: .utf8)?.write(to: dest)
-                                    NSWorkspace.shared.activateFileViewerSelecting([dest])
-                                } catch {
-                                    print("Failed to write preview XML: \(error)")
-                                }
-                            }
-#endif
-                        }
-                        Button("Close") { showPreviewSheet = false }
-                    }
-                    .padding()
-                }
-                .frame(minWidth: 600, minHeight: 400)
-            }
-            .padding()
-            
-            if progress.showProgressView == true {
-                ProgressView {
-                    Text("Processing")
-                        .padding()
-                }
-            } else {
-                Text("")
-            }
-        }
-    }
-    
-    // MARK: - MAIN VIEW
-    
-    
-    func handleConnect() {
-        print("Running handleConnect.")
-        networkController.fetchStandardData()
-        if networkController.allIconsDetailed.count <= 1 {
-            print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
-        } else {
-            print("getAllIconsDetailed has already run")
-            print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-        }
-    }
-
-    
-
-    // MARK: - Template persistence (file-based under Application Support)
-    private var templatesDirectoryURL: URL? {
-        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
-        return appSupport.appendingPathComponent("Man1fest0", isDirectory: true)
-    }
-
-    private func templatesFileURL() -> URL? {
-        guard let dir = templatesDirectoryURL else { return nil }
-        // encode server to filename-safe string
-        let encoded = Data(server.utf8).base64EncodedString()
-        return dir.appendingPathComponent("templates-\(encoded).json")
-    }
-
-    private func ensureTemplatesDirectory() {
-        guard let dir = templatesDirectoryURL else { return }
-        if !FileManager.default.fileExists(atPath: dir.path) {
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-    }
-
-    private func loadTemplates() {
-        guard let file = templatesFileURL() else { return }
-        if FileManager.default.fileExists(atPath: file.path) {
-            if let data = try? Data(contentsOf: file), let decoded = try? JSONDecoder().decode([PolicyTemplate].self, from: data) {
-                templates = decoded
-                // Expand templates section if templates exist, otherwise keep collapsed
-                templatesExpanded = !templates.isEmpty
-            }
-        } else {
-            templates = []
-            templatesExpanded = false
-        }
-    }
-
-    private func persistTemplates() {
-        ensureTemplatesDirectory()
-        guard let file = templatesFileURL() else { return }
-        if let encoded = try? JSONEncoder().encode(templates) {
-            try? encoded.write(to: file, options: .atomic)
-        }
-    }
-
-    private func saveCurrentAsTemplate() {
-        let tpl = PolicyTemplate(name: newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines), policyName: newPolicyName, selectedPackageIds: Array(packageMultiSelection), categoryId: selectedCategoryId, departmentId: selectedDepartmentId, scriptId: selectedScriptId, selfServiceEnabled: enableSelfService, iconId: selectedIconId)
-        templates.append(tpl)
-        persistTemplates()
-        newTemplateName = ""
-    }
-
-    private func applyTemplate(_ t: PolicyTemplate) {
-        newPolicyName = t.policyName
-        packageMultiSelection = Set(t.selectedPackageIds)
-        selectedCategoryId = t.categoryId
-        selectedDepartmentId = t.departmentId
-        selectedScriptId = t.scriptId
-        enableSelfService = t.selfServiceEnabled
-        selectedIconId = t.iconId
-    }
-
-    private func deleteTemplate(_ t: PolicyTemplate) {
-        templates.removeAll { $0.id == t.id }
-        persistTemplates()
-    }
-
-    // Export all templates to Downloads for sharing/backups
-    private func exportTemplatesToDownloads() {
-        guard !templates.isEmpty else { return }
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted]
-        guard let data = try? encoder.encode(templates) else { return }
-        #if os(macOS)
-        if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
-            let filename = "policy-templates-\(Date().timeIntervalSince1970).json"
-            let dest = downloads.appendingPathComponent(filename)
-            do {
-                try data.write(to: dest)
-                NSWorkspace.shared.activateFileViewerSelecting([dest])
-            } catch {
-                print("Failed to export templates: \(error)")
-            }
-        }
-        #else
-        // On other platforms save to Documents
-        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let filename = "policy-templates-\(Date().timeIntervalSince1970).json"
-            let dest = docs.appendingPathComponent(filename)
-            try? data.write(to: dest)
-        }
-        #endif
-    }
-
-    // Import templates from a JSON file and merge (avoid duplicates by name)
-    private func importTemplatesFromFile() {
-        #if os(macOS)
-        if let url = importExportBrain.showOpenPanel() {
-            do {
-                let data = try Data(contentsOf: url)
-                if let decoded = try? JSONDecoder().decode([PolicyTemplate].self, from: data) {
-                    // merge: if same name exists, replace
-                    for tpl in decoded {
-                        if let idx = templates.firstIndex(where: { $0.name == tpl.name }) {
-                            templates[idx] = tpl
-                        } else {
-                            templates.append(tpl)
-                        }
-                    }
-                    persistTemplates()
-                } else if let single = try? JSONDecoder().decode(PolicyTemplate.self, from: data) {
-                    if let idx = templates.firstIndex(where: { $0.name == single.name }) {
-                        templates[idx] = single
-                    } else {
-                        templates.append(single)
-                    }
-                    persistTemplates()
-                }
-            } catch {
-                print("Failed to import templates: \(error)")
-            }
-        }
-        #endif
-    }
-
-    var searchResults: [Package] {
-        if searchText.isEmpty {
-            return networkController.packages
-        } else {
-            return networkController.packages.filter { $0.name.lowercased().contains(searchText.lowercased())}
-        }
-    }
-    
-    // Combined sorted packages based on current searchResults and sort settings
-    private var sortedPackages: [Package] {
-        let arr = searchResults
-        switch packageSortBy {
-        case .name:
-            return arr.sorted { a, b in
-                if packageSortAscending {
-                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-                } else {
-                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedDescending
-                }
-            }
-        case .id:
-            return arr.sorted { a, b in
-                // Treat jamfId==0 as large so it sorts after real ids
-                let aId = (a.jamfId != 0) ? a.jamfId : Int.max
-                let bId = (b.jamfId != 0) ? b.jamfId : Int.max
-                return packageSortAscending ? (aId < bId) : (aId > bId)
-            }
-        }
-    }
-
-    // Dynamic heights to conserve vertical space when lists are small
-    private var packageListHeight: CGFloat {
-        let rows = max(1, sortedPackages.count)
-        let h = CGFloat(rows) * 28.0 + 80.0
-        return min(400.0, max(120.0, h))
-    }
-
-    private var selectionListHeight: CGFloat {
-        let rows = packageMultiSelection.count
-        if rows == 0 { return 44.0 }
-        let h = CGFloat(rows) * 22.0 + 24.0
-        return min(240.0, max(44.0, h))
-    }
-    
-    // Added packagesSection composed view (renders header + platform-specific selectable list/table)
-    private var packagesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            packagesHeader
-
-            // Platform-specific selectable view: native macOS Table or iOS List
-            Group {
-                #if os(macOS)
-                packagesTable
-                    .frame(height: packageListHeight)
-                #else
-                packagesListView
-                    .frame(height: packageListHeight)
-                #endif
-            }
-            .padding(.top, 4)
-        }
-        .padding(.vertical, 6)
+                .padding(.top, 4)
+            } // end body
+            .padding(.vertical, 6)
     }
 
     // Extracted packages header to simplify type-checking
@@ -1097,7 +715,6 @@ struct CreatePolicyView: View {
          // Show a small header row above the selectable list so users understand this pane
          
           
-         
          VStack(alignment: .leading, spacing: 6) {
              // Selection row always shown under header so users see selection count
              HStack(spacing: 8) {

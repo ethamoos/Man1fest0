@@ -30,6 +30,13 @@ struct PolicyRemoveItemsTabView: View {
     @State var showingWarningClearLimit: Bool = false
     
     @State var showingWarningClearExclusions: Bool = false
+
+    // Additional confirmations for destructive clear actions
+    @State private var showingWarningClearSelfService: Bool = false
+    @State private var showingWarningClearMaintenance: Bool = false
+    @State private var showingWarningClearPrinters: Bool = false
+    @State private var showingWarningClearDockItems: Bool = false
+    @State private var showingWarningClearReboot: Bool = false
     
     @State private var selectedResourceType = ResourceType.policyDetail
     
@@ -60,88 +67,121 @@ struct PolicyRemoveItemsTabView: View {
                 HStack(spacing: 10) {
                     
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        xmlController.clearSelfService()
-                        xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
-                        
-                        networkController.separationLine()
-                        print("Pressing clear SelfService")
+                        // confirm before clearing self-service
+                        showingWarningClearSelfService = true
                     }) {
                         Text("Clear Self-Service")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .help("This clears the self-service node from the policy")
+                    .alert(isPresented: $showingWarningClearSelfService) {
+                        Alert(title: Text("Caution!"),
+                              message: Text("This will clear the Self-Service configuration from the policy. This action cannot be undone."),
+                              primaryButton: .destructive(Text("I understand!")) {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                xmlController.clearSelfService()
+                                xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
+                                networkController.separationLine()
+                                print("Confirmed: clear SelfService")
+                              }, secondaryButton: .cancel())
+                    }
                 }
                 
                 HStack(spacing: 10) {
                     
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        xmlController.clearMaintenance(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
-                        
-                        Debug.separationLine()
-                        print("Pressing clear Maintenance")
+                        showingWarningClearMaintenance = true
                     }) {
                         Text("Clear Maintenance")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .help("This clears the maintenance node from the policy")
+                    .alert(isPresented: $showingWarningClearMaintenance) {
+                        Alert(title: Text("Caution!"),
+                              message: Text("This will clear the Maintenance configuration from the policy."),
+                              primaryButton: .destructive(Text("I understand!")) {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                xmlController.clearMaintenance(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
+                                Debug.separationLine()
+                                print("Confirmed: clear Maintenance")
+                              }, secondaryButton: .cancel())
+                    }
                 }
                 
                 HStack(spacing: 10) {
                     
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        xmlController.clearPrinters()
-                        Debug.separationLine()
-                        print("Pressing clear Printers")
-                        xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
-                        
+                        showingWarningClearPrinters = true
                     }) {
                         Text("Clear Printers")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .help("This clears the printers node from the policy")
+                    .alert(isPresented: $showingWarningClearPrinters) {
+                        Alert(title: Text("Caution!"),
+                              message: Text("This will clear printers from the policy."),
+                              primaryButton: .destructive(Text("I understand!")) {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                xmlController.clearPrinters()
+                                Debug.separationLine()
+                                print("Confirmed: clear Printers")
+                                xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
+                              }, secondaryButton: .cancel())
+                    }
                 }
                 
                 HStack(spacing: 10) {
                     
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        xmlController.clearDockItems()
-                        xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
-                        Debug.separationLine()
-                        print("Pressing clear DockItems")
+                        showingWarningClearDockItems = true
                     }) {
                         Text("Clear DockItems")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .help("This clears the dock_items node from the policy")
+                    .alert(isPresented: $showingWarningClearDockItems) {
+                        Alert(title: Text("Caution!"),
+                              message: Text("This will clear Dock items from the policy."),
+                              primaryButton: .destructive(Text("I understand!")) {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                xmlController.clearDockItems()
+                                xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
+                                Debug.separationLine()
+                                print("Confirmed: clear DockItems")
+                              }, secondaryButton: .cancel())
+                    }
                 }
                 
                 HStack(spacing: 10) {
                     
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        xmlController.clearReboot()
-                        xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
-                        Debug.separationLine()
-                        print("Pressing clear reboot")
+                        showingWarningClearReboot = true
                     }) {
                         Text("Clear Reboot")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .help("This clears the reboot node from the policy")
+                    .alert(isPresented: $showingWarningClearReboot) {
+                        Alert(title: Text("Caution!"),
+                              message: Text("This will clear reboot settings from the policy."),
+                              primaryButton: .destructive(Text("I understand!")) {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                xmlController.clearReboot()
+                                xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
+                                Debug.separationLine()
+                                print("Confirmed: clear Reboot")
+                              }, secondaryButton: .cancel())
+                    }
                 }
                 
                 Button(action: {

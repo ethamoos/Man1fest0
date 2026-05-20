@@ -82,6 +82,9 @@ struct PolicyScriptsTabView: View {
     
     
     @State var command: String = ""
+    // Confirmation states for removals
+    @State private var showingRemoveScriptConfirm: Bool = false
+    @State private var showingRemoveAllScriptsConfirm: Bool = false
     
     var body: some View {
         
@@ -226,9 +229,11 @@ struct PolicyScriptsTabView: View {
                         }
                     }
                     
-                    DisclosureGroup("More Parameters") {
-                      
-                        
+                    // Replaced DisclosureGroup("More Parameters") with ProminentDisclosure
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("More Parameters")
+                            .font(.headline)
+                    } content: {
                         HStack {
                             LazyVGrid(columns: layout.columns) {
                                 TextField("parameter4", text: $scriptParameter4)
@@ -251,7 +256,11 @@ struct PolicyScriptsTabView: View {
                         }
                     }
                     
-                    DisclosureGroup("Notes") {
+                    // Replaced DisclosureGroup("Notes") with ProminentDisclosure
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Notes")
+                            .font(.headline)
+                    } content: {
                         VStack() {
                             NotesView()
                         }
@@ -263,7 +272,11 @@ struct PolicyScriptsTabView: View {
                 }
                 
                 
-                DisclosureGroup("Add/Remove Scripts") {
+                // Replaced DisclosureGroup("Add/Remove Scripts") with ProminentDisclosure
+                ProminentDisclosure(indicatorColor: .accentColor) {
+                    Text("Add/Remove Scripts")
+                        .font(.headline)
+                } content: {
                     
                     //  ################################################################################
                     //              Scripts picker
@@ -334,14 +347,8 @@ struct PolicyScriptsTabView: View {
                         
                         
                         Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            // Pass listSelection.jamfId as optional Int? (nil if 0)
-                            let _: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
-                            xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
-                            
+                            // Show confirmation before removing a single script
+                            showingRemoveScriptConfirm = true
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "plus.app.fill")
@@ -351,6 +358,18 @@ struct PolicyScriptsTabView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
                         .help("Remove the selected script from this policy.")
+                        .alert("Remove selected script?", isPresented: $showingRemoveScriptConfirm) {
+                            Button("Proceed", role: .destructive) {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                // Pass listSelection.jamfId as optional Int? (nil if 0)
+                                let _: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
+                                xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
+                            }
+                            Button("Cancel", role: .cancel) { }
+                        } message: {
+                            Text("This will remove the selected script from the policy. This action cannot be undone. Proceed?")
+                        }
                         //                    .disabled(listedScript.jamfId == 0 && listedScript.name == "")
                         
                         //  ################################################################################
@@ -358,15 +377,8 @@ struct PolicyScriptsTabView: View {
                         //  ################################################################################
                         
                         Button(action: {
-                            
-                            progress.showProgress()
-                            progress.waitForABit()
-                            
-                            networkController.separationLine()
-                            print("Removing all scripts in policy:\(String(describing: policyID))")
-                            
-                            xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
-                            
+                            // Confirm before removing all scripts
+                            showingRemoveAllScriptsConfirm = true
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "minus.square.fill.on.square.fill")
@@ -376,25 +388,40 @@ struct PolicyScriptsTabView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
                         .help("Remove all scripts currently assigned to this policy.")
+                        .alert("Remove all scripts?", isPresented: $showingRemoveAllScriptsConfirm) {
+                            Button("Proceed", role: .destructive) {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                networkController.separationLine()
+                                print("Confirmed: Removing all scripts in policy:\(String(describing: policyID))")
+                                xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                            }
+                            Button("Cancel", role: .cancel) { }
+                        } message: {
+                            Text("This will remove all scripts from the policy. This action cannot be undone. Proceed?")
+                        }
                         
                     }
                 }
                 
                 
-                DisclosureGroup("Add Individual Command/s To Run In Policy") {
-                    
+                // Replaced DisclosureGroup("Add Individual Command/s To Run In Policy") with ProminentDisclosure
+                ProminentDisclosure(indicatorColor: .accentColor) {
+                    Text("Add Individual Command/s To Run In Policy")
+                        .font(.headline)
+                } content: {
+
                     //  ################################################################################
                     //  Add custom command in policy4
                     //  ################################################################################
-                    
-                    
+
                     TextEditor(text: $command)
                         .frame(minHeight: 20)
                         .frame(maxHeight: 40)
                         .border(Color.gray)
-              
+
                     Button(action: {
-                        
+
                         progress.showProgress()
                         progress.waitForABit()
                         networkController.separationLine()

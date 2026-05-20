@@ -304,10 +304,7 @@ struct PoliciesActionView: View {
                     
                     HStack(spacing:20) {
                         
-                        // Delete action moved to General tab
-                        Text("Delete moved to General tab")
-                            .foregroundColor(.secondary)
-                            .help("Delete selected policies from the General tab")
+               
                         
 //              ################################################################################
 //              Update Category
@@ -709,6 +706,12 @@ struct PoliciesActionScopeTab: View {
     var onClearLimitations: (_ policyID: String) -> Void
     var onClearExclusions: () -> Void
 
+    // Local confirmation states for destructive batch scope actions
+    @State private var showingScopeAllComputersConfirm: Bool = false
+    @State private var showingScopeAllUsersConfirm: Bool = false
+    @State private var showingScopeAllBothConfirm: Bool = false
+    @State private var showingClearScopeConfirm: Bool = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -721,10 +724,8 @@ struct PoliciesActionScopeTab: View {
                 // Batch scope buttons (operate on policiesSelection)
                 HStack(spacing: 12) {
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        // call networkController with current selection
-                        networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                        // Show confirmation before scoping to all computers
+                        showingScopeAllComputersConfirm = true
                     }) {
                         Label("Scope To All Computers", systemImage: "plus.circle")
                     }
@@ -732,9 +733,8 @@ struct PoliciesActionScopeTab: View {
                     .tint(.red)
 
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                        // Show confirmation before scoping to all users
+                        showingScopeAllUsersConfirm = true
                     }) {
                         Label("Scope To All Users", systemImage: "plus.circle")
                     }
@@ -742,10 +742,8 @@ struct PoliciesActionScopeTab: View {
                     .tint(.red)
 
                     Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
-                        networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                        // Show confirmation before scoping to both computers and users
+                        showingScopeAllBothConfirm = true
                     }) {
                         Label("Scope To All Computers & Users", systemImage: "plus.circle")
                     }
@@ -753,13 +751,55 @@ struct PoliciesActionScopeTab: View {
                     .tint(.red)
 
                     Button(action: {
-                        // Clear scope for selected policies via parent's closure
-                        onClearExclusions()
+                        // Confirm before clearing scope/exclusions
+                        showingClearScopeConfirm = true
                     }) {
                         Label("Clear Scope", systemImage: "eraser")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
+                }
+                // Alerts for the batch destructive actions
+                .alert("Confirm Scope to All Computers?", isPresented: $showingScopeAllComputersConfirm) {
+                    Button("Proceed", role: .destructive) {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("This will scope the selected policies to all computers. This action may be large in scope and difficult to undo. Proceed?")
+                }
+                .alert("Confirm Scope to All Users?", isPresented: $showingScopeAllUsersConfirm) {
+                    Button("Proceed", role: .destructive) {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("This will scope the selected policies to all users. This action may be large in scope and difficult to undo. Proceed?")
+                }
+                .alert("Confirm Scope to All Computers & Users?", isPresented: $showingScopeAllBothConfirm) {
+                    Button("Proceed", role: .destructive) {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.batchScopeAllUsers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                        networkController.batchScopeAllComputers(policiesSelection: policiesSelection, server: server, authToken: networkController.authToken)
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("This will scope the selected policies to all computers and all users. This action cannot easily be undone. Proceed?")
+                }
+                .alert("Confirm Clear Scope?", isPresented: $showingClearScopeConfirm) {
+                    Button("Proceed", role: .destructive) {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        onClearExclusions()
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("This will clear scope/exclusions on the selected policies. You may need to rescope to redeploy. Proceed?")
                 }
 
                 Divider()
