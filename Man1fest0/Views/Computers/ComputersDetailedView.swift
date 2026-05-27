@@ -30,6 +30,9 @@ struct ComputersDetailedView: View {
     @State private var historyLoadedForComputerID: String? = nil
     @State private var showDebugHistory: Bool = false
     @State private var showRawHistory: Bool = false
+    // Policies sorting: 0 = name, 1 = date
+    @State private var policySortBy: Int = 0
+    @State private var policySortAscending: Bool = true
     
     // Main subviews split to help the compiler
     @ViewBuilder
@@ -158,8 +161,58 @@ struct ComputersDetailedView: View {
                 .foregroundColor(.secondary)
         } else {
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(policies.indices, id: \.self) { i in
-                    let pl = policies[i]
+                // Sorting controls
+                HStack(alignment: .center, spacing: 12) {
+                    Text("Sort by:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Picker("", selection: $policySortBy) {
+                        Text("Name").tag(0)
+                        Text("Date").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+
+                    Button(action: { policySortAscending.toggle() }) {
+                        Image(systemName: policySortAscending ? "arrow.up" : "arrow.down")
+                    }
+                    .help("Toggle sort order")
+
+                    Spacer()
+                    Text("Count: \(policies.count)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                // Prepare sorted array based on selected column/order
+                let sortedPolicies = policies.sorted { a, b in
+                    if policySortBy == 0 {
+                        // sort by name (case-insensitive)
+                        let an = a.policyName?.lowercased() ?? ""
+                        let bn = b.policyName?.lowercased() ?? ""
+                        if an == bn {
+                            // fallback to date if names equal
+                            let ae = a.dateCompletedEpoch ?? 0
+                            let be = b.dateCompletedEpoch ?? 0
+                            return policySortAscending ? (ae < be) : (ae > be)
+                        }
+                        return policySortAscending ? (an < bn) : (an > bn)
+                    } else {
+                        // sort by epoch date (fallback to 0)
+                        let ae = a.dateCompletedEpoch ?? 0
+                        let be = b.dateCompletedEpoch ?? 0
+                        if ae == be {
+                            // fallback to name
+                            let an = a.policyName?.lowercased() ?? ""
+                            let bn = b.policyName?.lowercased() ?? ""
+                            return policySortAscending ? (an < bn) : (an > bn)
+                        }
+                        return policySortAscending ? (ae < be) : (ae > be)
+                    }
+                }
+
+                ForEach(sortedPolicies.indices, id: \.self) { i in
+                    let pl = sortedPolicies[i]
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(pl.policyName ?? "(unknown)")
