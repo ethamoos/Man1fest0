@@ -263,11 +263,7 @@ struct CreatePolicyView: View {
                             Text("Create Policy")
                                 .font(.title)
                                 .fontWeight(.semibold)
-//                                                            .foregroundColor(.secondary)
 
-                            //                            Text("Create categories, groups, packages and scripts")
-                            //                                .font(.subheadline)
-                            //                                .foregroundColor(.secondary)
                         }
                         Spacer()
                         HStack(spacing: 8) {
@@ -459,6 +455,20 @@ struct CreatePolicyView: View {
                             }
                             .toggleStyle(.checkbox)
                             
+                            // Script picker: choose a script to attach to the new policy
+                            HStack {
+                                Text("Script").bold()
+                                Picker("Script", selection: Binding(get: { selectedScriptId ?? -1 }, set: { selectedScriptId = $0 == -1 ? nil : $0 })) {
+                                    Text("None").tag(-1)
+                                    ForEach(networkController.scripts, id: \.jamfId) { s in
+                                        Text(s.name).tag(s.jamfId)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(maxWidth: 300)
+                                Spacer()
+                            }
+                            
                         }
                     }
                     
@@ -621,16 +631,16 @@ struct CreatePolicyView: View {
                 } // end VStack
 
                 // Platform-specific selectable view: native macOS Table or iOS List
-                Group {
-                    #if os(macOS)
-                    packagesTable
-                        .frame(height: packageListHeight)
-                    #else
-                    packagesListView
-                        .frame(height: packageListHeight)
-                    #endif
-                }
-                .padding(.top, 4)
+//                Group {
+//                    #if os(macOS)
+//                    packagesTable
+//                        .frame(height: packageListHeight)
+//                    #else
+//                    packagesListView
+//                        .frame(height: packageListHeight)
+//                    #endif
+//                }
+//                .padding(.top, 4)
             } // end body
             .padding(.vertical, 6)
     }
