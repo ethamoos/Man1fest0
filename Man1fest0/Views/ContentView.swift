@@ -6,11 +6,59 @@
 
 import SwiftUI
 
+// Lightweight local MessageStore and MessageBar fallback so the app compiles
+// even if shared files were not added to the project target. These mirror
+// the full implementations in Views/Shared when present.
+final class MessageStore: ObservableObject {
+    enum Level: String { case info, success, warning, error, debug }
+    @Published var message: String = ""
+    @Published var level: Level = .info
+    @Published var isVisible: Bool = false
+    @Published var showSpinner: Bool = false
+    func show(_ text: String, level: Level = .info, spinner: Bool = false) {
+        DispatchQueue.main.async {
+            self.message = text
+            self.level = level
+            self.showSpinner = spinner
+            withAnimation { self.isVisible = true }
+        }
+    }
+    func hide() { DispatchQueue.main.async { withAnimation { self.isVisible = false }; self.showSpinner = false } }
+}
+
+struct MessageBar: View {
+    @ObservedObject var store: MessageStore
+    private func fg(_ level: MessageStore.Level) -> Color {
+        switch level {
+        case .info: return .blue
+        case .success: return .green
+        case .warning: return .orange
+        case .error: return .red
+        case .debug: return .gray
+        }
+    }
+    var body: some View {
+        if store.isVisible {
+            HStack(spacing: 10) {
+                if store.showSpinner { ProgressView().progressViewStyle(CircularProgressViewStyle()) }
+                Text(store.message).foregroundColor(fg(store.level)).lineLimit(2)
+                Spacer()
+                Button(action: { store.hide() }) { Image(systemName: "xmark.circle.fill").foregroundColor(.secondary) }
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.03)))
+            .padding(.horizontal)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+}
+
 struct ContentView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
+    @EnvironmentObject var messageStore: MessageStore
 
     //  #######################################################################
     //  Login
@@ -24,9 +72,10 @@ struct ContentView: View {
     @AppStorage("ShouldShowWelcomeScreenSet") private var storedShouldShowWelcomeSet: Bool = false
 
     var body: some View {
-         NavigationView {
-            // Primary column: always show the app sidebar so navigation links work
-            OptionsView()
+        VStack(spacing: 0) {
+            NavigationView {
+                // Primary column: always show the app sidebar so navigation links work
+                OptionsView()
 
             // Detail column: show loading, welcome, or default placeholder
             if networkController.isLoading {
@@ -61,6 +110,10 @@ struct ContentView: View {
                 }
             }
                 
+            }
+            // Persistent message bar reserved for user-visible messages and spinners
+            MessageBar(store: messageStore)
+                .padding(.vertical, 6)
         }
         .sheet(isPresented: $networkController.needsCredentials) {
             ConnectSheet(

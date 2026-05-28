@@ -154,6 +154,8 @@ struct Man1fest0App: App {
     let scopingController: ScopingBrain
     let policyController: PolicyBrain
     let exportController: ImportExportBrain
+    // Global message store for persistent user-visible messages (errors, info, spinners)
+    let messageStore: MessageStore
     // State to control presentation of the Preferences sheet (macOS only)
     @State private var showingPreferences: Bool = false
     #if os(macOS)
@@ -175,6 +177,8 @@ struct Man1fest0App: App {
         self.scopingController = ScopingBrain()
         self.policyController = PolicyBrain()
         self.exportController = ImportExportBrain()
+        // Message store used across the app for persistent user messages
+        self.messageStore = MessageStore()
         // Initialize global security settings and inactivity monitor
         self.securitySettings = SecuritySettingsManager()
         self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)
@@ -217,6 +221,7 @@ struct Man1fest0App: App {
                 .environmentObject(scopingController)
                 .environmentObject(policyController)
                 .environmentObject(exportController)
+                .environmentObject(messageStore)
                 // Provide global security objects
                 .environmentObject(securitySettings)
                 .environmentObject(inactivityMonitor)

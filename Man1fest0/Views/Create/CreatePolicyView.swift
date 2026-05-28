@@ -425,7 +425,7 @@ struct CreatePolicyView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
                             .disabled(newPolicyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        
+                            
                             Button(action: {
                                 // Build preview XML and show sheet
                                 let selectedPackageIdsToAdd = Set(packageMultiSelection)
@@ -444,7 +444,7 @@ struct CreatePolicyView: View {
                             }) {
                                 Text("Preview XML")
                             }
-
+                            
                             Toggle(isOn: $createDepartmentIsChecked) {
                                 Text("New Dept")
                             }
@@ -454,6 +454,7 @@ struct CreatePolicyView: View {
                                 Text("Self Service")
                             }
                             .toggleStyle(.checkbox)
+                        }
                             
                             // Script picker: choose a script to attach to the new policy
                             HStack {
@@ -469,7 +470,7 @@ struct CreatePolicyView: View {
                                 Spacer()
                             }
                             
-                        }
+//                        }
                     }
                     
 #if os(macOS)
