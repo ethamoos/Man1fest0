@@ -197,18 +197,26 @@ struct ContentView: View {
             guard let frameString = UserDefaults.standard.string(forKey: defaultsKey) else { return }
             print("[WindowAccessor] Found saved frame: \(frameString)")
             var rect = NSRectFromString(frameString)
-            let screens = NSScreen.screens
-            if !screens.contains(where: { $0.visibleFrame.intersects(rect) }) {
-                let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
-                let clampedWidth = min(rect.size.width, mainVisible.width)
-                let clampedHeight = min(rect.size.height, mainVisible.height)
-                let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
-                let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
-                rect.origin.x = max(mainVisible.origin.x, centeredX)
-                rect.origin.y = max(mainVisible.origin.y, centeredY)
-                rect.size.width = clampedWidth
-                rect.size.height = clampedHeight
-            }
+                    let screens = NSScreen.screens
+                    if let intersect = screens.first(where: { $0.visibleFrame.intersects(rect) }) {
+                        // Clamp to the intersecting screen's visible frame
+                        let vis = intersect.visibleFrame
+                        rect.size.width = min(rect.size.width, vis.width)
+                        rect.size.height = min(rect.size.height, vis.height)
+                        rect.origin.x = max(vis.minX, min(rect.origin.x, vis.maxX - rect.size.width))
+                        rect.origin.y = max(vis.minY, min(rect.origin.y, vis.maxY - rect.size.height))
+                    } else {
+                        // Fallback to main screen
+                        let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
+                        let clampedWidth = min(rect.size.width, mainVisible.width)
+                        let clampedHeight = min(rect.size.height, mainVisible.height)
+                        let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
+                        let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
+                        rect.origin.x = max(mainVisible.origin.x, centeredX)
+                        rect.origin.y = max(mainVisible.origin.y, centeredY)
+                        rect.size.width = clampedWidth
+                        rect.size.height = clampedHeight
+                    }
             window.setFrame(rect, display: true, animate: false)
             print("[WindowAccessor] Applied saved frame to window: \(rect)")
         }

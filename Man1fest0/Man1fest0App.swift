@@ -88,6 +88,27 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Find a main/styled window to apply the saved frame to
         if let window = NSApp.windows.first(where: { $0.styleMask.contains(.titled) }) {
+            // Ensure the rect fits the screen it will be applied to. Prefer the screen
+            // that the rect intersects, otherwise fall back to the window's screen or main screen.
+            let screens = NSScreen.screens
+            let targetVisible: NSRect = {
+                if let intersect = screens.first(where: { $0.visibleFrame.intersects(rect) }) {
+                    return intersect.visibleFrame
+                }
+                if let winScreen = window.screen {
+                    return winScreen.visibleFrame
+                }
+                return NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
+            }()
+
+            // Clamp size to the target visible frame
+            rect.size.width = min(rect.size.width, targetVisible.width)
+            rect.size.height = min(rect.size.height, targetVisible.height)
+
+            // Clamp origin so the rect remains fully on-screen
+            rect.origin.x = max(targetVisible.minX, min(rect.origin.x, targetVisible.maxX - rect.size.width))
+            rect.origin.y = max(targetVisible.minY, min(rect.origin.y, targetVisible.maxY - rect.size.height))
+
             window.setFrame(rect, display: true, animate: false)
             print("[AppDelegate] Applied saved frame to window: \(rect)")
         }
@@ -108,6 +129,15 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
             rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
             print("[AppDelegate] No saved frame in applySavedFrame(to:), using proportional default: \(rect)")
         }
+        // Clamp rect to the provided window's screen (if available) or to the main screen
+        let screens = NSScreen.screens
+        let targetVisible: NSRect = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
+
+        rect.size.width = min(rect.size.width, targetVisible.width)
+        rect.size.height = min(rect.size.height, targetVisible.height)
+        rect.origin.x = max(targetVisible.minX, min(rect.origin.x, targetVisible.maxX - rect.size.width))
+        rect.origin.y = max(targetVisible.minY, min(rect.origin.y, targetVisible.maxY - rect.size.height))
+
         window.setFrame(rect, display: true, animate: false)
         print("[AppDelegate] Applied saved frame to specific window: \(rect)")
     }
