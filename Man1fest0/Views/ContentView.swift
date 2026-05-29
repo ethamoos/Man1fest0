@@ -15,15 +15,27 @@ final class MessageStore: ObservableObject {
     @Published var level: Level = .info
     @Published var isVisible: Bool = false
     @Published var showSpinner: Bool = false
-    func show(_ text: String, level: Level = .info, spinner: Bool = false) {
+    // Match the signature of the shared MessageStore so callers can pass details and
+    // the named `showSpinner` parameter. The full implementation in Views/Shared
+    // supports `details: String?` and `showSpinner: Bool`.
+    func show(_ text: String, level: Level = .info, details: String? = nil, showSpinner: Bool = false) {
         DispatchQueue.main.async {
             self.message = text
             self.level = level
-            self.showSpinner = spinner
+            self.showSpinner = showSpinner
             withAnimation { self.isVisible = true }
         }
     }
+
     func hide() { DispatchQueue.main.async { withAnimation { self.isVisible = false }; self.showSpinner = false } }
+
+    // Shortcut helpers matching the full MessageStore API used throughout the app.
+    func info(_ text: String, details: String? = nil) { show(text, level: .info, details: details) }
+    func success(_ text: String, details: String? = nil) { show(text, level: .success, details: details) }
+    func warn(_ text: String, details: String? = nil) { show(text, level: .warning, details: details) }
+    func error(_ text: String, details: String? = nil) { show(text, level: .error, details: details) }
+    func debug(_ text: String, details: String? = nil) { show(text, level: .debug, details: details) }
+
 }
 
 struct MessageBar: View {

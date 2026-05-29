@@ -486,6 +486,14 @@ extension NetBrain {
 
     @State var currentResponseCode: String = ""
     var hasError = false
+
+    // Optional global MessageStore injected from the App so network operations can
+    // present user-facing messages (spinner, success, error) centrally.
+    weak var messageStore: MessageStore?
+
+    func bindMessageStore(_ store: MessageStore) {
+        self.messageStore = store
+    }
     
     //  #############################################################################
     //    ############ Screen Access
@@ -828,31 +836,33 @@ extension NetBrain {
     //    #################################################################################
     
     func getAllGroups(server: String, authToken: String) async throws {
-        let jamfURLQuery = server + "/JSSResource/computergroups"
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running func: getAllGroups")
-        print("jamfURLQuery is: \(jamfURLQuery)")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            throw JamfAPIError.badResponseCode
+        // Show a global message while fetching groups
+        messageStore?.show("Loading groups…", level: .info, details: "Connecting to server", showSpinner: true)
+        do {
+            let jamfURLQuery = server + "/JSSResource/computergroups"
+            let url = URL(string: jamfURLQuery)!
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            separationLine()
+            print("Running func: getAllGroups")
+            print("jamfURLQuery is: \(jamfURLQuery)")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                print("Code not 200")
+                throw JamfAPIError.badResponseCode
+            }
+            let decoder = JSONDecoder()
+            self.allComputerGroups = try decoder.decode(Man1fest0.allComputerGroups.self, from: data).computerGroups
+
+            // Success
+            messageStore?.show("Groups loaded", level: .success, details: "\(self.allComputerGroups.count) groups")
+        } catch {
+            messageStore?.show("Failed to load groups", level: .error, details: error.localizedDescription)
+            throw error
         }
-        //        DEBUG
-        //        separationLine()
-        //        print("getAllGroups - processDetail Json data as text is:")
-        //        print(String(data: data, encoding: .utf8)!)
-        let decoder = JSONDecoder()
-        
-        //        DispatchQueue.main.async {
-        self.allComputerGroups = try decoder.decode(Man1fest0.allComputerGroups.self, from: data).computerGroups
-        //        }
     }
     
     func getAdvancedComputerSearch(_ userID: String) async throws {
@@ -1108,6 +1118,7 @@ print("DEBUG - status code is 200, response is:")
     
     
     func getAllPolicies(server: String) async throws {
+        messageStore?.show("Loading policies…", level: .info, details: "Connecting to server", showSpinner: true)
         let jamfURLQuery = server + "/JSSResource/policies"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
@@ -1121,8 +1132,10 @@ print("DEBUG - status code is 200, response is:")
         let (data, response) = try await URLSession.shared.data(for: request)
         self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             print("Code not 200")
             print(response)
+            messageStore?.show("Failed to load policies", level: .error, details: "HTTP \(statusCode)")
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
@@ -1136,11 +1149,13 @@ print("DEBUG - status code is 200, response is:")
         print("getAllPolicies status is set to:\(allPoliciesComplete)")
         print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
         print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
+        messageStore?.show("Policies loaded", level: .success, details: "\(self.allPoliciesConverted.count) policies")
     }
     
      
   
     func getDetailedPolicy(server: String, authToken: String, policyID: String) async throws {
+        messageStore?.show("Loading policy details…", level: .info, details: "Policy ID: \(policyID)", showSpinner: true)
 //        if self.debug_enabled == true {
             print("Running getDetailedPolicy - policyID is:\(policyID)")
 //        }
@@ -1182,6 +1197,7 @@ print("DEBUG - status code is 200, response is:")
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             self.currentResponseCode = String(describing: statusCode)
             print("getDetailedPolicy request error - code is:\(statusCode)")
+            messageStore?.show("Failed to load policy details", level: .error, details: "HTTP \(statusCode)")
             throw JamfAPIError.http(statusCode)
         }
 //        ########################################################
@@ -1210,6 +1226,8 @@ print("DEBUG - status code is 200, response is:")
         // view-backed collection. This avoids frequent mutations during layout.
         self.policyDetailsBuffer.append(decodedData)
         self.scheduleFlushPolicyDetails()
+        // Success
+        messageStore?.show("Policy details loaded", level: .success, details: self.policyDetailed?.general?.name)
       
     }
     
@@ -1396,7 +1414,7 @@ print("DEBUG - status code is 200, response is:")
             }
         } else {
             self.separationLine()
-            print("No getPackagesAssignedToPolicy response yet")    
+            print("No getPackagesAssignedToPolicy response yet")
         }
     }
     
@@ -2865,6 +2883,7 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
     
     
     func getAllPolicies(server: String, authToken: String) async throws {
+        messageStore?.show("Loading policies…", level: .info, details: "Connecting to server", showSpinner: true)
         let jamfURLQuery = server + "/JSSResource/policies"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
@@ -2878,8 +2897,10 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         let (data, response) = try await URLSession.shared.data(for: request)
         self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             print("Code not 200")
             print(response)
+            messageStore?.show("Failed to load policies", level: .error, details: "HTTP \(statusCode)")
             throw JamfAPIError.badResponseCode
         }
         let decoder = JSONDecoder()
@@ -2895,6 +2916,7 @@ func updateScript(server: String, scriptName: String, scriptContent: String, scr
         print("getAllPolicies status is set to:\(allPoliciesComplete)")
         print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
         print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
+        messageStore?.show("Policies loaded", level: .success, details: "\(self.allPoliciesConverted.count) policies")
     }
     
      
@@ -6699,13 +6721,16 @@ xml = """
     
     
     func getAllPackages() async throws {
+        messageStore?.show("Loading packages…", level: .info, details: "Connecting to server", showSpinner: true)
         do {
             let request = APIRequest<Packages>(endpoint: "packages", method: .get)
             let decoded = try await requestSender.resultFor(apiRequest: request)
             self.packages = decoded.packages
             print("Loaded \(packages.count) packages")
+            messageStore?.show("Packages loaded", level: .success, details: "\(self.packages.count) packages")
         } catch {
             publishError(error, title: "Failed to load packages")
+            messageStore?.show("Failed to load packages", level: .error, details: error.localizedDescription)
             throw error
         }
     }
@@ -6713,6 +6738,7 @@ xml = """
     
     
     func getAllScripts() async throws {
+        messageStore?.show("Loading scripts…", level: .info, details: "Connecting to server", showSpinner: true)
         do {
             print("Running getAllScripts (paginated)")
             // Ensure we have a valid token (refresh or fetch if needed)
@@ -6764,11 +6790,13 @@ xml = """
             }
 
             print("Loaded \(accumulated.count) scripts across \(page + 1) page(s)")
+            messageStore?.show("Scripts loaded", level: .success, details: "\(accumulated.count) scripts")
         } catch {
             // Provide clearer diagnostics when script fetching fails
             separationLine()
             print("Failed to load scripts: \(error)")
             publishError(error, title: "Failed to load scripts")
+            messageStore?.show("Failed to load scripts", level: .error, details: error.localizedDescription)
             throw error
         }
     }
@@ -6930,15 +6958,18 @@ xml = """
     }
     // Fetch all categories
       func getAllCategories() async throws {
+          messageStore?.show("Loading categories…", level: .info, details: "Connecting to server", showSpinner: true)
           do {
               let request = APIRequest<AllCategories>(endpoint: "categories", method: .get)
               let decoded = try await requestSender.resultFor(apiRequest: request)
               self.categories = decoded.categories
               print("Loaded \(categories.count) categories")
+              messageStore?.show("Categories loaded", level: .success, details: "\(self.categories.count) categories")
           } catch {
               self.alertTitle = "Failed to load categories"
               self.alertMessage = error.localizedDescription
               self.showAlert = true
+              messageStore?.show("Failed to load categories", level: .error, details: error.localizedDescription)
               throw error
           }
       }

@@ -179,6 +179,12 @@ struct Man1fest0App: App {
         self.exportController = ImportExportBrain()
         // Message store used across the app for persistent user messages
         self.messageStore = MessageStore()
+        // Bind the message store to the Progress helper so progress operations
+        // automatically show/hide the global message area with a spinner.
+        self.progress.bindMessageStore(self.messageStore)
+        // Also inject the MessageStore into NetBrain so network calls can present
+        // consistent user-facing messages for long-running operations.
+        self.networkController.bindMessageStore(self.messageStore)
         // Initialize global security settings and inactivity monitor
         self.securitySettings = SecuritySettingsManager()
         self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)
