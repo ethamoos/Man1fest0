@@ -13,7 +13,10 @@ class PolicyBrain: ObservableObject {
     
 //    @EnvironmentObject var layout: Layout
 //    @EnvironmentObject var xmlBrain: XmlBrain
-    @EnvironmentObject var networkController: NetBrain
+    // Use an injected NetBrain reference instead of @EnvironmentObject here so
+    // PolicyBrain can be constructed programmatically (previews, app init) and
+    // won't crash if a View environment doesn't provide NetBrain.
+    var networkController: NetBrain?
     
     @State var debugStatus = true
     
@@ -529,7 +532,18 @@ class PolicyBrain: ObservableObject {
             let jamfID: String = String(describing:eachItem.jamfId ?? 0)
             print("Current policyID is:\(policyID)")
             print("Current jamfID is:\(String(describing: jamfID))")
-            networkController.deletePolicy(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
+            // networkController may be nil in preview/test contexts; call the
+            // main-actor-isolated method on the MainActor to satisfy Swift's
+            // concurrency checks. Use a Task so we don't block the caller.
+            if let nc = self.networkController {
+                Task {
+                    await MainActor.run {
+                        nc.deletePolicy(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken)
+                    }
+                }
+            } else {
+                print("processDeletePolicies: no networkController available")
+            }
             print("List is:\(packageProcessList)")
         }
         self.separationLine()
@@ -826,10 +840,27 @@ class PolicyBrain: ObservableObject {
                             print(String(describing: response))
                             return
                         }
-                        DispatchQueue.main.async {
-                            print("Success! Policy cloned. Update XML")
-                            self.updateXML = true
-                        }
+                            DispatchQueue.main.async { [weak self] in
+                                guard let self = self else { return }
+                                print("Success! Policy cloned. Update XML")
+                                self.updateXML = true
+                                // After creating the clone, refresh the global policies list.
+                                // Wait briefly to allow the server to finish processing the new policy.
+                                        Task { [weak self] in
+                                            guard let self = self else { return }
+                                            try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s
+                                                    do {
+                                                        guard let nc = self.networkController else {
+                                                            print("clonePolicy: no networkController available to refresh policies")
+                                                            return
+                                                        }
+                                                        try await nc.getAllPolicies(server: server, authToken: authToken)
+                                                        print("Refreshed policies after clone")
+                                                    } catch {
+                                                        print("Failed to refresh policies after clone: \(error)")
+                                                    }
+                                        }
+                            }
                     }.resume()
                     sem.wait()
                 }

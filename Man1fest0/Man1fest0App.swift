@@ -206,6 +206,11 @@ struct Man1fest0App: App {
         self.backgroundTasks = BackgroundTasks()
         self.scopingController = ScopingBrain()
         self.policyController = PolicyBrain()
+        // Inject the app's NetBrain instance into PolicyBrain so it has a usable
+        // networkController reference even when used programmatically (not via
+        // a View environment). This avoids runtime "No ObservableObject of type
+        // NetBrain found" crashes when PolicyBrain methods access networkController.
+        self.policyController.networkController = self.networkController
         self.exportController = ImportExportBrain()
         // Message store used across the app for persistent user messages
         self.messageStore = MessageStore()

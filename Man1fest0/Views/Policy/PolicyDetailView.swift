@@ -624,32 +624,14 @@ struct PolicyDetailView: View {
                             .help("Set the Self Service display name for this policy.")
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
-                            Toggle("", isOn: $enableDisableSelfService)
-                                .toggleStyle(SwitchToggleStyle(tint: .red))
-                                .onChange(of: enableDisableSelfService) { value in
-                                    progress.showProgress()
-                                    progress.waitForABit()
-                                    networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
-                                    print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
-                                }
-#if os(macOS)
-                            if enableDisableSelfService == true {
-                                Text("Enabled")
-                            } else {
-                                Text("Disabled")
-                            }
-                            
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                            }) {
-                                Text("Enable")
-                            }
-                            .help("Enable Self Service for this policy.")
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-#endif
+//                            Toggle("", isOn: $enableDisableSelfService)
+//                                .toggleStyle(SwitchToggleStyle(tint: .red))
+//                                .onChange(of: enableDisableSelfService) { value in
+//                                    progress.showProgress()
+//                                    progress.waitForABit()
+//                                    networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
+//                                    print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
+//                                }
                         }
                     }
                 }
