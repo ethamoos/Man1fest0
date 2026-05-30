@@ -201,10 +201,15 @@ struct ContentView: View {
                     if let intersect = screens.first(where: { $0.visibleFrame.intersects(rect) }) {
                         // Clamp to the intersecting screen's visible frame
                         let vis = intersect.visibleFrame
-                        rect.size.width = min(rect.size.width, vis.width)
-                        rect.size.height = min(rect.size.height, vis.height)
-                        rect.origin.x = max(vis.minX, min(rect.origin.x, vis.maxX - rect.size.width))
-                        rect.origin.y = max(vis.minY, min(rect.origin.y, vis.maxY - rect.size.height))
+                        // If the saved rect is larger than the visible area for this
+                        // screen (e.g., saved on a different monitor), center a
+                        // clamped rect so the window stays fully on-screen.
+                        let clampedWidth = min(rect.size.width, vis.width)
+                        let clampedHeight = min(rect.size.height, vis.height)
+                        rect.size.width = clampedWidth
+                        rect.size.height = clampedHeight
+                        rect.origin.x = vis.origin.x + (vis.width - clampedWidth) / 2.0
+                        rect.origin.y = vis.origin.y + (vis.height - clampedHeight) / 2.0
                     } else {
                         // Fallback to main screen
                         let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))

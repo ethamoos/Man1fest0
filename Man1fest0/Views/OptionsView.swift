@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 @available(macOS 13.3, *)
 @available(iOS 17.0, *)
@@ -21,7 +24,7 @@ struct OptionsView: View {
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
     var auth: JamfAuthToken?
-    
+
     //  #######################################################################
     //  BODY
     //  #######################################################################
@@ -55,12 +58,6 @@ struct OptionsView: View {
                             .shadow(radius: 2)
                     }
                     .padding(.vertical, 6)
-                    
-//                    Divider()
-//
-//                    Text("manage Jamf policies and more ")
-//                        .fontWeight(.black)
-//                        .padding(.vertical, 6)
                 }
                 
                 Divider()
@@ -75,39 +72,20 @@ struct OptionsView: View {
 
                         Group {
                             
-//    #################################################################################
-//    Downloads
-//    #################################################################################
-//                            NavigationLink(destination: DownloadsView(authToken: authToken, server: server )) {
-//                                Text("Downloads")
-//                            }
-                            
                             DisclosureGroup("Computers") {
                                 NavigationLink(destination: ComputersView( server: server )) {
                                     Text("Computers")
                                 }
-//                                NavigationLink(destination: ComputerBasicView( server: server )) {
-//                                    Text("Computers  (beta)")
-//                                }
-                                
-                                
                                 NavigationLink(destination: ComputerBasicActionView( server: server )) {
                                     Text("Computers Basic Actions")
                                 }
-                                
-                         
-                        
-                                
-                                
 #if os(macOS)
-
                                 NavigationLink(destination: ComputersBasicTableView(server: server)) {
                                     Text("Computer Actions Table")
                                 }
 #endif
                                 
                                 DisclosureGroup("Groups") {
-                                    
                                     NavigationLink(destination: GroupsView(server: server)) {
                                         Text("Computer Static Groups")
                                     }
@@ -135,15 +113,12 @@ struct OptionsView: View {
                             Divider()
 
                             DisclosureGroup("Packages") {
-                                
                                 NavigationLink(destination: PackagesUnsortedView(server: server, selectedResourceType: ResourceType.package )) {
                                     Text("Packages")
                                 }
-                                
                                 NavigationLink(destination: PackagesView(server: server, selectedResourceType: ResourceType.package )) {
                                     Text("Packages (sorted - beta)")
                                 }
-                                
                                 NavigationLink(destination: PackagesActionView(selectedResourceType: ResourceType.package, server: server )) {
                                     Text("Package Actions")
                                 }
@@ -151,7 +126,6 @@ struct OptionsView: View {
                                     Text("Package Usage")
                                 }
                             }
-//                            Divider()
 #endif
                         }
                         
@@ -168,17 +142,12 @@ struct OptionsView: View {
                                 NavigationLink(destination: PoliciesActionView(server: server, selectedResourceType: ResourceType.policy )) {
                                     Text("Policy Actions")
                                 }
-                                
                                 NavigationLink(destination: PolicyActionsDetailTableView(server: server)) {
                                     Text("Policy Actions - Detailed")
                                 }
-                                
                                 NavigationLink(destination: PolicySearchView(server: server)) {
                                     Text("Policy Search View")
                                 }
-//                                NavigationLink(destination: NotesView()) {
-//                                    Text("Notes View")
-//                                }
 #endif
                             }
                         }
@@ -196,9 +165,6 @@ struct OptionsView: View {
                                 NavigationLink(destination: ScriptUsageView(server: server)) {
                                     Text("Script Usage")
                                 }
-//                                NavigationLink(destination: ScriptsActionView(server: server)) {
-//                                    Text("Script Actions")
-//                                }
                                 NavigationLink(destination: ScriptDetailTableView(server: server)) {
                                     Text("Script Actions")
                                 }
@@ -206,13 +172,11 @@ struct OptionsView: View {
                             }
                         }
                       
-                            
 #if os(macOS)
                         Group {
                             Divider()
                             
                             DisclosureGroup("Create") {
-                                
                                 NavigationLink(destination: CreateView(server: server)) {
                                     Text("Create Items")
                                 }
@@ -222,7 +186,6 @@ struct OptionsView: View {
                                 NavigationLink(destination: CreateScriptView(server: server)) {
                                     Text("Create Script")
                                 }
-                                
                                 NavigationLink(destination: BreakoutGameView(server: server)) {
                                     Text("Downtime")
                                 }
@@ -231,15 +194,8 @@ struct OptionsView: View {
 #endif
                         
                         Group {
-
                             Divider()
-
                             DisclosureGroup("Profiles") {
-                                
-                                //  ###########################################################################
-                                //    Config Profiles
-                                //  ###########################################################################
-                                
                                 NavigationLink(destination: ConfigProfileViewMacOS(server: server )) {
                                     Text("Config Profiles")
                                 }
@@ -249,56 +205,22 @@ struct OptionsView: View {
                             }
                         }
                         
-//                        DISABLED FOR NOW - TOO MUCH TO MAINTAIN WITH LIMITED TIME
-//                        Group {
-//                            Divider()
-//                            DisclosureGroup("Preferences") {
-//                                PreferencesSecuritySection()
-//                                Divider()
-//                                NavigationLink(destination: PolicyDelayInlineView()) {
-//                                    Text("Policy fetch delay")
-//                                }
-//                            }
-//                        }
-                        
-//                            NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
-//                                Text("Prestages")
-//                            }
                         Divider()
-
                         
                         Group {
                             DisclosureGroup("Structures") {
-                   
-                    //    ###########################################################################
-                    //    Categories
-                    //    ###########################################################################
                                 NavigationLink(destination: CategoriesView(selectedResourceType: ResourceType.category, server: server )) {
                                     Text("Categories")
                                 }
-                                //  ###########################################################################
-                                //  Buildings
-                                //  ###########################################################################
                                 NavigationLink(destination: BuildingsView( server: server)) {
                                     Text("Buildings")
                                 }
-                                //  ###########################################################################
-                                //  Departments
-                                //  ###########################################################################
                                 NavigationLink(destination: DepartmentsView(selectedResourceType: ResourceType.department, server: server )) {
                                     Text("Departments")
                                 }
-                                //  ###########################################################################
-                                //  Icons
-                                //  ###########################################################################
                                 NavigationLink(destination: IconsView( server: server )) {
                                     Text("Icons")
                                 }
-                                
-                                //  ###########################################################################
-                                //  Users
-                                //  ###########################################################################
-                                
                                 DisclosureGroup("Users") {
                                     NavigationLink(destination: UsersView(server: server )) {
                                         Text("Users")
@@ -311,56 +233,28 @@ struct OptionsView: View {
                         }
                         
                         Group {
-                            
                             Divider()
-
                             DisclosureGroup("Prestage Management") {
-                                
                                 NavigationLink(destination: PrestagesView(server: server, allPrestages: prestageController.allPrestages)) {
                                     Text("Prestages")
                                 }
-                                
                                 NavigationLink(destination: PrestagesAssignedView(server: server)) {
                                     Text("Devices Assigned")
                                 }
-                                
                                 NavigationLink(destination: PrestagesEditView(initialPrestageID: "", targetPrestageID: "", serial: "", server: server, showProgressScreen: false )) {
                                     Text("Edit Device Assignment")
                                 }
                             }
 #if os(macOS)
-                            
-                            
                             NavigationLink(destination: ReportsView()) {
                                 Text("Reports")
                             }
-//                            NavigationLink(destination: ImportView()) {
-//                                Text("Import/Export")
-//                            }
-//                                                        Divider()
-//
-//                            NavigationLink(destination: ReportsExport()) {
-//                                Text("Reports Export")
-//                            }
-//
-//                            NavigationLink(destination: ReportsExportCSV()) {
-//                                Text("Reports Export CSV")
-//                            }
-                            
 #endif
-//
                             Divider()
-                            
-//#if os(macOS)
-//  NavigationLink(destination: BackupsView(server: server, username: username, password: password )) {
-//                            Text("Backups")
-//                           }
-//#endif
                         }
                     }
                 }
                 .toolbar {
-                    
                     ToolbarItem(id: "Error") {
                         if networkController.hasError {
                             HStack {
@@ -370,113 +264,74 @@ struct OptionsView: View {
                             }
                         }
                     }
-                    
-                    
-                    
-                    // #################################################################################
-                    //  CONNECT
-                    // #################################################################################
-                    
+
                     ToolbarItem(id: "Connect") {
-                        
-                        Button(action: {
-                            
-                            networkController.needsCredentials = true
-                        }) {
-                            HStack {
-//                                Label("Connect", systemImage: networkController.connected ? "bolt.horizontal.fill" : "bolt.horizontal")
-                                Text("Connect")
-                            }
-                            .foregroundColor(.blue)
+                        Button(action: { networkController.needsCredentials = true }) {
+                            HStack { Text("Connect") }
                         }
-                        
-                      
+                        .foregroundColor(.blue)
                     }
-                    
+
                     ToolbarItem(id: "Refresh") {
                         Button(action: {
-                            
                             progress.showProgress()
                             progress.waitForABit()
-                            
-                            Task {
-                                try? await networkController.getToken(server: server, username: username, password: networkController.password)
-                            }
+                            Task { try? await networkController.getToken(server: server, username: username, password: networkController.password) }
                         }) {
-                            HStack {
-//                                Text("Refresh")
-                                Image(systemName: "arrow.clockwise")
-
-                            }
-                            .foregroundColor(.blue)
+                            Image(systemName: "arrow.clockwise")
                         }
-//                    }
+                        .foregroundColor(.blue)
                     }
-                    
+
                     ToolbarItem(id: "Address") {
-                            VStack(alignment: .leading, spacing: 1) {
-                            HStack {
-                                Text(server)
-                                    .foregroundColor(.green)
-//                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
-//                                    .foregroundColor(.green)
-                               
-                            }
-                        }
+                        Text(server).foregroundColor(.green)
                     }
-                 
-                    ToolbarItem(id: "Status") {
-                            VStack(alignment: .leading, spacing: 1) {
-                            HStack {
-//                                Text(server)
-//                                    .foregroundColor(.green)
-                                Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash" )
-                                    .foregroundColor(.green)
-                               
-                            }
-                        }
-                    }
-                    
-                    
-                }
-                .foregroundColor(.blue)
-                 .frame(minWidth: 300)
-                
-                HStack() {
-//                    Text("man1fest0 - Jamf Pro management tool")
-//                        .font(.footnote)
-//                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text("App version is \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
 
-                //  #######################################################################
-                //  END OF SIDEBAR
-                //  #######################################################################
-                
-                //  #######################################################################
-                //  PROGRESS
-                //  #######################################################################
-                
-                
+                    ToolbarItem(id: "Status") {
+                        Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
+                            .foregroundColor(.green)
+                    }
+
+                    ToolbarItem(id: "ResetWindow") {
+                        Button(action: { resetMainWindowToScreen() }) {
+                            HStack { Image(systemName: "arrow.counterclockwise"); Text("Reset Window") }
+                        }
+                    }
+                }
             }
-            .listStyle(.sidebar)
-            .padding()
-             .frame(minWidth: 300)
+            .foregroundColor(.blue)
+            .frame(minWidth: 300)
+            
+            HStack() {
+                Spacer()
+                Text("App version is \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
         }
+        .listStyle(.sidebar)
+        .padding()
+        .frame(minWidth: 300)
+    }
+
+    // Reset helper - clears saved frame and recenters main window to fit screen
+    private func resetMainWindowToScreen() {
+        #if os(macOS)
+        DispatchQueue.main.async {
+            UserDefaults.standard.removeObject(forKey: "MainWindowFrame")
+            guard let window = NSApp.keyWindow ?? NSApp.windows.first else { return }
+            let screens = NSScreen.screens
+            let targetVisible = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
+            let minWidth: CGFloat = 700
+            let minHeight: CGFloat = 420
+            let width = max(minWidth, floor(targetVisible.width * 0.85))
+            let height = max(minHeight, floor(targetVisible.height * 0.75))
+            let originX = targetVisible.origin.x + (targetVisible.width - width) / 2.0
+            let originY = targetVisible.origin.y + (targetVisible.height - height) / 2.0
+            let rect = NSRect(x: originX, y: originY, width: width, height: height)
+            window.setFrame(rect, display: true, animate: true)
+        }
+        #endif
     }
 }
 
-
-//  #######################################################################
-//  CONNECTION - END
-//  #######################################################################
-
-
-//struct OptionsView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        OptionsView()
-//    }
-//}

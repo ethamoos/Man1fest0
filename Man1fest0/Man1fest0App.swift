@@ -101,6 +101,15 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
                 return NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
             }()
 
+            // If the saved rect is larger than the target visible area (for
+            // example it was saved on an external monitor that is no longer
+            // available), fall back to a proportional default rather than
+            // applying a huge/clamped rect that can produce odd layout.
+            if rect.size.width > targetVisible.width || rect.size.height > targetVisible.height {
+                print("[AppDelegate] Saved frame larger than target screen; using proportional default")
+                rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+            }
+
             // Clamp size to the target visible frame
             rect.size.width = min(rect.size.width, targetVisible.width)
             rect.size.height = min(rect.size.height, targetVisible.height)
@@ -132,6 +141,14 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
         // Clamp rect to the provided window's screen (if available) or to the main screen
         let screens = NSScreen.screens
         let targetVisible: NSRect = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
+
+        // If the saved rect is larger than the screen we are about to apply it
+        // to, use a proportional default so the window remains usable and the
+        // UI (message area, toolbars) stays visible.
+        if rect.size.width > targetVisible.width || rect.size.height > targetVisible.height {
+            print("[AppDelegate] Saved frame too large for targetVisible in applySavedFrame(to:); using proportional default")
+            rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+        }
 
         rect.size.width = min(rect.size.width, targetVisible.width)
         rect.size.height = min(rect.size.height, targetVisible.height)
