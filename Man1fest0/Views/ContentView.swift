@@ -6,11 +6,71 @@
 
 import SwiftUI
 
+// Lightweight local MessageStore and MessageBar fallback so the app compiles
+// even if shared files were not added to the project target. These mirror
+// the full implementations in Views/Shared when present.
+final class MessageStore: ObservableObject {
+    enum Level: String { case info, success, warning, error, debug }
+    @Published var message: String = ""
+    @Published var level: Level = .info
+    @Published var isVisible: Bool = false
+    @Published var showSpinner: Bool = false
+    // Match the signature of the shared MessageStore so callers can pass details and
+    // the named `showSpinner` parameter. The full implementation in Views/Shared
+    // supports `details: String?` and `showSpinner: Bool`.
+    func show(_ text: String, level: Level = .info, details: String? = nil, showSpinner: Bool = false) {
+        DispatchQueue.main.async {
+            self.message = text
+            self.level = level
+            self.showSpinner = showSpinner
+            withAnimation { self.isVisible = true }
+        }
+    }
+
+    func hide() { DispatchQueue.main.async { withAnimation { self.isVisible = false }; self.showSpinner = false } }
+
+    // Shortcut helpers matching the full MessageStore API used throughout the app.
+    func info(_ text: String, details: String? = nil) { show(text, level: .info, details: details) }
+    func success(_ text: String, details: String? = nil) { show(text, level: .success, details: details) }
+    func warn(_ text: String, details: String? = nil) { show(text, level: .warning, details: details) }
+    func error(_ text: String, details: String? = nil) { show(text, level: .error, details: details) }
+    func debug(_ text: String, details: String? = nil) { show(text, level: .debug, details: details) }
+
+}
+
+struct MessageBar: View {
+    @ObservedObject var store: MessageStore
+    private func fg(_ level: MessageStore.Level) -> Color {
+        switch level {
+        case .info: return .blue
+        case .success: return .green
+        case .warning: return .orange
+        case .error: return .red
+        case .debug: return .gray
+        }
+    }
+    var body: some View {
+        if store.isVisible {
+            HStack(spacing: 10) {
+                if store.showSpinner { ProgressView().progressViewStyle(CircularProgressViewStyle()) }
+                Text(store.message).foregroundColor(fg(store.level)).lineLimit(2)
+                Spacer()
+                Button(action: { store.hide() }) { Image(systemName: "xmark.circle.fill").foregroundColor(.secondary) }
+            }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.03)))
+            .padding(.horizontal)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+}
+
 struct ContentView: View {
     
     @EnvironmentObject var networkController: NetBrain
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
+    @EnvironmentObject var messageStore: MessageStore
 
     //  #######################################################################
     //  Login
@@ -24,9 +84,10 @@ struct ContentView: View {
     @AppStorage("ShouldShowWelcomeScreenSet") private var storedShouldShowWelcomeSet: Bool = false
 
     var body: some View {
-         NavigationView {
-            // Primary column: always show the app sidebar so navigation links work
-            OptionsView()
+        VStack(spacing: 0) {
+            NavigationView {
+                // Primary column: always show the app sidebar so navigation links work
+                OptionsView()
 
             // Detail column: show loading, welcome, or default placeholder
             if networkController.isLoading {
@@ -61,6 +122,10 @@ struct ContentView: View {
                 }
             }
                 
+            }
+            // Persistent message bar reserved for user-visible messages and spinners
+            MessageBar(store: messageStore)
+                .padding(.vertical, 6)
         }
         .sheet(isPresented: $networkController.needsCredentials) {
             ConnectSheet(
@@ -132,18 +197,31 @@ struct ContentView: View {
             guard let frameString = UserDefaults.standard.string(forKey: defaultsKey) else { return }
             print("[WindowAccessor] Found saved frame: \(frameString)")
             var rect = NSRectFromString(frameString)
-            let screens = NSScreen.screens
-            if !screens.contains(where: { $0.visibleFrame.intersects(rect) }) {
-                let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
-                let clampedWidth = min(rect.size.width, mainVisible.width)
-                let clampedHeight = min(rect.size.height, mainVisible.height)
-                let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
-                let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
-                rect.origin.x = max(mainVisible.origin.x, centeredX)
-                rect.origin.y = max(mainVisible.origin.y, centeredY)
-                rect.size.width = clampedWidth
-                rect.size.height = clampedHeight
-            }
+                    let screens = NSScreen.screens
+                    if let intersect = screens.first(where: { $0.visibleFrame.intersects(rect) }) {
+                        // Clamp to the intersecting screen's visible frame
+                        let vis = intersect.visibleFrame
+                        // If the saved rect is larger than the visible area for this
+                        // screen (e.g., saved on a different monitor), center a
+                        // clamped rect so the window stays fully on-screen.
+                        let clampedWidth = min(rect.size.width, vis.width)
+                        let clampedHeight = min(rect.size.height, vis.height)
+                        rect.size.width = clampedWidth
+                        rect.size.height = clampedHeight
+                        rect.origin.x = vis.origin.x + (vis.width - clampedWidth) / 2.0
+                        rect.origin.y = vis.origin.y + (vis.height - clampedHeight) / 2.0
+                    } else {
+                        // Fallback to main screen
+                        let mainVisible = NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600))
+                        let clampedWidth = min(rect.size.width, mainVisible.width)
+                        let clampedHeight = min(rect.size.height, mainVisible.height)
+                        let centeredX = mainVisible.origin.x + (mainVisible.width - clampedWidth) / 2.0
+                        let centeredY = mainVisible.origin.y + (mainVisible.height - clampedHeight) / 2.0
+                        rect.origin.x = max(mainVisible.origin.x, centeredX)
+                        rect.origin.y = max(mainVisible.origin.y, centeredY)
+                        rect.size.width = clampedWidth
+                        rect.size.height = clampedHeight
+                    }
             window.setFrame(rect, display: true, animate: false)
             print("[WindowAccessor] Applied saved frame to window: \(rect)")
         }

@@ -13,7 +13,10 @@ class PolicyBrain: ObservableObject {
     
 //    @EnvironmentObject var layout: Layout
 //    @EnvironmentObject var xmlBrain: XmlBrain
-    @EnvironmentObject var networkController: NetBrain
+    // Use an injected NetBrain reference instead of @EnvironmentObject here so
+    // PolicyBrain can be constructed programmatically (previews, app init) and
+    // won't crash if a View environment doesn't provide NetBrain.
+    var networkController: NetBrain?
     
     @State var debugStatus = true
     
@@ -127,7 +130,7 @@ class PolicyBrain: ObservableObject {
         print("Running readXMLDataFromStringPolicyBrain")
         //        print("xmlContent is:\(xmlContent)")
         
-        guard let data = try? Data(xmlContent.utf8)
+        guard let data = xmlContent.data(using: .utf8)
         else {
             print("Sample XML Data error.")
             return
@@ -205,16 +208,16 @@ class PolicyBrain: ObservableObject {
         }
         dataTask.resume()
     }
-//    
+//
 //    //    #################################################################################
 //    //    Create Policies - via XML
 //    //    #################################################################################
-//    
+//
 //    func createNewPolicyXML(server: String, authToken: String, policyName: String, customTrigger: String, departmentID: String, notificationName: String, notificationStatus: String, iconId: String, iconName: String, iconUrl: String, selfServiceEnable: String ) {
-//        
+//
 //        var xml:String
 ////        let sem = DispatchSemaphore.init(value: 0)
-//        
+//
 //        self.separationLine()
 //        print("DEBUGGING - DISABLE IF NOT TESTING")
 //        self.separationLine()
@@ -226,11 +229,11 @@ class PolicyBrain: ObservableObject {
 //        print("policyName is set as:\(policyName)")
 //        print("notificationName is set as:\(notificationName)")
 //        print("notificationStatus is set as:\(notificationStatus)")
-//        
+//
 //        //    #################################################################################
 //        //    newPolicyXml
 //        //    #################################################################################
-//        
+//
 //        xml = """
 //        <?xml version="1.0" encoding="utf-8"?>
 //        <policy>
@@ -308,12 +311,12 @@ class PolicyBrain: ObservableObject {
 //            </self_service>
 //        </policy>
 //        """
-////        
-//        
+////
+//
 //        //              ################################################################################
 //        //              DEBUG
 //        //              ################################################################################
-//        
+//
 //        self.separationLine()
 //        print("Setting newPolicyAsXML variable - PolicyBrain")
 //        self.newPolicyAsXML = xml
@@ -324,11 +327,11 @@ class PolicyBrain: ObservableObject {
 //        print(xml)
 //        print("Reading xml data with AEXML")
 //        self.readXMLDataFromStringPolicyBrain(xmlContent: xml)
-//        
+//
 //        print("XML data is now stored in:self.aexmlDoc.root - PolicyBrain")
 //        print(self.aexmlDoc.root)
 //        self.separationLine()
-//        
+//
 //        //        if URL(string: server) != nil {
 //        //            if let serverURL = URL(string: server) {
 //        //
@@ -359,7 +362,7 @@ class PolicyBrain: ObservableObject {
 //        //            }
 //        //        }
 //    }
-//    
+//
     
     
     //    #################################################################################
@@ -411,7 +414,7 @@ class PolicyBrain: ObservableObject {
                     guard let httpResponse = response as? HTTPURLResponse,
                           (200...299).contains(httpResponse.statusCode) else {
                         print("Bad Credentials")
-                        print(response!)
+                        print(String(describing: response))
                         return
                     }
                 }.resume()
@@ -457,12 +460,12 @@ class PolicyBrain: ObservableObject {
 //    // ######################################################################################
 //    // addCategoryToPolicy
 //    // ######################################################################################
-//    
-//    
+//
+//
 //    func addCategoryToPolicy(xmlContent: String,authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
-//        
+//
 //        self.readXMLDataFromStringPolicyBrain(xmlContent: xmlContent)
-//        
+//
 //        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
 //        let url = URL(string: jamfURLQuery)!
 //        self.separationLine()
@@ -477,23 +480,23 @@ class PolicyBrain: ObservableObject {
 //        //        }
 //        if categoryName != "" && categoryId != "" {
 //            category.addChild(name: "name", value: categoryName)
-//            
-//            
+//
+//
 //        print("updatedContent is:")
 //        print(xmlContent)
-//            
+//
 //            if newPolicyFlag == false {
 //                print("Posting data")
-//      
-//                
+//
+//
 //                self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent, httpMethod: "PUT")
 //            }
-//            
+//
 //        } else {
 //            print("Category is not set - not updating")
 //        }
 //    }
-//    
+//
     
     
     
@@ -529,7 +532,18 @@ class PolicyBrain: ObservableObject {
             let jamfID: String = String(describing:eachItem.jamfId ?? 0)
             print("Current policyID is:\(policyID)")
             print("Current jamfID is:\(String(describing: jamfID))")
-            networkController.deletePolicy(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken )
+            // networkController may be nil in preview/test contexts; call the
+            // main-actor-isolated method on the MainActor to satisfy Swift's
+            // concurrency checks. Use a Task so we don't block the caller.
+            if let nc = self.networkController {
+                Task {
+                    await MainActor.run {
+                        nc.deletePolicy(server: server, resourceType: resourceType, itemID: jamfID, authToken: authToken)
+                    }
+                }
+            } else {
+                print("processDeletePolicies: no networkController available")
+            }
             print("List is:\(packageProcessList)")
         }
         self.separationLine()
@@ -623,7 +637,7 @@ class PolicyBrain: ObservableObject {
                     guard let httpResponse = response as? HTTPURLResponse,
                           (200...299).contains(httpResponse.statusCode) else {
                         print("Bad Credentials")
-                        print(response!)
+                        print(String(describing: response))
                         return
                     }
                 }.resume()
@@ -735,7 +749,7 @@ class PolicyBrain: ObservableObject {
         print("Running readXMLDataFromString - PolicyBrain")
 //        print("xmlContent is:\(xmlContent)")
         
-        guard let data = try? Data(xmlContent.utf8)
+        guard let data = xmlContent.data(using: .utf8)
         else {
             print("Sample XML Data error.")
             return
@@ -757,46 +771,54 @@ class PolicyBrain: ObservableObject {
     
     func clonePolicy(xmlContent: String, server: String, policyName: String, authToken: String ) {
         
-        readXMLDataFromString(xmlContent: xmlContent)
-        
-        if self.aexmlDoc.name.isEmpty != true {
-            
+        // Parse the provided XML directly so we do not rely on shared parser state.
+        let trimmed = xmlContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        print("clonePolicy called for '")
+        print("  policyName: \(policyName)")
+        print("  xml length: \(trimmed.count)")
+        if trimmed.count > 0 {
+            let head = String(trimmed.prefix(500))
+            print("  xml head: \n\(head)\n--- end head ---")
+            if !trimmed.contains("<general>") {
+                print("  xml does not contain <general> tag (will attempt to parse anyway)")
+            }
+        } else {
+            print("clonePolicy: provided xmlContent is empty")
+            return
+        }
+
+        do {
+            let doc = try AEXMLDocument(xml: Data(trimmed.utf8))
             separationLine()
-            print("Running clonePolicy - xmlDoc available:\(policyName)")
+            print("Running clonePolicy - xmlDoc parsed; will edit and POST. policyName=\(policyName)")
             let sem = DispatchSemaphore.init(value: 0)
-            let wholeDoc = aexmlDoc.root
-            let policyGeneral = aexmlDoc.root["general"]
-            let lastID = policyGeneral["id"].last!
-            let reference = policyGeneral["name"].last!
-            //    #################################################################################
-            //        ADD NEW STRINGS
-            //    #################################################################################
-            separationLine()
+
+            let wholeDoc = doc.root
+            print("doc.root name=\(wholeDoc.name); children=\(wholeDoc.children.map({ $0.name }))")
+            let policyGeneral = doc.root["general"]
+            print("policyGeneral name=\(policyGeneral.name); children names=\(policyGeneral.children.map({ $0.name }))")
+
+            // Ensure we have a <general> node with name/id children; be defensive and remove existing
+            // name/id nodes then add ours so we avoid accidental deletion of newly added nodes.
+            let existingNameNodes = policyGeneral.children.filter { $0.name == "name" }
+            let existingIdNodes = policyGeneral.children.filter { $0.name == "id" }
+
+            // Remove existing name/id nodes (if any)
+            for n in existingNameNodes { n.removeFromParent() }
+            for i in existingIdNodes { i.removeFromParent() }
+
+            // Add our new name and id
             print("Add new policy name:\(policyName)")
-            policyGeneral.addChild(name: "name", value: policyName)
+            _ = policyGeneral.addChild(name: "name", value: policyName)
             print("Add new policy id:0")
-            policyGeneral.addChild(name: "id", value: "0")
-            //    #################################################################################
-            //        REMOVE LAST STRINGS
-            //    #################################################################################
-            separationLine()
-            print("lastID ID IS:\(lastID.xml)")
-            print("Removing:\(lastID.xml)")
-            lastID.removeFromParent()
-            print("Removing:\(reference.xml)")
-            reference.removeFromParent()
-            //    #################################################################################
-            //    Confirm
-            //    #################################################################################
-//            separationLine()
-//            print("policyGeneral IS:\(policyGeneral.xml)")
+            _ = policyGeneral.addChild(name: "id", value: "0")
+
+            // Debug: show the general block
+            print("policyGeneral after edit:\n\(policyGeneral.xml)")
+
             let updatedPolicy = wholeDoc.xml
             separationLine()
-            
-//            DEBUG
-//            atSeparationLine()
-//            print("xml is set as:\(String(describing:updatedPolicy))")
-            
+
             if URL(string: server) != nil {
                 if let serverURL = URL(string: server) {
                     let url = serverURL.appendingPathComponent("/JSSResource/policies/id/0")
@@ -815,17 +837,37 @@ class PolicyBrain: ObservableObject {
                         guard let httpResponse = response as? HTTPURLResponse,
                               (200...299).contains(httpResponse.statusCode) else {
                             print("Bad Credentials")
-                            print(response!)
+                            print(String(describing: response))
                             return
                         }
-                        DispatchQueue.main.async {
-                            print("Success! Policy cloned. Update XML")
-                            self.updateXML = true
-                        }
+                            DispatchQueue.main.async { [weak self] in
+                                guard let self = self else { return }
+                                print("Success! Policy cloned. Update XML")
+                                self.updateXML = true
+                                // After creating the clone, refresh the global policies list.
+                                // Wait briefly to allow the server to finish processing the new policy.
+                                        Task { [weak self] in
+                                            guard let self = self else { return }
+                                            try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s
+                                                    do {
+                                                        guard let nc = self.networkController else {
+                                                            print("clonePolicy: no networkController available to refresh policies")
+                                                            return
+                                                        }
+                                                        try await nc.getAllPolicies(server: server, authToken: authToken)
+                                                        print("Refreshed policies after clone")
+                                                    } catch {
+                                                        print("Failed to refresh policies after clone: \(error)")
+                                                    }
+                                        }
+                            }
                     }.resume()
                     sem.wait()
                 }
             }
+        } catch {
+            print("clonePolicy: Failed to parse xmlContent: \(error)")
+            return
         }
     }
     
@@ -854,7 +896,7 @@ class PolicyBrain: ObservableObject {
                     guard let httpResponse = response as? HTTPURLResponse,
                           (200...299).contains(httpResponse.statusCode) else {
                         print("Bad Credentials")
-                        print(response!)
+                        print(String(describing: response))
                         return
                     }
                     
@@ -903,5 +945,5 @@ class PolicyBrain: ObservableObject {
     
     
     
-}
 
+}

@@ -88,6 +88,36 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Find a main/styled window to apply the saved frame to
         if let window = NSApp.windows.first(where: { $0.styleMask.contains(.titled) }) {
+            // Ensure the rect fits the screen it will be applied to. Prefer the screen
+            // that the rect intersects, otherwise fall back to the window's screen or main screen.
+            let screens = NSScreen.screens
+            let targetVisible: NSRect = {
+                if let intersect = screens.first(where: { $0.visibleFrame.intersects(rect) }) {
+                    return intersect.visibleFrame
+                }
+                if let winScreen = window.screen {
+                    return winScreen.visibleFrame
+                }
+                return NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
+            }()
+
+            // If the saved rect is larger than the target visible area (for
+            // example it was saved on an external monitor that is no longer
+            // available), fall back to a proportional default rather than
+            // applying a huge/clamped rect that can produce odd layout.
+            if rect.size.width > targetVisible.width || rect.size.height > targetVisible.height {
+                print("[AppDelegate] Saved frame larger than target screen; using proportional default")
+                rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+            }
+
+            // Clamp size to the target visible frame
+            rect.size.width = min(rect.size.width, targetVisible.width)
+            rect.size.height = min(rect.size.height, targetVisible.height)
+
+            // Clamp origin so the rect remains fully on-screen
+            rect.origin.x = max(targetVisible.minX, min(rect.origin.x, targetVisible.maxX - rect.size.width))
+            rect.origin.y = max(targetVisible.minY, min(rect.origin.y, targetVisible.maxY - rect.size.height))
+
             window.setFrame(rect, display: true, animate: false)
             print("[AppDelegate] Applied saved frame to window: \(rect)")
         }
@@ -108,6 +138,23 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
             rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
             print("[AppDelegate] No saved frame in applySavedFrame(to:), using proportional default: \(rect)")
         }
+        // Clamp rect to the provided window's screen (if available) or to the main screen
+        let screens = NSScreen.screens
+        let targetVisible: NSRect = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? (screens.first?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800))
+
+        // If the saved rect is larger than the screen we are about to apply it
+        // to, use a proportional default so the window remains usable and the
+        // UI (message area, toolbars) stays visible.
+        if rect.size.width > targetVisible.width || rect.size.height > targetVisible.height {
+            print("[AppDelegate] Saved frame too large for targetVisible in applySavedFrame(to:); using proportional default")
+            rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
+        }
+
+        rect.size.width = min(rect.size.width, targetVisible.width)
+        rect.size.height = min(rect.size.height, targetVisible.height)
+        rect.origin.x = max(targetVisible.minX, min(rect.origin.x, targetVisible.maxX - rect.size.width))
+        rect.origin.y = max(targetVisible.minY, min(rect.origin.y, targetVisible.maxY - rect.size.height))
+
         window.setFrame(rect, display: true, animate: false)
         print("[AppDelegate] Applied saved frame to specific window: \(rect)")
     }
@@ -154,6 +201,8 @@ struct Man1fest0App: App {
     let scopingController: ScopingBrain
     let policyController: PolicyBrain
     let exportController: ImportExportBrain
+    // Global message store for persistent user-visible messages (errors, info, spinners)
+    let messageStore: MessageStore
     // State to control presentation of the Preferences sheet (macOS only)
     @State private var showingPreferences: Bool = false
     #if os(macOS)
@@ -174,7 +223,20 @@ struct Man1fest0App: App {
         self.backgroundTasks = BackgroundTasks()
         self.scopingController = ScopingBrain()
         self.policyController = PolicyBrain()
+        // Inject the app's NetBrain instance into PolicyBrain so it has a usable
+        // networkController reference even when used programmatically (not via
+        // a View environment). This avoids runtime "No ObservableObject of type
+        // NetBrain found" crashes when PolicyBrain methods access networkController.
+        self.policyController.networkController = self.networkController
         self.exportController = ImportExportBrain()
+        // Message store used across the app for persistent user messages
+        self.messageStore = MessageStore()
+        // Bind the message store to the Progress helper so progress operations
+        // automatically show/hide the global message area with a spinner.
+        self.progress.bindMessageStore(self.messageStore)
+        // Also inject the MessageStore into NetBrain so network calls can present
+        // consistent user-facing messages for long-running operations.
+        self.networkController.bindMessageStore(self.messageStore)
         // Initialize global security settings and inactivity monitor
         self.securitySettings = SecuritySettingsManager()
         self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)
@@ -217,6 +279,7 @@ struct Man1fest0App: App {
                 .environmentObject(scopingController)
                 .environmentObject(policyController)
                 .environmentObject(exportController)
+                .environmentObject(messageStore)
                 // Provide global security objects
                 .environmentObject(securitySettings)
                 .environmentObject(inactivityMonitor)

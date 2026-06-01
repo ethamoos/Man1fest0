@@ -15,6 +15,10 @@ class Progress: ObservableObject {
     @Published var currentProgress = 0.0
     @Published var debugMode = false
 
+    // Optional link to the global MessageStore so progress can show a persistent
+    // message + spinner in the shared message area. This is set from the App init.
+    weak var messageStore: MessageStore?
+
     func separationLine() {
         print("------------------------------------------------------------------")
     }
@@ -24,6 +28,8 @@ class Progress: ObservableObject {
         separationLine()
         print("Setting showProgress to true")
         print(self.showProgressView)
+        // If a global message store is available, show a spinner message there as well.
+        messageStore?.show("Working…", level: .info, details: nil, showSpinner: true)
     }
     
     func endProgress() {
@@ -31,6 +37,8 @@ class Progress: ObservableObject {
         separationLine()
         print("Setting showProgress to false")
         print(self.showProgressView)
+        // Hide the global message area spinner when progress ends
+        messageStore?.hide()
     }
     
     func showExtendedProgress() {
@@ -38,6 +46,7 @@ class Progress: ObservableObject {
         separationLine()
         print("Setting showExtendedProgressView to true")
         print(self.showExtendedProgressView)
+        messageStore?.show("Working…", level: .info, details: nil, showSpinner: true)
     }
     
     func endExtendedProgress() {
@@ -45,6 +54,7 @@ class Progress: ObservableObject {
         separationLine()
         print("Setting endExtendedProgress to false")
         print(self.endExtendedProgress)
+        messageStore?.hide()
     }
     
     func waitForABit() {
@@ -52,6 +62,8 @@ class Progress: ObservableObject {
             Task {
                 try await Task.sleep(nanoseconds: 4000000000)
                 self.showProgressView = false
+                // Also hide the global message spinner
+                self.messageStore?.hide()
                 print(self.showProgressView)
                 print("Finished awaiting")
             }
@@ -64,10 +76,17 @@ class Progress: ObservableObject {
             Task {
                 try await Task.sleep(nanoseconds: 1000000000)
                 self.showProgressView = false
+                // Also hide the global message spinner
+                self.messageStore?.hide()
                 print(self.showProgressView)
                 print("Finished awaiting")
             }
         }
+    }
+
+    // Called by the App initializer to connect the shared MessageStore
+    func bindMessageStore(_ store: MessageStore) {
+        self.messageStore = store
     }
     
     func showCustomAlert(alertTitle: String, alertMessage: String ) -> Alert {

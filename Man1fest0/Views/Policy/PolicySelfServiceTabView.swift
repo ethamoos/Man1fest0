@@ -72,7 +72,6 @@ struct PolicySelfServiceTabView: View {
     
     @State  var selectionBuilding: Building = Building(id: 0, name: "")
     
-    
     @State var selectedIcon: Icon? = nil
     
     @State var selectedIconList: Icon = Icon(id: 0, url: "", name: "")
@@ -82,6 +81,10 @@ struct PolicySelfServiceTabView: View {
     @State var selectedIconString = ""
     
     @State var newSelfServiceName = ""
+    
+    @State var enableDisableSelfServiceStatus: Bool = true
+
+    @State var enableDisableSelfService: Bool = true
     
     //  ########################################################################################
     //  LDAP
@@ -128,6 +131,27 @@ struct PolicySelfServiceTabView: View {
                 Divider()
                 
                 VStack(alignment: .leading) {
+                    
+#if os(macOS)
+                    HStack {
+                        if enableDisableSelfService == true {
+                            Text("Enabled")
+                        } else {
+                            Text("Disabled")
+                        }
+                        
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
+                        }) {
+                            Text("Enable")
+                        }
+                        .help("Enable Self Service for this policy.")
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+#endif
                     
                     Text("Icons").bold()
                     

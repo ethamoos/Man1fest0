@@ -352,6 +352,7 @@ struct PolicyDetailView: View {
                     
                     Task {
                         do {
+                            print("Fetching detailed policy as xml")
                             let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                             
                             xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
@@ -396,13 +397,18 @@ struct PolicyDetailView: View {
                     HStack {
                         
                         Button(action: {
-                            print("Cloning policy:\(policyName)")
+                            print("Cloning policy:\(policyNameClone)")
+                            print("policyNameClone is:\(policyNameClone)")
                             progress.showProgress()
                             progress.waitForABit()
-                            if policyNameClone == policyName {
-                                policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
-                                let newPolicyName = "\(policyNameInitial)-1"
-                                print("No name provided - policy is:\(newPolicyName)")
+                            policyNameInitial = networkController.policyDetailed?.general?.name ?? ""
+                            let initialTrim = policyNameInitial.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let cloneTrim = policyNameClone.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let baseForClone = initialTrim.isEmpty ? "policy" : initialTrim
+
+                            if cloneTrim.isEmpty || cloneTrim == initialTrim {
+                                let newPolicyName = "\(baseForClone)-1"
+                                print("No name provided or unchanged - policy is:\(newPolicyName)")
                                 policyController.clonePolicy(xmlContent: xmlController.currentPolicyAsXML, server: server, policyName: newPolicyName, authToken: networkController.authToken)
                             } else {
                                 print("Cloning name is being used and is set as:\(policyNameClone)")
@@ -417,7 +423,9 @@ struct PolicyDetailView: View {
                         .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
                         .buttonStyle(.borderedProminent)
                         .tint(.orange)
-                        TextField(policyName, text: $policyNameClone)
+//                        TextField(policyNameClone, text: $policyName)
+//                            .textSelection(.enabled)
+                        TextField(policyNameClone, text: $policyNameClone)
                             .textSelection(.enabled)
                     }
                     
@@ -616,32 +624,14 @@ struct PolicyDetailView: View {
                             .help("Set the Self Service display name for this policy.")
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
-                            Toggle("", isOn: $enableDisableSelfService)
-                                .toggleStyle(SwitchToggleStyle(tint: .red))
-                                .onChange(of: enableDisableSelfService) { value in
-                                    progress.showProgress()
-                                    progress.waitForABit()
-                                    networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
-                                    print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
-                                }
-#if os(macOS)
-                            if enableDisableSelfService == true {
-                                Text("Enabled")
-                            } else {
-                                Text("Disabled")
-                            }
-                            
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                            }) {
-                                Text("Enable")
-                            }
-                            .help("Enable Self Service for this policy.")
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-#endif
+//                            Toggle("", isOn: $enableDisableSelfService)
+//                                .toggleStyle(SwitchToggleStyle(tint: .red))
+//                                .onChange(of: enableDisableSelfService) { value in
+//                                    progress.showProgress()
+//                                    progress.waitForABit()
+//                                    networkController.toggleSelfServiceOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: enableDisableSelfService)
+//                                    print("enableDisableSelfServiceButton changed - value is now:\(value) for policy:\(policyID)")
+//                                }
                         }
                     }
                 }
@@ -796,14 +786,21 @@ struct PolicyDetailView: View {
             progress.showProgress()
             progress.waitForNotVeryLong()
 
-            Task {
-                print("PolicyDetailView appeared - running getDetailedPolicy function")
-                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                // Ensure packagesAssignedToPolicy is populated now that detailed policy is available
-                networkController.getPackagesAssignedToPolicy()
-                networkController.addExistingPackages()
-                policyName = networkController.policyDetailed?.general?.name ?? ""
-                policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
+                Task {
+                    print("PolicyDetailView appeared - running getDetailedPolicy function")
+                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                    // Ensure packagesAssignedToPolicy is populated now that detailed policy is available
+                    networkController.getPackagesAssignedToPolicy()
+                    networkController.addExistingPackages()
+                    // Populate policyName and policyNameClone only when they are not already set
+                    let fetchedName = networkController.policyDetailed?.general?.name ?? ""
+                    if policyName.isEmpty {
+                        policyName = fetchedName
+                    }
+                    if policyNameClone.isEmpty {
+                        policyNameClone = fetchedName
+                    }
+                    policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
                 trigger_login = networkController.policyDetailed?.general?.triggerLogin ?? false
                 trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
                 trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
