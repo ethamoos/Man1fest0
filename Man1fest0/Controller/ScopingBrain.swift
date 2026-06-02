@@ -18,7 +18,7 @@ import AEXML
     
     //  #################################################################################
     //    Policies
-    //  #################################################################################
+    //    #################################################################################
     
     @Published var currentPolicyID: Int = 0
     @Published var currentPolicyName: String = ""
@@ -60,6 +60,13 @@ import AEXML
     @Published var allLdapGroups: [LDAPGroup] = []
     @Published var allLdapCustomGroupsCombinedArray: [LDAPCustomGroup] = []
     @Published var allLDAPSearchResponse: LDAPSearchResponse = LDAPSearchResponse(totalCount: 0, results:[])
+    // Optional MessageStore injected from the App so scoping/network operations
+    // can present user-facing messages (spinner / success / error).
+    weak var messageStore: MessageStore?
+
+    func bindMessageStore(_ store: MessageStore) {
+        self.messageStore = store
+    }
     
     enum NetError: Error {
         case couldntEncodeNamePass
@@ -557,10 +564,12 @@ import AEXML
     }
 
     func getLdapGroupsSearch(server: String, search: String, authToken: String) async throws {
-        
         print("Running getLdapGroupsSearch")
         let jamfURLQuery = server + "/api/v1/ldap/groups?q=" + search
         let url = URL(string: jamfURLQuery)!
+        DispatchQueue.main.async {
+            self.messageStore?.show("Searching LDAP groups…", level: .info, details: search, showSpinner: true)
+        }
         
         var request = URLRequest(url: url)
         request.addValue("application/json", forHTTPHeaderField: "Accept")
@@ -580,6 +589,9 @@ import AEXML
         self.allLDAPSearchResponse = try decoder.decode(LDAPSearchResponse.self, from: data)
         print("Set allLdapGroupsCombined was successful")
         self.allLdapCustomGroupsCombinedArray = allLDAPSearchResponse.results
+        DispatchQueue.main.async {
+            self.messageStore?.show("LDAP groups loaded", level: .success, details: "Results: \(self.allLdapCustomGroupsCombinedArray.count)")
+        }
 
     }
 

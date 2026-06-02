@@ -51,6 +51,13 @@ import SwiftUI
     // The version lock for changes to prestages
     var depVersionLock = 0
     @Published var authToken = ""
+    // Optional MessageStore injected from the App so this controller can show
+    // user-facing messages (spinner / success / error) consistently.
+    weak var messageStore: MessageStore?
+
+    func bindMessageStore(_ store: MessageStore) {
+        self.messageStore = store
+    }
 
     // UI state: active prestage editor information. When non-nil / true, UI can present the PrestagesEditView
     @Published var activePrestageEditorSerial: String? = nil
@@ -113,16 +120,15 @@ import SwiftUI
     
     
     
-    // #######################################################################################
+    // #################################################################################
     // LIST ALL PRESTAGES
-    // #######################################################################################
+    // #################################################################################
     // This just lists all prestages. For: PreStagesView
     
     func getAllPrestages(server: String, authToken: String) async throws {
 
         self.allPsComplete = false
         print("Setting allPsComplete to:\(self.allPsComplete)")
-//        let jamfURLQuery = server + "/api/v2/computer-prestages?page=0&page-size=100&sort=id%3Adesc"
         let jamfURLQuery = server + "/api/v3/computer-prestages"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
@@ -150,9 +156,9 @@ import SwiftUI
     
     
     
-    // #######################################################################################
+    // #################################################################################
     // GET ALL DEVICES' PRESTAGE SCOPE - For: PrestageScopeView
-    // #######################################################################################
+    // #################################################################################
     // Function to show which prestage each individual device is assigned to - using serial number and id of prestage
     
     func getAllDevicesPrestageScope(server: String, prestageID: String, authToken: String) async throws {
@@ -174,6 +180,9 @@ import SwiftUI
         
         separationLine()
         print("Running func: getAllDevicesPrestageScope")
+        DispatchQueue.main.async {
+            self.messageStore?.show("Loading prestage device assignments…", level: .info, details: "Prestage ID: \(prestageID)", showSpinner: true)
+        }
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -187,7 +196,13 @@ import SwiftUI
 
             self.serialPrestageAssignment = decodedPrestages.serialsByPrestageID
             self.allPsScComplete = true
-            
+            DispatchQueue.main.async {
+                self.messageStore?.show("Prestage device assignments loaded", level: .success, details: "Devices: \(self.serialPrestageAssignment.count)")
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.messageStore?.show("Failed to load prestage devices", level: .error)
+            }
         }
     }
     
@@ -207,6 +222,9 @@ import SwiftUI
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
         print("Running:getPrestageCurrentScope for prestage id:\(prestageID)")
+        DispatchQueue.main.async {
+            self.messageStore?.show("Loading prestage scope…", level: .info, details: "Prestage ID: \(prestageID)", showSpinner: true)
+        }
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -217,9 +235,17 @@ import SwiftUI
         let decoder = JSONDecoder()
         
         if let decodedPrestages = try? decoder.decode(ComputerPrestageCurrentScope.self, from: data) {
-    
+
             self.depVersionLock = decodedPrestages.versionLock
             self.selectedPrestageScope = decodedPrestages
+            DispatchQueue.main.async {
+                // ComputerPrestageCurrentScope exposes `assignments`, not `devices`.
+                self.messageStore?.show("Prestage scope loaded", level: .success, details: "Items: \(decodedPrestages.assignments.count)")
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.messageStore?.show("Failed to load prestage scope", level: .error)
+            }
         }
     }
 

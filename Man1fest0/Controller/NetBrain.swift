@@ -721,6 +721,9 @@ extension NetBrain {
         UserDefaults.standard.set(count, forKey: "policyFetchConcurrency")
         separationLine()
         print("Policy fetch concurrency updated to \(count). Persisted to UserDefaults key 'policyFetchConcurrency'.")
+        DispatchQueue.main.async {
+            self.messageStore?.show("Policy fetch concurrency set", level: .info, details: "Concurrency: \(count)")
+        }
     }
 
     func getPolicyFetchConcurrency() -> Int { self.policyFetchConcurrency }
@@ -920,6 +923,9 @@ print("DEBUG - status code is 200, response is:")
         print("jamfURLQuery is: \(jamfURLQuery)")
         print("Server is: \(server)")
         print("Name is: \(name)")
+        DispatchQueue.main.async {
+            self.messageStore?.show("Loading group members…", level: .info, details: name, showSpinner: true)
+        }
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -937,6 +943,7 @@ print("DEBUG - status code is 200, response is:")
             self.allComputerGroupsInitDict = self.allComputerRecordsInit.computer
             self.allComputersBasicDict = self.allComputersBasic.computers
             self.compGroupComputers = compGroupData.computerGroup.computers
+            self.messageStore?.show("Group members loaded", level: .success, details: "\(compGroupData.computerGroup.computers.count) members")
         }
     }
     
@@ -2299,6 +2306,10 @@ print("DEBUG - status code is 200, response is:")
     func getToken(server: String, username: String, password: String) async throws -> JamfAuthToken {
         
         print("Getting token - Netbrain")
+        // Inform user the app is attempting to authenticate
+        DispatchQueue.main.async {
+            self.messageStore?.show("Authenticating…", level: .info, showSpinner: true)
+        }
         guard let base64 = encodeBase64(username: username, password: password) else {
             print("Error encoding username/password")
             throw JamfAPIError.couldntEncodeNamePass
@@ -2328,6 +2339,9 @@ print("DEBUG - status code is 200, response is:")
         guard let (data, response) = try? await URLSession.shared.data(for: request)
         else {
             if debug_enabled { print("[DEBUG] Token request failed: no response/data") }
+            DispatchQueue.main.async {
+                self.messageStore?.show("Authentication failed", level: .error)
+            }
             throw JamfAPIError.requestFailed
         }
         
@@ -2355,6 +2369,9 @@ print("DEBUG - status code is 200, response is:")
                 print("Authentication Failed")
                 self.showAlert = true
                 self.alertMessage = "Authentication Failed"
+                DispatchQueue.main.async {
+                    self.messageStore?.show("Authentication failed", level: .error, details: "Unauthorized")
+                }
                 throw JamfAPIError.http(self.tokenStatusCode)
                 
             case 403:
@@ -2380,6 +2397,9 @@ print("DEBUG - status code is 200, response is:")
                 print("Unknown error")
                 self.showAlert = true
                 self.status = "Unknown error:"
+                DispatchQueue.main.async {
+                    self.messageStore?.show("Authentication failed", level: .error, details: "HTTP \(self.tokenStatusCode)")
+                }
                 throw JamfAPIError.http(self.tokenStatusCode)
             }
           
@@ -2391,6 +2411,9 @@ print("DEBUG - status code is 200, response is:")
             }
             print("Authentication success")
             self.status = "Connected"
+            DispatchQueue.main.async {
+                self.messageStore?.show("Authenticated", level: .success)
+            }
         }
         
         // MARK: Parse JSON returned
@@ -2778,10 +2801,12 @@ print("DEBUG - status code is 200, response is:")
     }
     
     func getDetailedScript(server: String, scriptID: Int, authToken: String) async throws {
-        
         separationLine()
         print("Running func: getDetailedScript")
         print("scriptID is set to:\(scriptID)")
+        DispatchQueue.main.async {
+            self.messageStore?.show("Loading script details…", level: .info, details: "Script ID: \(scriptID)", showSpinner: true)
+        }
         
         let jamfURLQuery = server + "/api/v1/scripts/" + String(describing: scriptID)
         self.currentURL = jamfURLQuery
@@ -2801,6 +2826,9 @@ print("DEBUG - status code is 200, response is:")
 
         let decoder = JSONDecoder()
         scriptDetailed = try decoder.decode(Script.self, from: data)
+        DispatchQueue.main.async {
+            self.messageStore?.show("Script details loaded", level: .success, details: "Script ID: \(scriptID)")
+        }
         //        print("scriptDetailed is set to:\(scriptDetailed)")
     }
     

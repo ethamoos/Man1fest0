@@ -26,6 +26,12 @@ import AEXML
     @Published var currentResponseCode = ""
     @Published var currentResponseStatus = ""
     @Published var hasError = false
+    // Optional MessageStore so EA operations can show user-facing messages
+    weak var messageStore: MessageStore?
+
+    func bindMessageStore(_ store: MessageStore) {
+        self.messageStore = store
+    }
     
     enum NetError: Error {
         case couldntEncodeNamePass
@@ -50,6 +56,9 @@ import AEXML
         separationLine()
         print("Running func: getComputerExtAttributes")
         print("jamfURLQuery is: \(jamfURLQuery)")
+        DispatchQueue.main.async {
+            self.messageStore?.show("Loading extension attributes…", level: .info, showSpinner: true)
+        }
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
@@ -71,11 +80,16 @@ import AEXML
             self.allComputerExtensionAttributesDict = response.computerExtensionAttributes
             separationLine()
             print("allComputerExtensionAttributes Decoding succeeded")
-            
+            DispatchQueue.main.async {
+                self.messageStore?.show("Extension attributes loaded", level: .success, details: "Count: \(self.allComputerExtensionAttributesDict.count)")
+            }
         } catch {
             self.separationLine()
             print("allComputerExtensionAttributes Decoding failed - error is:")
             print(error)
+            DispatchQueue.main.async {
+                self.messageStore?.show("Failed to load extension attributes", level: .error, details: error.localizedDescription)
+            }
         }
     }
     
