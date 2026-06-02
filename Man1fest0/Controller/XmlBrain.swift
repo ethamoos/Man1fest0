@@ -16,12 +16,17 @@ import AEXML
 
 class XmlBrain: ObservableObject {
     
-    @EnvironmentObject var layout: Layout
-    @EnvironmentObject var networkController: NetBrain
-    @EnvironmentObject var progress: Progress
-    @EnvironmentObject var xmlController: XmlBrain
-    @EnvironmentObject var policyController: PolicyBrain
-    @EnvironmentObject var importExportBrain: ImportExportBrain
+    // These were previously declared as @EnvironmentObject which is only
+    // valid inside SwiftUI Views. XmlBrain is an ObservableObject used as a
+    // controller and is created programmatically in the App init. Using
+    // @EnvironmentObject here caused a runtime fatal error when the wrapper
+    // attempted to resolve values from the SwiftUI environment. Replace
+    // with plain injected properties and have the App assign them at startup.
+    var layout: Layout!
+    var networkController: NetBrain!
+    var progress: Progress!
+    var policyController: PolicyBrain!
+    var importExportBrain: ImportExportBrain!
     
     //    #################################################################################
     //    DEBUG STATUS
@@ -891,12 +896,19 @@ class XmlBrain: ObservableObject {
         print("Running: getGroupMembersXML - xmlcontroller")
         print("groupId set as: \(groupId)")
         print("jamfURLQuery set as: \(jamfURLQuery)")
+        // Show a user-facing message so the UI indicates work is happening
+        DispatchQueue.main.async {
+            self.networkController.messageStore?.show("Loading group members…", level: .info, details: "Group ID: \(groupId)", showSpinner: true)
+        }
 
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data else {
                 self.separationLine()
                 print("getGroupMembersXML failed")
                 print(String(describing: error))
+                DispatchQueue.main.async {
+                    self.networkController.messageStore?.show("Failed to load group members", level: .error, details: String(describing: error))
+                }
                 return
             }
             self.separationLine()
@@ -936,8 +948,15 @@ class XmlBrain: ObservableObject {
 
                     // Update published array so views refresh
                     self.compGroupComputers = computersArray
+                    // Indicate success to the user
+                    DispatchQueue.main.async {
+                        self.networkController.messageStore?.show("Group members loaded", level: .success, details: "\(computersArray.count) members")
+                    }
                 } catch {
                     print("Failed to parse group members XML: \(error)")
+                    DispatchQueue.main.async {
+                        self.networkController.messageStore?.show("Failed to parse group members", level: .error, details: error.localizedDescription)
+                    }
                 }
             }
         }
@@ -1701,7 +1720,7 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
                     separationLine()
                     print("policyID is:\(String(describing: policyID))")
                     print("Current policyID is:\(String(describing: policyID))")
-                    xmlController.removeMaintenanceManual(server: server, authToken: authToken, policyID: String(describing: policyID))
+                    self.removeMaintenanceManual(server: server, authToken: authToken, policyID: String(describing: policyID))
             }
             separationLine()
             print("Finished - Set processingComplete to true")
@@ -2119,36 +2138,36 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     //    updatePolicyScopeMultipleGroups - batch
     //    #################################################################################
     
-    func updatePolicyScopeMultipleGroups(selectedPolicy: Int, server: String, authToken: String, groupSelection: Set<ComputerGroup>, xmlString: String) {
-        
-        //    #################################################################################
-        //    Update a single policy with one or more groups - selected
-        //    #################################################################################
-        
-        layout.separationLine()
-        print("Running: updatePolicyScopeMultipleGroups")
-        print("Set processingComplete to false")
-        self.processingComplete = true
-        print(String(describing: self.processingComplete))
-        print("selectedPolicy is:\(selectedPolicy)")
-        
-        xmlController.getPolicyAsXML(server: server, policyID: selectedPolicy, authToken: authToken)
-        
-        for eachItem in groupSelection {
-            layout.separationLine()
-            print("Items as Dictionary is \(eachItem)")
-            let groupID = String(describing:eachItem.id)
-            let groupName: String = String(describing:eachItem.name)
-            print("Current groupID is:\(groupID)")
-            print("Current groupName is:\(String(describing: groupName))")
-            print("Run:getPolicyAsXML")
-            //          self.updateScopeAddCompGroup(xmlString: xmlString, groupName: groupName, groupId: groupId)
-        }
-        layout.separationLine()
-        print("Finished - Set processingComplete to true")
-        self.processingComplete = true
-        print(String(describing: self.processingComplete))
-    }
+//    func updatePolicyScopeMultipleGroups(selectedPolicy: Int, server: String, authToken: String, groupSelection: Set<ComputerGroup>, xmlString: String) {
+//        
+//        //    #################################################################################
+//        //    Update a single policy with one or more groups - selected
+//        //    #################################################################################
+//        
+//        layout.separationLine()
+//        print("Running: updatePolicyScopeMultipleGroups")
+//        print("Set processingComplete to false")
+//        self.processingComplete = true
+//        print(String(describing: self.processingComplete))
+//        print("selectedPolicy is:\(selectedPolicy)")
+//        
+//        self.getPolicyAsXML(server: server, policyID: selectedPolicy, authToken: authToken)
+//        
+//        for eachItem in groupSelection {
+//            layout.separationLine()
+//            print("Items as Dictionary is \(eachItem)")
+//            let groupID = String(describing:eachItem.id)
+//            let groupName: String = String(describing:eachItem.name)
+//            print("Current groupID is:\(groupID)")
+//            print("Current groupName is:\(String(describing: groupName))")
+//            print("Run:getPolicyAsXML")
+//            //          self.updateScopeAddCompGroup(xmlString: xmlString, groupName: groupName, groupId: groupId)
+//        }
+//        layout.separationLine()
+//        print("Finished - Set processingComplete to true")
+//        self.processingComplete = true
+//        print(String(describing: self.processingComplete))
+//    }
     
     
     
@@ -2304,6 +2323,10 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         
         let policyIdString = String(describing: policyID )
         print("Running:getPolicyAsXMLaSync - policyID is:\(policyIdString) ")
+        DispatchQueue.main.async {
+            // Inform the user the XML fetch is starting
+            self.networkController.messageStore?.show("Loading policy XML…", level: .info, details: "Policy ID: \(policyIdString)", showSpinner: true)
+        }
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
         let url = URL(string: jamfURLQuery)!
         
@@ -2315,9 +2338,15 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         let responseCode = (response as? HTTPURLResponse)?.statusCode
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200 - Response is:\(String(describing: responseCode))")
+            DispatchQueue.main.async {
+                self.networkController.messageStore?.show("Failed to load policy XML", level: .error, details: "HTTP \(responseCode ?? -1)")
+            }
             throw JamfAPIError.badResponseCode
         }
         self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
+        DispatchQueue.main.async {
+            self.networkController.messageStore?.show("Policy XML loaded", level: .success, details: "Policy ID: \(policyIdString)")
+        }
 //        DEBUG
 //        separationLine()
 //                    print("Policy as XML is:\(self.currentPolicyAsXML ?? ""))")
@@ -2635,6 +2664,9 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         
         self.separationLine()
         print("Running updatePolicyScopeLimitatAutoRemove")
+        DispatchQueue.main.async {
+            self.networkController.messageStore?.show("Removing policy user limitations…", level: .info, details: "Policy ID: \(policyID)", showSpinner: true)
+        }
         self.readXMLDataFromStringScopingBrain(xmlContent: currentPolicyAsXML)
         self.separationLine()
         self.atSeparationLine()
@@ -2719,6 +2751,9 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         print("Submit updated doc")
         self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
         print("The string is not empty")
+        DispatchQueue.main.async {
+            self.networkController.messageStore?.show("Policy scope updated", level: .success, details: "Limitations removed for policy \(policyID)")
+        }
     }
     
     

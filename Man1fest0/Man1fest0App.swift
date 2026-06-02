@@ -237,6 +237,14 @@ struct Man1fest0App: App {
         // Also inject the MessageStore into NetBrain so network calls can present
         // consistent user-facing messages for long-running operations.
         self.networkController.bindMessageStore(self.messageStore)
+        // Inject dependencies into the programmatically-created XmlBrain so it
+        // doesn't rely on @EnvironmentObject (which would crash when the
+        // controller is instantiated outside of a View environment).
+        self.xmlController.networkController = self.networkController
+        self.xmlController.progress = self.progress
+        self.xmlController.policyController = self.policyController
+        self.xmlController.importExportBrain = self.exportController
+        self.xmlController.layout = self.layout
         // Initialize global security settings and inactivity monitor
         self.securitySettings = SecuritySettingsManager()
         self.inactivityMonitor = InactivityMonitor(securitySettings: self.securitySettings)

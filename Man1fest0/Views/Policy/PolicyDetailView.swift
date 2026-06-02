@@ -314,9 +314,9 @@ struct PolicyDetailView: View {
                 .tint(.red)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
                 
-                //              ################################################################################
+                //  #####################################################################
                 //              DOWNLOAD OPTION
-                //              ################################################################################
+                //  #####################################################################
                 
 #if os(macOS)
                 
@@ -423,8 +423,6 @@ struct PolicyDetailView: View {
                         .help("Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.")
                         .buttonStyle(.borderedProminent)
                         .tint(.orange)
-//                        TextField(policyNameClone, text: $policyName)
-//                            .textSelection(.enabled)
                         TextField(policyNameClone, text: $policyNameClone)
                             .textSelection(.enabled)
                     }
@@ -532,16 +530,15 @@ struct PolicyDetailView: View {
                 }
             }
 
-                    //              ##########################################################################
+                    //  #################################################################
                     //              CLONE - END
-                    //
-//                }
-//                     Spacer()
+                    //  #################################################################
+
                  
             
-            //  ##########################################################################
+            //  #########################################################################
             //              UPDATE NAME
-            //  ##########################################################################
+            //  #########################################################################
             
             Divider()
             
@@ -549,7 +546,6 @@ struct PolicyDetailView: View {
                 
                 VStack(alignment: .leading) {
                     
-//                    Text("Edit Names:").fontWeight(.bold)
                     
                     LazyVGrid(columns: layout.columnsFlexAdaptive, spacing: 20) {
                         
@@ -686,17 +682,17 @@ struct PolicyDetailView: View {
 //            }
             .padding()
             
-            //  ##########################################################################
+            //  #########################################################################
             //              DELETE POLICY
-            //  ##########################################################################
+            //  #########################################################################
             
-            //  ##########################################################################
+            //  #########################################################################
             //  Manually add to assigned list
-            //  ##########################################################################
+            //  #########################################################################
             
-            //  ##########################################################################
+            //  #########################################################################
             //  TabView - TAB
-            //  ##########################################################################
+            //  #########################################################################
             
 #if os(macOS)
             // Replace TabView with a segmented Picker + switched content to ensure clicks reliably switch tabs on macOS
@@ -736,7 +732,7 @@ struct PolicyDetailView: View {
                         PolicyPackageTabView(policyID: policyID, server: server, resourceType: selectedResourceType, packageSelection: packageSelection)
                     }
                 }
-                .frame(minHeight: 300)
+                .frame(minHeight: 250)
             }
             
             // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL

@@ -91,7 +91,6 @@ struct PolicyPackageTabView: View {
                         Text("No packages present")
                     } .font(.headline)
                         .padding()
-                    Spacer()
                 }
             }
                 

@@ -5,12 +5,6 @@
 //  Created by Amos Deane on 06/08/2025.
 //
 
-//
-//  PolicySelfServiceTabView.swift
-//  Man1fest0
-//
-//  Created by Amos Deane on 10/07/2024.
-//
 
 import SwiftUI
 import AEXML

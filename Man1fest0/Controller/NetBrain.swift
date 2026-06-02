@@ -765,7 +765,9 @@ extension NetBrain {
     //    #################################################################################
     
     func getComputersBasic(server: String, authToken: String) async throws {
-        
+        // Inform the user we're starting to load basic computer list
+        messageStore?.show("Loading computers (basic)…", level: .info, details: "Connecting to server", showSpinner: true)
+
         print("Running getComputersBasic")
         let jamfURLQuery = server + "/JSSResource/computers/subset/basic"
         let url = URL(string: jamfURLQuery)!
@@ -821,6 +823,8 @@ extension NetBrain {
             self.allComputersBasic = decoded
             self.allComputersBasicDict = decoded.computers
             self.initialDataLoaded = true
+            // Indicate success to the user
+            self.messageStore?.show("Computers loaded", level: .success, details: "\(decoded.computers.count) computers")
         }
         
     }
@@ -1239,6 +1243,9 @@ print("DEBUG - status code is 200, response is:")
         }
         await MainActor.run { self.isFetchingDetailedPolicies = true; self.retryFailedDetailedPolicyCalls = [] }
 
+        // User-visible notification
+        messageStore?.show("Loading detailed policies…", level: .info, details: "Fetching \(policies.count) policies", showSpinner: true)
+
         // Ignore passed authToken and use managed token instead
         let validToken = try await getValidToken(server: server)
         // Print visual separator for debugging logs
@@ -1351,12 +1358,15 @@ print("DEBUG - status code is 200, response is:")
                 self.fetchedDetailedPolicies = true
                 self.isFetchingDetailedPolicies = false
             }
+            // Show partial failure message
+            messageStore?.show("Detailed policies fetched with errors", level: .warning, details: "Failed for \(failedCalls.count) policies")
         } else {
             print("getAllPoliciesDetailed completed successfully for all policies")
             await MainActor.run {
                 self.fetchedDetailedPolicies = true
                 self.isFetchingDetailedPolicies = false
             }
+            messageStore?.show("All policy details loaded", level: .success, details: "\(validPolicies.count) policies")
         }
     }
 
@@ -6206,17 +6216,25 @@ xml = """
     
     
     func getAllIconsDetailed(server: String, authToken: String, loopTotal: Int){
-        
         self.separationLine()
         print("Running func: getAllIconsDetailed")
         print("Total loop is set as:\(loopTotal)")
-        
+        // Inform the user this may take some time
+        messageStore?.show("Downloading icons…", level: .info, details: "Requesting up to \(loopTotal) icons", showSpinner: true)
+
         for iconNumber in 1...(loopTotal) {
-            
             Task {
-                try await getDetailedIcon(server: server, authToken: authToken, iconID: String(describing: iconNumber))
+                do {
+                    try await getDetailedIcon(server: server, authToken: authToken, iconID: String(describing: iconNumber))
+                } catch {
+                    // log and continue; individual icon failures shouldn't stop the whole run
+                    print("Failed to fetch icon \(iconNumber): \(error)")
+                }
             }
         }
+        // We can't easily know when all Task children finish from here (they run independently),
+        // so provide a courtesy message that the fetch has started.
+        messageStore?.show("Icon fetch started", level: .info, details: "Fetching icons in background")
     }
     
     
@@ -6976,20 +6994,24 @@ xml = """
 
       // Fetch all departments
     func getAllDepartments() async throws {
-        do {
-            struct DepartmentsResponse: Codable {
-                let departments: [Department]
+            // Show activity to user
+            messageStore?.show("Loading departments…", level: .info, details: "Connecting to server", showSpinner: true)
+            do {
+                struct DepartmentsResponse: Codable {
+                    let departments: [Department]
+                }
+                let request = APIRequest<DepartmentsResponse>(endpoint: "departments", method: .get)
+                let decoded = try await requestSender.resultFor(apiRequest: request)
+                self.departments = decoded.departments
+                print("Loaded \(departments.count) departments")
+                messageStore?.show("Departments loaded", level: .success, details: "\(self.departments.count) departments")
+            } catch {
+                self.alertTitle = "Failed to load departments"
+                self.alertMessage = error.localizedDescription
+                self.showAlert = true
+                messageStore?.show("Failed to load departments", level: .error, details: error.localizedDescription)
+                throw error
             }
-            let request = APIRequest<DepartmentsResponse>(endpoint: "departments", method: .get)
-            let decoded = try await requestSender.resultFor(apiRequest: request)
-            self.departments = decoded.departments
-            print("Loaded \(departments.count) departments")
-        } catch {
-            self.alertTitle = "Failed to load departments"
-            self.alertMessage = error.localizedDescription
-            self.showAlert = true
-
-        }
     }
 
     // Fetch detailed advanced computer search by id

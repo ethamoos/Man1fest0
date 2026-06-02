@@ -16,18 +16,9 @@ import AEXML
     @Published var encoded = ""
     @Published var url: URL? = nil
     
-    //    #################################################################################
-    //    Environment objects
-    //    #################################################################################
-    
-//    @EnvironmentObject var layout: Layout
-//    @EnvironmentObject var xmlBrain: XmlBrain
-//    // @EnvironmentObject var controller: JamfController
-//    @EnvironmentObject var networkController: NetBrain
-    
-    //    #################################################################################
+    //  #################################################################################
     //    Policies
-    //    #################################################################################
+    //  #################################################################################
     
     @Published var currentPolicyID: Int = 0
     @Published var currentPolicyName: String = ""
