@@ -110,6 +110,85 @@ struct PolicySearchView: View {
         policiesMatchingItems = ids
         networkController.policiesMatchingItems = ids
     }
+
+    // Export currently-displayed search results to CSV in the user's Downloads folder.
+    private func exportCSV() {
+        let pairs = displayedPairs
+        // Build CSV header
+        var csv = "jamfId,name,selfServiceDisplayName,selfServiceDescription,enabled,packages,scripts,scopeSummary\n"
+
+        func escapeCSV(_ s: String?) -> String {
+            guard let s = s else { return "" }
+            let escaped = s.replacingOccurrences(of: "\"", with: "\"\"")
+            return "\"\(escaped)\""
+        }
+
+        for pair in pairs {
+            let p = pair.policy
+            let id = p.general?.jamfId.map { String($0) } ?? ""
+            let name = p.general?.name ?? ""
+            let ssName = p.self_service?.selfServiceDisplayName ?? ""
+            let ssDesc = p.self_service?.selfServiceDescription ?? ""
+            let enabled = p.general?.enabled.map { String($0) } ?? ""
+
+            let packages = (p.package_configuration?.packages.map { $0.name ?? "" } ?? []).joined(separator: "; ")
+            let scripts = (p.scripts?.map { $0.name ?? "" } ?? []).joined(separator: "; ")
+
+            // Simple scope summary: concatenate common scope names/counts
+            var scopeParts: [String] = []
+            if let comps = p.scope?.computers, !comps.isEmpty { scopeParts.append("computers:[\(comps.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let cgs = p.scope?.computerGroups, !cgs.isEmpty { scopeParts.append("computerGroups:[\(cgs.compactMap { $0.name ?? "" }.joined(separator: ", "))]") }
+            if let blds = p.scope?.buildings, !blds.isEmpty { scopeParts.append("buildings:[\(blds.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let depts = p.scope?.departments, !depts.isEmpty { scopeParts.append("departments:[\(depts.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let limitToUsers = p.scope?.limitToUsers?.users, !limitToUsers.isEmpty { scopeParts.append("limitToUsers:[\(limitToUsers.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let limitations = p.scope?.limitations?.users, !limitations.isEmpty { scopeParts.append("limitations:[\(limitations.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let excl = p.scope?.exclusions, ((excl.computers?.isEmpty == false) || (excl.computerGroups?.isEmpty == false) || (excl.buildings?.isEmpty == false) || (excl.departments?.isEmpty == false) || (excl.users?.isEmpty == false)) {
+                var exParts: [String] = []
+                if let ec = excl.computers, !ec.isEmpty { exParts.append("computers:[\(ec.compactMap { $0.name }.joined(separator: ", "))]") }
+                if let eg = excl.computerGroups, !eg.isEmpty { exParts.append("computerGroups:[\(eg.compactMap { $0.name ?? "" }.joined(separator: ", "))]") }
+                if let eb = excl.buildings, !eb.isEmpty { exParts.append("buildings:[\(eb.compactMap { $0.name }.joined(separator: ", "))]") }
+                if let ed = excl.departments, !ed.isEmpty { exParts.append("departments:[\(ed.compactMap { $0.name }.joined(separator: ", "))]") }
+                if let eu = excl.users, !eu.isEmpty { exParts.append("users:[\(eu.compactMap { $0.name }.joined(separator: ", "))]") }
+                scopeParts.append("exclusions:[\(exParts.joined(separator: "; "))]")
+            }
+            let scopeSummary = scopeParts.joined(separator: " | ")
+
+            let row = [id, name, ssName, ssDesc, enabled, packages, scripts, scopeSummary].map { escapeCSV($0) }.joined(separator: ",")
+            csv += row + "\n"
+        }
+
+        // Destination: Downloads folder with timestamped filename
+        let tsFormatter = DateFormatter()
+        tsFormatter.dateFormat = "yyyyMMdd-HHmmss"
+        let filename = "policy_search_results_\(tsFormatter.string(from: Date())).csv"
+
+        let fm = FileManager.default
+        var destinationURL: URL?
+        if let downloads = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+            destinationURL = downloads.appendingPathComponent(filename)
+        } else {
+            // fallback to documents directory
+            destinationURL = fm.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(filename)
+        }
+
+        guard let dest = destinationURL else {
+            let err = NSError(domain: "Man1fest0", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unable to determine a destination folder for export."])
+            networkController.publishError(err, title: "CSV Export Failed")
+            return
+        }
+
+        do {
+            try csv.data(using: .utf8)?.write(to: dest)
+            // Notify user if message store available
+            DispatchQueue.main.async {
+                networkController.messageStore?.show("Exported CSV", level: .success, details: dest.path)
+            }
+            print("Exported CSV to: \(dest.path)")
+        } catch {
+            print("CSV export failed: \(error)")
+            networkController.publishError(error, title: "CSV Export Failed")
+        }
+    }
     
     // Computed displayed pairs depending on active filter
     private var displayedPairs: [MatchedPolicyPair] {
@@ -143,6 +222,17 @@ struct PolicySearchView: View {
                         }
                         .pickerStyle(MenuPickerStyle())
                         
+                    // Export CSV button for the current search results
+                    Button(action: {
+                        exportCSV()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.down")
+                            Text("Export CSV")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.green)
                         Spacer()
                 }
                 
