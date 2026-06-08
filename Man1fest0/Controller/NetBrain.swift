@@ -522,6 +522,10 @@ extension NetBrain {
     @Published var computerHistory: ComputerHistory? = nil
     // Raw JSON of the last computer history response (useful for debugging/preview in UI)
     @Published var lastComputerHistoryRaw: String? = nil
+    // Full decoded detailed computers collection (inventory detail responses)
+    @Published var allComputersDetailedFull: [ComputerFull?] = []
+    @Published var isFetchingDetailedComputers: Bool = false
+    @Published var retryFailedDetailedComputerCalls: [String] = []
     
     //  #############################################################################
     //    ############ GROUPS
@@ -682,6 +686,10 @@ extension NetBrain {
     private var policyDetailsBuffer: [PolicyDetailed] = []
     private var isPolicyDetailsFlushScheduled: Bool = false
     private let policyDetailsFlushInterval: TimeInterval = 0.20 // 200ms
+    // Buffer to coalesce fetched computer details before updating view-backed collections
+    private var computerDetailsBuffer: [ComputerFull] = []
+    private var isComputerDetailsFlushScheduled: Bool = false
+    private let computerDetailsFlushInterval: TimeInterval = 0.20 // 200ms
 
     init(minInterval: TimeInterval = 0.0) {
         // look for a persisted setting first
@@ -762,6 +770,22 @@ extension NetBrain {
                                          loaded: allPoliciesDetailed.compactMap { $0 }.count,
                                          failedIDs: retryFailedDetailedPolicyCalls)
     }
+
+    // Computed progress struct for detailed computer inventory fetches.
+    struct DetailedComputersProgress {
+        var expected: Int
+        var loaded: Int
+        var failedIDs: [String]
+    }
+
+    // Simple synchronous computed property so Views can read computer fetch progress
+    // without needing to access implementation details. This mirrors the policies
+    // progress helper and is intentionally lightweight.
+    var detailedComputersProgress: DetailedComputersProgress {
+        return DetailedComputersProgress(expected: allComputersBasic.computers.count,
+                                          loaded: allComputersDetailedFull.compactMap { $0 }.count,
+                                          failedIDs: retryFailedDetailedComputerCalls)
+    }
     
     //    #################################################################################
     //    Functions
@@ -831,11 +855,239 @@ extension NetBrain {
         }
         
     }
+
+    // Fetch detailed inventory for all known basic computers using the Jamf v3 inventory-detail endpoint.
+    func getAllComputersDetailedFull(server: String) async throws {
+        // Avoid concurrent runs
+        if isFetchingDetailedComputers {
+            print("getAllComputersDetailedFull called while a fetch is already in progress; skipping")
+            return
+        }
+
+        await MainActor.run { self.isFetchingDetailedComputers = true; self.retryFailedDetailedComputerCalls = [] }
+
+        // Ensure we have basic list of computers to iterate
+        let basicList = self.allComputersBasic.computers
+        if basicList.isEmpty {
+            // No basic list available; instruct caller to fetch basics first
+            DispatchQueue.main.async {
+                self.messageStore?.show("No basic computer list", level: .warning, details: "Run 'Fetch basic computers' first")
+            }
+            await MainActor.run { self.isFetchingDetailedComputers = false }
+            return
+        }
+
+        messageStore?.show("Loading detailed computer inventory…", level: .info, details: "Fetching \(basicList.count) devices", showSpinner: true)
+
+        // Ensure we have a valid token and a computed User-Agent before creating
+        // concurrent tasks. These local copies avoid accessing MainActor-isolated
+        // properties from within task-group child tasks.
+        let validToken = try await getValidToken(server: server)
+        let userAgent = "\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))"
+
+        // Use lower concurrency (2) for computer detail fetches to avoid overwhelming Jamf server
+        // The policy fetch concurrency may be set higher, but computer details need to be more conservative
+        let concurrency = 2
+        let semaphore = AsyncSemaphore(value: concurrency)
+        var failedCalls: [String] = []
+
+        await withTaskGroup(of: (String, Result<ComputerFull, Error>).self) { group in
+            for (index, record) in basicList.enumerated() {
+                let id = String(record.id)
+                let serverCopy = server
+                let tokenCopy = validToken
+                let userAgentCopy = userAgent
+                
+                // Add throttle BEFORE creating task to limit task group size
+                // This prevents creating too many pending tasks at once
+                if index > 0 && index % 20 == 0 {
+                    // Every 20 tasks, give a small delay for pending requests to complete
+                    try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms every 20 tasks
+                }
+
+                group.addTask {
+                    await semaphore.wait()
+                    defer { Task { await semaphore.signal() } }
+
+                    let jamfURLQuery = serverCopy + "/api/v3/computers-inventory-detail/" + id
+                    guard let url = URL(string: jamfURLQuery) else { return (id, .failure(JamfAPIError.badURL)) }
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "GET"
+                    request.setValue("Bearer \(tokenCopy)", forHTTPHeaderField: "Authorization")
+                    request.addValue(userAgentCopy, forHTTPHeaderField: "User-Agent")
+                    request.setValue("application/json", forHTTPHeaderField: "Accept")
+                    request.timeoutInterval = 60  // Increased from 30 to 60 seconds for larger responses
+                    
+                    do {
+                        let (data, response) = try await URLSession.shared.data(for: request)
+                        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                        
+                        // Check for server errors (5xx)
+                        if status >= 500 {
+                            return (id, .failure(JamfAPIError.http(status)))
+                        }
+                        
+                        guard status == 200 else { return (id, .failure(JamfAPIError.http(status))) }
+                        let decoder = JSONDecoder()
+                        // Try to decode wrapper first (/computers/id/<id> style), then raw ComputerFull
+                        if let wrapped = try? decoder.decode(ComputerDetailedFullResponse.self, from: data) {
+                            return (id, .success(wrapped.computer))
+                        } else {
+                            let raw = try decoder.decode(ComputerFull.self, from: data)
+                            return (id, .success(raw))
+                        }
+                    } catch {
+                        return (id, .failure(error))
+                    }
+                }
+            }
+
+            var successes: [ComputerFull] = []
+            var serverErrors: [String] = []  // Track 503 errors separately
+            for await (id, result) in group {
+                switch result {
+                case .success(let detail):
+                    successes.append(detail)
+                case .failure(let err):
+                    // Print error for debugging
+                    print("Error fetching computer detail id \(id): \(err)")
+                    
+                    // Check if it's a server error (5xx)
+                    if let apiErr = err as? JamfAPIError, case .http(let code) = apiErr {
+                        if code >= 500 {
+                            serverErrors.append(id)
+                            print("  → Server error \(code) for id \(id)")
+                        } else {
+                            failedCalls.append(id)
+                        }
+                    } else {
+                        failedCalls.append(id)
+                    }
+                }
+            }
+
+            if !successes.isEmpty {
+                await MainActor.run {
+                    self.allComputersDetailedFull.append(contentsOf: successes)
+                }
+            }
+            
+            // If we got significant server errors, add them to failed list with a note
+            if !serverErrors.isEmpty {
+                print("Server returned \(serverErrors.count) errors (5xx); these will be retried")
+                failedCalls.append(contentsOf: serverErrors)
+            }
+        }
+
+        if !failedCalls.isEmpty {
+            print("getAllComputersDetailedFull completed with failures for IDs: \(failedCalls)")
+            await MainActor.run {
+                self.retryFailedDetailedComputerCalls = failedCalls
+                self.isFetchingDetailedComputers = false
+            }
+            let failureReasons = failedCalls.count > 0 ? "Check server status and retry" : ""
+            messageStore?.show("Detailed computers fetched with errors", level: .warning, details: "Failed for \(failedCalls.count) devices. \(failureReasons)")
+        } else {
+            print("getAllComputersDetailedFull completed successfully")
+            await MainActor.run {
+                self.isFetchingDetailedComputers = false
+            }
+            messageStore?.show("All computer details loaded", level: .success, details: "\(basicList.count) devices")
+        }
+    }
     
     
     //    #################################################################################
     //    try await functions
     //    #################################################################################
+
+    // Manual retry helper: attempt to fetch any IDs recorded in
+    // `retryFailedDetailedComputerCalls`. This allows the UI to offer a
+    // one-shot retry button for failed items without re-running the entire
+    // inventory fetch. The implementation is intentionally lightweight and
+    // only makes a single pass; callers can invoke it multiple times if
+    // desired.
+    func retryFailedComputerDetails(server: String) async {
+        let failed = await MainActor.run { self.retryFailedDetailedComputerCalls }
+        guard !failed.isEmpty else {
+            await MainActor.run { self.messageStore?.show("No failed computer details to retry", level: .info) }
+            return
+        }
+
+        await MainActor.run { self.messageStore?.show("Retrying failed computer details…", level: .info, showSpinner: true) }
+
+        do {
+            let token = try await getValidToken(server: server)
+            let userAgent = "\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))"
+            // Use conservative concurrency (2) for retries as well
+            let semaphore = AsyncSemaphore(value: 2)
+            
+            // Add initial delay before retry to let server recover
+            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+
+            await withTaskGroup(of: (String, Result<ComputerFull, Error>).self) { group in
+                for id in failed {
+                    let idCopy = id
+                    let tokenCopy = token
+                    let serverCopy = server
+                    let userAgentCopy = userAgent
+                    group.addTask {
+                        await semaphore.wait()
+                        defer { Task { await semaphore.signal() } }
+                        let jamfURLQuery = serverCopy + "/api/v3/computers-inventory-detail/" + idCopy
+                        guard let url = URL(string: jamfURLQuery) else { return (idCopy, .failure(JamfAPIError.badURL)) }
+                        var request = URLRequest(url: url)
+                        request.httpMethod = "GET"
+                        request.setValue("Bearer \(tokenCopy)", forHTTPHeaderField: "Authorization")
+                        request.addValue(userAgentCopy, forHTTPHeaderField: "User-Agent")
+                        request.setValue("application/json", forHTTPHeaderField: "Accept")
+                        request.timeoutInterval = 30  // Prevent indefinite hangs
+                        do {
+                            let (data, response) = try await URLSession.shared.data(for: request)
+                            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                            guard status == 200 else { return (idCopy, .failure(JamfAPIError.http(status))) }
+                            let decoder = JSONDecoder()
+                            if let wrapped = try? decoder.decode(ComputerDetailedFullResponse.self, from: data) {
+                                return (idCopy, .success(wrapped.computer))
+                            } else {
+                                let raw = try decoder.decode(ComputerFull.self, from: data)
+                                return (idCopy, .success(raw))
+                            }
+                        } catch {
+                            return (idCopy, .failure(error))
+                        }
+                    }
+                }
+
+                var successes: [ComputerFull] = []
+                var newFailed: [String] = []
+                for await (id, result) in group {
+                    switch result {
+                    case .success(let detail):
+                        successes.append(detail)
+                    case .failure(let err):
+                        print("Retry failed for id \(id): \(err)")
+                        newFailed.append(id)
+                    }
+                }
+
+                if !successes.isEmpty {
+                    await MainActor.run {
+                        self.allComputersDetailedFull.append(contentsOf: successes)
+                    }
+                }
+
+                await MainActor.run {
+                    self.retryFailedDetailedComputerCalls = newFailed
+                    let message = newFailed.isEmpty ? "Retry succeeded - all details loaded" : "Retry finished with failures"
+                    let details = "Recovered: \(successes.count), Still failing: \(newFailed.count)"
+                    self.messageStore?.show(message, level: newFailed.isEmpty ? .success : .warning, details: details)
+                }
+            }
+        } catch {
+            await MainActor.run { self.messageStore?.show("Retry failed", level: .error, details: error.localizedDescription) }
+        }
+    }
     
     
     //   #################################################################################
@@ -1406,6 +1658,31 @@ print("DEBUG - status code is 200, response is:")
         // Clear the buffer and reset the scheduled flag
         self.policyDetailsBuffer.removeAll()
         isPolicyDetailsFlushScheduled = false
+    }
+
+    // Schedule and flush helpers for computer details (coalesce updates)
+    private func scheduleFlushComputerDetails() {
+        guard !isComputerDetailsFlushScheduled else { return }
+        isComputerDetailsFlushScheduled = true
+        let interval = computerDetailsFlushInterval
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
+            Task { [weak self] in
+                self?.flushComputerDetails()
+            }
+        }
+    }
+
+    @MainActor
+    private func flushComputerDetails() {
+        guard !computerDetailsBuffer.isEmpty else { isComputerDetailsFlushScheduled = false; return }
+        // Prepend buffered items while preserving order
+        let toInsertOptional = computerDetailsBuffer.map { Optional($0) }
+        var newArray: [ComputerFull?] = []
+        newArray.append(contentsOf: toInsertOptional.reversed())
+        newArray.append(contentsOf: self.allComputersDetailedFull)
+        self.allComputersDetailedFull = newArray
+        self.computerDetailsBuffer.removeAll()
+        isComputerDetailsFlushScheduled = false
     }
     //    #################################################################################
     //    FUNCTIONS
@@ -2833,87 +3110,87 @@ print("DEBUG - status code is 200, response is:")
     }
     
     
-  
-func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String,category: String,filename: String,info: String, notes: String) async throws {
+    
+    func updateScript(server: String, scriptName: String, scriptContent: String, scriptId: String, authToken: String,category: String,filename: String,info: String, notes: String) async throws {
 
-    // Helper: escape XML reserved characters for element content
-    func escapeXML(_ s: String) -> String {
-        var out = s
-        out = out.replacingOccurrences(of: "&", with: "&amp;")
-        out = out.replacingOccurrences(of: "<", with: "&lt;")
-        out = out.replacingOccurrences(of: ">", with: "&gt;")
-        out = out.replacingOccurrences(of: "\'", with: "&apos;")
-        out = out.replacingOccurrences(of: "\"", with: "&quot;")
-        return out
-    }
-
-    // Ensure any occurrence of the CDATA terminator inside the script is safely handled
-    let safeScriptContent = scriptContent.replacingOccurrences(of: "]]>", with: "]]]]><![CDATA[>")
-
-    let xml = """
-    <?xml version="1.0" encoding="utf-8"?>
-    <script>
-        <name>
-        \(escapeXML(scriptName))
-        </name>
-        <category>\(escapeXML(category.isEmpty ? "No category assigned" : category))</category>
-        <filename>\(escapeXML(filename))</filename>
-        <info>\(escapeXML(info))</info>
-        <notes>\(escapeXML(notes))</notes>
-        <script_contents><![CDATA[\(safeScriptContent)]]></script_contents>
-    </script>
-    """
-
-    separationLine()
-    print("Running func: updateScript")
-    print("scriptName is set to:\(scriptName)")
-    print("scriptID is set to:\(scriptId)")
-
-    let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
-    self.currentURL = jamfURLQuery
-    guard let url = URL(string: jamfURLQuery) else {
-        print("Invalid URL for updateScript: \(jamfURLQuery)")
-        throw JamfAPIError.badURL
-    }
-    var request = URLRequest(url: url)
-    request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-    request.addValue("application/xml", forHTTPHeaderField: "Accept")
-    request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
-    // Provide a helpful User-Agent (matches other requests)
-    request.addValue("\(String(describing: product_name ?? "Man1fest0"))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-    request.httpMethod = "PUT"
-    request.httpBody = xml.data(using: .utf8)
-
-    do {
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        self.separationLine()
-        print("updateScript response status: \(status)")
-        if status == 200 || status == 201 {
-            print("updateScript succeeded for id: \(scriptId)")
-            // Optionally refresh the detailed script cache
-            Task {
-                try? await self.getDetailedScript(server: server, scriptID: Int(scriptId) ?? 0, authToken: authToken)
-            }
-            return
-        } else {
-            // Try to show the server response for debugging
-            if let body = String(data: data, encoding: .utf8) {
-                print("updateScript failed - response body:\n\(body)")
-            } else {
-                print("updateScript failed - no response body available")
-            }
-            print("updateScript failed - HTTP status: \(status)")
-            throw JamfAPIError.http(status)
+        // Helper: escape XML reserved characters for element content
+        func escapeXML(_ s: String) -> String {
+            var out = s
+            out = out.replacingOccurrences(of: "&", with: "&amp;")
+            out = out.replacingOccurrences(of: "<", with: "&lt;")
+            out = out.replacingOccurrences(of: ">", with: "&gt;")
+            out = out.replacingOccurrences(of: "\'", with: "&apos;")
+            out = out.replacingOccurrences(of: "\"", with: "&quot;")
+            return out
         }
-    } catch let urlError as URLError {
-        print("updateScript network request failed: \(urlError)")
-        throw JamfAPIError.requestFailed
-    } catch {
-        print("updateScript unexpected error: \(error)")
-        throw JamfAPIError.unknown
+
+        // Ensure any occurrence of the CDATA terminator inside the script is safely handled
+        let safeScriptContent = scriptContent.replacingOccurrences(of: "]]>", with: "]]]]><![CDATA[>")
+
+        let xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <script>
+            <name>
+            \(escapeXML(scriptName))
+            </name>
+            <category>\(escapeXML(category.isEmpty ? "No category assigned" : category))</category>
+            <filename>\(escapeXML(filename))</filename>
+            <info>\(escapeXML(info))</info>
+            <notes>\(escapeXML(notes))</notes>
+            <script_contents><![CDATA[\(safeScriptContent)]]></script_contents>
+        </script>
+        """
+
+        separationLine()
+        print("Running func: updateScript")
+        print("scriptName is set to:\(scriptName)")
+        print("scriptID is set to:\(scriptId)")
+
+        let jamfURLQuery = server + "/JSSResource/scripts/id/" + String(describing: scriptId)
+        self.currentURL = jamfURLQuery
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL for updateScript: \(jamfURLQuery)")
+            throw JamfAPIError.badURL
+        }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/xml", forHTTPHeaderField: "Accept")
+        request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
+        // Provide a helpful User-Agent (matches other requests)
+        request.addValue("\(String(describing: product_name ?? "Man1fest0"))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+        request.httpMethod = "PUT"
+        request.httpBody = xml.data(using: .utf8)
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            self.separationLine()
+            print("updateScript response status: \(status)")
+            if status == 200 || status == 201 {
+                print("updateScript succeeded for id: \(scriptId)")
+                // Optionally refresh the detailed script cache
+                Task {
+                    try? await self.getDetailedScript(server: server, scriptID: Int(scriptId) ?? 0, authToken: authToken)
+                }
+                return
+            } else {
+                // Try to show the server response for debugging
+                if let body = String(data: data, encoding: .utf8) {
+                    print("updateScript failed - response body:\n\(body)")
+                } else {
+                    print("updateScript failed - no response body available")
+                }
+                print("updateScript failed - HTTP status: \(status)")
+                throw JamfAPIError.http(status)
+            }
+        } catch let urlError as URLError {
+            print("updateScript network request failed: \(urlError)")
+            throw JamfAPIError.requestFailed
+        } catch {
+            print("updateScript unexpected error: \(error)")
+            throw JamfAPIError.unknown
+        }
     }
-}
     
     
     
@@ -6868,21 +7145,51 @@ xml = """
         }
     }
 
-    // Fetch detailed computer by id (lightweight decode)
+    // Fetch detailed computer by id using v3 API endpoint
     func getDetailedComputer(userID: String) async throws {
         do {
-            // Decode the full detailed response (includes hardware/security)
-            let request = APIRequest<ComputerDetailedFullResponse>(endpoint: "computers/id/" + userID, method: .get)
-            print("APIRequest (computer detailed full): \(request)")
+            // Ensure we have a valid token
             if authToken.isEmpty {
                 _ = try await getToken(server: server, username: username, password: password)
             }
-            // record the current URL for debugging (RequestSender builds the final URL similarly)
-            self.currentURL = server + "/JSSResource/computers/id/" + userID
-            // Attempt decode with detailed DecodingError logging to help diagnose failures
+            
+            // Use v3 API endpoint for detailed computer inventory
+            let jamfURLQuery = server + "/api/v3/computers-inventory-detail/" + userID
+            print("getDetailedComputer: using v3 endpoint: \(jamfURLQuery)")
+            self.currentURL = jamfURLQuery
+            
+            guard let url = URL(string: jamfURLQuery) else {
+                throw JamfAPIError.badURL
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.timeoutInterval = 30
+            
+            // Perform the network request
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            
+            guard status == 200 else {
+                print("getDetailedComputer: received status \(status)")
+                throw JamfAPIError.http(status)
+            }
+            
+            // Attempt to decode the response
+            let decoder = JSONDecoder()
             let decodedFull: ComputerDetailedFullResponse
+            
             do {
-                decodedFull = try await requestSender.resultFor(apiRequest: request)
+                // Try to decode as wrapped response first, then as raw ComputerFull
+                if let wrapped = try? decoder.decode(ComputerDetailedFullResponse.self, from: data) {
+                    decodedFull = wrapped
+                } else {
+                    let raw = try decoder.decode(ComputerFull.self, from: data)
+                    decodedFull = ComputerDetailedFullResponse(computer: raw)
+                }
             } catch let decodeError as DecodingError {
                 // Provide rich diagnostics for common DecodingError cases
                 separationLine()
@@ -6951,14 +7258,9 @@ xml = """
             }
             
 
-            if let loc = loc {
-                print("Location info: department=\(loc.department ?? "(none)"), building=\(loc.building ?? "(none)"), room=\(loc.room ?? "(none)")")
-            }
-            
-            
-        } catch {
-            publishError(error, title: "Failed to load computer detail")
-            throw error
+             if let loc = loc {
+                 print("Location info: department=\(loc.department ?? "(none)"), building=\(loc.building ?? "(none)"), room=\(loc.room ?? "(none)")")
+             }
         }
     }
     
@@ -7176,3 +7478,4 @@ xml = """
   }
 
 }
+

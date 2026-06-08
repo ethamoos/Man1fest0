@@ -83,6 +83,10 @@ struct OptionsView: View {
                                 NavigationLink(destination: ComputersBasicTableView(server: server)) {
                                     Text("Computer Actions Table")
                                 }
+                                
+                                NavigationLink(destination: ComputerSearchView(server: server)) {
+                                    Text("Computer Search View")
+                                }
 #endif
                                 
                                 DisclosureGroup("Groups") {

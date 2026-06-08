@@ -33,6 +33,7 @@ struct ComputerBasicRecord: Codable, Hashable, Identifiable {
     let username, model, department, building: String
     let macAddress, udid, serialNumber, reportDateUTC: String
     let reportDateEpoch: Int
+    let lastEnrolledDate: String?  // Optional field for API flexibility
 
     enum CodingKeys: String, CodingKey {
         case id, name, managed, username, model, department, building
@@ -41,6 +42,51 @@ struct ComputerBasicRecord: Codable, Hashable, Identifiable {
         case serialNumber = "serial_number"
         case reportDateUTC = "report_date_utc"
         case reportDateEpoch = "report_date_epoch"
+        case lastEnrolledDate = "last_enrolled_date"
+    }
+    
+    init(id: Int, name: String, managed: Bool, username: String, model: String,
+         department: String, building: String, macAddress: String, udid: String,
+         serialNumber: String, reportDateUTC: String, reportDateEpoch: Int, lastEnrolledDate: String? = nil) {
+        self.id = id
+        self.name = name
+        self.managed = managed
+        self.username = username
+        self.model = model
+        self.department = department
+        self.building = building
+        self.macAddress = macAddress
+        self.udid = udid
+        self.serialNumber = serialNumber
+        self.reportDateUTC = reportDateUTC
+        self.reportDateEpoch = reportDateEpoch
+        self.lastEnrolledDate = lastEnrolledDate
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        managed = try container.decode(Bool.self, forKey: .managed)
+        username = try container.decode(String.self, forKey: .username)
+        model = try container.decode(String.self, forKey: .model)
+        department = try container.decode(String.self, forKey: .department)
+        building = try container.decode(String.self, forKey: .building)
+        macAddress = try container.decode(String.self, forKey: .macAddress)
+        udid = try container.decode(String.self, forKey: .udid)
+        serialNumber = try container.decode(String.self, forKey: .serialNumber)
+        reportDateUTC = try container.decode(String.self, forKey: .reportDateUTC)
+        reportDateEpoch = try container.decode(Int.self, forKey: .reportDateEpoch)
+        
+        // Gracefully handle lastEnrolledDate - try to decode as string, or as date if it comes in different format
+        if let dateString = try? container.decodeIfPresent(String.self, forKey: .lastEnrolledDate) {
+            lastEnrolledDate = dateString
+        } else if let _ = try? container.decodeIfPresent(Int.self, forKey: .lastEnrolledDate) {
+            // If server returns it as timestamp, just skip it (optional field)
+            lastEnrolledDate = nil
+        } else {
+            lastEnrolledDate = try? container.decodeIfPresent(String.self, forKey: .lastEnrolledDate)
+        }
     }
 }
 
