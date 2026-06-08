@@ -2344,8 +2344,8 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
             }
             throw JamfAPIError.badResponseCode
         }
-        self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
         DispatchQueue.main.async {
+            self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
             self.networkController.messageStore?.show("Policy XML loaded", level: .success, details: "Policy ID: \(policyIdString)")
         }
 //        DEBUG
