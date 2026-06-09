@@ -7,7 +7,7 @@ struct ComputerDetailedFullResponse: Decodable {
 }
 
 struct ComputerFull: Decodable {
-    let general: General?
+    var general: General?
     let location: Location?
     let hardware: Hardware?
     let security: Security?
@@ -20,7 +20,7 @@ struct ComputerFull: Decodable {
     // let extensionAttributes: ExtensionAttributes?
     
     struct General: Decodable {
-        let id: String
+        var id: String
         let name: String?
         let udid: String?
         let serial_number: String?
@@ -34,6 +34,18 @@ struct ComputerFull: Decodable {
             case serial_number = "serial_number"
             case model, username, ip_address
             case report_date_utc = "report_date_utc"
+        }
+        
+        // Regular initializer for creating General with a known ID
+        init(id: String, name: String? = nil, udid: String? = nil, serial_number: String? = nil, ip_address: String? = nil, model: String? = nil, username: String? = nil, report_date_utc: String? = nil) {
+            self.id = id
+            self.name = name
+            self.udid = udid
+            self.serial_number = serial_number
+            self.ip_address = ip_address
+            self.model = model
+            self.username = username
+            self.report_date_utc = report_date_utc
         }
         
         init(from decoder: Decoder) throws {

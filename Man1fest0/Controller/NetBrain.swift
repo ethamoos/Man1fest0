@@ -885,9 +885,9 @@ extension NetBrain {
         let validToken = try await getValidToken(server: server)
         let userAgent = "\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))"
 
-        // Use lower concurrency (2) for computer detail fetches to avoid overwhelming Jamf server
-        // The policy fetch concurrency may be set higher, but computer details need to be more conservative
-        let concurrency = 2
+        // Use minimal concurrency (1) for computer detail fetches - the server is being overwhelmed
+        // Sequential fetching prevents server overload and allows better retry/backoff handling
+        let concurrency = 1
         let semaphore = AsyncSemaphore(value: concurrency)
         var failedCalls: [String] = []
 
@@ -898,11 +898,9 @@ extension NetBrain {
                 let tokenCopy = validToken
                 let userAgentCopy = userAgent
                 
-                // Add throttle BEFORE creating task to limit task group size
-                // This prevents creating too many pending tasks at once
-                if index > 0 && index % 20 == 0 {
-                    // Every 20 tasks, give a small delay for pending requests to complete
-                    try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms every 20 tasks
+                // Add minimum delay between requests to prevent overwhelming server
+                if index > 0 {
+                    try? await Task.sleep(nanoseconds: 100_000_000)  // 100ms between each request
                 }
 
                 group.addTask {
@@ -930,12 +928,26 @@ extension NetBrain {
                         guard status == 200 else { return (id, .failure(JamfAPIError.http(status))) }
                         let decoder = JSONDecoder()
                         // Try to decode wrapper first (/computers/id/<id> style), then raw ComputerFull
+                        var computer: ComputerFull
                         if let wrapped = try? decoder.decode(ComputerDetailedFullResponse.self, from: data) {
-                            return (id, .success(wrapped.computer))
+                            computer = wrapped.computer
                         } else {
-                            let raw = try decoder.decode(ComputerFull.self, from: data)
-                            return (id, .success(raw))
+                            computer = try decoder.decode(ComputerFull.self, from: data)
                         }
+                        
+                        // Ensure the ID is set from the request if it's missing in the response
+                        if computer.general == nil || computer.general!.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            // ID is missing or general is nil; ensure we have it set correctly
+                            if var general = computer.general {
+                                general.id = id
+                                computer.general = general
+                            } else {
+                                // Create a minimal General with just the ID
+                                computer.general = ComputerFull.General(id: id)
+                            }
+                        }
+                        
+                        return (id, .success(computer))
                     } catch {
                         return (id, .failure(error))
                     }
@@ -1019,18 +1031,25 @@ extension NetBrain {
         do {
             let token = try await getValidToken(server: server)
             let userAgent = "\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))"
-            // Use conservative concurrency (2) for retries as well
-            let semaphore = AsyncSemaphore(value: 2)
+            // Use minimal concurrency (1) for retries with exponential backoff
+            let semaphore = AsyncSemaphore(value: 1)
             
             // Add initial delay before retry to let server recover
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+            try await Task.sleep(nanoseconds: 1_000_000_000)  // 1 second initial delay
 
             await withTaskGroup(of: (String, Result<ComputerFull, Error>).self) { group in
-                for id in failed {
+                for (index, id) in failed.enumerated() {
                     let idCopy = id
                     let tokenCopy = token
                     let serverCopy = server
                     let userAgentCopy = userAgent
+                    let retryIndex = index
+                    
+                    // Add exponential backoff: 200ms * (index + 1) between requests
+                    if index > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(200_000_000 * (retryIndex + 1)))
+                    }
+                    
                     group.addTask {
                         await semaphore.wait()
                         defer { Task { await semaphore.signal() } }
@@ -1047,12 +1066,24 @@ extension NetBrain {
                             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                             guard status == 200 else { return (idCopy, .failure(JamfAPIError.http(status))) }
                             let decoder = JSONDecoder()
+                            var computer: ComputerFull
                             if let wrapped = try? decoder.decode(ComputerDetailedFullResponse.self, from: data) {
-                                return (idCopy, .success(wrapped.computer))
+                                computer = wrapped.computer
                             } else {
-                                let raw = try decoder.decode(ComputerFull.self, from: data)
-                                return (idCopy, .success(raw))
+                                computer = try decoder.decode(ComputerFull.self, from: data)
                             }
+                            
+                            // Ensure the ID is set from the request if it's missing in the response
+                            if computer.general == nil || computer.general!.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                if var general = computer.general {
+                                    general.id = idCopy
+                                    computer.general = general
+                                } else {
+                                    computer.general = ComputerFull.General(id: idCopy)
+                                }
+                            }
+                            
+                            return (idCopy, .success(computer))
                         } catch {
                             return (idCopy, .failure(error))
                         }

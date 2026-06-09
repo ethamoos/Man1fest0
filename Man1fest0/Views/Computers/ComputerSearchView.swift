@@ -357,6 +357,13 @@ struct ComputerSearchView: View {
             }
         }
         .onAppear {
+            
+                print("Fetching required data for ComputersView")
+                Task {
+                    try await networkController.getComputersBasic(server: server,authToken: networkController.authToken)
+                }
+            
+            
             // Load persisted sort preference
             let persistedSort = UserDefaults.standard.string(forKey: "computerListSortColumn") ?? SortColumn.name.rawValue
             if let col = SortColumn(rawValue: persistedSort) {
