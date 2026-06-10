@@ -1563,9 +1563,9 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         let url = URL(string: jamfURLQuery)!
         self.separationLine()
         print("Running removeAllScriptsFromPolicy - XML brain")
-        print("Initial xmlContent is:")
-        self.atSeparationLine()
-        print(xmlContent.xml)
+//        print("Initial xmlContent is:")
+//        self.atSeparationLine()
+//        print(xmlContent.xml)
         self.atSeparationLine()
         print("url is:\(url)")
         self.atSeparationLine()

@@ -47,6 +47,7 @@ struct ComputerSearchView: View {
     @State private var sortColumn: SortColumn = .name
     @State private var sortAscending: Bool = true
     @State private var currentFetchTask: Task<Void, Never>? = nil
+    @State private var selectedComputerId: String? = nil
 
     private func computeMatchedPairs() -> [MatchedComputerPair] {
         let detailed = networkController.allComputersDetailedFull
@@ -97,222 +98,167 @@ struct ComputerSearchView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Search and filter controls
-            HStack {
-                TextField("Search...", text: $searchString)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(maxWidth: 320)
+        HStack(spacing: 0) {
+            // LEFT PANEL: Search controls and computer list
+            VStack(alignment: .leading, spacing: 0) {
+                // Search and filter controls
+                HStack {
+                    TextField("Search...", text: $searchString)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(maxWidth: 320)
 
-                Picker("Field", selection: $selectedField) {
-                    ForEach(ComputerSearchField.allCases, id: \.self) { f in Text(f.displayName) }
-                }
-                .pickerStyle(MenuPickerStyle())
-
-                Picker("Match", selection: $matchMode) {
-                    ForEach(MatchMode.allCases, id: \.self) { m in Text(m.displayName) }
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .frame(maxWidth: 220)
-
-                Toggle("Case Sensitive", isOn: $caseSensitive).toggleStyle(SwitchToggleStyle())
-
-                Button(action: {
-                    // Cancel any running fetch
-                    if let task = currentFetchTask {
-                        task.cancel()
-                        currentFetchTask = nil
+                    Picker("Field", selection: $selectedField) {
+                        ForEach(ComputerSearchField.allCases, id: \.self) { f in Text(f.displayName) }
                     }
-                    
-                    progress.showProgress()
-                    let fetchTask = Task {
-                        do {
-                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
-                            try await networkController.getAllComputersDetailedFull(server: server)
-                            updateMatchingIDs()
-                        } catch {
-                            networkController.publishError(error, title: "Failed to fetch detailed inventory")
-                        }
-                        progress.waitForABit()
-                        currentFetchTask = nil
-                    }
-                    currentFetchTask = fetchTask
-                }) {
-                    HStack { Image(systemName: "arrow.down.doc") ; Text("Fetch Full Inventory") }
-                }
-                .buttonStyle(.borderedProminent)
+                    .pickerStyle(MenuPickerStyle())
 
-                // Cancel button visible during fetch
-                if networkController.isFetchingDetailedComputers {
+                    Picker("Match", selection: $matchMode) {
+                        ForEach(MatchMode.allCases, id: \.self) { m in Text(m.displayName) }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(maxWidth: 220)
+
+                    Toggle("Case Sensitive", isOn: $caseSensitive).toggleStyle(SwitchToggleStyle())
+
                     Button(action: {
+                        // Cancel any running fetch
                         if let task = currentFetchTask {
                             task.cancel()
                             currentFetchTask = nil
                         }
-                        networkController.messageStore?.show("Fetch cancelled by user", level: .info)
-                    }) {
-                        HStack { Image(systemName: "stop.circle.fill") ; Text("Cancel") }
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.orange)
-                }
-
-                Spacer()
-            }
-            .padding()
-
-            // Progress bar while fetching
-            if networkController.isFetchingDetailedComputers {
-                VStack(alignment: .leading, spacing: 8) {
-                    let compProgress = networkController.detailedComputersProgress
-                    let percentage = compProgress.expected > 0
-                        ? Double(compProgress.loaded) / Double(compProgress.expected)
-                        : 0.0
-                    
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("Loading detailed computer inventory…")
-                                    .font(.subheadline)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Text("Loaded \(compProgress.loaded) of \(compProgress.expected)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            ProgressView(value: percentage)
-                                .tint(.blue)
-                            HStack(spacing: 8) {
-                                Text("\(Int(percentage * 100))%")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                                if compProgress.failedIDs.count > 0 {
-                                    Text("Failed: \(compProgress.failedIDs.count)")
-                                        .font(.caption2)
-                                        .foregroundColor(.red)
-                                }
-                                Spacer()
-                            }
-                        }
-                    }
-                    .padding(12)
-                    .background(Color(.controlBackgroundColor))
-                    .cornerRadius(6)
-                }
-                .padding([.leading, .trailing, .bottom])
-            }
-
-            // Finished progress header with optional retry button
-            let compProgress = networkController.detailedComputersProgress
-            if compProgress.expected > 0 && !networkController.isFetchingDetailedComputers {
-                HStack(spacing: 12) {
-                    Text("Loaded \(compProgress.loaded) of \(compProgress.expected)")
-                        .font(.subheadline)
-                        .foregroundColor(.primary)
-                    if compProgress.failedIDs.count > 0 {
-                        Text("Failed: \(compProgress.failedIDs.count)")
-                            .font(.subheadline)
-                            .foregroundColor(.red)
-                        Button(action: {
-                            let retryTask = Task {
-                                await networkController.retryFailedComputerDetails(server: server)
+                        
+                        progress.showProgress()
+                        let fetchTask = Task {
+                            do {
+                                try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                                try await networkController.getAllComputersDetailedFull(server: server)
                                 updateMatchingIDs()
+                            } catch {
+                                networkController.publishError(error, title: "Failed to fetch detailed inventory")
                             }
-                            currentFetchTask = retryTask
+                            progress.waitForABit()
+                            currentFetchTask = nil
+                        }
+                        currentFetchTask = fetchTask
+                    }) {
+                        HStack { Image(systemName: "arrow.down.doc") ; Text("Fetch Full Inventory") }
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    // Cancel button visible during fetch
+                    if networkController.isFetchingDetailedComputers {
+                        Button(action: {
+                            if let task = currentFetchTask {
+                                task.cancel()
+                                currentFetchTask = nil
+                            }
+                            networkController.messageStore?.show("Fetch cancelled by user", level: .info)
                         }) {
-                            Text("Retry Failed (\(compProgress.failedIDs.count))")
+                            HStack { Image(systemName: "stop.circle.fill") ; Text("Cancel") }
                         }
                         .buttonStyle(.bordered)
+                        .tint(.orange)
                     }
-                    Spacer()
-                }
-                .padding([.leading, .trailing, .bottom])
-            }
 
-            // Sortable list
-            if sortedAndFilteredPairs.isEmpty {
-                VStack {
-                    if networkController.allComputersDetailedFull.isEmpty {
-                        Text("No detailed computers loaded. Use 'Fetch Full Inventory' to begin.")
-                            .foregroundColor(.secondary)
-                            .padding()
-                    } else {
-                        Text("No computers match the current filters.")
-                            .foregroundColor(.secondary)
-                            .padding()
-                    }
                     Spacer()
                 }
-            } else {
-                List(sortedAndFilteredPairs, id: \.id) { pair in
-                    // Only show navigation link if we have a valid Jamf ID
-                    let jamfId = pair.computer.general?.id ?? ""
-                    if !jamfId.isEmpty {
-                        NavigationLink(destination: ComputersDetailedView(server: server, computerID: jamfId)) {
-                            VStack(alignment: .leading, spacing: 6) {
+                .padding()
+
+                // Progress bar while fetching
+                if networkController.isFetchingDetailedComputers {
+                    VStack(alignment: .leading, spacing: 8) {
+                        let compProgress = networkController.detailedComputersProgress
+                        let percentage = compProgress.expected > 0
+                            ? Double(compProgress.loaded) / Double(compProgress.expected)
+                            : 0.0
+                        
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(pair.computer.general?.name ?? "(no name)")
-                                            .font(.headline)
-                                        Text("ID: \(jamfId)")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
+                                    Text("Loading detailed computer inventory…")
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
                                     Spacer()
-                                    Image(systemName: "chevron.right")
+                                    Text("Loaded \(compProgress.loaded) of \(compProgress.expected)")
+                                        .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
-                                
-                                HStack(spacing: 16) {
-                                    if let serial = pair.computer.general?.serial_number, !serial.isEmpty {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Serial")
-                                                .font(.caption2)
-                                                .foregroundColor(.secondary)
-                                            Text(serial)
-                                                .font(.caption)
-                                        }
+                                ProgressView(value: percentage)
+                                    .tint(.blue)
+                                HStack(spacing: 8) {
+                                    Text("\(Int(percentage * 100))%")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    if compProgress.failedIDs.count > 0 {
+                                        Text("Failed: \(compProgress.failedIDs.count)")
+                                            .font(.caption2)
+                                            .foregroundColor(.red)
                                     }
-                                    
-                                    if let ip = pair.computer.general?.ip_address, !ip.isEmpty {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("IP")
-                                                .font(.caption2)
-                                                .foregroundColor(.secondary)
-                                            Text(ip)
-                                                .font(.caption)
-                                        }
-                                    }
-                                    
-                                    if let user = pair.computer.location?.username ?? pair.computer.general?.username, !user.isEmpty {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("User")
-                                                .font(.caption2)
-                                                .foregroundColor(.secondary)
-                                            Text(user)
-                                                .font(.caption)
-                                        }
-                                    }
-                                    
                                     Spacer()
                                 }
                             }
-                            .padding(.vertical, 8)
                         }
-                    } else {
-                        // Show disabled item if no ID available
+                        .padding(12)
+                        .background(Color(.controlBackgroundColor))
+                        .cornerRadius(6)
+                    }
+                    .padding([.leading, .trailing, .bottom])
+                }
+
+                // Finished progress header with optional retry button
+                let compProgress = networkController.detailedComputersProgress
+                if compProgress.expected > 0 && !networkController.isFetchingDetailedComputers {
+                    HStack(spacing: 12) {
+                        Text("Loaded \(compProgress.loaded) of \(compProgress.expected)")
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                        if compProgress.failedIDs.count > 0 {
+                            Text("Failed: \(compProgress.failedIDs.count)")
+                                .font(.subheadline)
+                                .foregroundColor(.red)
+                            Button(action: {
+                                let retryTask = Task {
+                                    await networkController.retryFailedComputerDetails(server: server)
+                                    updateMatchingIDs()
+                                }
+                                currentFetchTask = retryTask
+                            }) {
+                                Text("Retry Failed (\(compProgress.failedIDs.count))")
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                        Spacer()
+                    }
+                    .padding([.leading, .trailing, .bottom])
+                }
+
+                // Sortable list
+                if sortedAndFilteredPairs.isEmpty {
+                    VStack {
+                        if networkController.allComputersDetailedFull.isEmpty {
+                            Text("No detailed computers loaded. Use 'Fetch Full Inventory' to begin.")
+                                .foregroundColor(.secondary)
+                                .padding()
+                        } else {
+                            Text("No computers match the current filters.")
+                                .foregroundColor(.secondary)
+                                .padding()
+                        }
+                        Spacer()
+                    }
+                } else {
+                    List(sortedAndFilteredPairs, id: \.id, selection: $selectedComputerId) { pair in
+                        let jamfId = pair.computer.general?.id ?? ""
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(pair.computer.general?.name ?? "(no name)")
                                         .font(.headline)
-                                    Text("ID: (unavailable)")
+                                    Text("ID: \(jamfId.isEmpty ? "(unavailable)" : jamfId)")
                                         .font(.caption)
-                                        .foregroundColor(.red)
+                                        .foregroundColor(jamfId.isEmpty ? .red : .secondary)
                                 }
                                 Spacer()
-                                Image(systemName: "exclamationmark.circle")
-                                    .foregroundColor(.red)
                             }
                             
                             HStack(spacing: 16) {
@@ -350,10 +296,33 @@ struct ComputerSearchView: View {
                             }
                         }
                         .padding(.vertical, 8)
-                        .opacity(0.5)
+                        .opacity(jamfId.isEmpty ? 0.5 : 1.0)
+                        .disabled(jamfId.isEmpty)
                     }
+                    .listStyle(.plain)
                 }
-                .listStyle(.plain)
+            }
+            .frame(minWidth: 300)
+
+            // RIGHT PANEL: Detail view for selected computer
+            if let selectedId = selectedComputerId, !selectedId.isEmpty {
+                Divider()
+                
+                ComputersDetailedView(server: server, computerID: selectedId)
+                    .frame(minWidth: 400)
+            } else {
+                Divider()
+                
+                VStack {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 48))
+                        .foregroundColor(.secondary)
+                    Text("Select a computer to view details")
+                        .foregroundColor(.secondary)
+                        .padding()
+                    Spacer()
+                }
+                .frame(minWidth: 400)
             }
         }
         .onAppear {
