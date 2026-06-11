@@ -115,14 +115,14 @@ struct ComputerSearchView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(maxWidth: 220)
 
-                Toggle("Case Sensitive", isOn: $caseSensitive).toggleStyle(SwitchToggleStyle())
+                Toggle("Case", isOn: $caseSensitive).toggleStyle(SwitchToggleStyle())
 
                 Button(action: {
                     // Cancel any running fetch
                     if let task = currentFetchTask {
                         task.cancel()
                         currentFetchTask = nil
-                    }
+                    } it
                     
                     progress.showProgress()
                     let fetchTask = Task {

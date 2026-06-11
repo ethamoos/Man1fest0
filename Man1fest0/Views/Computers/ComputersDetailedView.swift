@@ -82,7 +82,8 @@ struct ComputersDetailedView: View {
             
             Text("Hardware model: \(hardware?.model ?? "")")
             Text("Filevault Status: \(filevaultStatus)")
-            Text("Activation Lock Status: \(activationLock)")
+            let activationLockStr = activationLock ? "Enabled" : "Disabled"
+            Text("Activation Lock Status: \(activationLockStr)")
             
             let serialNumber = general?.serial_number ?? ""
             if let prestageId = prestageController.allPrestagesScope?.serialsByPrestageID[serialNumber] ?? prestageController.serialPrestageAssignment[serialNumber] {
@@ -147,13 +148,263 @@ struct ComputersDetailedView: View {
             if let updated = lastUpdated { Text("Last updated: \(updated.formatted(.dateTime.hour().minute().second()))").font(.caption2).foregroundColor(.secondary) }
         }
     }
-
+    
     // Helpers moved out of historyView to avoid nested function/result-builder issues
     private func formatEpoch(_ epoch: Int64?) -> String {
         guard let e = epoch else { return "" }
         let date = Date(timeIntervalSince1970: TimeInterval(e) / 1000.0)
         return date.formatted(.dateTime.year().month().day().hour().minute())
     }
+
+    @ViewBuilder
+    private func hardwareView(_ hardware: ComputerFull.Hardware?) -> some View {
+        if let hw = hardware {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Hardware").font(.headline)
+                if let model = hw.model {
+                    HStack {
+                        Text("Model:")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Text(model)
+                            .textSelection(.enabled)
+                    }
+                }
+                if let encryption = hw.diskEncryptionConfiguration {
+                    HStack {
+                        Text("Disk Encryption:")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Text(encryption)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+        } else {
+            Text("No hardware information").foregroundColor(.secondary)
+        }
+    }
+    
+    @ViewBuilder
+    private func softwareView(_ software: ComputerFull.Software?) -> some View {
+        if let sw = software {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Software").font(.headline)
+                
+                if let apps = sw.applications, !apps.isEmpty {
+                    Text("Installed Applications: \(apps.count)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(apps.prefix(50).indices, id: \.self) { i in
+                                let app = apps[i]
+                                HStack(alignment: .top, spacing: 8) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        if let name = app.name {
+                                            Text(name)
+                                                .font(.caption)
+                                                .textSelection(.enabled)
+                                        }
+                                        if let version = app.version {
+                                            Text("v\(version)")
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                }
+                                if i < apps.prefix(50).count - 1 {
+                                    Divider()
+                                        .padding(.vertical, 2)
+                                }
+                            }
+                            if apps.count > 50 {
+                                Text("... and \(apps.count - 50) more applications")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 300)
+                }
+                
+                if let fonts = sw.fonts, !fonts.isEmpty {
+                    Divider()
+                    Text("Fonts: \(fonts.count)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                if let plugins = sw.plugins, !plugins.isEmpty {
+                    Divider()
+                    Text("Plugins: \(plugins.count)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                if let services = sw.running_services, !services.isEmpty {
+                    Divider()
+                    Text("Running Services: \(services.count)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+        } else {
+            Text("No software information").foregroundColor(.secondary)
+        }
+    }
+    
+    @ViewBuilder
+    private func extensionAttributesView(_ attributes: [ComputerFull.ExtensionAttribute]?) -> some View {
+        if let attrs = attributes, !attrs.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Extension Attributes").font(.headline)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(attrs.indices, id: \.self) { i in
+                            let attr = attrs[i]
+                            VStack(alignment: .leading, spacing: 4) {
+                                if let name = attr.name {
+                                    Text(name)
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                }
+                                if let value = attr.value {
+                                    Text(value)
+                                        .font(.caption)
+                                        .textSelection(.enabled)
+                                        .foregroundColor(.secondary)
+                                }
+                                if let type = attr.type {
+                                    Text("Type: \(type)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            if i < attrs.count - 1 {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 400)
+            }
+        } else {
+            Text("No extension attributes").foregroundColor(.secondary)
+        }
+    }
+    
+    @ViewBuilder
+    private func groupAccountsView(_ groupAccounts: ComputerFull.GroupAccounts?) -> some View {
+        if let ga = groupAccounts {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Group Accounts & Memberships").font(.headline)
+                
+                let hasComputerGroups = ga.computer_group_memberships != nil && !ga.computer_group_memberships!.isEmpty
+                let hasLocalAccounts = ga.local_accounts != nil && !ga.local_accounts!.isEmpty
+                
+                if hasComputerGroups {
+                    if let computerGroups = ga.computer_group_memberships {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Computer Groups (\(computerGroups.count))").font(.subheadline).foregroundColor(.secondary)
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    ForEach(computerGroups.indices, id: \.self) { i in
+                                        Text("• \(computerGroups[i])")
+                                            .font(.caption)
+                                            .textSelection(.enabled)
+                                    }
+                                }
+                            }
+                            .frame(maxHeight: 150)
+                        }
+                    }
+                }
+                
+                if hasLocalAccounts {
+                    if hasComputerGroups { Divider() }
+                    if let localAccounts = ga.local_accounts {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Local Accounts (\(localAccounts.count))").font(.subheadline).foregroundColor(.secondary)
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(localAccounts.indices, id: \.self) { i in
+                                        let acct = localAccounts[i]
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            if let name = acct.name {
+                                                Text(name).font(.caption).fontWeight(.semibold)
+                                            }
+                                            if let realname = acct.realname {
+                                                Text("Real Name: \(realname)").font(.caption2).foregroundColor(.secondary)
+                                            }
+                                            if let uid = acct.uid {
+                                                Text("UID: \(uid)").font(.caption2).foregroundColor(.secondary)
+                                            }
+                                            if let admin = acct.administrator, admin {
+                                                Text("Administrator").font(.caption2).foregroundColor(.blue)
+                                            }
+                                            if let fv = acct.filevault_enabled, fv {
+                                                Text("FileVault Enabled").font(.caption2).foregroundColor(.green)
+                                            }
+                                        }
+                                        if i < localAccounts.count - 1 {
+                                            Divider().padding(.vertical, 2)
+                                        }
+                                    }
+                                }
+                            }
+                            .frame(maxHeight: 200)
+                        }
+                    }
+                }
+            }
+        } else {
+            Text("No group accounts information").foregroundColor(.secondary)
+        }
+    }
+    
+    @ViewBuilder
+    private func configurationProfilesView(_ profiles: ComputerFull.ConfigurationProfiles?) -> some View {
+        if let cp = profiles, let profs = cp.profiles, !profs.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Configuration Profiles (\(profs.count))").font(.headline)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(profs.indices, id: \.self) { i in
+                            let prof = profs[i]
+                            VStack(alignment: .leading, spacing: 4) {
+                                if let name = prof.name {
+                                    Text(name)
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .textSelection(.enabled)
+                                }
+                                if let uuid = prof.uuid {
+                                    Text("UUID: \(uuid)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .textSelection(.enabled)
+                                }
+                                if let removable = prof.is_removable {
+                                    Text("Removable: \(removable ? "Yes" : "No")")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            if i < profs.count - 1 {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 300)
+            }
+        } else {
+            Text("No configuration profiles").foregroundColor(.secondary)
+        }
+    }
+
     @ViewBuilder
     private func policiesView(_ policies: [PolicyLog]) -> some View {
         if policies.isEmpty {
@@ -478,7 +729,12 @@ struct ComputersDetailedView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Picker(selection: $selectedTab, label: Text("")) {
                         Text("General").tag(0)
-                        Text("History").tag(1)
+                        Text("Hardware").tag(1)
+                        Text("Software").tag(2)
+                        Text("Extension Attributes").tag(3)
+                        Text("Accounts").tag(4)
+                        Text("Profiles").tag(5)
+                        Text("History").tag(6)
                     }
                     .pickerStyle(.segmented)
                     .padding([.top, .horizontal])
@@ -487,6 +743,31 @@ struct ComputersDetailedView: View {
                         if selectedTab == 0 {
                             ScrollView {
                                 generalView()
+                                    .padding()
+                            }
+                        } else if selectedTab == 1 {
+                            ScrollView {
+                                hardwareView(networkController.computerDetailedFull?.hardware)
+                                    .padding()
+                            }
+                        } else if selectedTab == 2 {
+                            ScrollView {
+                                softwareView(networkController.computerDetailedFull?.software)
+                                    .padding()
+                            }
+                        } else if selectedTab == 3 {
+                            ScrollView {
+                                extensionAttributesView(networkController.computerDetailedFull?.extension_attributes)
+                                    .padding()
+                            }
+                        } else if selectedTab == 4 {
+                            ScrollView {
+                                groupAccountsView(networkController.computerDetailedFull?.group_accounts)
+                                    .padding()
+                            }
+                        } else if selectedTab == 5 {
+                            ScrollView {
+                                configurationProfilesView(networkController.computerDetailedFull?.configuration_profiles)
                                     .padding()
                             }
                         } else {

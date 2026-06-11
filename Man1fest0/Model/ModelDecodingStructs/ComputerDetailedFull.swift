@@ -28,16 +28,18 @@ struct ComputerFull: Decodable {
         let model: String?
         let username: String?
         let report_date_utc: String?
+        let last_enrolled_date: String?
         
         enum CodingKeys: String, CodingKey {
             case id, name, udid
             case serial_number = "serial_number"
             case model, username, ip_address
             case report_date_utc = "report_date_utc"
+            case last_enrolled_date = "last_enrolled_date"
         }
         
         // Regular initializer for creating General with a known ID
-        init(id: String, name: String? = nil, udid: String? = nil, serial_number: String? = nil, ip_address: String? = nil, model: String? = nil, username: String? = nil, report_date_utc: String? = nil) {
+        init(id: String, name: String? = nil, udid: String? = nil, serial_number: String? = nil, ip_address: String? = nil, model: String? = nil, username: String? = nil, report_date_utc: String? = nil, last_enrolled_date: String? = nil) {
             self.id = id
             self.name = name
             self.udid = udid
@@ -46,6 +48,7 @@ struct ComputerFull: Decodable {
             self.model = model
             self.username = username
             self.report_date_utc = report_date_utc
+            self.last_enrolled_date = last_enrolled_date
         }
         
         init(from decoder: Decoder) throws {
@@ -69,6 +72,16 @@ struct ComputerFull: Decodable {
             username = try? container.decodeIfPresent(String.self, forKey: .username)
             ip_address = try? container.decodeIfPresent(String.self, forKey: .ip_address)
             report_date_utc = try? container.decodeIfPresent(String.self, forKey: .report_date_utc)
+            
+            // Handle last_enrolled_date flexibly - could be string or other types
+            if let dateStr = try? container.decodeIfPresent(String.self, forKey: .last_enrolled_date) {
+                last_enrolled_date = dateStr
+            } else if let _ = try? container.decodeIfPresent(Int.self, forKey: .last_enrolled_date) {
+                // If server returns it as timestamp, convert to ISO string or keep nil
+                last_enrolled_date = nil
+            } else {
+                last_enrolled_date = nil
+            }
         }
     }
     

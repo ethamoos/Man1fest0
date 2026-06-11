@@ -248,7 +248,7 @@ struct PolicySearchView: View {
                     
                     // Case sensitivity toggle
                     Toggle(isOn: $caseSensitive) {
-                        Text("Case Sensitive")
+                        Text("Case")
                     }
                     .toggleStyle(SwitchToggleStyle())
                     
