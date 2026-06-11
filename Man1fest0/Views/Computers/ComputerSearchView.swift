@@ -122,7 +122,7 @@ struct ComputerSearchView: View {
                     if let task = currentFetchTask {
                         task.cancel()
                         currentFetchTask = nil
-                    } it
+                    }
                     
                     progress.showProgress()
                     let fetchTask = Task {
@@ -408,6 +408,8 @@ struct ComputerSearchView: View {
         .onChange(of: matchMode) { _ in updateMatchingIDs() }
         .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
         .onReceive(networkController.$allComputersDetailedFull) { _ in updateMatchingIDs() }
+        .onReceive(networkController.$successfulComputerDetailIDs) { _ in updateMatchingIDs() }
+        .onReceive(networkController.$failedComputerDetailLookups) { _ in updateMatchingIDs() }
         .onDisappear {
             // Cancel any running fetch when view is dismissed
             if let task = currentFetchTask {

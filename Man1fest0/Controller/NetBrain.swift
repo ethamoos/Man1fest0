@@ -526,6 +526,9 @@ extension NetBrain {
     @Published var allComputersDetailedFull: [ComputerFull?] = []
     @Published var isFetchingDetailedComputers: Bool = false
     @Published var retryFailedDetailedComputerCalls: [String] = []
+    // Track which IDs succeeded vs failed during fetch
+    @Published var successfulComputerDetailIDs: Set<String> = []
+    @Published var failedComputerDetailLookups: [String: String] = [:]  // id -> error message
     
     //  #############################################################################
     //    ############ GROUPS
