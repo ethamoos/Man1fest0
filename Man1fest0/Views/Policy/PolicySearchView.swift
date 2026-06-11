@@ -54,6 +54,11 @@ struct PolicySearchView: View {
     @State private var matchMode: MatchMode = .contains
     @State private var caseSensitive: Bool = false
     
+    // Bulk actions for selected policies
+    @State private var selectedPoliciesForActions = Set<Int?>()
+    @State private var showActionsPanel: Bool = false
+    @State private var policiesSelection = Set<Policy>()
+    
     @State var policiesMatchingItems: [Int] = []
     @State var policiesMissingItems: [Int] = []
     @State var policyName = ""
@@ -109,6 +114,8 @@ struct PolicySearchView: View {
         let ids = pairs.filter { $0.isHighlighted }.compactMap { $0.policy.general?.jamfId }
         policiesMatchingItems = ids
         networkController.policiesMatchingItems = ids
+        // Auto-select matching policies in the checkbox state (convert to Optional for Set<Int?>)
+        selectedPoliciesForActions = Set(ids.map { Optional($0) })
     }
 
     // Export currently-displayed search results to CSV in the user's Downloads folder.
@@ -326,11 +333,28 @@ struct PolicySearchView: View {
                     // Show only filtered (matching) policies and use the model's Identifiable id
                     ForEach(displayedPairs) { pair in
                         HStack(spacing: 8) {
+                            // Checkbox for selecting policy for actions
+                            Button(action: {
+                                let jamfId = pair.policy.general?.jamfId
+                                if selectedPoliciesForActions.contains(jamfId) {
+                                    selectedPoliciesForActions.remove(jamfId)
+                                } else {
+                                    selectedPoliciesForActions.insert(jamfId)
+                                }
+                            }) {
+                                Image(systemName: selectedPoliciesForActions.contains(pair.policy.general?.jamfId) ? "checkmark.square.fill" : "square")
+                                    .foregroundColor(selectedPoliciesForActions.contains(pair.policy.general?.jamfId) ? .blue : .secondary)
+                                    .font(.system(size: 18))
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Select policy for bulk actions")
+                            
                             PolicyRowView(policy: pair.policy)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(pair.isHighlighted ? Color.white.opacity(0.12) : Color.clear)
                                 .cornerRadius(6)
-                                .padding(.leading)
+                                .padding(.leading, 4)
                                 .contentShape(Rectangle())
                             
                             NavigationLink(destination: PolicyDetailView(server: server, policy: {
@@ -351,71 +375,42 @@ struct PolicySearchView: View {
                 .padding(.vertical)
             }
             
-            
-            
-            // ################################################################################
-            //                       Print Matching IDs
-            // ################################################################################
-            
-            
-            // Button to run an operation on all matching items (prints their jamf IDs)
-//            Button("Print Matching IDs") {
-//                // Recompute matches to ensure we have the latest set
-//                updateMatchingIDs()
-//                // Print the IDs (and paired names for convenience)
-//                let ids = policiesMatchingItems
-//                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
-//                print("Matching policy jamf IDs: \(ids)")
-//                print("Matching policy names: \(names)")
-//            }
-     
-            
-            
-//#if os(macOS)
-//            List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-//                HStack {
-//                    Image(systemName: "photo.circle")
-//                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-//                    AsyncImage(url: URL(string: icon.url )) { image in
-//                        image.resizable().frame(width: 15, height: 15)
-//                    } placeholder: {
-//                    }
-//                }
-//                .foregroundColor(.gray)
-//                .listRowBackground(selectedIconString == icon.name
-//                                   ? Color.green.opacity(0.3)
-//                                   : Color.clear)
-//                .tag(icon)
-//            }
-//            .cornerRadius(8)
-//            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-//#else
-//
-//            List(networkController.allIconsDetailed, id: \.self) { icon in
-//                HStack {
-//                    Image(systemName: "photo.circle")
-//                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-//                    AsyncImage(url: URL(string: icon.url )) { image in
-//                        image.resizable().frame(width: 15, height: 15)
-//                    } placeholder: {
-//                    }
-//                }
-//            }
-//#endif
-            //                                    .background(.gray)
-            //        }
-            
-            
-            DisclosureGroup("Icons") {
-                
-                
-                // ################################################################################
-                //                        Icons - picker
-                // ################################################################################
-                
+            // Actions Panel
+            if !selectedPoliciesForActions.isEmpty {
+                Divider()
+                    .padding(.vertical, 4)
                 
                 HStack {
+                    Text("Actions: \(selectedPoliciesForActions.compactMap { $0 }.count) selected")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                     
+                    Spacer()
+                    
+                    Button(action: { selectedPoliciesForActions.removeAll() }) {
+                        Text("Clear")
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    
+                    Button(action: { showActionsPanel.toggle() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: showActionsPanel ? "chevron.up" : "chevron.down")
+                            Text(showActionsPanel ? "Hide" : "Show")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding(.vertical, 6)
+                
+                if showActionsPanel {
+                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: Array(selectedPoliciesForActions), policiesSelection: $policiesSelection)
+                        .frame(maxHeight: 500)
+                }
+            }
+            
+            DisclosureGroup("Icons") {
+                HStack {
                     ScrollView(.horizontal, showsIndicators: true) {
                         HStack(spacing: 8) {
                             ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }) { icon in
@@ -454,14 +449,6 @@ struct PolicySearchView: View {
                         }
                 }
                 
-                
-                //                ############################################################
-                //                Update Icon Button
-                //                ############################################################
-                
-                
-                
-                
                 HStack {
                     Button(action: {
                         progress.showProgress()
@@ -481,22 +468,14 @@ struct PolicySearchView: View {
                     Button(action: {
                         progress.showProgress()
                         progress.waitForABit()
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
-                            Text("Refresh Icons")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                    }) {
+                        Text("Refresh Icons")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
             }
-            
-            
-            //  ##########################################################################
-            //  Progress view via showProgress
-            //  ##########################################################################
-            
-            //  ##########################################################################
-            //  Progress view via showProgress
-            //  ##########################################################################
             
             Group {
                 if progress.showProgressView == true {
