@@ -238,7 +238,7 @@ struct PolicySearchView: View {
                 
                 HStack {
                     // Match mode segmented control (Contains / Starts With)
-                    Picker("Match Mode", selection: $matchMode) {
+                    Picker("Mode", selection: $matchMode) {
                         ForEach(MatchMode.allCases, id: \.self) { mode in
                             Text(mode.displayName)
                             }
