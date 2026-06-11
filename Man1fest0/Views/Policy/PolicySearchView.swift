@@ -248,7 +248,7 @@ struct PolicySearchView: View {
                     
                     // Case sensitivity toggle
                     Toggle(isOn: $caseSensitive) {
-                        Text("Case Sensitive")
+                        Text("Case")
                     }
                     .toggleStyle(SwitchToggleStyle())
                     
@@ -406,83 +406,87 @@ struct PolicySearchView: View {
             //        }
             
             
-            // ################################################################################
-            //                        Icons - picker
-            // ################################################################################
-            
-            
-            HStack {
-              
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(spacing: 8) {
-                        ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }) { icon in
-                            AsyncImage(url: URL(string: icon.url)) { phase in
-                                switch phase {
-                                case .success(let image):
-                                    image.resizable().scaledToFill()
-                                case .failure(_):
-                                    Image(systemName: "photo").resizable().scaledToFit()
-                                default:
-                                    ProgressView()
+            DisclosureGroup("Icons") {
+                
+                
+                // ################################################################################
+                //                        Icons - picker
+                // ################################################################################
+                
+                
+                HStack {
+                    
+                    ScrollView(.horizontal, showsIndicators: true) {
+                        HStack(spacing: 8) {
+                            ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }) { icon in
+                                AsyncImage(url: URL(string: icon.url)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFill()
+                                    case .failure(_):
+                                        Image(systemName: "photo").resizable().scaledToFit()
+                                    default:
+                                        ProgressView()
+                                    }
                                 }
+                                .frame(width: 30, height: 30)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2))
+                                .onTapGesture {
+                                    selectedIcon = icon
+                                    selectedIconString = icon.name
+                                }
+                                .help(icon.name)
                             }
-                            .frame(width: 30, height: 30)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2))
-                            .onTapGesture {
-                                selectedIcon = icon
-                                selectedIconString = icon.name
-                            }
-                            .help(icon.name)
                         }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
+                    TextField("Filter", text: $iconFilter)
+                        .onAppear {
+                            if !networkController.allIconsDetailed.isEmpty {
+                                selectedIcon = networkController.allIconsDetailed.first
+                            } else {
+                                selectedIcon = nil
+                            }
+                        }
+                        .onChange(of: networkController.allIconsDetailed) { newIcons in
+                            if !newIcons.isEmpty { selectedIcon = newIcons.first } else { selectedIcon = nil }
+                        }
                 }
-                TextField("Filter", text: $iconFilter)
-                .onAppear {
-                    if !networkController.allIconsDetailed.isEmpty {
-                        selectedIcon = networkController.allIconsDetailed.first
-                    } else {
-                        selectedIcon = nil
+                
+                
+                //                ############################################################
+                //                Update Icon Button
+                //                ############################################################
+                
+                
+                
+                
+                HStack {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        if let icon = selectedIcon {
+                            xmlController.updateIconBatch(selectedPoliciesInt: policiesMatchingItems , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
+                        } else {
+                            print("No icon selected")
+                        }
+                    }) {
+                        Text("Update Icon")
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
-                .onChange(of: networkController.allIconsDetailed) { newIcons in
-                    if !newIcons.isEmpty { selectedIcon = newIcons.first } else { selectedIcon = nil }
-                }
-            }
-            
-            
-            //                ############################################################
-            //                Update Icon Button
-            //                ############################################################
-                
-                
-                
-                
-            HStack {
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    if let icon = selectedIcon {
-                                                xmlController.updateIconBatch(selectedPoliciesInt: policiesMatchingItems , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
-                    } else {
-                        print("No icon selected")
-                    }
-                }) {
-                    Text("Update Icon")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-            }
-            HStack {
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                HStack {
+                    Button(action: {
+                        progress.showProgress()
+                        progress.waitForABit()
+                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
                             Text("Refresh Icons")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+                }
             }
             
             
@@ -624,6 +628,7 @@ enum SearchField: String, CaseIterable {
     case generalName
     case generalID
     case generalEnabled
+    case customTrigger
     case selfServiceDisplayName
     case selfServiceDescription
     case selfServiceIconURI
@@ -647,6 +652,7 @@ enum SearchField: String, CaseIterable {
         case .generalName: return "General: Name"
         case .generalID: return "General: ID"
         case .generalEnabled: return "General: Enabled"
+        case .customTrigger: return "General: Custom Trigger"
         case .selfServiceDisplayName: return "Self Service: Display Name"
         case .selfServiceDescription: return "Self Service: Description"
         case .selfServiceIconURI: return "Self Service: Icon URI"
@@ -699,6 +705,7 @@ enum SearchField: String, CaseIterable {
                     case .startsWith: return subject.hasPrefix(targetSearch)
                     }
                 }()) ||
+                match(policy.general?.triggerOther) ||
                 match(policy.self_service?.selfServiceDisplayName) ||
                 match(policy.self_service?.selfServiceDescription) ||
                 match(policy.self_service?.selfServiceIcon?.uri) ||
@@ -756,6 +763,8 @@ enum SearchField: String, CaseIterable {
         case .generalEnabled:
             if let enabled = policy.general?.enabled { let enabledString = String(describing: enabled); return caseSensitive ? enabledString.contains(search) : enabledString.lowercased().contains(targetSearch) }
             return false
+        case .customTrigger:
+            return match(policy.general?.triggerOther)
         case .selfServiceDisplayName:
             return match(policy.self_service?.selfServiceDisplayName)
         case .selfServiceDescription:
@@ -803,6 +812,8 @@ enum SearchField: String, CaseIterable {
             return policy.general?.jamfId == nil
         case .generalEnabled:
             return policy.general?.enabled == nil
+        case .customTrigger:
+            return (policy.general?.triggerOther?.isEmpty ?? true)
         case .selfServiceDisplayName:
             return (policy.self_service?.selfServiceDisplayName?.isEmpty ?? true)
         case .selfServiceDescription:
