@@ -382,7 +382,7 @@ struct PolicyActionsDetailTableView: View {
                         }
 
                         HStack {
-                            Spacer()
+//                            Spacer()
                             Button(action: {
                                 let ids = selectedPoliciesInt.compactMap { $0 }
                                 guard !ids.isEmpty else { return }
