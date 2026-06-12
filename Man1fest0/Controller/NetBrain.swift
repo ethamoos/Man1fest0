@@ -930,27 +930,33 @@ extension NetBrain {
                         
                         guard status == 200 else { return (id, .failure(JamfAPIError.http(status))) }
                         let decoder = JSONDecoder()
-                        // Try to decode wrapper first (/computers/id/<id> style), then raw ComputerFull
-                        var computer: ComputerFull
-                        if let wrapped = try? decoder.decode(ComputerDetailedFullResponse.self, from: data) {
-                            computer = wrapped.computer
-                        } else {
-                            computer = try decoder.decode(ComputerFull.self, from: data)
-                        }
                         
-                        // Ensure the ID is set from the request if it's missing in the response
-                        if computer.general == nil || computer.general!.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            // ID is missing or general is nil; ensure we have it set correctly
-                            if var general = computer.general {
-                                general.id = id
-                                computer.general = general
-                            } else {
-                                // Create a minimal General with just the ID
-                                computer.general = ComputerFull.General(id: id)
+                        // Try to decode with enhanced error reporting
+                        do {
+                            let decoded = try decoder.decode(ComputerDetailedFullResponse.self, from: data)
+                            var computer = decoded.computer
+                            
+                            // Ensure the ID is set from the request if it's missing in the response
+                            if computer.general == nil || computer.general!.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                // ID is missing or general is nil; ensure we have it set correctly
+                                if var general = computer.general {
+                                    general.id = id
+                                    computer.general = general
+                                } else {
+                                    // Create a minimal General with just the ID
+                                    computer.general = ComputerFull.General(id: id)
+                                }
                             }
+                            
+                            return (id, .success(computer))
+                        } catch let decodeError {
+                            // On decode error, print raw JSON for debugging
+                            print("❌ Decode failed for computer ID \(id). Error: \(decodeError)")
+                            if let jsonString = String(data: data, encoding: .utf8) {
+                                print("Raw JSON (first 1000 chars): \(String(jsonString.prefix(1000)))")
+                            }
+                            return (id, .failure(decodeError))
                         }
-                        
-                        return (id, .success(computer))
                     } catch {
                         return (id, .failure(error))
                     }
@@ -7217,17 +7223,25 @@ xml = """
             let decodedFull: ComputerDetailedFullResponse
             
             do {
-                // Try to decode as wrapped response first, then as raw ComputerFull
-                if let wrapped = try? decoder.decode(ComputerDetailedFullResponse.self, from: data) {
-                    decodedFull = wrapped
-                } else {
-                    let raw = try decoder.decode(ComputerFull.self, from: data)
-                    decodedFull = ComputerDetailedFullResponse(computer: raw)
-                }
+                // Try to decode as wrapped response with better error handling
+                decodedFull = try decoder.decode(ComputerDetailedFullResponse.self, from: data)
+                print("✅ Successfully decoded computer detail for ID: \(userID)")
             } catch let decodeError as DecodingError {
                 // Provide rich diagnostics for common DecodingError cases
                 separationLine()
-                print("DecodingError while parsing ComputerDetailedFullResponse:")
+                print("❌ DecodingError while parsing ComputerDetailedFullResponse for ID: \(userID)")
+                print("API endpoint: \(jamfURLQuery)")
+                
+                // Print first 2000 characters of raw JSON to help debug
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    let preview = String(jsonString.prefix(2000))
+                    print("Raw JSON Response (first 2000 chars):")
+                    print(preview)
+                    if jsonString.count > 2000 {
+                        print("... (truncated, total length: \(jsonString.count) chars)")
+                    }
+                }
+                
                 switch decodeError {
                 case .typeMismatch(let type, let context):
                     print("Type mismatch for type: \(type). Debug description: \(context.debugDescription). CodingPath: \(context.codingPath)")
@@ -7241,7 +7255,7 @@ xml = """
                     print("Unknown decoding error: \(decodeError)")
                 }
                 separationLine()
-                publishError(decodeError, title: "Decoding failure")
+                publishError(decodeError, title: "Decoding failure for computer \(userID)")
                 throw decodeError
             } catch {
                 // Non-decoding error (network, etc.)

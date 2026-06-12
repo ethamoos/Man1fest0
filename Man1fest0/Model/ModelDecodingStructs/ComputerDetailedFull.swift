@@ -2,8 +2,29 @@
 import Foundation
 
 // Matches Jamf's 'computers/id/<id>' JSON which contains a top-level "computer" object
+// Also supports v3 API which returns the data at top level without wrapping
 struct ComputerDetailedFullResponse: Decodable {
     let computer: ComputerFull
+    
+    init(from decoder: Decoder) throws {
+        // Try to decode with wrapper first (classic API)
+        if let container = try? decoder.container(keyedBy: CodingKeys.self),
+           let wrapped = try? container.decode(ComputerFull.self, forKey: .computer) {
+            computer = wrapped
+        } else {
+            // v3 API: decode directly at top level
+            computer = try ComputerFull(from: decoder)
+        }
+    }
+    
+    // Allow direct initialization from ComputerFull for convenience
+    init(computer: ComputerFull) {
+        self.computer = computer
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case computer
+    }
 }
 
 struct ComputerFull: Decodable {
@@ -16,8 +37,54 @@ struct ComputerFull: Decodable {
     let group_accounts: GroupAccounts?
     let configuration_profiles: ConfigurationProfiles?
     let iphones: IPhones?
-    // keep extensionAttributes optional in case it's present
-    // let extensionAttributes: ExtensionAttributes?
+    
+    enum CodingKeys: String, CodingKey {
+        case general
+        case location
+        case hardware
+        case security
+        case software
+        case extension_attributes
+        case extensionAttributes
+        case group_accounts = "groups_accounts"
+        case groupsAccounts
+        case configuration_profiles
+        case configurationProfiles
+        case iphones
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        general = try? container.decodeIfPresent(General.self, forKey: .general)
+        location = try? container.decodeIfPresent(Location.self, forKey: .location)
+        hardware = try? container.decodeIfPresent(Hardware.self, forKey: .hardware)
+        security = try? container.decodeIfPresent(Security.self, forKey: .security)
+        software = try? container.decodeIfPresent(Software.self, forKey: .software)
+        
+        // Try both extension_attributes and extensionAttributes
+        if let attrs = try? container.decodeIfPresent([ExtensionAttribute].self, forKey: .extension_attributes) {
+            extension_attributes = attrs
+        } else {
+            extension_attributes = try? container.decodeIfPresent([ExtensionAttribute].self, forKey: .extensionAttributes)
+        }
+        
+        // Try both groups_accounts and groupsAccounts
+        if let grp = try? container.decodeIfPresent(GroupAccounts.self, forKey: .group_accounts) {
+            group_accounts = grp
+        } else {
+            group_accounts = try? container.decodeIfPresent(GroupAccounts.self, forKey: .groupsAccounts)
+        }
+        
+        // Try both configuration_profiles and configurationProfiles
+        if let profiles = try? container.decodeIfPresent(ConfigurationProfiles.self, forKey: .configuration_profiles) {
+            configuration_profiles = profiles
+        } else {
+            configuration_profiles = try? container.decodeIfPresent(ConfigurationProfiles.self, forKey: .configurationProfiles)
+        }
+        
+        iphones = try? container.decodeIfPresent(IPhones.self, forKey: .iphones)
+    }
     
     struct General: Decodable {
         var id: String
@@ -317,9 +384,5 @@ struct ComputerFull: Decodable {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             activationLock = (try? container.decodeIfPresent(Bool.self, forKey: .activation_lock)) ?? (try? container.decodeIfPresent(Bool.self, forKey: .activationLock))
         }
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case general, location, hardware, security, software, extension_attributes, group_accounts = "groups_accounts", configuration_profiles, iphones
     }
 }
