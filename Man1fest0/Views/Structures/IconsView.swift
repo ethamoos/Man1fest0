@@ -156,7 +156,6 @@ struct  IconsView: View {
             .frame(width: 400, height: 50)
             .onAppear() {
                 if networkController.allIconsDetailed.count <= 1 {
-
                     print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
                     networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 5000)
                 } else {

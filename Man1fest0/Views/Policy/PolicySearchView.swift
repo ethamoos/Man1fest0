@@ -56,7 +56,7 @@ struct PolicySearchView: View {
     
     // Bulk actions for selected policies
     @State private var selectedPoliciesForActions = Set<Int?>()
-    @State private var showActionsPanel: Bool = false
+    @State private var showActionsPanel: Bool = true
     @State private var policiesSelection = Set<Policy>()
     
     @State var policiesMatchingItems: [Int] = []
@@ -406,74 +406,6 @@ struct PolicySearchView: View {
                 if showActionsPanel {
                     PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: Array(selectedPoliciesForActions), policiesSelection: $policiesSelection)
                         .frame(maxHeight: 500)
-                }
-            }
-            
-            DisclosureGroup("Icons") {
-                HStack {
-                    ScrollView(.horizontal, showsIndicators: true) {
-                        HStack(spacing: 8) {
-                            ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }) { icon in
-                                AsyncImage(url: URL(string: icon.url)) { phase in
-                                    switch phase {
-                                    case .success(let image):
-                                        image.resizable().scaledToFill()
-                                    case .failure(_):
-                                        Image(systemName: "photo").resizable().scaledToFit()
-                                    default:
-                                        ProgressView()
-                                    }
-                                }
-                                .frame(width: 30, height: 30)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2))
-                                .onTapGesture {
-                                    selectedIcon = icon
-                                    selectedIconString = icon.name
-                                }
-                                .help(icon.name)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    TextField("Filter", text: $iconFilter)
-                        .onAppear {
-                            if !networkController.allIconsDetailed.isEmpty {
-                                selectedIcon = networkController.allIconsDetailed.first
-                            } else {
-                                selectedIcon = nil
-                            }
-                        }
-                        .onChange(of: networkController.allIconsDetailed) { newIcons in
-                            if !newIcons.isEmpty { selectedIcon = newIcons.first } else { selectedIcon = nil }
-                        }
-                }
-                
-                HStack {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        if let icon = selectedIcon {
-                            xmlController.updateIconBatch(selectedPoliciesInt: policiesMatchingItems , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
-                        } else {
-                            print("No icon selected")
-                        }
-                    }) {
-                        Text("Update Icon")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                }
-                HStack {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
-                    }) {
-                        Text("Refresh Icons")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
                 }
             }
             
