@@ -94,13 +94,13 @@ struct PolicyScriptsTabView: View {
                 
                 Group {
                     
-                    // ################################################################################
+                    // #################################################################
                     //              SCRIPTS
-                    // ################################################################################
+                    // #################################################################
                     
-                    // ################################################################################
+                    // #################################################################
                     //              List scripts
-                    // ################################################################################
+                    // #################################################################
                     
                     // Compute a local, simple value for scripts to avoid a very complex
                     // inline expression that the Swift compiler struggles to type-check.
@@ -236,13 +236,14 @@ struct PolicyScriptsTabView: View {
                     } content: {
                         HStack {
                             LazyVGrid(columns: layout.columns) {
-                                TextField("parameter4", text: $scriptParameter4)
                                 TextField("parameter5", text: $scriptParameter5)
                                 TextField("parameter6", text: $scriptParameter6)
+                                TextField("parameter7", text: $scriptParameter7)
                             }
                         }
                         HStack {
                             LazyVGrid(columns: layout.columns) {
+                                TextField("parameter8", text: $scriptParameter8)
                                 TextField("parameter9", text: $scriptParameter9)
                                 TextField("parameter10", text: $scriptParameter10)
                                 TextField("parameter11", text: $scriptParameter11)
@@ -505,7 +506,7 @@ struct PolicyScriptsTabViewDetail: View {
 
                 HStack {
                     Picker("Script Index", selection: $selectedScriptNumber) {
-                        ForEach(0..<10) { i in Text("\(i)") }
+                        ForEach(1..<10) { i in Text("\(i)") }
                     }
                     .pickerStyle(.menu)
 
