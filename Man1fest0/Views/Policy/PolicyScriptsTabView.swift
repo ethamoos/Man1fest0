@@ -383,7 +383,7 @@ struct PolicyScriptsTabView: View {
                         }) {
                             HStack(spacing: 10) {
                                 Image(systemName: "minus.square.fill.on.square.fill")
-                                Text("Remove All")
+                                Text("Clear")
                             }
                         }
                         .buttonStyle(.borderedProminent)
