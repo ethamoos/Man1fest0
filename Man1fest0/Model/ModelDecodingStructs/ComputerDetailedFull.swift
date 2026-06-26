@@ -2,12 +2,33 @@
 import Foundation
 
 // Matches Jamf's 'computers/id/<id>' JSON which contains a top-level "computer" object
+// Also supports v3 API which returns the data at top level without wrapping
 struct ComputerDetailedFullResponse: Decodable {
     let computer: ComputerFull
+    
+    init(from decoder: Decoder) throws {
+        // Try to decode with wrapper first (classic API)
+        if let container = try? decoder.container(keyedBy: CodingKeys.self),
+           let wrapped = try? container.decode(ComputerFull.self, forKey: .computer) {
+            computer = wrapped
+        } else {
+            // v3 API: decode directly at top level
+            computer = try ComputerFull(from: decoder)
+        }
+    }
+    
+    // Allow direct initialization from ComputerFull for convenience
+    init(computer: ComputerFull) {
+        self.computer = computer
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case computer
+    }
 }
 
 struct ComputerFull: Decodable {
-    let general: General?
+    var general: General?
     let location: Location?
     let hardware: Hardware?
     let security: Security?
@@ -16,11 +37,57 @@ struct ComputerFull: Decodable {
     let group_accounts: GroupAccounts?
     let configuration_profiles: ConfigurationProfiles?
     let iphones: IPhones?
-    // keep extensionAttributes optional in case it's present
-    // let extensionAttributes: ExtensionAttributes?
+    
+    enum CodingKeys: String, CodingKey {
+        case general
+        case location
+        case hardware
+        case security
+        case software
+        case extension_attributes
+        case extensionAttributes
+        case group_accounts = "groups_accounts"
+        case groupsAccounts
+        case configuration_profiles
+        case configurationProfiles
+        case iphones
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        general = try? container.decodeIfPresent(General.self, forKey: .general)
+        location = try? container.decodeIfPresent(Location.self, forKey: .location)
+        hardware = try? container.decodeIfPresent(Hardware.self, forKey: .hardware)
+        security = try? container.decodeIfPresent(Security.self, forKey: .security)
+        software = try? container.decodeIfPresent(Software.self, forKey: .software)
+        
+        // Try both extension_attributes and extensionAttributes
+        if let attrs = try? container.decodeIfPresent([ExtensionAttribute].self, forKey: .extension_attributes) {
+            extension_attributes = attrs
+        } else {
+            extension_attributes = try? container.decodeIfPresent([ExtensionAttribute].self, forKey: .extensionAttributes)
+        }
+        
+        // Try both groups_accounts and groupsAccounts
+        if let grp = try? container.decodeIfPresent(GroupAccounts.self, forKey: .group_accounts) {
+            group_accounts = grp
+        } else {
+            group_accounts = try? container.decodeIfPresent(GroupAccounts.self, forKey: .groupsAccounts)
+        }
+        
+        // Try both configuration_profiles and configurationProfiles
+        if let profiles = try? container.decodeIfPresent(ConfigurationProfiles.self, forKey: .configuration_profiles) {
+            configuration_profiles = profiles
+        } else {
+            configuration_profiles = try? container.decodeIfPresent(ConfigurationProfiles.self, forKey: .configurationProfiles)
+        }
+        
+        iphones = try? container.decodeIfPresent(IPhones.self, forKey: .iphones)
+    }
     
     struct General: Decodable {
-        let id: String
+        var id: String
         let name: String?
         let udid: String?
         let serial_number: String?
@@ -28,12 +95,27 @@ struct ComputerFull: Decodable {
         let model: String?
         let username: String?
         let report_date_utc: String?
+        let last_enrolled_date: String?
         
         enum CodingKeys: String, CodingKey {
             case id, name, udid
             case serial_number = "serial_number"
             case model, username, ip_address
             case report_date_utc = "report_date_utc"
+            case last_enrolled_date = "last_enrolled_date"
+        }
+        
+        // Regular initializer for creating General with a known ID
+        init(id: String, name: String? = nil, udid: String? = nil, serial_number: String? = nil, ip_address: String? = nil, model: String? = nil, username: String? = nil, report_date_utc: String? = nil, last_enrolled_date: String? = nil) {
+            self.id = id
+            self.name = name
+            self.udid = udid
+            self.serial_number = serial_number
+            self.ip_address = ip_address
+            self.model = model
+            self.username = username
+            self.report_date_utc = report_date_utc
+            self.last_enrolled_date = last_enrolled_date
         }
         
         init(from decoder: Decoder) throws {
@@ -57,6 +139,16 @@ struct ComputerFull: Decodable {
             username = try? container.decodeIfPresent(String.self, forKey: .username)
             ip_address = try? container.decodeIfPresent(String.self, forKey: .ip_address)
             report_date_utc = try? container.decodeIfPresent(String.self, forKey: .report_date_utc)
+            
+            // Handle last_enrolled_date flexibly - could be string or other types
+            if let dateStr = try? container.decodeIfPresent(String.self, forKey: .last_enrolled_date) {
+                last_enrolled_date = dateStr
+            } else if let _ = try? container.decodeIfPresent(Int.self, forKey: .last_enrolled_date) {
+                // If server returns it as timestamp, convert to ISO string or keep nil
+                last_enrolled_date = nil
+            } else {
+                last_enrolled_date = nil
+            }
         }
     }
     
@@ -292,9 +384,5 @@ struct ComputerFull: Decodable {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             activationLock = (try? container.decodeIfPresent(Bool.self, forKey: .activation_lock)) ?? (try? container.decodeIfPresent(Bool.self, forKey: .activationLock))
         }
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case general, location, hardware, security, software, extension_attributes, group_accounts = "groups_accounts", configuration_profiles, iphones
     }
 }

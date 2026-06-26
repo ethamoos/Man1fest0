@@ -130,9 +130,14 @@ struct ComputersDetailedView: View {
             .overlay(Group { if isUpdatingUsername { ProgressView("Updating...").progressViewStyle(CircularProgressViewStyle()).padding(8).background(RoundedRectangle(cornerRadius: 8).fill(Color(.windowBackgroundColor).opacity(0.85))) } })
             
             HStack(alignment: .center, spacing: 12) {
-                Picker("Commands", selection: $selectedCommand) { ForEach(pushController.flushCommands, id: \.self) { cmd in Text(String(describing: cmd)) } }.pickerStyle(.menu)
+                Picker("Commands", selection: $selectedCommand) {
+                    Text("Select command...").tag("")
+                    ForEach(pushController.flushCommands, id: \.self) { cmd in Text(String(describing: cmd)) }
+                }
+                .pickerStyle(.menu)
                 Button("Flush Commands") { progress.showProgress(); progress.waitForABit(); if let compInt = Int(self.computerID) { Task { try? await pushController.flushCommands(targetId: compInt, deviceType: "computers", command: selectedCommand, authToken: networkController.authToken, server: self.server) } } }
                     .buttonStyle(.borderedProminent).tint(.blue).shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    .disabled(selectedCommand.isEmpty)
             }
             
             VStack(alignment: .leading, spacing: 12) {
@@ -363,6 +368,227 @@ struct ComputersDetailedView: View {
     }
 
     @ViewBuilder
+    private func softwareView() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            let software = networkController.computerDetailedFull?.software
+            
+            if software == nil {
+                Text("No software data available")
+                    .foregroundColor(.secondary)
+            } else {
+                // Applications
+                if let apps = software?.applications, !apps.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Applications")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(apps.count) installed")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Divider()
+                        
+                        ForEach(apps.indices, id: \.self) { i in
+                            let app = apps[i]
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack {
+                                    Text(app.name ?? "(unknown)")
+                                        .font(.subheadline)
+                                    Spacer()
+                                    Text(app.version ?? "")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                if let path = app.path, !path.isEmpty {
+                                    Text(path)
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                if let bundleID = app.bundle_id, !bundleID.isEmpty {
+                                    Text("Bundle ID: \(bundleID)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                            if i < apps.count - 1 {
+                                Divider()
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(8)
+                }
+                
+                // Available Software Updates
+                if let updates = software?.available_software_updates, !updates.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Available Software Updates")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(updates.count)")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                        }
+                        Divider()
+                        ForEach(updates, id: \.self) { update in
+                            Text(update)
+                                .font(.caption)
+                        }
+                    }
+                    .padding()
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(8)
+                }
+                
+                // Licensed Software
+                if let licensed = software?.licensed_software, !licensed.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Licensed Software")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(licensed.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Divider()
+                        ForEach(licensed, id: \.self) { item in
+                            Text(item)
+                                .font(.caption)
+                        }
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(8)
+                }
+                
+                // Installed by Jamf Pro
+                if let jamfInstalled = software?.installed_by_jamf_pro, !jamfInstalled.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Installed by Jamf Pro")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(jamfInstalled.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Divider()
+                        ForEach(jamfInstalled, id: \.self) { item in
+                            Text(item)
+                                .font(.caption)
+                        }
+                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.05))
+                    .cornerRadius(8)
+                }
+                
+                // Running Services
+                if let services = software?.running_services, !services.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Running Services")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(services.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Divider()
+                        ForEach(services, id: \.self) { service in
+                            Text(service)
+                                .font(.caption)
+                        }
+                    }
+                    .padding()
+                    .background(Color.green.opacity(0.05))
+                    .cornerRadius(8)
+                }
+                
+                // Unix Executables
+                if let unixExec = software?.unix_executables, !unixExec.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Unix Executables")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(unixExec.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Divider()
+                        ScrollView {
+                            ForEach(unixExec, id: \.self) { item in
+                                Text(item)
+                                    .font(.caption)
+                            }
+                        }
+                        .frame(maxHeight: 200)
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(8)
+                }
+                
+                // Fonts
+                if let fonts = software?.fonts, !fonts.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Fonts")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(fonts.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Divider()
+                        ScrollView {
+                            ForEach(fonts, id: \.self) { font in
+                                Text(font)
+                                    .font(.caption)
+                            }
+                        }
+                        .frame(maxHeight: 200)
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(8)
+                }
+                
+                // Plugins
+                if let plugins = software?.plugins, !plugins.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Plugins")
+                                .font(.headline)
+                            Spacer()
+                            Text("\(plugins.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Divider()
+                        ScrollView {
+                            ForEach(plugins, id: \.self) { plugin in
+                                Text(plugin)
+                                    .font(.caption)
+                            }
+                        }
+                        .frame(maxHeight: 200)
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(8)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private func historyView() -> some View {
             // Small debug summary so we can confirm the model is being observed by the view.
             VStack(alignment: .leading, spacing: 4) {
@@ -478,7 +704,8 @@ struct ComputersDetailedView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Picker(selection: $selectedTab, label: Text("")) {
                         Text("General").tag(0)
-                        Text("History").tag(1)
+                        Text("Software").tag(1)
+                        Text("History").tag(2)
                     }
                     .pickerStyle(.segmented)
                     .padding([.top, .horizontal])
@@ -487,6 +714,11 @@ struct ComputersDetailedView: View {
                         if selectedTab == 0 {
                             ScrollView {
                                 generalView()
+                                    .padding()
+                            }
+                        } else if selectedTab == 1 {
+                            ScrollView {
+                                softwareView()
                                     .padding()
                             }
                         } else {

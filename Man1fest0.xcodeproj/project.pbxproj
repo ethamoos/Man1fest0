@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A800E8452F3F25CE000250E7 /* WelcomeToMan1fest0.swift in Sources */ = {isa = PBXBuildFile; fileRef = A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */; };
-		A80209632F8813B600F3778D /* ComputerSearchesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80209622F8813B600F3778D /* ComputerSearchesView.swift */; };
+		A80209632F8813B600F3778D /* AdvancedComputerSearchesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80209622F8813B600F3778D /* AdvancedComputerSearchesView.swift */; };
 		A812FD6B2C46D260000A9DA6 /* ScopingBrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */; };
 		A813124029D4A7C400BB1C9F /* ScriptsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813123F29D4A7C400BB1C9F /* ScriptsView.swift */; };
 		A813124229D4B10100BB1C9F /* ScriptsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */; };
@@ -31,6 +31,8 @@
 		A83D210B2DE627AD00D9AD2F /* ComputerExtAttributeActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */; };
 		A83D210D2DE6F76200D9AD2F /* ScriptsActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83D210C2DE6F76200D9AD2F /* ScriptsActionView.swift */; };
 		A840186D2D4BCA6B00C09FD3 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A840186C2D4BCA6700C09FD3 /* ImportView.swift */; };
+		A843622D2FD186760086B1DC /* ComputerSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A843622C2FD186760086B1DC /* ComputerSearchView.swift */; };
+		A843622F2FD186800086B1DC /* ComputerSearchesDetailedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A843622E2FD186800086B1DC /* ComputerSearchesDetailedView.swift */; };
 		A8533C3E2CA42EA900E6678F /* KeychainWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */; };
 		A857A4282E2566B900A96F3A /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A857A4272E2566B300A96F3A /* NotesView.swift */; };
 		A85F09162E43A79300D5FF33 /* PolicySelfServiceTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */; };
@@ -121,7 +123,7 @@
 
 /* Begin PBXFileReference section */
 		A800E8432F3F25CE000250E7 /* WelcomeToMan1fest0.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeToMan1fest0.swift; sourceTree = "<group>"; };
-		A80209622F8813B600F3778D /* ComputerSearchesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerSearchesView.swift; sourceTree = "<group>"; };
+		A80209622F8813B600F3778D /* AdvancedComputerSearchesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedComputerSearchesView.swift; sourceTree = "<group>"; };
 		A812FD6A2C46D260000A9DA6 /* ScopingBrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopingBrain.swift; sourceTree = "<group>"; };
 		A813123F29D4A7C400BB1C9F /* ScriptsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsView.swift; sourceTree = "<group>"; };
 		A813124129D4B10100BB1C9F /* ScriptsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsDetailView.swift; sourceTree = "<group>"; };
@@ -145,6 +147,8 @@
 		A83D210A2DE6279D00D9AD2F /* ComputerExtAttributeActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerExtAttributeActionView.swift; sourceTree = "<group>"; };
 		A83D210C2DE6F76200D9AD2F /* ScriptsActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptsActionView.swift; sourceTree = "<group>"; };
 		A840186C2D4BCA6700C09FD3 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
+		A843622C2FD186760086B1DC /* ComputerSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerSearchView.swift; sourceTree = "<group>"; };
+		A843622E2FD186800086B1DC /* ComputerSearchesDetailedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerSearchesDetailedView.swift; sourceTree = "<group>"; };
 		A8533C3D2CA42E9F00E6678F /* KeychainWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainWrapper.swift; sourceTree = "<group>"; };
 		A857A4272E2566B300A96F3A /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		A85F09152E43A78500D5FF33 /* PolicySelfServiceTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicySelfServiceTabView.swift; sourceTree = "<group>"; };
@@ -288,12 +292,12 @@
 			path = Welcome;
 			sourceTree = "<group>";
 		};
-		A8020CC42F921BD200F3778D /* Computer Searches */ = {
+		A8020CC42F921BD200F3778D /* Advanced Computer Searches */ = {
 			isa = PBXGroup;
 			children = (
-				A80209622F8813B600F3778D /* ComputerSearchesView.swift */,
+				A80209622F8813B600F3778D /* AdvancedComputerSearchesView.swift */,
 			);
-			path = "Computer Searches";
+			path = "Advanced Computer Searches";
 			sourceTree = "<group>";
 		};
 		A8020CC52F921BE700F3778D /* ComputerExtAttributes */ = {
@@ -356,12 +360,14 @@
 		A86AF37F2C3FE2C2009349C4 /* Computers */ = {
 			isa = PBXGroup;
 			children = (
+				A843622C2FD186760086B1DC /* ComputerSearchView.swift */,
+				A843622E2FD186800086B1DC /* ComputerSearchesDetailedView.swift */,
 				A861F25629D7447A0075D622 /* ComputersView.swift */,
 				A861F25829D7448E0075D622 /* ComputersDetailedView.swift */,
 				A8B312EF2F87B4A200DF685C /* ComputerBasicView.swift */,
 				A8B312ED2F87B34D00DF685C /* ComputersBasicDetailedView.swift */,
 				A8DD6B3A2A13CA890098563C /* ComputerBasicActionView.swift */,
-				A8020CC42F921BD200F3778D /* Computer Searches */,
+				A8020CC42F921BD200F3778D /* Advanced Computer Searches */,
 				E4D4344F2C7FBDF600E90BAE /* ComputersBasicTableView.swift */,
 				A8020CC52F921BE700F3778D /* ComputerExtAttributes */,
 				A885D1532F5ABF21002CB073 /* Groups */,
@@ -706,6 +712,7 @@
 				A877BED12E60F3400041D3C9 /* Sorting.swift in Sources */,
 				E48D59DD2C5A457D00E1E35B /* CreateGeneralTabView.swift in Sources */,
 				E48D59D62C5965AA00E1E35B /* PolicyBrain.swift in Sources */,
+				A843622F2FD186800086B1DC /* ComputerSearchesDetailedView.swift in Sources */,
 				E4CE369329D3372400533707 /* PolicyView.swift in Sources */,
 				A8B312EE2F87B34F00DF685C /* ComputersBasicDetailedView.swift in Sources */,
 				A83D210D2DE6F76200D9AD2F /* ScriptsActionView.swift in Sources */,
@@ -757,6 +764,7 @@
 				A8FBD34F2F5755FF001B8518 /* SecureAppWrapper.swift in Sources */,
 				A8FBD3502F5755FF001B8518 /* LockScreenView.swift in Sources */,
 				A8FBD3512F5755FF001B8518 /* SecuritySettingsView.swift in Sources */,
+				A843622D2FD186760086B1DC /* ComputerSearchView.swift in Sources */,
 				A8DD6B3B2A13CA890098563C /* ComputerBasicActionView.swift in Sources */,
 				E4CE57C72AD9AF680038A88A /* PackageUsageView.swift in Sources */,
 				A8EA615E2F521E130011BD56 /* PackagesUnsortedView.swift in Sources */,
@@ -786,7 +794,7 @@
 				A8FB5F912AEA891E0061D5F7 /* ASyncFileDownloader.swift in Sources */,
 				A8DECD5A2BD7FA2700D79A11 /* Layout.swift in Sources */,
 				A87445CB2E2AACFB00BCB41B /* NotesModel.xcdatamodeld in Sources */,
-				A80209632F8813B600F3778D /* ComputerSearchesView.swift in Sources */,
+				A80209632F8813B600F3778D /* AdvancedComputerSearchesView.swift in Sources */,
 				A8BAD2D52DE074D7006C9B34 /* CreateScriptView.swift in Sources */,
 				E49319872B6797B400B58519 /* PrestagesAssignedView.swift in Sources */,
 			);

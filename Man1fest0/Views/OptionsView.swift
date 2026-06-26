@@ -83,6 +83,10 @@ struct OptionsView: View {
                                 NavigationLink(destination: ComputersBasicTableView(server: server)) {
                                     Text("Computer Actions Table")
                                 }
+                                
+                                NavigationLink(destination: ComputerSearchView(server: server)) {
+                                    Text("Computer Search View - beta")
+                                }
 #endif
                                 
                                 DisclosureGroup("Groups") {
@@ -255,44 +259,37 @@ struct OptionsView: View {
                     }
                 }
                 .toolbar {
-                    ToolbarItem(id: "Error") {
+                    
+                    // Row 1: Error, Connect, Refresh (left side)
+                    ToolbarItemGroup(placement: .navigation) {
                         if networkController.hasError {
-                            HStack {
-                                Image(systemName:  "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.secondary, .yellow)
-                                    .imageScale(.large)
-                            }
+                            Image(systemName:  "exclamationmark.triangle.fill")
+                                .foregroundStyle(.secondary, .yellow)
+                                .imageScale(.large)
                         }
-                    }
-
-                    ToolbarItem(id: "Connect") {
+                        
                         Button(action: { networkController.needsCredentials = true }) {
-                            HStack { Text("Connect") }
+                            Text("Connect")
                         }
                         .foregroundColor(.blue)
-                    }
-
-                    ToolbarItem(id: "Refresh") {
+                        
                         Button(action: {
                             progress.showProgress()
                             progress.waitForABit()
                             Task { try? await networkController.getToken(server: server, username: username, password: networkController.password) }
                         }) {
-                            Image(systemName: "arrow.clockwise")
+                            Image(systemName: "arrow.clockwise.circle")
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(.green)
                     }
-
-                    ToolbarItem(id: "Address") {
+                    
+                    // Row 2: Address, Status, Reset Window (right side, appears below row 1)
+                    ToolbarItemGroup(placement: .status) {
                         Text(server).foregroundColor(.green)
-                    }
-
-                    ToolbarItem(id: "Status") {
+                        
                         Label((networkController.status), systemImage: networkController.connected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
                             .foregroundColor(.green)
-                    }
-
-                    ToolbarItem(id: "ResetWindow") {
+                        
                         Button(action: { resetMainWindowToScreen() }) {
                             HStack { Image(systemName: "arrow.counterclockwise"); Text("Reset Window") }
                         }

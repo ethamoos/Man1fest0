@@ -1,0 +1,193 @@
+import SwiftUI
+
+struct ComputerSearchView: View {
+    var server: String
+
+    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var progress: Progress
+    @EnvironmentObject var layout: Layout
+
+    @State private var searchString: String = ""
+    enum MatchMode: String, CaseIterable {
+        case contains
+        case startsWith
+        var displayName: String { self == .contains ? "Contains" : "Starts With" }
+    }
+    @State private var matchMode: MatchMode = .contains
+    @State private var caseSensitive: Bool = false
+    @State private var selectedField: ComputerSearchField = .all
+
+    private struct MatchedComputerPair: Identifiable {
+        let computer: ComputerFull
+        let isHighlighted: Bool
+        var id: String { computer.general?.id ?? UUID().uuidString }
+    }
+
+    private func computeMatchedPairs() -> [MatchedComputerPair] {
+        let detailed = networkController.allComputersDetailedFull
+        let nonNil = detailed.compactMap { $0 }
+        return nonNil.map { c in MatchedComputerPair(computer: c, isHighlighted: isComputerMatch(c)) }
+    }
+
+    @State private var matchedPairsState: [MatchedComputerPair] = []
+
+    private func updateMatchingIDs() {
+        let pairs = computeMatchedPairs()
+        matchedPairsState = pairs
+    }
+
+    private var displayedPairs: [MatchedComputerPair] {
+        let trimmed = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
+        let activeFilter = !trimmed.isEmpty || matchMode != .contains || caseSensitive || selectedField != .all
+        return activeFilter ? matchedPairsState.filter { $0.isHighlighted } : matchedPairsState
+    }
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                TextField("Search...", text: $searchString)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(maxWidth: 320)
+
+                Picker("Field", selection: $selectedField) {
+                    ForEach(ComputerSearchField.allCases, id: \.self) { f in Text(f.displayName) }
+                }
+                .pickerStyle(MenuPickerStyle())
+
+                Picker("Match", selection: $matchMode) {
+                    ForEach(MatchMode.allCases, id: \.self) { m in Text(m.displayName) }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(maxWidth: 220)
+
+                Toggle("Case Sensitive", isOn: $caseSensitive).toggleStyle(SwitchToggleStyle())
+
+                Button(action: {
+                    progress.showProgress()
+                    Task {
+                        do {
+                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                            try await networkController.getAllComputersDetailedFull(server: server)
+                            updateMatchingIDs()
+                        } catch {
+                            networkController.publishError(error, title: "Failed to fetch detailed inventory")
+                        }
+                        progress.waitForABit()
+                    }
+                }) {
+                    HStack { Image(systemName: "arrow.down.doc") ; Text("Fetch Full Inventory") }
+                }
+                .buttonStyle(.borderedProminent)
+
+                Spacer()
+            }
+            .padding()
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    if matchedPairsState.isEmpty {
+                        Text("No detailed computers loaded")
+                            .foregroundColor(.secondary)
+                            .padding()
+                    }
+                    ForEach(displayedPairs) { pair in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(pair.computer.general?.name ?? "(no name)")
+                                    .font(.headline)
+                                Text("ID: \(pair.computer.general?.id ?? "")  Serial: \(pair.computer.general?.serial_number ?? "")")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            NavigationLink(destination: ComputersDetailedView(server: server, computerID: pair.computer.general?.id ?? "")) {
+                                Image(systemName: "arrow.right.circle")
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal)
+                        .background(pair.isHighlighted ? Color.white.opacity(0.06) : Color.clear)
+                        .cornerRadius(6)
+                    }
+                }
+                .padding(.vertical)
+            }
+        }
+        .onAppear {
+            // prepare initial matched state
+            matchedPairsState = computeMatchedPairs()
+        }
+        .onChange(of: searchString) { _ in updateMatchingIDs() }
+        .onChange(of: selectedField) { _ in updateMatchingIDs() }
+        .onChange(of: matchMode) { _ in updateMatchingIDs() }
+        .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
+        .onReceive(networkController.$allComputersDetailedFull) { _ in updateMatchingIDs() }
+    }
+
+    // Simple matching helper
+    private func isComputerMatch(_ c: ComputerFull) -> Bool {
+        let trimmed = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return true }
+
+        func match(_ value: String?) -> Bool {
+            guard let v = value else { return false }
+            if caseSensitive {
+                switch matchMode {
+                case .contains: return v.contains(trimmed)
+                case .startsWith: return v.hasPrefix(trimmed)
+                }
+            } else {
+                let lhs = v.lowercased()
+                let rhs = trimmed.lowercased()
+                switch matchMode { case .contains: return lhs.contains(rhs); case .startsWith: return lhs.hasPrefix(rhs) }
+            }
+        }
+
+        switch selectedField {
+        case .all:
+            return match(c.general?.name) || match(c.general?.serial_number) || match(c.general?.udid) || match(c.general?.ip_address) || match(c.general?.model) || match(c.location?.username) || match(c.location?.department) || match(c.location?.building)
+        case .name:
+            return match(c.general?.name)
+        case .id:
+            return match(c.general?.id)
+        case .serial:
+            return match(c.general?.serial_number)
+        case .udid:
+            return match(c.general?.udid)
+        case .username:
+            return match(c.location?.username ?? c.general?.username)
+        case .department:
+            return match(c.location?.department)
+        case .building:
+            return match(c.location?.building)
+        case .model:
+            return match(c.hardware?.model ?? c.general?.model)
+        case .ip:
+            return match(c.general?.ip_address)
+        }
+    }
+}
+
+enum ComputerSearchField: String, CaseIterable {
+    case all, name, id, serial, udid, username, department, building, model, ip
+    var displayName: String {
+        switch self {
+        case .all: return "All"
+        case .name: return "Name"
+        case .id: return "ID"
+        case .serial: return "Serial"
+        case .udid: return "UDID"
+        case .username: return "Username"
+        case .department: return "Department"
+        case .building: return "Building"
+        case .model: return "Model"
+        case .ip: return "IP"
+        }
+    }
+}
+
+struct ComputerSearchView_Previews: PreviewProvider {
+    static var previews: some View {
+        ComputerSearchView(server: "https://example.jamf.com")
+    }
+}
