@@ -54,6 +54,11 @@ struct PolicySearchView: View {
     @State private var matchMode: MatchMode = .contains
     @State private var caseSensitive: Bool = false
     
+    // Bulk actions for selected policies
+    @State private var selectedPoliciesForActions = Set<Int?>()
+    @State private var showActionsPanel: Bool = true
+    @State private var policiesSelection = Set<Policy>()
+    
     @State var policiesMatchingItems: [Int] = []
     @State var policiesMissingItems: [Int] = []
     @State var policyName = ""
@@ -109,6 +114,8 @@ struct PolicySearchView: View {
         let ids = pairs.filter { $0.isHighlighted }.compactMap { $0.policy.general?.jamfId }
         policiesMatchingItems = ids
         networkController.policiesMatchingItems = ids
+        // Auto-select matching policies in the checkbox state (convert to Optional for Set<Int?>)
+        selectedPoliciesForActions = Set(ids.map { Optional($0) })
     }
 
     // Export currently-displayed search results to CSV in the user's Downloads folder.
@@ -231,14 +238,16 @@ struct PolicySearchView: View {
                             Text("Export CSV")
                         }
                     }
-                    .buttonStyle(.bordered)
                     .tint(.green)
+                    .buttonStyle(.borderedProminent)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+//                    .help("Export policy summary data to a CSV file.")
                         Spacer()
                 }
                 
                 HStack {
                     // Match mode segmented control (Contains / Starts With)
-                    Picker("Match Mode", selection: $matchMode) {
+                    Picker("Mode", selection: $matchMode) {
                         ForEach(MatchMode.allCases, id: \.self) { mode in
                             Text(mode.displayName)
                             }
@@ -326,11 +335,28 @@ struct PolicySearchView: View {
                     // Show only filtered (matching) policies and use the model's Identifiable id
                     ForEach(displayedPairs) { pair in
                         HStack(spacing: 8) {
+                            // Checkbox for selecting policy for actions
+                            Button(action: {
+                                let jamfId = pair.policy.general?.jamfId
+                                if selectedPoliciesForActions.contains(jamfId) {
+                                    selectedPoliciesForActions.remove(jamfId)
+                                } else {
+                                    selectedPoliciesForActions.insert(jamfId)
+                                }
+                            }) {
+                                Image(systemName: selectedPoliciesForActions.contains(pair.policy.general?.jamfId) ? "checkmark.square.fill" : "square")
+                                    .foregroundColor(selectedPoliciesForActions.contains(pair.policy.general?.jamfId) ? .blue : .secondary)
+                                    .font(.system(size: 18))
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Select policy for bulk actions")
+                            
                             PolicyRowView(policy: pair.policy)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(pair.isHighlighted ? Color.white.opacity(0.12) : Color.clear)
                                 .cornerRadius(6)
-                                .padding(.leading)
+                                .padding(.leading, 4)
                                 .contentShape(Rectangle())
                             
                             NavigationLink(destination: PolicyDetailView(server: server, policy: {
@@ -351,148 +377,39 @@ struct PolicySearchView: View {
                 .padding(.vertical)
             }
             
-            
-            
-            // ################################################################################
-            //                       Print Matching IDs
-            // ################################################################################
-            
-            
-            // Button to run an operation on all matching items (prints their jamf IDs)
-//            Button("Print Matching IDs") {
-//                // Recompute matches to ensure we have the latest set
-//                updateMatchingIDs()
-//                // Print the IDs (and paired names for convenience)
-//                let ids = policiesMatchingItems
-//                let names = matchedPolicyPairsState.map { $0.policy.general?.name ?? "(no name)" }
-//                print("Matching policy jamf IDs: \(ids)")
-//                print("Matching policy names: \(names)")
-//            }
-     
-            
-            
-//#if os(macOS)
-//            List(networkController.allIconsDetailed, id: \.self, selection: $selectedIcon) { icon in
-//                HStack {
-//                    Image(systemName: "photo.circle")
-//                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-//                    AsyncImage(url: URL(string: icon.url )) { image in
-//                        image.resizable().frame(width: 15, height: 15)
-//                    } placeholder: {
-//                    }
-//                }
-//                .foregroundColor(.gray)
-//                .listRowBackground(selectedIconString == icon.name
-//                                   ? Color.green.opacity(0.3)
-//                                   : Color.clear)
-//                .tag(icon)
-//            }
-//            .cornerRadius(8)
-//            .frame(minWidth: 300, maxWidth: .infinity, maxHeight: 200, alignment: .leading)
-//#else
-//
-//            List(networkController.allIconsDetailed, id: \.self) { icon in
-//                HStack {
-//                    Image(systemName: "photo.circle")
-//                    Text(icon.name).font(.system(size: 12.0)).foregroundColor(.black)
-//                    AsyncImage(url: URL(string: icon.url )) { image in
-//                        image.resizable().frame(width: 15, height: 15)
-//                    } placeholder: {
-//                    }
-//                }
-//            }
-//#endif
-            //                                    .background(.gray)
-            //        }
-            
-            
-            // ################################################################################
-            //                        Icons - picker
-            // ################################################################################
-            
-            
-            HStack {
-              
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(spacing: 8) {
-                        ForEach(networkController.allIconsDetailed.filter { iconFilter.isEmpty ? true : $0.name.lowercased().contains(iconFilter.lowercased()) }) { icon in
-                            AsyncImage(url: URL(string: icon.url)) { phase in
-                                switch phase {
-                                case .success(let image):
-                                    image.resizable().scaledToFill()
-                                case .failure(_):
-                                    Image(systemName: "photo").resizable().scaledToFit()
-                                default:
-                                    ProgressView()
-                                }
-                            }
-                            .frame(width: 30, height: 30)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(selectedIcon?.id == icon.id ? Color.blue : Color.clear, lineWidth: 2))
-                            .onTapGesture {
-                                selectedIcon = icon
-                                selectedIconString = icon.name
-                            }
-                            .help(icon.name)
-                        }
-                    }
+            // Actions Panel
+            if !selectedPoliciesForActions.isEmpty {
+                Divider()
                     .padding(.vertical, 4)
-                }
-                TextField("Filter", text: $iconFilter)
-                .onAppear {
-                    if !networkController.allIconsDetailed.isEmpty {
-                        selectedIcon = networkController.allIconsDetailed.first
-                    } else {
-                        selectedIcon = nil
+                
+                HStack {
+                    Text("Actions: \(selectedPoliciesForActions.compactMap { $0 }.count) selected")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    Button(action: { selectedPoliciesForActions.removeAll() }) {
+                        Text("Clear")
                     }
-                }
-                .onChange(of: networkController.allIconsDetailed) { newIcons in
-                    if !newIcons.isEmpty { selectedIcon = newIcons.first } else { selectedIcon = nil }
-                }
-            }
-            
-            
-            //                ############################################################
-            //                Update Icon Button
-            //                ############################################################
-                
-                
-                
-                
-            HStack {
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    if let icon = selectedIcon {
-                                                xmlController.updateIconBatch(selectedPoliciesInt: policiesMatchingItems , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
-                    } else {
-                        print("No icon selected")
-                    }
-                }) {
-                    Text("Update Icon")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-            }
-            HStack {
-                Button(action: {
-                    progress.showProgress()
-                    progress.waitForABit()
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
-                            Text("Refresh Icons")
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    
+                    Button(action: { showActionsPanel.toggle() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: showActionsPanel ? "chevron.up" : "chevron.down")
+                            Text(showActionsPanel ? "Hide" : "Show")
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding(.vertical, 6)
+                
+                if showActionsPanel {
+                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: Array(selectedPoliciesForActions), policiesSelection: $policiesSelection)
+                        .frame(maxHeight: 500)
+                }
             }
-            
-            
-            //  ##########################################################################
-            //  Progress view via showProgress
-            //  ##########################################################################
-            
-            //  ##########################################################################
-            //  Progress view via showProgress
-            //  ##########################################################################
             
             Group {
                 if progress.showProgressView == true {
@@ -624,6 +541,7 @@ enum SearchField: String, CaseIterable {
     case generalName
     case generalID
     case generalEnabled
+    case customTrigger
     case selfServiceDisplayName
     case selfServiceDescription
     case selfServiceIconURI
@@ -647,6 +565,7 @@ enum SearchField: String, CaseIterable {
         case .generalName: return "General: Name"
         case .generalID: return "General: ID"
         case .generalEnabled: return "General: Enabled"
+        case .customTrigger: return "General: Custom Trigger"
         case .selfServiceDisplayName: return "Self Service: Display Name"
         case .selfServiceDescription: return "Self Service: Description"
         case .selfServiceIconURI: return "Self Service: Icon URI"
@@ -699,6 +618,7 @@ enum SearchField: String, CaseIterable {
                     case .startsWith: return subject.hasPrefix(targetSearch)
                     }
                 }()) ||
+                match(policy.general?.triggerOther) ||
                 match(policy.self_service?.selfServiceDisplayName) ||
                 match(policy.self_service?.selfServiceDescription) ||
                 match(policy.self_service?.selfServiceIcon?.uri) ||
@@ -756,6 +676,8 @@ enum SearchField: String, CaseIterable {
         case .generalEnabled:
             if let enabled = policy.general?.enabled { let enabledString = String(describing: enabled); return caseSensitive ? enabledString.contains(search) : enabledString.lowercased().contains(targetSearch) }
             return false
+        case .customTrigger:
+            return match(policy.general?.triggerOther)
         case .selfServiceDisplayName:
             return match(policy.self_service?.selfServiceDisplayName)
         case .selfServiceDescription:
@@ -803,6 +725,8 @@ enum SearchField: String, CaseIterable {
             return policy.general?.jamfId == nil
         case .generalEnabled:
             return policy.general?.enabled == nil
+        case .customTrigger:
+            return (policy.general?.triggerOther?.isEmpty ?? true)
         case .selfServiceDisplayName:
             return (policy.self_service?.selfServiceDisplayName?.isEmpty ?? true)
         case .selfServiceDescription:

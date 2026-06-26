@@ -4258,8 +4258,14 @@ print("DEBUG - status code is 200, response is:")
     // - "replaceall": replace all occurrences of `match` with `replacement`
     // If the in-memory detailed policy isn't available the function will log and return.
     func updatePolicyNameLogical(server: String, authToken: String, resourceType: ResourceType, policyID: String, action: String, count: Int = 0, match: String = "", replacement: String = "") {
-        // Attempt to obtain the current name from the in-memory detailed policy
-        let currentName = self.policyDetailed?.general?.name ?? ""
+        // Look up the current name from the allPoliciesDetailed array using the policy ID
+        let policyIDInt = Int(policyID) ?? 0
+        let currentName = self.allPoliciesDetailed
+            .compactMap { $0 }
+            .first(where: { $0.general?.jamfId == policyIDInt })?
+            .general?.name
+            ?? self.policies.first(where: { $0.jamfId == policyIDInt })?.name
+            ?? ""
         guard !currentName.isEmpty else {
             print("updatePolicyNameLogical: current policy name not available in memory for id: \(policyID). Aborting.")
             return

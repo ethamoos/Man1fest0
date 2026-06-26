@@ -11,6 +11,7 @@ import SwiftUI
 
 // PolicyRowView: compact row that expands to show details and has a collapsible Scripts section.
 struct PolicyRowView: View {
+    
     let policy: PolicyDetailed
 
     @State private var isExpanded: Bool = false
@@ -20,6 +21,7 @@ struct PolicyRowView: View {
     private var generalName: String { policy.general?.name ?? "(no name)" }
     private var jamfID: Int { policy.general?.jamfId ?? 0 }
     private var enabledString: String { policy.general?.enabled.map { String(describing: $0) } ?? "-" }
+    private var customTrigger: String { policy.general?.triggerOther ?? "" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -53,9 +55,15 @@ struct PolicyRowView: View {
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
                         }
+
+                        if !customTrigger.isEmpty {
+                            Text("Trigger: \(customTrigger)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                 }
-
                 Spacer()
             }
             .contentShape(Rectangle())

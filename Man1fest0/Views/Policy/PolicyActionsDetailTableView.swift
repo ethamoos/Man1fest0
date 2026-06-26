@@ -272,16 +272,26 @@ struct PolicyActionsDetailTableView: View {
                 progress.showProgress()
                 progress.waitForABit()
                 Task { await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server) }
-            }) { Image(systemName: "arrow.clockwise"); Text("Refresh") }
-            .buttonStyle(.borderedProminent)
+            }) {
+                Label("Refresh", systemImage: "arrow.clockwise")
+                    .labelStyle(.titleAndIcon)
+            }
+//            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
+
+            .help("Reload policy details from the server")
 
             Button(action: {
                 progress.showProgress(); progress.waitForABit(); print("Clearing allPoliciesDetailed")
                 networkController.allPoliciesDetailed.removeAll()
                 Task { try? await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted) }
                 convertToallPoliciesDetailedGeneral()
-            }) { Image(systemName: "arrow.clockwise"); Text("Reset") }
+            }) {
+                Label("Reset", systemImage: "trash")
+                    .labelStyle(.titleAndIcon)
+            }
             .buttonStyle(.bordered)
+            .help("Clear and re-fetch all policy details")
 
             Button(action: {
                 let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
@@ -382,7 +392,7 @@ struct PolicyActionsDetailTableView: View {
                         }
 
                         HStack {
-                            Spacer()
+//                            Spacer()
                             Button(action: {
                                 let ids = selectedPoliciesInt.compactMap { $0 }
                                 guard !ids.isEmpty else { return }

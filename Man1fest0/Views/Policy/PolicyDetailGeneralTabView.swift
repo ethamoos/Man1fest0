@@ -183,6 +183,8 @@ struct PolicyDetailGeneralTabView: View {
             // ################################################################################
             
             
+            DisclosureGroup("Icons") {
+
             // ################################################################################
             //                        Icons - picker
             // ################################################################################
@@ -247,39 +249,42 @@ struct PolicyDetailGeneralTabView: View {
                         .disabled(false)
                 }
                 //
-                //                ############################################################
-                //                Update Icon Button
-                //                ############################################################
                 
-                
-                
-                
-                HStack {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        if let icon = selectedIcon {
-                            xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
-                        } else {
-                            print("No icon selected")
-                        }
-                    }) {
-                        Text("Update Icon")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .help("Apply the selected icon to the selected policies in bulk.")
-                }
-                HStack {
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
-                            Text("Refresh Icons")
+                    
+                    //                ############################################################
+                    //                Update Icon Button
+                    //                ############################################################
+                    
+                    
+                    
+                    
+                    HStack {
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            if let icon = selectedIcon {
+                                xmlController.updateIconBatch(selectedPoliciesInt: selectedPoliciesInt , server: server, authToken: networkController.authToken, iconFilename: String(describing: icon.name), iconID: String(describing: icon.id), iconURI: String(describing: icon.url))
+                            } else {
+                                print("No icon selected")
+                            }
+                        }) {
+                            Text("Update Icon")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                        .help("Refresh the icon list from the server (may take time).")
+                        .help("Apply the selected icon to the selected policies in bulk.")
+                    }
+                    HStack {
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                                Text("Refresh Icons")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .help("Refresh the icon list from the server (may take time).")
+                    }
                 }
             }
             Spacer()

@@ -103,7 +103,7 @@ struct PolicyView: View {
                                     Text("Refresh")
                                 }
                             }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.bordered)
                             .tint(.blue)
                         }
                         .searchable(text: $searchText)

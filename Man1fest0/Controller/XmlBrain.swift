@@ -31,15 +31,15 @@ class XmlBrain: ObservableObject {
     //    #################################################################################
     //    DEBUG STATUS
     //    #################################################################################
-    @State var debugStatus = true
+    var debugStatus = true
     //    #################################################################################
     
 #if os(macOS)
     
-    @State var element: XMLNode = XMLNode()
-    @State var element2: XMLNode = XMLNode()
-    @State var item: XMLNode = XMLNode()
-    @State var item2: XMLNode = XMLNode()
+    var element: XMLNode = XMLNode()
+    var element2: XMLNode = XMLNode()
+    var item: XMLNode = XMLNode()
+    var item2: XMLNode = XMLNode()
     
 #endif
     
@@ -67,20 +67,20 @@ class XmlBrain: ObservableObject {
     //    Scripts
     //    #################################################################################
     
-    @State var assignedScripts: [PolicyScripts] = []
+    @Published var assignedScripts: [PolicyScripts] = []
     @Published var assignedScriptsByNameDict: [String: String] = [:]
-    @State var assignedScriptsByNameSet = Set<String>()
-    @State var assignedScriptsArray: [String] = []
+    var assignedScriptsByNameSet = Set<String>()
+    @Published var assignedScriptsArray: [String] = []
     
-    @State var clippedScripts = Set<String>()
-    @State var unassignedScriptsSet = Set<String>()
+    var clippedScripts = Set<String>()
+    var unassignedScriptsSet = Set<String>()
     @Published var unassignedScriptsArray: [String] = []
-    @State var unassignedScriptsByNameDict: [String: String] = [:]
+    var unassignedScriptsByNameDict: [String: String] = [:]
     
-    @State var allScripts: [ScriptClassic] = []
-    @State var allScriptsByNameDict: [String: String] = [:]
-    @State var allScriptsByNameSet = Set<String>()
-    @State var totalScriptsNotUsed = 0
+    @Published var allScripts: [ScriptClassic] = []
+    var allScriptsByNameDict: [String: String] = [:]
+    var allScriptsByNameSet = Set<String>()
+    var totalScriptsNotUsed = 0
     
     //    #################################################################################
     //    Icons
