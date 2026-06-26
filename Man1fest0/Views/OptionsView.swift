@@ -85,7 +85,7 @@ struct OptionsView: View {
                                 }
                                 
                                 NavigationLink(destination: ComputerSearchView(server: server)) {
-                                    Text("Computer Search View")
+                                    Text("Computer Search View - beta")
                                 }
 #endif
                                 
