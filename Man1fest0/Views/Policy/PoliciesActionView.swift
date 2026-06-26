@@ -279,7 +279,7 @@ struct PoliciesActionView: View {
                             Text("Refresh")
                         }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
                     .tint(.blue)
                     // Hidden shortcut to focus the inline search (Cmd-F)
                     Button(action: { searchFieldFocused = true }) {
