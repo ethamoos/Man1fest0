@@ -4492,7 +4492,7 @@ print("DEBUG - status code is 200, response is:")
         let policyID = policyID
         var xml: String
         self.separationLine()
-        print("updateSSName XML")
+        print("update Self Sservice Name XML")
         print("updateSSName is set as:\(providedName)")
         
         xml = """
