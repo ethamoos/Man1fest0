@@ -272,26 +272,16 @@ struct PolicyActionsDetailTableView: View {
                 progress.showProgress()
                 progress.waitForABit()
                 Task { await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server) }
-            }) {
-                Label("Refresh", systemImage: "arrow.clockwise")
-                    .labelStyle(.titleAndIcon)
-            }
-//            .buttonStyle(.borderedProminent)
-            .buttonStyle(.bordered)
-
-            .help("Reload policy details from the server")
+            }) { Image(systemName: "arrow.clockwise"); Text("Refresh") }
+            .buttonStyle(.borderedProminent)
 
             Button(action: {
                 progress.showProgress(); progress.waitForABit(); print("Clearing allPoliciesDetailed")
                 networkController.allPoliciesDetailed.removeAll()
                 Task { try? await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted) }
                 convertToallPoliciesDetailedGeneral()
-            }) {
-                Label("Reset", systemImage: "trash")
-                    .labelStyle(.titleAndIcon)
-            }
+            }) { Image(systemName: "arrow.clockwise"); Text("Reset") }
             .buttonStyle(.bordered)
-            .help("Clear and re-fetch all policy details")
 
             Button(action: {
                 let selectedRows = networkController.allPoliciesDetailedGeneral.filter { selectedPolicyIDs.contains($0.id) }
@@ -392,7 +382,7 @@ struct PolicyActionsDetailTableView: View {
                         }
 
                         HStack {
-//                            Spacer()
+                            Spacer()
                             Button(action: {
                                 let ids = selectedPoliciesInt.compactMap { $0 }
                                 guard !ids.isEmpty else { return }
@@ -410,6 +400,54 @@ struct PolicyActionsDetailTableView: View {
                                 Text("Run on Selected")
                             }
                             .buttonStyle(.borderedProminent)
+                            .disabled(selectedPoliciesInt.compactMap { $0 }.isEmpty)
+                        }
+
+                        Divider().padding(.vertical, 4)
+
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                let ids = selectedPoliciesInt.compactMap { $0 }
+                                guard !ids.isEmpty else { return }
+
+                                progress.showProgress()
+                                Task {
+                                    var updated = 0
+                                    var skipped = 0
+
+                                    for pid in ids {
+                                        let policyIDString = String(pid)
+                                        guard let policyName = policyNameForJamfId(pid), !policyName.isEmpty else {
+                                            skipped += 1
+                                            print("Set SS Name skipped: missing policy name for id \(policyIDString)")
+                                            continue
+                                        }
+
+                                        networkController.updateSSName(
+                                            server: server,
+                                            authToken: networkController.authToken,
+                                            resourceType: ResourceType.policyDetail,
+                                            providedName: policyName,
+                                            policyID: policyIDString
+                                        )
+                                        updated += 1
+                                        try? await Task.sleep(nanoseconds: 200_000_000)
+                                    }
+
+                                    progress.endProgress()
+                                    DispatchQueue.main.async {
+                                        if skipped == 0 {
+                                            networkController.messageStore?.show("Self Service names updated", level: .success, details: "Updated \(updated) policies")
+                                        } else {
+                                            networkController.messageStore?.show("Self Service names partially updated", level: .warning, details: "Updated \(updated), skipped \(skipped)")
+                                        }
+                                    }
+                                }
+                            }) {
+                                Label("Set Self-Service Name = Policy Name", systemImage: "text.badge.checkmark")
+                            }
+                            .buttonStyle(.bordered)
                             .disabled(selectedPoliciesInt.compactMap { $0 }.isEmpty)
                         }
                     }
@@ -611,6 +649,25 @@ struct PolicyActionsDetailTableView: View {
      }
     
     
+    private func policyNameForJamfId(_ jamfId: Int) -> String? {
+        if let detailedName = networkController.allPoliciesDetailedGeneral.first(where: { $0.jamfId == jamfId })?.name,
+           !detailedName.isEmpty {
+            return detailedName
+        }
+
+        if let convertedName = networkController.allPoliciesConverted.first(where: { $0.jamfId == jamfId })?.name,
+           !convertedName.isEmpty {
+            return convertedName
+        }
+
+        if let policyName = networkController.policies.first(where: { $0.jamfId == jamfId })?.name,
+           !policyName.isEmpty {
+            return policyName
+        }
+
+        return nil
+    }
+
     var searchResults: [General] {
         let filtered: [General]
         if searchText.isEmpty {
