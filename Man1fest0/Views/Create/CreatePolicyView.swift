@@ -202,13 +202,19 @@ struct CreatePolicyView: View {
     }
 
     private func importTemplatesFromFile() {
-        guard !importFilePath.isEmpty else { return }
+        guard let url = importExportBrain.showOpenPanel() else {
+            print("importTemplatesFromFile: no file selected")
+            return
+        }
         do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: importFilePath))
+            let data = try Data(contentsOf: url)
             let imported = try JSONDecoder().decode([PolicyTemplate].self, from: data)
             templates.append(contentsOf: imported)
             persistTemplates()
+            networkController.messageStore?.show("Templates imported successfully", level: .success, details: "Imported \(imported.count) template(s) from \(url.lastPathComponent)")
+            print("importTemplatesFromFile: imported \(imported.count) templates from \(url.path)")
         } catch {
+            networkController.messageStore?.show("Template import failed", level: .error, details: error.localizedDescription)
             print("Failed to import templates: \(error)")
         }
     }
