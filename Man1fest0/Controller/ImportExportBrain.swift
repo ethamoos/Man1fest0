@@ -60,7 +60,7 @@ class ImportExportBrain: ObservableObject {
     func showOpenPanel() -> URL? {
         let openPanel = NSOpenPanel()
         // Use UTType-based allowedContentTypes (replacement for deprecated allowedFileTypes)
-        let allowedExtensions = ["txt", "xml", "pkg", "dmg", "png", "jpg", "jpeg"]
+        let allowedExtensions = ["txt", "xml", "json", "pkg", "dmg", "png", "jpg", "jpeg"]
         openPanel.allowedContentTypes = allowedExtensions.compactMap { UTType(filenameExtension: $0) }
         openPanel.allowsMultipleSelection = false
         openPanel.canChooseDirectories = false
