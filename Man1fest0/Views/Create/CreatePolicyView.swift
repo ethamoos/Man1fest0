@@ -189,14 +189,25 @@ struct CreatePolicyView: View {
     }
 
     private func exportTemplatesToDownloads() {
+        // Build a sensible default filename
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateStr = formatter.string(from: Date())
+        let suggestedName = "Man1fest0_templates_\(dateStr).json"
+
+        guard let url = importExportBrain.showSavePanel(suggestedName: suggestedName, allowedExtensions: ["json"]) else {
+            print("exportTemplates: user cancelled save panel")
+            return
+        }
         do {
-            let data = try JSONEncoder().encode(templates)
-            if let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
-                let out = downloads.appendingPathComponent("Man1fest0_templates_\(Date().timeIntervalSince1970).json")
-                try data.write(to: out)
-                print("Exported templates to: \(out.path)")
-            }
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(templates)
+            try data.write(to: url, options: .atomic)
+            networkController.messageStore?.show("Templates exported", level: .success, details: "Saved \(templates.count) template(s) to \(url.lastPathComponent)")
+            print("Exported templates to: \(url.path)")
         } catch {
+            networkController.messageStore?.show("Export failed", level: .error, details: error.localizedDescription)
             print("Failed exporting templates: \(error)")
         }
     }
@@ -296,14 +307,18 @@ struct CreatePolicyView: View {
                     .padding(.vertical, 6)
                     .padding(.horizontal)
                     .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.03)))
-                    
-                    
-                    
+                                        
                         
                 }
+                .onAppear() {
+                    
+                    Task {
+                        try await networkController.getAllPackages()
+                        try await networkController.getAllScripts()
+                    }
+                }
+                
                 //                        Spacer()
-                
-                
                 
                 if networkController.packages.count > 0 {
                     packagesSection
@@ -637,17 +652,6 @@ struct CreatePolicyView: View {
                     } // end Group
                 } // end VStack
 
-                // Platform-specific selectable view: native macOS Table or iOS List
-//                Group {
-//                    #if os(macOS)
-//                    packagesTable
-//                        .frame(height: packageListHeight)
-//                    #else
-//                    packagesListView
-//                        .frame(height: packageListHeight)
-//                    #endif
-//                }
-//                .padding(.top, 4)
             } // end body
             .padding(.vertical, 6)
     }

@@ -57,6 +57,33 @@ class ImportExportBrain: ObservableObject {
     }
     
 #if os(macOS)
+    /// Shows a save panel with a suggested filename. Remembers the last directory used.
+    /// - Parameters:
+    ///   - suggestedName: Default filename shown in the panel (e.g. "templates.json")
+    ///   - allowedExtensions: File extensions to restrict the panel to (e.g. ["json"])
+    /// - Returns: The chosen URL, or nil if the user cancelled.
+    func showSavePanel(suggestedName: String = "export", allowedExtensions: [String] = ["json"]) -> URL? {
+        let savePanel = NSSavePanel()
+        savePanel.nameFieldStringValue = suggestedName
+        savePanel.allowedContentTypes = allowedExtensions.compactMap { UTType(filenameExtension: $0) }
+        savePanel.canCreateDirectories = true
+        // Restore last used directory
+        let lastDirKey = "com.man1fest0.lastSaveDirectory"
+        if let lastPath = UserDefaults.standard.string(forKey: lastDirKey),
+           FileManager.default.fileExists(atPath: lastPath) {
+            savePanel.directoryURL = URL(fileURLWithPath: lastPath, isDirectory: true)
+        } else {
+            savePanel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        }
+        let response = savePanel.runModal()
+        if response == .OK, let url = savePanel.url {
+            // Persist the chosen directory for next time
+            UserDefaults.standard.set(url.deletingLastPathComponent().path, forKey: lastDirKey)
+            return url
+        }
+        return nil
+    }
+
     func showOpenPanel() -> URL? {
         let openPanel = NSOpenPanel()
         // Use UTType-based allowedContentTypes (replacement for deprecated allowedFileTypes)
