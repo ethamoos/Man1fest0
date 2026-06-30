@@ -235,19 +235,19 @@ struct PolicyScriptsTabView: View {
                             .font(.headline)
                     } content: {
                         HStack {
-                            LazyVGrid(columns: layout.columns) {
+//                            LazyVGrid(columns: layout.columns) {
                                 TextField("parameter5", text: $scriptParameter5)
                                 TextField("parameter6", text: $scriptParameter6)
-                                TextField("parameter7", text: $scriptParameter7)
-                            }
+                                OutlinedTextField("parameter7", text: $scriptParameter7)
+//                            }
                         }
                         HStack {
-                            LazyVGrid(columns: layout.columns) {
+//                            LazyVGrid(columns: layout.columns) {
                                 TextField("parameter8", text: $scriptParameter8)
                                 TextField("parameter9", text: $scriptParameter9)
                                 TextField("parameter10", text: $scriptParameter10)
                                 TextField("parameter11", text: $scriptParameter11)
-                            }
+//                            }
                         }
                         
                         HStack {
@@ -552,3 +552,34 @@ struct PolicyScriptsTabViewDetail: View {
 //#Preview {
 //    PolicyEditTabView()
 //}
+
+// Reusable text field with consistent outline styling.
+struct OutlinedTextField: View {
+    private let title: String
+    @Binding private var text: String
+    private let cornerRadius: CGFloat
+    private let lineWidth: CGFloat
+    private let strokeColor: Color
+
+    init(
+        _ title: String,
+        text: Binding<String>,
+        cornerRadius: CGFloat = 8,
+        lineWidth: CGFloat = 2,
+        strokeColor: Color = .blue
+    ) {
+        self.title = title
+        self._text = text
+        self.cornerRadius = cornerRadius
+        self.lineWidth = lineWidth
+        self.strokeColor = strokeColor
+    }
+
+    var body: some View {
+        TextField(title, text: $text)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(strokeColor, lineWidth: lineWidth)
+            )
+    }
+}

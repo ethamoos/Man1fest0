@@ -273,7 +273,7 @@ struct PolicyActionsDetailTableView: View {
                 progress.waitForABit()
                 Task { await refreshDetailedPolicySelections(selectedPolicies: selectedPoliciesInt, authToken: networkController.authToken, server: server) }
             }) { Image(systemName: "arrow.clockwise"); Text("Refresh") }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
 
             Button(action: {
                 progress.showProgress(); progress.waitForABit(); print("Clearing allPoliciesDetailed")
