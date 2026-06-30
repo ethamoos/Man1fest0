@@ -225,7 +225,7 @@ struct PolicyScriptsTabView: View {
                                 //                                print("Setting numbers picker default")
                                 //                                pickerSelectedScript = 0 }
                             }
-                            OutlinedTextField("parameter4", text: $scriptParameter4)
+                            TextField("parameter4", text: $scriptParameter4)
                         }
                     }
                     
@@ -552,34 +552,3 @@ struct PolicyScriptsTabViewDetail: View {
 //#Preview {
 //    PolicyEditTabView()
 //}
-
-// Reusable text field with consistent outline styling.
-struct OutlinedTextField: View {
-    private let title: String
-    @Binding private var text: String
-    private let cornerRadius: CGFloat
-    private let lineWidth: CGFloat
-    private let strokeColor: Color
-
-    init(
-        _ title: String,
-        text: Binding<String>,
-        cornerRadius: CGFloat = 8,
-        lineWidth: CGFloat = 2,
-        strokeColor: Color = .blue
-    ) {
-        self.title = title
-        self._text = text
-        self.cornerRadius = cornerRadius
-        self.lineWidth = lineWidth
-        self.strokeColor = strokeColor
-    }
-
-    var body: some View {
-        TextField(title, text: $text)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(strokeColor, lineWidth: lineWidth)
-            )
-    }
-}
