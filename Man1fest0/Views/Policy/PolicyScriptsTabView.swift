@@ -225,7 +225,7 @@ struct PolicyScriptsTabView: View {
                                 //                                print("Setting numbers picker default")
                                 //                                pickerSelectedScript = 0 }
                             }
-                            TextField("parameter4", text: $scriptParameter4)
+                            OutlinedTextField("parameter4", text: $scriptParameter4)
                         }
                     }
                     
@@ -236,23 +236,23 @@ struct PolicyScriptsTabView: View {
                     } content: {
                         HStack {
 //                            LazyVGrid(columns: layout.columns) {
-                                TextField("parameter5", text: $scriptParameter5)
-                                TextField("parameter6", text: $scriptParameter6)
+                            OutlinedTextField("parameter5", text: $scriptParameter5)
+                            OutlinedTextField("parameter6", text: $scriptParameter6)
                                 OutlinedTextField("parameter7", text: $scriptParameter7)
 //                            }
                         }
                         HStack {
 //                            LazyVGrid(columns: layout.columns) {
-                                TextField("parameter8", text: $scriptParameter8)
-                                TextField("parameter9", text: $scriptParameter9)
-                                TextField("parameter10", text: $scriptParameter10)
-                                TextField("parameter11", text: $scriptParameter11)
+                            OutlinedTextField("parameter8", text: $scriptParameter8)
+                            OutlinedTextField("parameter9", text: $scriptParameter9)
+                            OutlinedTextField("parameter10", text: $scriptParameter10)
+                            OutlinedTextField("parameter11", text: $scriptParameter11)
 //                            }
                         }
                         
                         HStack {
                             LazyVGrid(columns: layout.columns) {
-                                TextField("before/after", text: $priority)
+                                OutlinedTextField("before/after", text: $priority)
                             }
                         }
                     }
