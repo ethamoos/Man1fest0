@@ -83,6 +83,10 @@ struct ContentView: View {
     @AppStorage("ShouldShowWelcomeScreen") private var storedShouldShowWelcome: Bool = false
     @AppStorage("ShouldShowWelcomeScreenSet") private var storedShouldShowWelcomeSet: Bool = false
 
+    /// Destination string set when the user taps a feature card in WelcomeToMan1fest0.
+    /// When non-nil the detail column shows the corresponding view (mirroring a sidebar tap).
+    @State private var welcomeNavDest: String? = nil
+
     var body: some View {
         VStack(spacing: 0) {
             NavigationView {
@@ -114,8 +118,37 @@ struct ContentView: View {
                 // WelcomeToMan1fest0 view instead of the PoliciesView)
                 let shouldShowWelcomeDueToCachedCredentials = networkController.hasCachedCredentials && !networkController.needsCredentials
 
-                if showWelcome || shouldShowWelcomeDueToCachedCredentials {
-                    WelcomeToMan1fest0()
+                // If the user tapped a welcome card, show that destination directly in the
+                // detail column (same behaviour as clicking the equivalent sidebar link).
+                if let dest = welcomeNavDest {
+                    VStack(spacing: 0) {
+                        // Back bar — returns to WelcomeToMan1fest0
+                        HStack(spacing: 8) {
+                            Button {
+                                welcomeNavDest = nil
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Image(systemName: "chevron.left")
+                                    Text("Home")
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundColor(.accentColor)
+                            Spacer()
+                            Text(dest.replacingOccurrences(of: "View", with: ""))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(.ultraThinMaterial)
+                        Divider()
+                        welcomeDestinationView(dest)
+                    }
+                } else if showWelcome || shouldShowWelcomeDueToCachedCredentials {
+                    WelcomeToMan1fest0(onNavigate: { destination in
+                        welcomeNavDest = destination
+                    })
                 } else {
                     Text("Select an Item")
                         .foregroundColor(Color.gray)
@@ -167,6 +200,44 @@ struct ContentView: View {
         #endif
     }
     
+    /// Maps a destination string (from AppFeature.destination) to the corresponding view,
+    /// mirroring the same destinations used by the sidebar NavigationLinks in OptionsView.
+    @ViewBuilder
+    private func welcomeDestinationView(_ destination: String) -> some View {
+        switch destination {
+        case "PolicyView":
+            PolicyView(server: server, selectedResourceType: .policy)
+        case "PoliciesActionView":
+            PoliciesActionView(server: server, selectedResourceType: .policies)
+        case "PackageView", "PackagesView":
+            PackagesView(server: server, selectedResourceType: .packages)
+        case "ScriptsView":
+            ScriptsView(server: server)
+        case "ScriptUsageView":
+            ScriptUsageView(server: server)
+        case "ComputerView":
+            ComputersView(server: server)
+        case "ComputerGroupView":
+            GroupsView(server: server)
+        case "PrestageView":
+            PrestagesView(server: server, allPrestages: [])
+        case "BuildingsView":
+            BuildingsView(server: server)
+        case "CategoriesView":
+            CategoriesView(selectedResourceType: .category, server: server)
+        case "DepartmentsView":
+            DepartmentsView(selectedResourceType: .department, server: server)
+        case "IconsView":
+            IconsView(server: server)
+        case "CreateView":
+            CreateView(server: server)
+        default:
+            Text("Navigate to \(destination)")
+                .font(.title2)
+                .foregroundColor(.secondary)
+        }
+    }
+
     #if os(macOS)
     /// A small NSViewRepresentable that captures the NSWindow for the SwiftUI view hierarchy
     /// and applies a saved frame from UserDefaults (key: "MainWindowFrame"). This runs once

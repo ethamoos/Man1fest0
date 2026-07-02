@@ -107,6 +107,10 @@ struct WelcomeToMan1fest0: View {
     @EnvironmentObject var networkController: NetBrain
     @StateObject private var userPreferences = AppUserPreferences()
     
+    /// Called when the user taps a feature card. The string is the AppFeature.destination value.
+    /// ContentView uses this to replace the detail column — identical to clicking a sidebar link.
+    var onNavigate: ((String) -> Void)? = nil
+    
     // MARK: - State
     @State private var selectedFeature: AppFeature?
     @State private var animateFeatures = false
@@ -235,7 +239,8 @@ struct WelcomeToMan1fest0: View {
                     FeatureCategoryCard(
                         category: category,
                         features: getFeatures(for: category),
-                        animateIn: animateFeatures
+                        animateIn: animateFeatures,
+                        onNavigate: onNavigate
                     )
                 }
             }
@@ -415,6 +420,8 @@ struct FeatureCategoryCard: View {
     let category: String
     let features: [AppFeature]
     let animateIn: Bool
+    /// Propagated from WelcomeToMan1fest0 so tapping a card navigates in the detail column.
+    var onNavigate: ((String) -> Void)? = nil
     
     @EnvironmentObject var networkController: NetBrain
     
@@ -438,17 +445,24 @@ struct FeatureCategoryCard: View {
             }
             .padding(.bottom, 12)
             
-            // Feature cards
+            // Feature cards — use Button so taps replace the detail column (same as a sidebar link)
             LazyVGrid(columns: [
                 GridItem(.flexible())
             ], spacing: 12) {
                 ForEach(features, id: \.id) { feature in
-                    NavigationLink(destination: getViewForDestination(feature.destination)) {
+                    Button {
+                        prefetchIfNeeded(destination: feature.destination)
+                        onNavigate?(feature.destination)
+                    } label: {
                         FeatureCard(feature: feature, animateIn: animateIn)
-                            .onTapGesture {
-                                prefetchIfNeeded(destination: feature.destination)
-                            }
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    #if os(macOS)
+                    .onHover { inside in
+                        if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                    }
+                    #endif
                 }
             }
         }
@@ -470,27 +484,9 @@ struct FeatureCategoryCard: View {
         }
     }
     
-    @ViewBuilder
-    private func getViewForDestination(_ destination: String) -> some View {
-        // Map known destination strings to actual views in the app
-        switch destination {
-        case "PolicyView":
-            PolicyView(server: networkController.server, selectedResourceType: .policy)
-        case "PoliciesActionView":
-            PoliciesActionView(server: networkController.server, selectedResourceType: .policies)
-        case "PackageView", "PackagesView":
-            PackagesView(server: networkController.server, selectedResourceType: .packages)
-        case "ScriptsView":
-            ScriptsView(server: networkController.server)
-        case "ScriptUsageView":
-            // Fallback to ScriptsView if a dedicated ScriptUsageView isn't available
-            ScriptsView(server: networkController.server)
-        default:
-            // Generic fallback: show a simple destination placeholder
-            Text("Navigate to \(destination)").font(.title2)
-        }
-    }
-    
+    // getViewForDestination removed — navigation is now handled by ContentView.welcomeDestinationView(_:)
+    // so that feature card taps replace the detail column exactly like sidebar NavigationLinks do.
+
     // Prefetch network data for known destinations so destination views are not empty on arrival
     private func prefetchIfNeeded(destination: String) {
         switch destination {
