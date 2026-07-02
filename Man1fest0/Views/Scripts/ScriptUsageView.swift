@@ -67,6 +67,7 @@ struct ScriptUsageView: View {
     @State private var toolsMatchString: String = ""
     @State private var toolsReplacementString: String = ""
     @State private var showScriptRenameConfirmation: Bool = false
+    @State private var showDeleteConfirmation: Bool = false
 
     // Small helper views to reduce type-checking complexity in large body
     @ViewBuilder
@@ -495,23 +496,27 @@ struct ScriptUsageView: View {
             HStack(spacing: 12) {
                 // Delete selected scripts
                 Button(action: {
-                    // Confirm and delete selected items
-                    let items = Array(selection)
-                    guard items.count > 0 else { return }
-                    progress.showProgress()
-                    Task {
-                        await performDeleteSelection(items)
-                        // Clear selection on main actor
-                        await MainActor.run {
-                            selection.removeAll()
-                        }
-                    }
+                    guard !selection.isEmpty else { return }
+                    showDeleteConfirmation = true
                 }) {
                     Text("Delete Selection")
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .disabled(selection.isEmpty)
+                .alert("Confirm Delete", isPresented: $showDeleteConfirmation) {
+                    Button("Delete", role: .destructive) {
+                        let items = Array(selection)
+                        progress.showProgress()
+                        Task {
+                            await performDeleteSelection(items)
+                            await MainActor.run { selection.removeAll() }
+                        }
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("Are you sure you want to permanently delete \(selection.count) script\(selection.count == 1 ? "" : "s")? This action cannot be undone.")
+                }
 
                 Spacer()
 
