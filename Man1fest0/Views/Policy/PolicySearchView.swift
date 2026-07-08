@@ -20,6 +20,7 @@ struct PolicySearchView: View {
     @EnvironmentObject var progress: Progress
     @EnvironmentObject var layout: Layout
     @EnvironmentObject var xmlController: XmlBrain
+    @EnvironmentObject var policyBrain: PolicyBrain
     
     
     @State private var searchString: String = ""
@@ -486,11 +487,9 @@ struct PolicySearchView: View {
                                                 Text("Export as XML")
                                                     .font(.headline)
                                             }
-
                                             Text("Downloads each selected policy as an individual XML file to your Downloads folder.")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
-
                                             HStack(spacing: 12) {
                                                 Button {
                                                     let ids = selectedPoliciesForActions.compactMap { $0 }
@@ -532,6 +531,74 @@ struct PolicySearchView: View {
                                                 .buttonStyle(.borderedProminent)
                                                 .tint(.orange)
                                                 .disabled(selectedPoliciesForActions.isEmpty)
+                                            }
+                                        }
+                                        .padding(.horizontal)
+
+                                        Divider()
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+
+                                        // ── Replace Policies from XML Files ───────
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "arrow.up.doc.fill")
+                                                    .foregroundColor(.purple)
+                                                Text("Replace Policies from XML")
+                                                    .font(.headline)
+                                            }
+                                            Text("Select one or more XML files. Each file replaces the policy whose ID matches the filename (e.g. 12345.xml → policy 12345).")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            HStack(spacing: 12) {
+                                                Button {
+                                                    Task { @MainActor in
+                                                        let files = await policyBrain.showOpenPanelForXMLFiles()
+                                                        guard !files.isEmpty else { return }
+                                                        progress.showProgress()
+                                                        policyBrain.replacePolicies(
+                                                            from: files,
+                                                            server: server,
+                                                            authToken: networkController.authToken
+                                                        )
+                                                        progress.waitForABit()
+                                                    }
+                                                } label: {
+                                                    Label("Replace Policies…", systemImage: "arrow.up.doc")
+                                                }
+                                                .buttonStyle(.borderedProminent)
+                                                .tint(.purple)
+                                                .disabled(policyBrain.replacePoliciesInProgress)
+
+                                                if policyBrain.replacePoliciesInProgress {
+                                                    ProgressView().scaleEffect(0.75)
+                                                    Text("Replacing…")
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+
+                                            // Per-file result summary
+                                            if !policyBrain.replacePoliciesResults.isEmpty {
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    ForEach(policyBrain.replacePoliciesResults) { result in
+                                                        HStack(spacing: 6) {
+                                                            Image(systemName: result.success
+                                                                  ? "checkmark.circle.fill"
+                                                                  : "xmark.circle.fill")
+                                                                .foregroundColor(result.success ? .green : .red)
+                                                                .font(.caption)
+                                                            Text(result.message)
+                                                                .font(.caption)
+                                                                .foregroundColor(result.success ? .primary : .red)
+                                                        }
+                                                    }
+                                                }
+                                                .padding(8)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.secondary.opacity(0.08))
+                                                )
                                             }
                                         }
                                         .padding(.horizontal)
@@ -589,7 +656,7 @@ struct PolicySearchView: View {
                                     Divider()
 
                                     // Enable / Disable toggle + combined update
-                                    HStack(spacing: 12) {
+                                HStack(spacing: 12) {
                                         Toggle("", isOn: $enableDisable)
                                             .toggleStyle(SwitchToggleStyle(tint: .red))
                                             .labelsHidden()

@@ -30,6 +30,18 @@ class PolicyBrain: ObservableObject {
     @Published var packageProcessList: [Package] = []
     @Published var genericProcessList: [Any] = []
     @Published var processingComplete: Bool = true
+
+    // Replace-policies progress & results (for the ReplacePolicies button)
+    @Published var replacePoliciesInProgress: Bool = false
+    @Published var replacePoliciesResults: [ReplacePolicyResult] = []
+
+    struct ReplacePolicyResult: Identifiable {
+        let id = UUID()
+        let policyId: String
+        let filename: String
+        let success: Bool
+        let message: String
+    }
     
     //    #################################################################################
     //    Packages
@@ -883,6 +895,7 @@ class PolicyBrain: ObservableObject {
                 let xmldata = xmlContent.data(using: .utf8)
                 separationLine()
                 print("url is set as:\(url)")
+                print("Running createPolicyManual for policyName:\(policyName)")
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
@@ -901,7 +914,7 @@ class PolicyBrain: ObservableObject {
                     }
                     
                     DispatchQueue.main.async {
-                        print("Success! Package pushed.")
+                        print("Success! Policy created.")
                     }
                 }.resume()
                 
@@ -911,7 +924,7 @@ class PolicyBrain: ObservableObject {
     }
     
     
-    func replacePolicy(xmlContent: String,  server: String, resourceType: ResourceType, policyId: String, policyName: String, authToken: String) {
+    func replacePolicy(xmlContent: String,  server: String, resourceType: ResourceType, policyId: String, authToken: String) {
         
         let sem = DispatchSemaphore.init(value: 0)
         
@@ -921,6 +934,7 @@ class PolicyBrain: ObservableObject {
                 let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
                 let xmldata = xmlContent.data(using: .utf8)
                 separationLine()
+                print("Runing replace policy with ID \(policyId)")
                 print("url is set as:\(url)")
                 var request = URLRequest(url: url)
                 request.httpMethod = "PUT"
@@ -940,7 +954,7 @@ class PolicyBrain: ObservableObject {
                     }
                     
                     DispatchQueue.main.async {
-                        print("Success! Package pushed.")
+                        print("Success! Policy replaced.")
                     }
                 }.resume()
                 
@@ -955,6 +969,139 @@ class PolicyBrain: ObservableObject {
     //    addCustomCommand - to policy
     //    #################################################################################
     
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - Replace Policies from XML Files
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// Opens an NSOpenPanel allowing the user to pick one or more XML files.
+    /// Returns the selected URLs, or an empty array if the user cancels.
+    @MainActor
+    func showOpenPanelForXMLFiles() -> [URL] {
+        #if os(macOS)
+        let panel = NSOpenPanel()
+        panel.title = "Select Policy XML Files"
+        panel.message = "Choose one or more policy XML files to replace. The policy ID is taken from each filename (e.g. 12345.xml → policy 12345)."
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.xml]
+        panel.prompt = "Replace"
+        guard panel.runModal() == .OK else { return [] }
+        return panel.urls
+        #else
+        return []
+        #endif
+    }
+
+    /// For each selected XML file:
+    ///   1. Reads the file contents as a UTF-8 string.
+    ///   2. Extracts the policy ID from the filename (strips extension).
+    ///   3. Validates the ID is numeric.
+    ///   4. Calls `replacePolicy(xmlContent:server:resourceType:policyId:authToken:)`.
+    ///   5. Appends a `ReplacePolicyResult` entry so the UI can show per-file feedback.
+    func replacePolicies(from files: [URL], server: String, authToken: String) {
+        guard !files.isEmpty else {
+            print("replacePolicies: no files supplied")
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.replacePoliciesInProgress = true
+            self.replacePoliciesResults = []
+        }
+
+        separationLine()
+        print("replacePolicies: processing \(files.count) file(s)")
+
+        // Process files sequentially on a background queue so we don't block the main thread
+        // but also don't overwhelm the server with simultaneous PUTs.
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+
+            var results: [ReplacePolicyResult] = []
+
+            for fileURL in files {
+                let filename = fileURL.lastPathComponent
+                // Extract policy ID: strip the file extension
+                let policyId = fileURL.deletingPathExtension().lastPathComponent
+
+                // Validate that the filename stem is a non-empty integer
+                guard !policyId.isEmpty, Int(policyId) != nil else {
+                    print("replacePolicies: skipping '\(filename)' — filename stem '\(policyId)' is not a numeric policy ID")
+                    results.append(ReplacePolicyResult(
+                        policyId: policyId,
+                        filename: filename,
+                        success: false,
+                        message: "Filename '\(filename)' does not contain a numeric policy ID — skipped."
+                    ))
+                    continue
+                }
+
+                // Read XML content
+                let xmlContent: String
+                do {
+                    xmlContent = try String(contentsOf: fileURL, encoding: .utf8)
+                } catch {
+                    print("replacePolicies: failed to read '\(filename)': \(error)")
+                    results.append(ReplacePolicyResult(
+                        policyId: policyId,
+                        filename: filename,
+                        success: false,
+                        message: "Could not read file: \(error.localizedDescription)"
+                    ))
+                    continue
+                }
+
+                guard !xmlContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    print("replacePolicies: '\(filename)' is empty — skipping")
+                    results.append(ReplacePolicyResult(
+                        policyId: policyId,
+                        filename: filename,
+                        success: false,
+                        message: "File '\(filename)' is empty — skipped."
+                    ))
+                    continue
+                }
+
+                print("replacePolicies: replacing policy ID \(policyId) from '\(filename)'")
+                self.replacePolicy(
+                    xmlContent: xmlContent,
+                    server: server,
+                    resourceType: .policyDetail,
+                    policyId: policyId,
+                    authToken: authToken
+                )
+
+                results.append(ReplacePolicyResult(
+                    policyId: policyId,
+                    filename: filename,
+                    success: true,
+                    message: "Replace request sent for policy \(policyId)."
+                ))
+
+                // Small delay between requests to avoid overwhelming the server
+                Thread.sleep(forTimeInterval: 0.3)
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.replacePoliciesResults = results
+                self.replacePoliciesInProgress = false
+                let successCount = results.filter { $0.success }.count
+                let failCount = results.count - successCount
+                print("replacePolicies: complete — \(successCount) sent, \(failCount) skipped/failed")
+                self.networkController?.messageStore?.show(
+                    "Replace Policies complete",
+                    level: failCount == 0 ? .success : .warning,
+                    details: "\(successCount) replaced, \(failCount) skipped/failed"
+                )
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     func addCustomCommand(server: String, authToken: String, policyID: String, command: String) {
         let resourcePath = getURLFormat(data: (ResourceType.policyDetail))
 //        let policyIDString = String(policyID)
