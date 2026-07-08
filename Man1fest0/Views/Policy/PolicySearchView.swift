@@ -1185,6 +1185,7 @@ enum SearchField: String, CaseIterable {
     case selfServiceIconURI
     case packages
     case scripts
+    case scriptParameters
 
     // New scope-related fields
     case scopeAllComputers
@@ -1209,6 +1210,7 @@ enum SearchField: String, CaseIterable {
         case .selfServiceIconURI: return "Self Service: Icon URI"
         case .packages: return "Packages"
         case .scripts: return "Scripts"
+        case .scriptParameters: return "Script Parameters"
         case .scopeAllComputers: return "Scope: All Computers"
         case .scopeAllJSSUsers: return "Scope: All JSS Users"
         case .scopeComputers: return "Scope: Computers"
@@ -1233,6 +1235,18 @@ enum SearchField: String, CaseIterable {
             case .startsWith:
                 return subject.hasPrefix(targetSearch)
             }
+        }
+
+        // Returns true if any parameter (4–11) of a script matches
+        func matchScriptParameters(_ script: PolicyScripts) -> Bool {
+            return match(script.parameter4)  ||
+                   match(script.parameter5)  ||
+                   match(script.parameter6)  ||
+                   match(script.parameter7)  ||
+                   match(script.parameter8)  ||
+                   match(script.parameter9)  ||
+                   match(script.parameter10) ||
+                   match(script.parameter11)
         }
 
         switch self {
@@ -1269,8 +1283,8 @@ enum SearchField: String, CaseIterable {
                     let subject = caseSensitive ? idString : idString.lowercased()
                     switch matchMode { case .contains: return subject.contains(targetSearch); case .startsWith: return subject.hasPrefix(targetSearch) }
                 } ?? false) ||
-                // scripts: match any script name
-                (policy.scripts?.contains { match($0.name) } ?? false) ||
+                // scripts: match any script name or any of its parameters
+                (policy.scripts?.contains { match($0.name) || matchScriptParameters($0) } ?? false) ||
                 // scope checks: match basic boolean/string forms and any names inside scope arrays
                 (policy.scope?.allComputers != nil && {
                     let subjectString = String(describing: policy.scope!.allComputers!)
@@ -1304,7 +1318,12 @@ enum SearchField: String, CaseIterable {
             } ?? false
 
         case .scripts:
-            return policy.scripts?.contains { match($0.name) } ?? false
+            // Match on script name OR any of its parameters
+            return policy.scripts?.contains { match($0.name) || matchScriptParameters($0) } ?? false
+
+        case .scriptParameters:
+            // Match only against parameter values (4–11) across all scripts in the policy
+            return policy.scripts?.contains { matchScriptParameters($0) } ?? false
 
         case .generalName:
             return match(policy.general?.name)
@@ -1375,6 +1394,14 @@ enum SearchField: String, CaseIterable {
             return (policy.package_configuration?.packages.isEmpty ?? true)
         case .scripts:
             return (policy.scripts?.isEmpty ?? true)
+        case .scriptParameters:
+            // Consider empty when no script has any non-empty parameter
+            return !(policy.scripts?.contains { script in
+                [script.parameter4, script.parameter5, script.parameter6,
+                 script.parameter7, script.parameter8, script.parameter9,
+                 script.parameter10, script.parameter11]
+                    .contains { $0 != nil && !$0!.isEmpty }
+            } ?? false)
 
         // Scope emptiness checks
         case .scopeAllComputers:
