@@ -69,6 +69,12 @@ struct PolicySearchView: View {
     @State private var actionsIconFilter: String = ""
     @State private var actionsSelectedIcon: Icon? = nil
     @State private var actionsSelectedIconString: String = ""
+
+    // XML Find & Replace tab state
+    @State private var xmlFRSearch: String = ""
+    @State private var xmlFRReplacement: String = ""
+    @State private var xmlFRShowPreview: Bool = false
+    @State private var xmlFRShowResults: Bool = false
     
     @State var policiesMatchingItems: [Int] = []
     @State var policiesMissingItems: [Int] = []
@@ -469,15 +475,6 @@ struct PolicySearchView: View {
                                 // ── Tools ─────────────────────────────────────────
                                 case 0:
                                     VStack(alignment: .leading, spacing: 0) {
-                                        PolicyDetailGeneralTabView(
-                                            server: server,
-                                            selectedPoliciesInt: Array(selectedPoliciesForActions),
-                                            policiesSelection: $policiesSelection
-                                        )
-
-                                        Divider()
-                                            .padding(.horizontal)
-                                            .padding(.vertical, 8)
 
                                         // ── Export XML ────────────────────────────
                                         VStack(alignment: .leading, spacing: 8) {
@@ -603,6 +600,223 @@ struct PolicySearchView: View {
                                         }
                                         .padding(.horizontal)
                                         .padding(.bottom, 12)
+
+                                        Divider()
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+
+                                        // ── XML Find & Replace ────────────────────
+                                        VStack(alignment: .leading, spacing: 10) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "text.magnifyingglass")
+                                                    .foregroundColor(.teal)
+                                                Text("XML Find & Replace")
+                                                    .font(.headline)
+                                            }
+                                            Text("Select XML files or a folder, preview matches, then apply the replacement.")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+
+                                            // ── Search / Replacement fields ───────
+                                            Grid(alignment: .leadingFirstTextBaseline,
+                                                 horizontalSpacing: 8,
+                                                 verticalSpacing: 6) {
+                                                GridRow {
+                                                    Text("Find:")
+                                                        .font(.subheadline)
+                                                        .gridColumnAlignment(.trailing)
+                                                    OutlinedTextField("Search string…", text: $xmlFRSearch,
+                                                                      strokeColor: .teal)
+                                                        .frame(maxWidth: 340)
+                                                }
+                                                GridRow {
+                                                    Text("Replace:")
+                                                        .font(.subheadline)
+                                                        .gridColumnAlignment(.trailing)
+                                                    OutlinedTextField("Replacement string…", text: $xmlFRReplacement,
+                                                                      strokeColor: .teal)
+                                                        .frame(maxWidth: 340)
+                                                }
+                                            }
+
+                                            // ── File selection ────────────────────
+                                            HStack(spacing: 10) {
+                                                Button {
+                                                    Task { @MainActor in
+                                                        policyBrain.showOpenPanelForXMLFindReplace()
+                                                        xmlFRShowPreview = false
+                                                        xmlFRShowResults = false
+                                                    }
+                                                } label: {
+                                                    Label("Select Files / Folder…",
+                                                          systemImage: "folder.badge.plus")
+                                                }
+                                                .buttonStyle(.bordered)
+                                                .tint(.teal)
+
+                                                if !policyBrain.xmlFindReplaceFiles.isEmpty {
+                                                    Text("\(policyBrain.xmlFindReplaceFiles.count) file(s) selected")
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+
+                                                    Button {
+                                                        policyBrain.xmlFindReplaceFiles = []
+                                                        policyBrain.xmlFindReplacePreviewResults = []
+                                                        policyBrain.xmlFindReplaceApplyResults = []
+                                                        policyBrain.xmlFindReplaceApplied = false
+                                                        xmlFRShowPreview = false
+                                                        xmlFRShowResults = false
+                                                    } label: {
+                                                        Image(systemName: "xmark.circle.fill")
+                                                            .foregroundColor(.secondary)
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                    .help("Clear file selection")
+                                                }
+                                            }
+
+                                            // File list (collapsed to 3 rows max)
+                                            if !policyBrain.xmlFindReplaceFiles.isEmpty {
+                                                DisclosureGroup("Show selected files (\(policyBrain.xmlFindReplaceFiles.count))") {
+                                                    ScrollView {
+                                                        VStack(alignment: .leading, spacing: 2) {
+                                                            ForEach(policyBrain.xmlFindReplaceFiles, id: \.path) { url in
+                                                                Text(url.lastPathComponent)
+                                                                    .font(.caption2)
+                                                                    .foregroundColor(.secondary)
+                                                            }
+                                                        }
+                                                        .padding(.leading, 4)
+                                                    }
+                                                    .frame(maxHeight: 100)
+                                                }
+                                                .font(.caption)
+                                            }
+
+                                            // ── Action buttons ────────────────────
+                                            HStack(spacing: 10) {
+                                                Button {
+                                                    guard !xmlFRSearch.isEmpty,
+                                                          !policyBrain.xmlFindReplaceFiles.isEmpty else { return }
+                                                    xmlFRShowPreview = true
+                                                    xmlFRShowResults = false
+                                                    policyBrain.previewXMLFindReplace(
+                                                        search: xmlFRSearch,
+                                                        replacement: xmlFRReplacement
+                                                    )
+                                                } label: {
+                                                    Label("Preview Changes", systemImage: "eye")
+                                                }
+                                                .buttonStyle(.bordered)
+                                                .tint(.teal)
+                                                .disabled(xmlFRSearch.isEmpty ||
+                                                          policyBrain.xmlFindReplaceFiles.isEmpty ||
+                                                          policyBrain.xmlFindReplaceInProgress)
+
+                                                Button {
+                                                    guard !xmlFRSearch.isEmpty,
+                                                          !policyBrain.xmlFindReplaceFiles.isEmpty else { return }
+                                                    xmlFRShowResults = true
+                                                    xmlFRShowPreview = false
+                                                    policyBrain.applyXMLFindReplace(
+                                                        search: xmlFRSearch,
+                                                        replacement: xmlFRReplacement
+                                                    )
+                                                } label: {
+                                                    Label("Apply Changes", systemImage: "pencil.and.list.clipboard")
+                                                }
+                                                .buttonStyle(.borderedProminent)
+                                                .tint(.teal)
+                                                .disabled(xmlFRSearch.isEmpty ||
+                                                          policyBrain.xmlFindReplaceFiles.isEmpty ||
+                                                          policyBrain.xmlFindReplaceInProgress)
+
+                                                if policyBrain.xmlFindReplaceInProgress {
+                                                    ProgressView().scaleEffect(0.75)
+                                                }
+                                            }
+
+                                            // ── Preview results ───────────────────
+                                            if xmlFRShowPreview && !policyBrain.xmlFindReplacePreviewResults.isEmpty {
+                                                VStack(alignment: .leading, spacing: 0) {
+                                                    Text("Preview — \(policyBrain.xmlFindReplacePreviewResults.filter { $0.matchCount > 0 }.count) file(s) with matches")
+                                                        .font(.caption)
+                                                        .fontWeight(.semibold)
+                                                        .padding(.bottom, 4)
+
+                                                    ScrollView {
+                                                        VStack(alignment: .leading, spacing: 6) {
+                                                            ForEach(policyBrain.xmlFindReplacePreviewResults) { p in
+                                                                VStack(alignment: .leading, spacing: 2) {
+                                                                    HStack(spacing: 4) {
+                                                                        Image(systemName: p.matchCount > 0
+                                                                              ? "magnifyingglass.circle.fill"
+                                                                              : "circle")
+                                                                            .foregroundColor(p.matchCount > 0 ? .teal : .secondary)
+                                                                            .font(.caption)
+                                                                        Text("\(p.filename) — \(p.matchCount) match(es)")
+                                                                            .font(.caption)
+                                                                            .fontWeight(p.matchCount > 0 ? .semibold : .regular)
+                                                                    }
+                                                                    if p.matchCount > 0 {
+                                                                        Text(p.snippet)
+                                                                            .font(.caption2)
+                                                                            .foregroundColor(.secondary)
+                                                                            .lineLimit(2)
+                                                                            .padding(.leading, 18)
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    .frame(maxHeight: 160)
+                                                }
+                                                .padding(8)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.teal.opacity(0.06))
+                                                        .overlay(RoundedRectangle(cornerRadius: 8)
+                                                            .stroke(Color.teal.opacity(0.2), lineWidth: 1))
+                                                )
+                                            }
+
+                                            // ── Apply results ─────────────────────
+                                            if xmlFRShowResults && !policyBrain.xmlFindReplaceApplyResults.isEmpty {
+                                                VStack(alignment: .leading, spacing: 0) {
+                                                    Text("Apply results")
+                                                        .font(.caption)
+                                                        .fontWeight(.semibold)
+                                                        .padding(.bottom, 4)
+
+                                                    ScrollView {
+                                                        VStack(alignment: .leading, spacing: 4) {
+                                                            ForEach(policyBrain.xmlFindReplaceApplyResults) { r in
+                                                                HStack(spacing: 6) {
+                                                                    Image(systemName: r.success
+                                                                          ? (r.replacementsApplied > 0 ? "checkmark.circle.fill" : "minus.circle")
+                                                                          : "xmark.circle.fill")
+                                                                        .foregroundColor(r.success
+                                                                                         ? (r.replacementsApplied > 0 ? .green : .secondary)
+                                                                                         : .red)
+                                                                        .font(.caption)
+                                                                    Text(r.message)
+                                                                        .font(.caption)
+                                                                        .foregroundColor(r.success ? .primary : .red)
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    .frame(maxHeight: 120)
+                                                }
+                                                .padding(8)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.secondary.opacity(0.06))
+                                                )
+                                            }
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.bottom, 12)
                                     }
                                 
                             // ── Category ─────────────────────────────────────
@@ -613,15 +827,15 @@ struct PolicySearchView: View {
                                     Text("Selected: \(selectedPoliciesForActions.compactMap { $0 }.count) policies")
                                         .font(.subheadline).foregroundColor(.secondary)
 
-                                    // Category picker + Update button
-                                    HStack {
+                                    // All category controls on one line
+                                    HStack(spacing: 10) {
                                         Picker("Category:", selection: $selectedCategoryId) {
                                             Text("No category selected").tag(nil as Int?)
                                             ForEach(networkController.categories, id: \.self) { cat in
                                                 Text(cat.name).tag(cat.jamfId as Int?)
                                             }
                                         }
-                                        .frame(maxWidth: 300)
+                                        .frame(maxWidth: 280)
                                         .onAppear {
                                             if selectedCategoryId == nil {
                                                 selectedCategoryId = networkController.categories.first?.jamfId
@@ -651,19 +865,18 @@ struct PolicySearchView: View {
                                         .buttonStyle(.borderedProminent)
                                         .tint(.blue)
                                         .disabled(selectedCategoryId == nil)
-                                    }
 
-                                    Divider()
+                                        Divider()
+                                            .frame(height: 22)
 
-                                    // Enable / Disable toggle + combined update
-                                HStack(spacing: 12) {
                                         Toggle("", isOn: $enableDisable)
                                             .toggleStyle(SwitchToggleStyle(tint: .red))
                                             .labelsHidden()
                                         Text(enableDisable ? "Enabled" : "Disabled")
                                             .foregroundColor(enableDisable ? .green : .red)
+                                            .font(.subheadline)
 
-                                        Button("Update / Enable") {
+                                        Button("Update Category / Enable") {
                                             guard let catId = selectedCategoryId,
                                                   let cat = networkController.categories.first(where: { $0.jamfId == catId })
                                             else { return }
@@ -682,6 +895,8 @@ struct PolicySearchView: View {
                                         .buttonStyle(.borderedProminent)
                                         .tint(.blue)
                                         .disabled(selectedCategoryId == nil)
+
+                                        Spacer()
                                     }
                                     Spacer()
                                 }

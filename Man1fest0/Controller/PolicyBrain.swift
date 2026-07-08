@@ -42,6 +42,29 @@ class PolicyBrain: ObservableObject {
         let success: Bool
         let message: String
     }
+
+    // ── XML Find & Replace ────────────────────────────────────────────────────
+    @Published var xmlFindReplaceFiles: [URL] = []
+    @Published var xmlFindReplacePreviewResults: [XMLFindReplacePreview] = []
+    @Published var xmlFindReplaceApplyResults:   [XMLFindReplaceResult2] = []
+    @Published var xmlFindReplaceInProgress: Bool = false
+    @Published var xmlFindReplaceApplied:    Bool = false
+
+    struct XMLFindReplacePreview: Identifiable {
+        let id = UUID()
+        let url: URL
+        var filename: String { url.lastPathComponent }
+        let matchCount: Int
+        let snippet: String     // short excerpt around first match
+    }
+
+    struct XMLFindReplaceResult2: Identifiable {
+        let id = UUID()
+        let filename: String
+        let success: Bool
+        let replacementsApplied: Int
+        let message: String
+    }
     
     //    #################################################################################
     //    Packages
@@ -969,6 +992,176 @@ class PolicyBrain: ObservableObject {
     //    addCustomCommand - to policy
     //    #################################################################################
     
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - XML Find & Replace
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// Opens an NSOpenPanel that lets the user pick files AND / OR a folder.
+    /// Any chosen folder is scanned recursively for .xml files.
+    /// The collected URLs are stored in `xmlFindReplaceFiles`.
+    @MainActor
+    func showOpenPanelForXMLFindReplace() {
+        #if os(macOS)
+        let panel = NSOpenPanel()
+        panel.title            = "Select XML Files or a Folder"
+        panel.message          = "Choose individual XML files or a folder containing XML files."
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories    = true
+        panel.canChooseFiles          = true
+        panel.allowedContentTypes     = [.xml, .folder]
+        panel.prompt = "Select"
+        guard panel.runModal() == .OK else { return }
+
+        var collected: [URL] = []
+        for url in panel.urls {
+            var isDir: ObjCBool = false
+            FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
+            if isDir.boolValue {
+                // Recursively collect all .xml files from the folder
+                if let enumerator = FileManager.default.enumerator(
+                    at: url,
+                    includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles]
+                ) {
+                    for case let fileURL as URL in enumerator
+                    where fileURL.pathExtension.lowercased() == "xml" {
+                        collected.append(fileURL)
+                    }
+                }
+            } else if url.pathExtension.lowercased() == "xml" {
+                collected.append(url)
+            }
+        }
+        // Deduplicate by path
+        var seen = Set<String>()
+        xmlFindReplaceFiles = collected.filter { seen.insert($0.path).inserted }
+        xmlFindReplacePreviewResults = []
+        xmlFindReplaceApplyResults   = []
+        xmlFindReplaceApplied        = false
+        print("xmlFindReplace: selected \(xmlFindReplaceFiles.count) XML file(s)")
+        #endif
+    }
+
+    /// Scans each file in `xmlFindReplaceFiles` for `search`, counts matches,
+    /// and builds a short snippet showing context around the first match.
+    /// Does NOT write any files.
+    func previewXMLFindReplace(search: String, replacement: String) {
+        guard !search.isEmpty else {
+            DispatchQueue.main.async { self.xmlFindReplacePreviewResults = [] }
+            return
+        }
+        DispatchQueue.main.async { self.xmlFindReplaceInProgress = true }
+
+        let files = xmlFindReplaceFiles
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            var previews: [XMLFindReplacePreview] = []
+
+            for url in files {
+                guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+                    previews.append(XMLFindReplacePreview(
+                        url: url, matchCount: 0,
+                        snippet: "⚠️ Could not read file"
+                    ))
+                    continue
+                }
+
+                // Count occurrences (case-sensitive)
+                var count = 0
+                var searchRange = content.startIndex..<content.endIndex
+                while let range = content.range(of: search, range: searchRange) {
+                    count += 1
+                    searchRange = range.upperBound..<content.endIndex
+                }
+
+                // Build a context snippet around the first match
+                var snippet = "No matches"
+                if count > 0, let firstRange = content.range(of: search) {
+                    let ctxStart = content.index(firstRange.lowerBound,
+                                                  offsetBy: -40,
+                                                  limitedBy: content.startIndex) ?? content.startIndex
+                    let ctxEnd   = content.index(firstRange.upperBound,
+                                                  offsetBy: 60,
+                                                  limitedBy: content.endIndex) ?? content.endIndex
+                    let before   = String(content[ctxStart..<firstRange.lowerBound])
+                    let matched  = String(content[firstRange])
+                    let after    = String(content[firstRange.upperBound..<ctxEnd])
+                    snippet      = "…\(before)[\(matched)]→[\(replacement)]\(after)…"
+                }
+
+                previews.append(XMLFindReplacePreview(
+                    url: url, matchCount: count, snippet: snippet
+                ))
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.xmlFindReplacePreviewResults = previews
+                self.xmlFindReplaceInProgress = false
+            }
+        }
+    }
+
+    /// Applies find-and-replace to every file in `xmlFindReplaceFiles`,
+    /// writes the result back to the same path, and records per-file results.
+    func applyXMLFindReplace(search: String, replacement: String) {
+        guard !search.isEmpty else { return }
+        DispatchQueue.main.async {
+            self.xmlFindReplaceInProgress = true
+            self.xmlFindReplaceApplyResults = []
+        }
+
+        let files = xmlFindReplaceFiles
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            var results: [XMLFindReplaceResult2] = []
+
+            for url in files {
+                let filename = url.lastPathComponent
+                do {
+                    let original  = try String(contentsOf: url, encoding: .utf8)
+                    let replaced  = original.replacingOccurrences(of: search, with: replacement)
+                    // Count the actual number of replacements made
+                    let repCount = original.components(separatedBy: search).count - 1
+                    try replaced.write(to: url, atomically: true, encoding: .utf8)
+                    results.append(XMLFindReplaceResult2(
+                        filename: filename,
+                        success: true,
+                        replacementsApplied: repCount,
+                        message: repCount == 0
+                            ? "No matches in \(filename)"
+                            : "✓ \(repCount) replacement(s) in \(filename)"
+                    ))
+                    print("xmlFindReplace: \(repCount) replacement(s) in \(filename)")
+                } catch {
+                    results.append(XMLFindReplaceResult2(
+                        filename: filename,
+                        success: false,
+                        replacementsApplied: 0,
+                        message: "✗ \(filename): \(error.localizedDescription)"
+                    ))
+                    print("xmlFindReplace error in \(filename): \(error)")
+                }
+                Thread.sleep(forTimeInterval: 0.05) // tiny pacing
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.xmlFindReplaceApplyResults = results
+                self.xmlFindReplaceInProgress   = false
+                self.xmlFindReplaceApplied      = true
+                let ok   = results.filter { $0.success && $0.replacementsApplied > 0 }.count
+                let skip = results.filter { $0.success && $0.replacementsApplied == 0 }.count
+                let fail = results.filter { !$0.success }.count
+                self.networkController?.messageStore?.show(
+                    "XML Find & Replace complete",
+                    level: fail == 0 ? .success : .warning,
+                    details: "\(ok) file(s) updated, \(skip) unchanged, \(fail) error(s)"
+                )
+            }
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // MARK: - Replace Policies from XML Files
     // ─────────────────────────────────────────────────────────────────────────
