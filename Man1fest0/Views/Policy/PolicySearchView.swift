@@ -387,36 +387,59 @@ struct PolicySearchView: View {
                 .padding(.vertical)
             }
             
-            // Actions Panel
+            // ── Actions Panel ────────────────────────────────────────────────
             if !selectedPoliciesForActions.isEmpty {
-                Divider()
-                    .padding(.vertical, 4)
 
-                // ── Header row ───────────────────────────────────────────────
-                HStack {
-                    Text("Actions: \(selectedPoliciesForActions.compactMap { $0 }.count) selected")
-                        .font(.subheadline)
+                // Visual separator with label between results and actions
+                HStack(spacing: 8) {
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(.blue.opacity(0.35))
+                    Image(systemName: "bolt.fill")
+                        .foregroundColor(.blue)
+                        .font(.caption)
+                    Text("BULK ACTIONS")
+                        .font(.caption)
                         .fontWeight(.semibold)
-
-                    Spacer()
-
-                    Button(action: { selectedPoliciesForActions.removeAll() }) {
-                        Text("Clear")
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.red)
-
-                    Button(action: { showActionsPanel.toggle() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: showActionsPanel ? "chevron.up" : "chevron.down")
-                            Text(showActionsPanel ? "Hide" : "Show")
-                        }
-                    }
-                    .buttonStyle(.bordered)
+                        .foregroundColor(.blue)
+                        .kerning(1.2)
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(.blue.opacity(0.35))
                 }
-                .padding(.vertical, 6)
+                .padding(.horizontal)
+                .padding(.top, 6)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    // ── Header row ───────────────────────────────────────────
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.blue)
+                        Text("\(selectedPoliciesForActions.compactMap { $0 }.count) policies selected")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+
+                        Spacer()
+
+                        Button(action: { selectedPoliciesForActions.removeAll() }) {
+                            Label("Clear", systemImage: "xmark.circle")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
+
+                        Button(action: { showActionsPanel.toggle() }) {
+                            Label(showActionsPanel ? "Hide" : "Show",
+                                  systemImage: showActionsPanel ? "chevron.down" : "chevron.up")
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
 
                 if showActionsPanel {
+                    Divider()
+                        .padding(.horizontal, 14)
+
                     VStack(alignment: .leading, spacing: 0) {
 
                         // ── Tab picker ───────────────────────────────────────
@@ -450,7 +473,87 @@ struct PolicySearchView: View {
                                         policiesSelection: $policiesSelection
                                     )
                                 
-                           
+                            // ── Category ─────────────────────────────────────
+                            case 2:
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Category")
+                                        .font(.headline)
+                                    Text("Selected: \(selectedPoliciesForActions.compactMap { $0 }.count) policies")
+                                        .font(.subheadline).foregroundColor(.secondary)
+
+                                    // Category picker + Update button
+                                    HStack {
+                                        Picker("Category:", selection: $selectedCategoryId) {
+                                            Text("No category selected").tag(nil as Int?)
+                                            ForEach(networkController.categories, id: \.self) { cat in
+                                                Text(cat.name).tag(cat.jamfId as Int?)
+                                            }
+                                        }
+                                        .frame(maxWidth: 300)
+                                        .onAppear {
+                                            if selectedCategoryId == nil {
+                                                selectedCategoryId = networkController.categories.first?.jamfId
+                                            }
+                                        }
+                                        .onChange(of: networkController.categories) { newCats in
+                                            if selectedCategoryId == nil, let first = newCats.first {
+                                                selectedCategoryId = first.jamfId
+                                            }
+                                        }
+
+                                        Button("Update Category") {
+                                            guard let catId = selectedCategoryId,
+                                                  let cat = networkController.categories.first(where: { $0.jamfId == catId })
+                                            else { return }
+                                            progress.showProgress()
+                                            progress.waitForABit()
+                                            networkController.processBatchUpdateCategory(
+                                                selection: Array(selectedPoliciesForActions),
+                                                server: server,
+                                                resourceType: .policyDetail,
+                                                authToken: networkController.authToken,
+                                                newCategoryName: cat.name,
+                                                newCategoryID: String(catId)
+                                            )
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .tint(.blue)
+                                        .disabled(selectedCategoryId == nil)
+//                                    }
+
+//                                    Divider()
+
+                                    // Enable / Disable toggle + combined update
+//                                    HStack(spacing: 12) {
+                                        Toggle("", isOn: $enableDisable)
+                                            .toggleStyle(SwitchToggleStyle(tint: .red))
+                                            .labelsHidden()
+                                        Text(enableDisable ? "Enabled" : "Disabled")
+                                            .foregroundColor(enableDisable ? .green : .red)
+
+                                        Button("Update / Enable") {
+                                            guard let catId = selectedCategoryId,
+                                                  let cat = networkController.categories.first(where: { $0.jamfId == catId })
+                                            else { return }
+                                            progress.showProgressView = true
+                                            networkController.processingComplete = false
+                                            progress.waitForABit()
+                                            networkController.selectedCategory = cat
+                                            networkController.processUpdatePoliciesCombined(
+                                                selection: Array(selectedPoliciesForActions),
+                                                server: server,
+                                                resourceType: .policies,
+                                                enableDisable: enableDisable,
+                                                authToken: networkController.authToken
+                                            )
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .tint(.blue)
+                                        .disabled(selectedCategoryId == nil)
+                                    }
+                                    Spacer()
+                                }
+                                .padding()
 
                             // ── Icons ─────────────────────────────────────────
                             case 1:
@@ -558,87 +661,7 @@ struct PolicySearchView: View {
                                 }
                                 .padding()
 
-                                // ── Category ─────────────────────────────────────
-                                case 2:
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        Text("Category")
-                                            .font(.headline)
-                                        Text("Selected: \(selectedPoliciesForActions.compactMap { $0 }.count) policies")
-                                            .font(.subheadline).foregroundColor(.secondary)
-
-                                        // Category picker + Update button
-                                        HStack {
-                                            Picker("Category:", selection: $selectedCategoryId) {
-                                                Text("No category selected").tag(nil as Int?)
-                                                ForEach(networkController.categories, id: \.self) { cat in
-                                                    Text(cat.name).tag(cat.jamfId as Int?)
-                                                }
-                                            }
-                                            .frame(maxWidth: 300)
-                                            .onAppear {
-                                                if selectedCategoryId == nil {
-                                                    selectedCategoryId = networkController.categories.first?.jamfId
-                                                }
-                                            }
-                                            .onChange(of: networkController.categories) { newCats in
-                                                if selectedCategoryId == nil, let first = newCats.first {
-                                                    selectedCategoryId = first.jamfId
-                                                }
-                                            }
-
-                                            Button("Update Category") {
-                                                guard let catId = selectedCategoryId,
-                                                      let cat = networkController.categories.first(where: { $0.jamfId == catId })
-                                                else { return }
-                                                progress.showProgress()
-                                                progress.waitForABit()
-                                                networkController.processBatchUpdateCategory(
-                                                    selection: Array(selectedPoliciesForActions),
-                                                    server: server,
-                                                    resourceType: .policyDetail,
-                                                    authToken: networkController.authToken,
-                                                    newCategoryName: cat.name,
-                                                    newCategoryID: String(catId)
-                                                )
-                                            }
-                                            .buttonStyle(.borderedProminent)
-                                            .tint(.blue)
-                                            .disabled(selectedCategoryId == nil)
-//                                        }
-
-//                                        Divider()
-
-                                        // Enable / Disable toggle + combined update
-//                                        HStack(spacing: 12) {
-                                            Toggle("", isOn: $enableDisable)
-                                                .toggleStyle(SwitchToggleStyle(tint: .red))
-                                                .labelsHidden()
-                                            Text(enableDisable ? "Enabled" : "Disabled")
-                                                .foregroundColor(enableDisable ? .green : .red)
-
-                                            Button("Update / Enable") {
-                                                guard let catId = selectedCategoryId,
-                                                      let cat = networkController.categories.first(where: { $0.jamfId == catId })
-                                                else { return }
-                                                progress.showProgressView = true
-                                                networkController.processingComplete = false
-                                                progress.waitForABit()
-                                                networkController.selectedCategory = cat
-                                                networkController.processUpdatePoliciesCombined(
-                                                    selection: Array(selectedPoliciesForActions),
-                                                    server: server,
-                                                    resourceType: .policies,
-                                                    enableDisable: enableDisable,
-                                                    authToken: networkController.authToken
-                                                )
-                                            }
-                                            .buttonStyle(.borderedProminent)
-                                            .tint(.blue)
-                                            .disabled(selectedCategoryId == nil)
-                                        }
-                                        Spacer()
-                                    }
-                                    .padding()
+                           
 
                             // ── Destructive ───────────────────────────────────
                             case 3:
@@ -664,8 +687,20 @@ struct PolicySearchView: View {
                         .frame(maxHeight: 500)
                     }
                     .padding(.horizontal, 4)
-                }
-            }
+                    .padding(.bottom, 8)
+                } // end if showActionsPanel
+                } // end inner VStack
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.blue.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.blue.opacity(0.25), lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            } // end actions panel
             
             Group {
                 if progress.showProgressView == true {
