@@ -58,6 +58,16 @@ struct PolicySearchView: View {
     @State private var selectedPoliciesForActions = Set<Int?>()
     @State private var showActionsPanel: Bool = true
     @State private var policiesSelection = Set<Policy>()
+    @State private var selectedActionsTab: Int = 0
+
+    // Category tab state
+    @State private var selectedCategoryId: Int? = nil
+    @State private var enableDisable: Bool = true
+
+    // Icons tab state
+    @State private var actionsIconFilter: String = ""
+    @State private var actionsSelectedIcon: Icon? = nil
+    @State private var actionsSelectedIconString: String = ""
     
     @State var policiesMatchingItems: [Int] = []
     @State var policiesMissingItems: [Int] = []
@@ -213,7 +223,7 @@ struct PolicySearchView: View {
                         .frame(maxWidth: 300)
                     
                     // Text search scope segmented control
-                    Picker("Search", selection: $textSearchScope) {
+                    Picker("", selection: $textSearchScope) {
                         ForEach(TextSearchScope.allCases, id: \.self) { scope in
                             Text(scope.displayName)
                             }
@@ -381,20 +391,21 @@ struct PolicySearchView: View {
             if !selectedPoliciesForActions.isEmpty {
                 Divider()
                     .padding(.vertical, 4)
-                
+
+                // ── Header row ───────────────────────────────────────────────
                 HStack {
                     Text("Actions: \(selectedPoliciesForActions.compactMap { $0 }.count) selected")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                    
+
                     Spacer()
-                    
+
                     Button(action: { selectedPoliciesForActions.removeAll() }) {
                         Text("Clear")
                     }
                     .buttonStyle(.bordered)
                     .tint(.red)
-                    
+
                     Button(action: { showActionsPanel.toggle() }) {
                         HStack(spacing: 4) {
                             Image(systemName: showActionsPanel ? "chevron.up" : "chevron.down")
@@ -404,10 +415,255 @@ struct PolicySearchView: View {
                     .buttonStyle(.bordered)
                 }
                 .padding(.vertical, 6)
-                
+
                 if showActionsPanel {
-                    PolicyDetailGeneralTabView(server: server, selectedPoliciesInt: Array(selectedPoliciesForActions), policiesSelection: $policiesSelection)
+                    VStack(alignment: .leading, spacing: 0) {
+
+                        // ── Tab picker ───────────────────────────────────────
+                        HStack {
+                            Picker("Action Tab", selection: $selectedActionsTab) {
+                                Label("Tools", systemImage: "wrench.and.screwdriver")
+                                    .tag(0)
+                                Label("Icons", systemImage: "photo")
+                                    .tag(1)
+                                Label("Category", systemImage: "folder")
+                                    .tag(2)
+                                Label("Destructive", systemImage: "exclamationmark.triangle.fill")
+                                    .tag(3)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(maxWidth: 520)
+                            Spacer()
+                        }
+                        .padding(.bottom, 8)
+
+                        // ── Tab content ──────────────────────────────────────
+                        Group {
+                            switch selectedActionsTab {
+
+                                
+                                // ── Tools ─────────────────────────────────────────
+                                case 0:
+                                PolicySearchToolsView(
+                                        server: server,
+                                        selectedPoliciesInt: Array(selectedPoliciesForActions),
+                                        policiesSelection: $policiesSelection
+                                    )
+                                
+                           
+
+                            // ── Icons ─────────────────────────────────────────
+                            case 1:
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Icons")
+                                        .font(.headline)
+                                    Text("Selected: \(selectedPoliciesForActions.compactMap { $0 }.count) policies")
+                                        .font(.subheadline).foregroundColor(.secondary)
+
+                                    // Filter + horizontal icon strip
+                                    HStack {
+                                        TextField("Filter icons…", text: $actionsIconFilter)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                            .frame(maxWidth: 200)
+
+                                        ScrollView(.horizontal, showsIndicators: true) {
+                                            HStack(spacing: 8) {
+                                                ForEach(
+                                                    networkController.allIconsDetailed.filter {
+                                                        actionsIconFilter.isEmpty ? true :
+                                                        $0.name.lowercased().contains(actionsIconFilter.lowercased())
+                                                    }
+                                                ) { icon in
+                                                    AsyncImage(url: URL(string: icon.url)) { phase in
+                                                        switch phase {
+                                                        case .success(let img):
+                                                            img.resizable().scaledToFill()
+                                                        case .failure:
+                                                            Image(systemName: "photo").resizable().scaledToFit()
+                                                        default:
+                                                            ProgressView()
+                                                        }
+                                                    }
+                                                    .frame(width: 32, height: 32)
+                                                    .clipShape(Circle())
+                                                    .overlay(
+                                                        Circle().stroke(
+                                                            actionsSelectedIcon?.id == icon.id ? Color.blue : Color.clear,
+                                                            lineWidth: 2
+                                                        )
+                                                    )
+                                                    .onTapGesture {
+                                                        actionsSelectedIcon = icon
+                                                        actionsSelectedIconString = icon.name
+                                                    }
+                                                    .help(icon.name)
+                                                }
+                                            }
+                                            .padding(.vertical, 4)
+                                        }
+                                    }
+                                    .onAppear {
+                                        if actionsSelectedIcon == nil, let first = networkController.allIconsDetailed.first {
+                                            actionsSelectedIcon = first
+                                            actionsSelectedIconString = first.name
+                                        }
+                                    }
+                                    .onChange(of: networkController.allIconsDetailed) { icons in
+                                        if actionsSelectedIcon == nil, let first = icons.first {
+                                            actionsSelectedIcon = first
+                                            actionsSelectedIconString = first.name
+                                        }
+                                    }
+
+                                    // Selected icon name
+                                    HStack {
+                                        Text("Selected:")
+                                            .font(.subheadline)
+                                        TextField("Selected icon", text: $actionsSelectedIconString)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                                            .frame(maxWidth: 260)
+                                    }
+
+                                    // Action buttons
+                                    HStack(spacing: 12) {
+                                        Button("Update Icon") {
+                                            guard let icon = actionsSelectedIcon else { return }
+                                            progress.showProgress()
+                                            progress.waitForABit()
+                                            xmlController.updateIconBatch(
+                                                selectedPoliciesInt: Array(selectedPoliciesForActions),
+                                                server: server,
+                                                authToken: networkController.authToken,
+                                                iconFilename: icon.name,
+                                                iconID: String(icon.id),
+                                                iconURI: icon.url
+                                            )
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .tint(.blue)
+                                        .disabled(actionsSelectedIcon == nil || selectedPoliciesForActions.isEmpty)
+
+                                        Button("Refresh Icons") {
+                                            progress.showProgress()
+                                            progress.waitForABit()
+                                            networkController.getAllIconsDetailed(
+                                                server: server,
+                                                authToken: networkController.authToken,
+                                                loopTotal: 20000
+                                            )
+                                        }
+                                        .buttonStyle(.bordered)
+                                    }
+                                    Spacer()
+                                }
+                                .padding()
+
+                                // ── Category ─────────────────────────────────────
+                                case 2:
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        Text("Category")
+                                            .font(.headline)
+                                        Text("Selected: \(selectedPoliciesForActions.compactMap { $0 }.count) policies")
+                                            .font(.subheadline).foregroundColor(.secondary)
+
+                                        // Category picker + Update button
+                                        HStack {
+                                            Picker("Category:", selection: $selectedCategoryId) {
+                                                Text("No category selected").tag(nil as Int?)
+                                                ForEach(networkController.categories, id: \.self) { cat in
+                                                    Text(cat.name).tag(cat.jamfId as Int?)
+                                                }
+                                            }
+                                            .frame(maxWidth: 300)
+                                            .onAppear {
+                                                if selectedCategoryId == nil {
+                                                    selectedCategoryId = networkController.categories.first?.jamfId
+                                                }
+                                            }
+                                            .onChange(of: networkController.categories) { newCats in
+                                                if selectedCategoryId == nil, let first = newCats.first {
+                                                    selectedCategoryId = first.jamfId
+                                                }
+                                            }
+
+                                            Button("Update Category") {
+                                                guard let catId = selectedCategoryId,
+                                                      let cat = networkController.categories.first(where: { $0.jamfId == catId })
+                                                else { return }
+                                                progress.showProgress()
+                                                progress.waitForABit()
+                                                networkController.processBatchUpdateCategory(
+                                                    selection: Array(selectedPoliciesForActions),
+                                                    server: server,
+                                                    resourceType: .policyDetail,
+                                                    authToken: networkController.authToken,
+                                                    newCategoryName: cat.name,
+                                                    newCategoryID: String(catId)
+                                                )
+                                            }
+                                            .buttonStyle(.borderedProminent)
+                                            .tint(.blue)
+                                            .disabled(selectedCategoryId == nil)
+//                                        }
+
+//                                        Divider()
+
+                                        // Enable / Disable toggle + combined update
+//                                        HStack(spacing: 12) {
+                                            Toggle("", isOn: $enableDisable)
+                                                .toggleStyle(SwitchToggleStyle(tint: .red))
+                                                .labelsHidden()
+                                            Text(enableDisable ? "Enabled" : "Disabled")
+                                                .foregroundColor(enableDisable ? .green : .red)
+
+                                            Button("Update / Enable") {
+                                                guard let catId = selectedCategoryId,
+                                                      let cat = networkController.categories.first(where: { $0.jamfId == catId })
+                                                else { return }
+                                                progress.showProgressView = true
+                                                networkController.processingComplete = false
+                                                progress.waitForABit()
+                                                networkController.selectedCategory = cat
+                                                networkController.processUpdatePoliciesCombined(
+                                                    selection: Array(selectedPoliciesForActions),
+                                                    server: server,
+                                                    resourceType: .policies,
+                                                    enableDisable: enableDisable,
+                                                    authToken: networkController.authToken
+                                                )
+                                            }
+                                            .buttonStyle(.borderedProminent)
+                                            .tint(.blue)
+                                            .disabled(selectedCategoryId == nil)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding()
+
+                            // ── Destructive ───────────────────────────────────
+                            case 3:
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.red)
+                                        Text("These actions are irreversible — confirm each prompt carefully.")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.bottom, 4)
+                                    PolicyDetailClearItemsTabView(
+                                        server: server,
+                                        selectedPoliciesInt: Array(selectedPoliciesForActions)
+                                    )
+                                }
+
+                            default:
+                                EmptyView()
+                            }
+                        }
                         .frame(maxHeight: 500)
+                    }
+                    .padding(.horizontal, 4)
                 }
             }
             

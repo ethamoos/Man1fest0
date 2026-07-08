@@ -57,6 +57,7 @@
 		A87E84702F10F2B200CF42D0 /* RequestSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */; };
 		A87E84722F10F31400CF42D0 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84712F10F30900CF42D0 /* APIRequest.swift */; };
 		A87E84742F10F34300CF42D0 /* HTTPMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = A87E84732F10F34000CF42D0 /* HTTPMethod.swift */; };
+		A882E6C02FFE4CB3007276D0 /* PolicySearchToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A882E6BF2FFE4CA9007276D0 /* PolicySearchToolsView.swift */; };
 		A886701D2AA8E5C0009DA6AA /* PackagesActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A886701C2AA8E5C0009DA6AA /* PackagesActionView.swift */; };
 		A88768992EE2DD3E009D97B9 /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A88768982EE2DD3E009D97B9 /* Helper.swift */; };
 		A88A6A242DB793AE009A64B8 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = A88A6A232DB793A8009A64B8 /* LICENSE.txt */; };
@@ -173,6 +174,7 @@
 		A87E846F2F10F2AD00CF42D0 /* RequestSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestSender.swift; sourceTree = "<group>"; };
 		A87E84712F10F30900CF42D0 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
 		A87E84732F10F34000CF42D0 /* HTTPMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPMethod.swift; sourceTree = "<group>"; };
+		A882E6BF2FFE4CA9007276D0 /* PolicySearchToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicySearchToolsView.swift; sourceTree = "<group>"; };
 		A886701C2AA8E5C0009DA6AA /* PackagesActionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackagesActionView.swift; sourceTree = "<group>"; };
 		A88768982EE2DD3E009D97B9 /* Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
 		A88A6A232DB793A8009A64B8 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
@@ -497,6 +499,7 @@
 				A83049192EB22F3C00A28F8D /* PolicySearch */,
 				A87BF5C52EB13CD000E065BB /* PolicySearchView.swift */,
 				A87BF5C72EB13CDC00E065BB /* PolicyRowView.swift */,
+				A882E6BF2FFE4CA9007276D0 /* PolicySearchToolsView.swift */,
 			);
 			path = Policy;
 			sourceTree = "<group>";
@@ -797,6 +800,7 @@
 				A80209632F8813B600F3778D /* AdvancedComputerSearchesView.swift in Sources */,
 				A8BAD2D52DE074D7006C9B34 /* CreateScriptView.swift in Sources */,
 				E49319872B6797B400B58519 /* PrestagesAssignedView.swift in Sources */,
+				A882E6C02FFE4CB3007276D0 /* PolicySearchToolsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
