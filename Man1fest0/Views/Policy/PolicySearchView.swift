@@ -467,11 +467,76 @@ struct PolicySearchView: View {
                                 
                                 // ── Tools ─────────────────────────────────────────
                                 case 0:
-                                PolicySearchToolsView(
-                                        server: server,
-                                        selectedPoliciesInt: Array(selectedPoliciesForActions),
-                                        policiesSelection: $policiesSelection
-                                    )
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        PolicyDetailGeneralTabView(
+                                            server: server,
+                                            selectedPoliciesInt: Array(selectedPoliciesForActions),
+                                            policiesSelection: $policiesSelection
+                                        )
+
+                                        Divider()
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+
+                                        // ── Export XML ────────────────────────────
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "arrow.down.doc.fill")
+                                                    .foregroundColor(.orange)
+                                                Text("Export as XML")
+                                                    .font(.headline)
+                                            }
+
+                                            Text("Downloads each selected policy as an individual XML file to your Downloads folder.")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+
+                                            HStack(spacing: 12) {
+                                                Button {
+                                                    let ids = selectedPoliciesForActions.compactMap { $0 }
+                                                    guard !ids.isEmpty else { return }
+                                                    progress.showProgress()
+                                                    for pid in ids {
+                                                        ASyncFileDownloader.downloadFileAsyncAuth(
+                                                            objectID: pid,
+                                                            resourceType: .policies,
+                                                            server: server,
+                                                            authToken: networkController.authToken
+                                                        ) { path, error in
+                                                            if let path {
+                                                                print("Exported policy \(pid) to: \(path)")
+                                                            } else if let error {
+                                                                print("Export failed for policy \(pid): \(error)")
+                                                                DispatchQueue.main.async {
+                                                                    networkController.messageStore?.show(
+                                                                        "XML export failed for policy \(pid)",
+                                                                        level: .error,
+                                                                        details: error.localizedDescription
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                                        progress.waitForABit()
+                                                        networkController.messageStore?.show(
+                                                            "XML export started",
+                                                            level: .info,
+                                                            details: "Exporting \(selectedPoliciesForActions.compactMap { $0 }.count) policies to Downloads"
+                                                        )
+                                                    }
+                                                } label: {
+                                                    Label("Export \(selectedPoliciesForActions.compactMap { $0 }.count) Policies as XML",
+                                                          systemImage: "arrow.down.doc")
+                                                }
+                                                .buttonStyle(.borderedProminent)
+                                                .tint(.orange)
+                                                .disabled(selectedPoliciesForActions.isEmpty)
+                                            }
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.bottom, 12)
+                                    }
                                 
                             // ── Category ─────────────────────────────────────
                             case 2:
@@ -519,12 +584,12 @@ struct PolicySearchView: View {
                                         .buttonStyle(.borderedProminent)
                                         .tint(.blue)
                                         .disabled(selectedCategoryId == nil)
-//                                    }
+                                    }
 
-//                                    Divider()
+                                    Divider()
 
                                     // Enable / Disable toggle + combined update
-//                                    HStack(spacing: 12) {
+                                    HStack(spacing: 12) {
                                         Toggle("", isOn: $enableDisable)
                                             .toggleStyle(SwitchToggleStyle(tint: .red))
                                             .labelsHidden()

@@ -460,7 +460,7 @@ struct CreatePolicyView: View {
                                 let scriptNameLocal = scriptLocal?.name ?? ""
                                 let scriptIdString = String(scriptLocal?.jamfId ?? 0)
                                 
-                                previewXML = xmlController.buildPolicyXML(policyName: newPolicyName, policyID: newPolicyId, scriptName: scriptNameLocal, scriptID: scriptIdString, selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages, SelfServiceEnabled: enableSelfService, department: departmentNameLocal, category: categoryNameLocal, enabledStatus: enableDisable, iconId: iconIdString, iconName: iconNameLocal, iconUrl: iconUrlLocal)
+                                previewXML = xmlController.buildPolicyXML(policyName: newPolicyName, policyID:  newPolicyId, scriptName: scriptNameLocal, scriptID: scriptIdString, selectedPackageIds: selectedPackageIdsToAdd, packages: networkController.packages, SelfServiceEnabled: enableSelfService, department: departmentNameLocal, category: categoryNameLocal, enabledStatus: enableDisable, iconId: iconIdString, iconName: iconNameLocal, iconUrl: iconUrlLocal)
                                 showPreviewSheet = true
                             }) {
                                 Text("Preview XML")

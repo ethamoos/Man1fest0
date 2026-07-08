@@ -911,6 +911,44 @@ class PolicyBrain: ObservableObject {
     }
     
     
+    func replacePolicy(xmlContent: String,  server: String, resourceType: ResourceType, policyId: String, policyName: String, authToken: String) {
+        
+        let sem = DispatchSemaphore.init(value: 0)
+        
+        if URL(string: server) != nil {
+            if let serverURL = URL(string: server) {
+                
+                let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
+                let xmldata = xmlContent.data(using: .utf8)
+                separationLine()
+                print("url is set as:\(url)")
+                var request = URLRequest(url: url)
+                request.httpMethod = "PUT"
+                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+                request.setValue("application/xml", forHTTPHeaderField: "Accept")
+                request.httpBody = xmldata
+                let config = URLSessionConfiguration.default
+                let authString = "Bearer \(authToken)"
+                config.httpAdditionalHeaders = ["Authorization" : authString]
+                URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
+                    defer { sem.signal() }
+                    guard let httpResponse = response as? HTTPURLResponse,
+                          (200...299).contains(httpResponse.statusCode) else {
+                        print("Bad Credentials")
+                        print(String(describing: response))
+                        return
+                    }
+                    
+                    DispatchQueue.main.async {
+                        print("Success! Package pushed.")
+                    }
+                }.resume()
+                
+                sem.wait()
+            }
+        }
+    }
+    
     
     
     //    #################################################################################
