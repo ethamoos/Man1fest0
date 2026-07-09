@@ -476,6 +476,36 @@ struct PolicySearchView: View {
                                 case 0:
                                     VStack(alignment: .leading, spacing: 0) {
 
+                                        // ── Open in Browser ───────────────────────
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "safari")
+                                                    .foregroundColor(.green)
+                                                Text("Open in Browser")
+                                                    .font(.headline)
+                                            }
+                                            Text("Opens each selected policy in the Jamf Pro web interface. Each policy opens in a new browser tab.")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            Button {
+                                                openSelectedPoliciesInBrowser()
+                                            } label: {
+                                                Label(
+                                                    "Open \(selectedPoliciesForActions.compactMap { $0 }.count) Policies in Browser",
+                                                    systemImage: "safari"
+                                                )
+                                            }
+                                            .buttonStyle(.borderedProminent)
+                                            .tint(.green)
+                                            .disabled(selectedPoliciesForActions.isEmpty)
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.top, 12)
+
+                                        Divider()
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+
                                         // ── Export XML ────────────────────────────
                                         VStack(alignment: .leading, spacing: 8) {
                                             HStack(spacing: 6) {
@@ -1121,6 +1151,19 @@ struct PolicySearchView: View {
          .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
     }
     
+    // MARK: - Actions
+
+    private func openSelectedPoliciesInBrowser() {
+        let ids = selectedPoliciesForActions.compactMap { $0 }
+        guard !ids.isEmpty else { return }
+        // Build the Jamf Pro web UI URL directly: server/policies.html?id=<id>&o=r
+        // (same pattern produced by translateJamfAPIURL for policy resources)
+        for pid in ids {
+            let webURL = "\(server)/policies.html?id=\(pid)&o=r"
+            layout.openURL(urlString: webURL)
+        }
+    }
+
     // MARK: - Matching Logic
     func isPolicyMatch(_ policy: PolicyDetailed) -> Bool {
         // Evaluate empty-field filter (if requested)

@@ -735,7 +735,7 @@ struct PolicyDetailView: View {
                 .frame(minHeight: 250)
             }
             
-            // Add an "Open in Browser" button that uses the Layout helper to open the current policy URL
+            // Add an "th" button that uses the Layout helper to open the current policy URL
             HStack {
                 Spacer()
                 Button(action: {

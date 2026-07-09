@@ -421,22 +421,41 @@ struct PolicyScriptsTabView: View {
                         .frame(maxHeight: 40)
                         .border(Color.gray)
 
-                    Button(action: {
-
-                        progress.showProgress()
-                        progress.waitForABit()
-                        networkController.separationLine()
-                        print("Add custom command to policy:\(String(describing: policyID))")
-                        policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
-                    }) {
-                        HStack {
-                            Image(systemName: "keyboard")
-                            Text("Add Individual Command To Policy")
+                    HStack {
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.separationLine()
+                            print("Add custom command to policy:\(String(describing: policyID))")
+                            policyController.addCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: command)
+                        }) {
+                            HStack {
+                                Image(systemName: "keyboard")
+                                Text("Add Individual Command To Policy")
+                            }
                         }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .help("Add a custom shell command to be run by this policy.")
+                        
+                        Button(action: {
+                            
+                            progress.showProgress()
+                            progress.waitForABit()
+                            networkController.separationLine()
+                            print("Clear custom commands:\(String(describing: policyID))")
+                            policyController.clearCustomCommand(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), command: "")
+                        }) {
+                            HStack {
+                                Image(systemName: "keyboard")
+                                Text("Clear Individual Commands")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .help("Clear Individual Commands")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .help("Add a custom shell command to be run by this policy.")
                 }
                 Spacer()
             }
