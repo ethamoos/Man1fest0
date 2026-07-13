@@ -247,14 +247,47 @@ struct CreatePolicyView: View {
 
     private func persistTemplates() {
         do {
-            let key = "com.man1fest0.templates.\(server)"
+            let key = templatesStorageKey()
             let data = try JSONEncoder().encode(templates)
             UserDefaults.standard.set(data, forKey: key)
+            // Ensure UserDefaults is committed
+            UserDefaults.standard.synchronize()
+            print("persistTemplates: saved \(templates.count) templates to key: \(key)")
         } catch {
             print("Failed to persist templates: \(error)")
         }
     }
+    
+    private func loadTemplates() {
+        let key = templatesStorageKey()
+        do {
+            if let data = UserDefaults.standard.data(forKey: key) {
+                let loadedTemplates = try JSONDecoder().decode([PolicyTemplate].self, from: data)
+                templates = loadedTemplates
+                print("loadTemplates: loaded \(loadedTemplates.count) templates from key: \(key)")
+            } else {
+                print("loadTemplates: no templates found for key: \(key)")
+            }
+        } catch {
+            print("Failed to load templates: \(error)")
+        }
+    }
 
+    // Build a stable storage key from the configured server - prefer host:port when possible
+    private func templatesStorageKey() -> String {
+        // Normalize server URL to host:port to avoid differences like trailing slashes
+        if let url = URL(string: server), let host = url.host {
+            if let port = url.port {
+                return "com.man1fest0.templates.\(host):\(port)"
+            } else {
+                return "com.man1fest0.templates.\(host)"
+            }
+        }
+        // Fallback: sanitize server string by removing characters that are unsafe for keys
+        let sanitized = server.replacingOccurrences(of: "[^A-Za-z0-9_.-]", with: "_", options: .regularExpression)
+        return "com.man1fest0.templates.\(sanitized)"
+    }
+    
     @State private var templates: [PolicyTemplate] = []
     @State private var newTemplateName: String = ""
     @State private var editingTemplate: PolicyTemplate? = nil
@@ -263,6 +296,8 @@ struct CreatePolicyView: View {
     @State private var previewXML: String = ""
     @State private var showPreviewSheet: Bool = false
     @State private var templatesExpanded: Bool = false
+    // Confirmation for resetting all templates
+    @State private var showResetTemplatesConfirmation: Bool = false
     
     
         
@@ -315,6 +350,8 @@ struct CreatePolicyView: View {
                     Task {
                         try await networkController.getAllPackages()
                         try await networkController.getAllScripts()
+                        // Load persisted templates for this server
+                        loadTemplates()
                     }
                 }
                 
@@ -577,7 +614,12 @@ struct CreatePolicyView: View {
                                     .buttonStyle(.bordered)
                                 Button("Import") { importTemplatesFromFile() }
                                     .buttonStyle(.bordered)
-                            }
+                                Button("Reset") {
+                                    showResetTemplatesConfirmation = true
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(.red)
+                             }
                             
                             if templates.isEmpty {
                                 Text("No templates saved for this server").foregroundColor(.secondary)
@@ -606,6 +648,16 @@ struct CreatePolicyView: View {
                                   message: Text("Delete template '\(tpl.name)'? This action cannot be undone."),
                                   primaryButton: .destructive(Text("Delete")) {
                                 deleteTemplate(tpl)
+                            }, secondaryButton: .cancel())
+                        }
+                        // Confirmation alert for resetting all templates
+                        .alert(isPresented: $showResetTemplatesConfirmation) {
+                            Alert(title: Text("Reset Templates"),
+                                  message: Text("Are you sure you want to delete all saved templates for this server? This action cannot be undone."),
+                                  primaryButton: .destructive(Text("Reset")) {
+                                templates.removeAll()
+                                persistTemplates()
+                                networkController.messageStore?.show("Templates reset", level: .success, details: "All templates removed for this server")
                             }, secondaryButton: .cancel())
                         }
                         .padding(.vertical, 6)

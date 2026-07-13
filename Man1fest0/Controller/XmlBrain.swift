@@ -425,7 +425,7 @@ class XmlBrain: ObservableObject {
                         let code = httpResponse.statusCode
                         if (200...299).contains(code) {
                             DispatchQueue.main.async {
-                                print("Success! Package pushed.")
+                                print("Success! Policy Created XML Brain.")
                             }
                             return
                         } else {
