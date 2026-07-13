@@ -142,6 +142,59 @@ struct CreatePolicyView: View {
         var iconId: Int?
     }
 
+    // Scope model matching the JSON shape used by the Jamf examples
+    struct ScopeLimitations: Codable, Equatable {
+        var users: [Int] = []
+        var user_groups: [Int] = []
+        var network_segments: [String] = []
+        var ibeacons: [String] = []
+    }
+
+    struct ScopeExclusions: Codable, Equatable {
+        var computers: [Int] = []
+        var buildings: [String] = []
+        var departments: [String] = []
+        var computer_groups: [Int] = []
+        var users: [Int] = []
+        var user_groups: [Int] = []
+        var network_segments: [String] = []
+        var ibeacons: [String] = []
+        var jss_users: [String: String] = [:]
+        var jss_user_groups: [String: String] = [:]
+    }
+
+    struct LimitToUsers: Codable, Equatable {
+        var user_groups: [Int] = []
+    }
+
+    struct Scope: Codable, Equatable {
+        var all_computers: Bool = false
+        var all_jss_users: Bool = false
+        var computers: [Int] = []
+        var buildings: [String] = []
+        var departments: [String] = []
+        var computer_groups: [Int] = []
+        var jss_users: [String: String] = [:]
+        var jss_user_groups: [String: String] = [:]
+        var limitations: ScopeLimitations = ScopeLimitations()
+        var exclusions: ScopeExclusions = ScopeExclusions()
+        var limit_to_users: LimitToUsers = LimitToUsers()
+
+        static func defaultEmpty() -> Scope { Scope() }
+        static func allComputersAllUsers() -> Scope {
+            var s = Scope()
+            s.all_computers = true
+            s.all_jss_users = true
+            return s
+        }
+    }
+
+    struct ScopePreset: Codable, Identifiable, Equatable {
+        var id: UUID = UUID()
+        var name: String
+        var scope: Scope
+    }
+
     // Local layout constants and helpers
     private let selectionListHeight: CGFloat = 100
     private let packageListHeight: CGFloat = 300
@@ -273,6 +326,49 @@ struct CreatePolicyView: View {
         }
     }
 
+    // MARK: - Scope preset persistence
+    private func scopePresetsStorageKey() -> String {
+        return templatesStorageKey() + ".scopePresets"
+    }
+
+    private func persistScopePresets() {
+        do {
+            let key = scopePresetsStorageKey()
+            let data = try JSONEncoder().encode(scopePresets)
+            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.synchronize()
+            print("persistScopePresets: saved \(scopePresets.count) presets to key: \(key)")
+        } catch {
+            print("Failed to persist scope presets: \(error)")
+        }
+    }
+
+    private func loadScopePresets() {
+        let key = scopePresetsStorageKey()
+        do {
+            if let data = UserDefaults.standard.data(forKey: key) {
+                let loaded: [ScopePreset] = try JSONDecoder().decode([ScopePreset].self, from: data)
+                scopePresets = loaded
+                print("loadScopePresets: loaded \(loaded.count) presets from key: \(key)")
+            } else {
+                print("loadScopePresets: no presets found for key: \(key)")
+            }
+        } catch {
+            print("Failed to load scope presets: \(error)")
+        }
+    }
+
+    private func scopeToJSON(_ s: Scope) -> String {
+        do {
+            let enc = JSONEncoder()
+            enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try enc.encode(["scope": s])
+            return String(data: data, encoding: .utf8) ?? ""
+        } catch {
+            return "{ \"error\": \"" + error.localizedDescription + "\" }"
+        }
+    }
+
     // Build a stable storage key from the configured server - prefer host:port when possible
     private func templatesStorageKey() -> String {
         // Normalize server URL to host:port to avoid differences like trailing slashes
@@ -298,6 +394,13 @@ struct CreatePolicyView: View {
     @State private var templatesExpanded: Bool = false
     // Confirmation for resetting all templates
     @State private var showResetTemplatesConfirmation: Bool = false
+
+    // Scope presets and current scope
+    @State private var scopePresets: [ScopePreset] = []
+    @State private var newScopePresetName: String = ""
+    @State private var currentScope: Scope = Scope.defaultEmpty()
+    @State private var scopePresetToDelete: ScopePreset? = nil
+    @State private var showScopePreview: Bool = false
     
     
         
@@ -352,6 +455,8 @@ struct CreatePolicyView: View {
                         try await networkController.getAllScripts()
                         // Load persisted templates for this server
                         loadTemplates()
+                        // Load persisted scope presets for this server
+                        loadScopePresets()
                     }
                 }
                 
@@ -661,6 +766,87 @@ struct CreatePolicyView: View {
                             }, secondaryButton: .cancel())
                         }
                         .padding(.vertical, 6)
+                    }
+                    // Scope Presets
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Scope Presets").font(.headline)
+                    } content: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 8) {
+                                Button("Preset: No devices or users") {
+                                    currentScope = Scope.defaultEmpty()
+                                    networkController.messageStore?.show("Scope set", level: .info, details: "No devices or users")
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button("Preset: All computers and all users") {
+                                    currentScope = Scope.allComputersAllUsers()
+                                    networkController.messageStore?.show("Scope set", level: .info, details: "All computers and all users")
+                                }
+                                .buttonStyle(.bordered)
+
+                                Spacer()
+                            }
+
+                            HStack {
+                                TextField("Preset name", text: $newScopePresetName)
+                                    .frame(maxWidth: 300)
+                                Button("Save Preset") {
+                                    let preset = ScopePreset(name: newScopePresetName.trimmingCharacters(in: .whitespacesAndNewlines), scope: currentScope)
+                                    guard !preset.name.isEmpty else { return }
+                                    scopePresets.append(preset)
+                                    persistScopePresets()
+                                    newScopePresetName = ""
+                                    networkController.messageStore?.show("Scope preset saved", level: .success, details: preset.name)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(newScopePresetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                Spacer()
+                                Button(showScopePreview ? "Hide JSON" : "Preview JSON") {
+                                    showScopePreview.toggle()
+                                }
+                                .buttonStyle(.bordered)
+                            }
+
+                            if scopePresets.isEmpty {
+                                Text("No scope presets saved for this server").foregroundColor(.secondary)
+                            } else {
+                                ForEach(scopePresets) { sp in
+                                    HStack {
+                                        Text(sp.name)
+                                        Spacer()
+                                        Button("Apply") {
+                                            currentScope = sp.scope
+                                            networkController.messageStore?.show("Scope applied", level: .info, details: sp.name)
+                                        }
+                                        .buttonStyle(.bordered)
+                                        Button("Delete") {
+                                            scopePresetToDelete = sp
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .tint(.red)
+                                    }
+                                }
+                            }
+
+                            if showScopePreview {
+                                Text("Scope JSON Preview").font(.subheadline)
+                                TextEditor(text: .constant(scopeToJSON(currentScope)))
+                                    .frame(minHeight: 120)
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .disabled(true)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                        // Confirmation alert for deleting a saved scope preset
+                        .alert(item: $scopePresetToDelete) { pres in
+                            Alert(title: Text("Confirm Delete"),
+                                  message: Text("Delete scope preset '\(pres.name)'? This action cannot be undone."),
+                                  primaryButton: .destructive(Text("Delete")) {
+                                scopePresets.removeAll { $0.id == pres.id }
+                                persistScopePresets()
+                            }, secondaryButton: .cancel())
+                        }
                     }
                     
                     // Edit sheet for templates
