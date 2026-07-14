@@ -330,6 +330,7 @@ struct PolicyScriptsTabView: View {
                             
                             print("Adding script:\(selectedScript.name)")
                             print("parameter 4 is :\(scriptParameter4)")
+                            requestPolicyRefresh()
                             
                         }) {
                             HStack(spacing: 10) {
@@ -366,6 +367,7 @@ struct PolicyScriptsTabView: View {
                                 // Pass listSelection.jamfId as optional Int? (nil if 0)
                                 let _: Int? = listSelection.jamfId == 0 ? nil : listSelection.jamfId
                                 xmlController.removeScriptFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID), selectedScriptName: listSelection.name ?? "", selectedScriptId: listSelection.jamfId)
+                                requestPolicyRefresh()
                             }
                             Button("Cancel", role: .cancel) { }
                         } message: {
@@ -396,6 +398,7 @@ struct PolicyScriptsTabView: View {
                                 networkController.separationLine()
                                 print("Confirmed: Removing all scripts in policy:\(String(describing: policyID))")
                                 xmlController.removeAllScriptsFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
+                                requestPolicyRefresh()
                             }
                             Button("Cancel", role: .cancel) { }
                         } message: {

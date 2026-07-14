@@ -561,6 +561,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Renaming Policy:\(policyName)")
+                                requestPolicyRefresh()
                             }) {
                                 Text("Rename")
                             }
@@ -587,6 +588,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Updating Policy Trigger to:\(policyName)")
+                                requestPolicyRefresh()
                                 
                             }) {
                                 Text("Trigger")
@@ -614,6 +616,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Name Self-Service to:\(policyName)")
+                                requestPolicyRefresh()
                             }) {
                                 Text("Self-Service")
                             }
@@ -895,11 +898,17 @@ struct PolicyDetailView: View {
         }
 
         // Listen for child tabs signalling that they modified the policy and request a refresh.
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("policyDidChange"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .policyDidChange)) { _ in
             Task {
                 do {
                     try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                    print("Refreshed detailed policy in response to policyDidChange notification")
+                    // Also refresh the XML representation so subsequent XML-based edits work from current state
+                    let refreshedXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                    // Keep local fields in sync with refreshed detail
+                    policyName = networkController.policyDetailed?.general?.name ?? policyName
+                    policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? policyCustomTrigger
+                    print("Refreshed detailed policy + XML (len: \(refreshedXML.count)) in response to policyDidChange notification")
                 } catch {
                     print("Failed to refresh detailed policy after policyDidChange notification: \(error)")
                 }
@@ -1266,3 +1275,20 @@ print("Running: clonePerPackage")
 //
 //    }
 //}
+
+// MARK: - Shared policy refresh helper
+
+extension Notification.Name {
+    /// Posted when a policy has been modified and the detail view should reload.
+    static let policyDidChange = Notification.Name("policyDidChange")
+}
+
+/// Requests a refresh of the currently displayed policy by posting the
+/// `policyDidChange` notification (observed by `PolicyDetailView`, which reloads
+/// the detailed policy and its XML). A short delay gives server-side writes time
+/// to complete before the refresh fetch runs.
+func requestPolicyRefresh(after delay: TimeInterval = 0.8) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+        NotificationCenter.default.post(name: .policyDidChange, object: nil)
+    }
+}

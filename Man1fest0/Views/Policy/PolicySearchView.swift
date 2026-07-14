@@ -96,6 +96,13 @@ struct PolicySearchView: View {
     @State var selectedIcon: Icon? = Icon(id: 0, url: "", name: "")
     @State var selectedIconString = ""
     
+    // Value-driven navigation for the detail view. Using a single, state-driven
+    // NavigationLink avoids a SwiftUI bug where many eager NavigationLinks inside a
+    // ScrollView/LazyVStack can misfire and activate the first link's destination
+    // (which made the 1st policy in the list appear to be selected erroneously).
+    @State private var detailNavPolicy: PolicyDetailed? = nil
+    @State private var isDetailNavActive: Bool = false
+    
     // Identifiable wrapper so ForEach can use the pairs directly as data
     private struct MatchedPolicyPair: Identifiable {
         let policy: PolicyDetailed
@@ -376,23 +383,46 @@ struct PolicySearchView: View {
                                 .padding(.leading, 4)
                                 .contentShape(Rectangle())
                             
-                            NavigationLink(destination: PolicyDetailView(server: server, policy: {
-                                var basicPolicy = Policy(name: pair.policy.general?.name ?? "")
-                                basicPolicy.jamfId = pair.policy.general?.jamfId
-                                return basicPolicy
-                            }(), policyID: pair.policy.general?.jamfId ?? 0)) {
+                            // Use a Button that drives a single shared NavigationLink (see
+                            // detailNavPolicy/isDetailNavActive). This guarantees the tapped
+                            // policy is the one shown, avoiding the eager-NavigationLink misfire.
+                            Button(action: {
+                                detailNavPolicy = pair.policy
+                                isDetailNavActive = true
+                            }) {
                                 Image(systemName: "arrow.right.circle")
                                     .imageScale(.large)
                                     .foregroundColor(.secondary)
                                     .padding(.trailing)
                             }
                             .buttonStyle(.plain)
+                            .help("Open this policy's detail view")
                         }
                         .frame(maxWidth: .infinity)
                      }
                 }
                 .padding(.vertical)
             }
+            // Single, state-driven navigation destination for the whole list. Only one
+            // NavigationLink exists, so the correct (tapped) policy is always shown.
+            .background(
+                NavigationLink(
+                    isActive: $isDetailNavActive,
+                    destination: {
+                        if let p = detailNavPolicy {
+                            PolicyDetailView(server: server, policy: {
+                                var basicPolicy = Policy(name: p.general?.name ?? "")
+                                basicPolicy.jamfId = p.general?.jamfId
+                                return basicPolicy
+                            }(), policyID: p.general?.jamfId ?? 0)
+                        } else {
+                            EmptyView()
+                        }
+                    },
+                    label: { EmptyView() }
+                )
+                .hidden()
+            )
             
             // ── Actions Panel ────────────────────────────────────────────────
             if !selectedPoliciesForActions.isEmpty {

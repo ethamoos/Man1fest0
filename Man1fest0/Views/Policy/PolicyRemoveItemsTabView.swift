@@ -85,6 +85,7 @@ struct PolicyRemoveItemsTabView: View {
                                 xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
                                 networkController.separationLine()
                                 print("Confirmed: clear SelfService")
+                                requestPolicyRefresh()
                               }, secondaryButton: .cancel())
                     }
                 }
@@ -108,6 +109,7 @@ struct PolicyRemoveItemsTabView: View {
                                 xmlController.clearMaintenance(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
                                 Debug.separationLine()
                                 print("Confirmed: clear Maintenance")
+                                requestPolicyRefresh()
                               }, secondaryButton: .cancel())
                     }
                 }
@@ -132,6 +134,7 @@ struct PolicyRemoveItemsTabView: View {
                                 Debug.separationLine()
                                 print("Confirmed: clear Printers")
                                 xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
+                                requestPolicyRefresh()
                               }, secondaryButton: .cancel())
                     }
                 }
@@ -156,6 +159,7 @@ struct PolicyRemoveItemsTabView: View {
                                 xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
                                 Debug.separationLine()
                                 print("Confirmed: clear DockItems")
+                                requestPolicyRefresh()
                               }, secondaryButton: .cancel())
                     }
                 }
@@ -180,6 +184,7 @@ struct PolicyRemoveItemsTabView: View {
                                 xmlController.updatePolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID), policyXML: String(describing: xmlController.aexmlDoc.xml))
                                 Debug.separationLine()
                                 print("Confirmed: clear Reboot")
+                                requestPolicyRefresh()
                               }, secondaryButton: .cancel())
                     }
                 }
@@ -201,6 +206,7 @@ struct PolicyRemoveItemsTabView: View {
                             // Code to execute when "Yes" is tapped
                             xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML)
                             print("Yes tapped")
+                            requestPolicyRefresh()
                         },
                         secondaryButton: .cancel()
                     )
@@ -223,6 +229,7 @@ struct PolicyRemoveItemsTabView: View {
                             // Code to execute when "Yes" is tapped
                             xmlController.removeExclusions(server: server, policyID: String(describing:policyID), authToken: networkController.authToken)
                             print("Yes tapped")
+                            requestPolicyRefresh()
                         },
                         secondaryButton: .cancel()
                     )

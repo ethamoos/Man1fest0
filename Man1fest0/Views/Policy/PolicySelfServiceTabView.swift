@@ -245,6 +245,7 @@ struct PolicySelfServiceTabView: View {
                         progress.waitForABit()
                         
                         xmlController.updateIcon(server: server,authToken: networkController.authToken, policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
+                        requestPolicyRefresh()
                     }) {
                         Text("Update Icon")
                     }
@@ -266,6 +267,7 @@ struct PolicySelfServiceTabView: View {
                                 progress.showProgress()
                                 progress.waitForABit()
                                 networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                                requestPolicyRefresh()
                             }
                             Button("Cancel", role: .cancel) { }
                         } message: {
@@ -281,6 +283,7 @@ struct PolicySelfServiceTabView: View {
                         progress.waitForABit()
                         
                         networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
+                        requestPolicyRefresh()
                     }) {
                         Text("Enable Self-Service")
                     }
@@ -298,6 +301,7 @@ struct PolicySelfServiceTabView: View {
                             
                             networkController.separationLine()
                             print("Name Self-Service to:\(newSelfServiceName)")
+                            requestPolicyRefresh()
                         }) {
                             Text("Set Name")
                         }
