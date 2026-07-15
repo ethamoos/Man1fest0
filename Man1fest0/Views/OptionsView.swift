@@ -212,7 +212,7 @@ struct OptionsView: View {
                         Divider()
                         
                         Group {
-                            DisclosureGroup("Structures") {
+                            DisclosureGroup("Objects") {
                                 NavigationLink(destination: CategoriesView(selectedResourceType: ResourceType.category, server: server )) {
                                     Text("Categories")
                                 }

@@ -168,7 +168,7 @@ struct PolicyPackageTabView: View {
                                 print("Failed to refresh detailed policy after adding package: \(error)")
                             }
                         }
-                        requestPolicyRefresh()
+                        requestPolicyRefresh(for: String(describing: policyID))
 
                     }) {
                         HStack(spacing: 10) {
@@ -191,7 +191,7 @@ struct PolicyPackageTabView: View {
                         packageName = selectedPackage?.name ?? ""
                         
                         networkController.editPolicy(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, packageName: packageName, packageID: packageID, policyID: policyID, action: action, fut: String(fut), feu: String(feu))
-                        requestPolicyRefresh()
+                        requestPolicyRefresh(for: String(describing: policyID))
                         
                     }) {
                         HStack(spacing: 10) {
@@ -229,7 +229,7 @@ struct PolicyPackageTabView: View {
                             networkController.separationLine()
                             print("Confirmed: Clearing all packages in policy:\(String(describing: policyID))")
                             xmlController.removePackagesFromPolicy(xmlContent: xmlController.aexmlDoc, authToken: networkController.authToken, server: server, policyId: String(describing: policyID))
-                            requestPolicyRefresh()
+                                requestPolicyRefresh(for: String(describing: policyID))
                         }
                         Button("Cancel", role: .cancel) { }
                     } message: {

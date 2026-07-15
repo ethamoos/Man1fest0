@@ -83,7 +83,7 @@ struct PolicyTriggersTabView: View {
                             print("Failed to refresh detailed policy after setting triggers: \(error)")
                         }
                     }
-                    requestPolicyRefresh()
+                    requestPolicyRefresh(for: String(describing: policyID))
                     
                 }) {
                     Text("Set Triggers")

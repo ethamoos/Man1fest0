@@ -561,7 +561,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Renaming Policy:\(policyName)")
-                                requestPolicyRefresh()
+                                requestPolicyRefresh(for: String(describing: policyID))
                             }) {
                                 Text("Rename")
                             }
@@ -588,7 +588,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Updating Policy Trigger to:\(policyName)")
-                                requestPolicyRefresh()
+                                requestPolicyRefresh(for: String(describing: policyID))
                                 
                             }) {
                                 Text("Trigger")
@@ -616,7 +616,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Name Self-Service to:\(policyName)")
-                                requestPolicyRefresh()
+                                requestPolicyRefresh(for: String(describing: policyID))
                             }) {
                                 Text("Self-Service")
                             }
@@ -898,7 +898,17 @@ struct PolicyDetailView: View {
         }
 
         // Listen for child tabs signalling that they modified the policy and request a refresh.
-        .onReceive(NotificationCenter.default.publisher(for: .policyDidChange)) { _ in
+        // Notifications may include a userInfo["policyID"] value. If present, only refresh when it
+        // matches this view's policyID. If absent, treat as a broadcast and refresh as before.
+        .onReceive(NotificationCenter.default.publisher(for: .policyDidChange)) { notification in
+            // Check optional policyID carried in the notification's userInfo
+            if let info = notification.userInfo, let changedPolicyID = info["policyID"] as? String {
+                // If this notification is for a different policy, ignore it
+                if changedPolicyID != String(describing: policyID) {
+                    return
+                }
+            }
+
             Task {
                 do {
                     try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
@@ -1287,8 +1297,15 @@ extension Notification.Name {
 /// `policyDidChange` notification (observed by `PolicyDetailView`, which reloads
 /// the detailed policy and its XML). A short delay gives server-side writes time
 /// to complete before the refresh fetch runs.
-func requestPolicyRefresh(after delay: TimeInterval = 0.8) {
+/// Request a policy refresh. If `policyID` is provided it will be included in the
+/// notification userInfo so only views showing that policy will react. If omitted,
+/// the notification is broadcast to all listeners (legacy behaviour).
+func requestPolicyRefresh(for policyID: String? = nil, after delay: TimeInterval = 0.8) {
     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-        NotificationCenter.default.post(name: .policyDidChange, object: nil)
+        if let pid = policyID {
+            NotificationCenter.default.post(name: .policyDidChange, object: nil, userInfo: ["policyID": pid])
+        } else {
+            NotificationCenter.default.post(name: .policyDidChange, object: nil)
+        }
     }
 }
