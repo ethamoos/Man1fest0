@@ -2376,6 +2376,31 @@ print("DEBUG - status code is 200, response is:")
             print("deletePolicy: failed to build URL")
         }
     }
+
+    /// Call after `deletePolicy` so list/search views update once the policy is gone.
+    /// 1. Optimistically prunes the deleted policy from the in-memory caches so the
+    ///    UI (PolicyView / PolicySearchView) updates immediately.
+    /// 2. Reconciles with the server by reloading the basic policy list after a short
+    ///    delay (giving the DELETE request time to complete server-side).
+    func refreshAfterPolicyDeletion(server: String, authToken: String, deletedPolicyID: Int) {
+        // Optimistic, immediate cache prune (safe: NetBrain is @MainActor)
+        policies.removeAll { $0.jamfId == deletedPolicyID }
+        allPoliciesConverted.removeAll { $0.jamfId == deletedPolicyID }
+        allPoliciesDetailed.removeAll { ($0?.general?.jamfId ?? -1) == deletedPolicyID }
+        policiesMatchingItems.removeAll { $0 == deletedPolicyID }
+        messageStore?.show("Policy deleted", level: .success, details: "Removed policy id \(deletedPolicyID)")
+
+        // Reconcile with the server after the delete has had time to complete
+        Task {
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            do {
+                try await self.getAllPolicies(server: server, authToken: authToken)
+                print("refreshAfterPolicyDeletion: reloaded policy list after deleting id \(deletedPolicyID)")
+            } catch {
+                print("refreshAfterPolicyDeletion: failed to refresh policy list: \(error)")
+            }
+        }
+    }
     
     func deleteScript(server: String,resourceType: ResourceType, itemID: String, authToken: String) async throws {
         let resourcePath = getURLFormat(data: (ResourceType.script))

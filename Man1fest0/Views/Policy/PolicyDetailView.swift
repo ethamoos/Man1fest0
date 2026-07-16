@@ -306,6 +306,9 @@ struct PolicyDetailView: View {
                             // Code to execute when "Yes" is tapped
                             networkController.deletePolicy(server: server, resourceType: selectedResourceType, itemID: String(describing: policyID), authToken: networkController.authToken)
                             print("Yes tapped")
+                            // Refresh the policy list so the deleted policy is removed from
+                            // list/search views (re-fetching this policy's detail would 404).
+                            networkController.refreshAfterPolicyDeletion(server: server, authToken: networkController.authToken, deletedPolicyID: policyID)
                         },
                         secondaryButton: .cancel()
                     )
