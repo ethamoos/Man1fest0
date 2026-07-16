@@ -1563,21 +1563,27 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         let url = URL(string: jamfURLQuery)!
         self.separationLine()
         print("Running removeAllScriptsFromPolicy - XML brain")
-        print("Initial xmlContent is:")
-        self.atSeparationLine()
-        print(xmlContent.xml)
+//        print("Initial xmlContent is:")
+//        self.atSeparationLine()
+//        print(xmlContent.xml)
         self.atSeparationLine()
         print("url is:\(url)")
         self.atSeparationLine()
+        let root = xmlContent.root
         let scripts = xmlContent.root["scripts"]["script"]
         let scriptsRoot = xmlContent.root["scripts"]
-        print("Current scripts are:\(scripts.xml)")
+        print("Current scripts are:\(scriptsRoot.xml)")
         print("Removing current scripts")
-        scripts.removeFromParent()
+        scriptsRoot.removeFromParent()
         print("Add empty scripts")
-        scriptsRoot.addChild(name: "scripts")
+        root.addChild(name: "scripts")
         scripts.addChild(name: "size", value: "0")
-        print("Current scripts are:\(scripts.xml)")
+        print("Current scripts are:\(scriptsRoot.xml)")
+        
+                print("Final xmlContent is:")
+                self.atSeparationLine()
+                print(xmlContent.xml)
+        
         //  ################################################################################
         //              DEBUG
         //  ################################################################################

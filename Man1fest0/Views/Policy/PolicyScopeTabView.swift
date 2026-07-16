@@ -471,7 +471,7 @@ struct PolicyScopeTabView: View {
                             Task {
                                 do { try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID)) } catch { print("Failed to refresh detailed policy after adding computer to scope: \(error)") }
                             }
-                            requestPolicyRefresh()
+                            requestPolicyRefresh(for: String(describing: policyID))
                         }) {
                             HStack(spacing: 10) { Image(systemName: "plus.square.fill.on.square.fill"); Text("Add") }
                         }
@@ -543,7 +543,7 @@ struct PolicyScopeTabView: View {
                     .padding(.bottom, 4)
                 Button(action: {
                     progress.showProgress(); progress.waitForABit(); xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken); xmlController.addDepartmentToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, departmentName: selectionDepartment.name, departmentId: String(describing: selectionDepartment.jamfId ?? 0), authToken: networkController.authToken, policyId: String(describing: policyID), resourceType: selectedResourceType, server: server)
-                    requestPolicyRefresh()
+                    requestPolicyRefresh(for: String(describing: policyID))
                 }) {
                     HStack(spacing: 10) { Image(systemName: "plus.square.fill.on.square.fill"); Text("Add Department") }
                 }
@@ -573,7 +573,7 @@ struct PolicyScopeTabView: View {
                     .padding(.bottom, 4)
                 Button(action: {
                     progress.showProgress(); progress.waitForABit(); xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken); xmlController.addBuildingToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, buildingName: selectionBuilding.name, buildingId: String(describing: selectionBuilding.id), policyId: String(describing: policyID), resourceType: ResourceType.policyDetail, server: server, authToken: networkController.authToken)
-                    requestPolicyRefresh()
+                    requestPolicyRefresh(for: String(describing: policyID))
                 }) {
                     HStack(spacing: 10) { Image(systemName: "plus.square.fill.on.square.fill"); Text("Add Building") }
                 }
@@ -599,7 +599,7 @@ struct PolicyScopeTabView: View {
                 TextField("Filter", text: $computerGroupFilter)
                 Button(action: {
                     progress.showProgress(); progress.waitForABit(); xmlController.updateScopeCompGroupSingle(groupSelection: selectionCompGroup, authToken: networkController.authToken,resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, currentPolicyAsAEXML: networkController.aexmlDoc)
-                    requestPolicyRefresh()
+                    requestPolicyRefresh(for: String(describing: policyID))
                 }) {
                     HStack(spacing: 10) { Image(systemName: "plus.square.fill.on.square.fill"); Text("Add Group ") }
                 }
@@ -669,7 +669,7 @@ struct PolicyScopeTabView: View {
                             primaryButton: .destructive(Text("I understand!")) {
                                 xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                                 Task { await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: ldapSearchCustomGroupSelection, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID)) }
-                                requestPolicyRefresh()
+                                requestPolicyRefresh(for: String(describing: policyID))
                             },
                             secondaryButton: .cancel()
                         )
@@ -686,7 +686,7 @@ struct PolicyScopeTabView: View {
                                 message: Text("This action will clear any current limitations on the policy scoping.\n Some devices previously blocked may now receive the policy"),
                                 primaryButton: .destructive(Text("I understand!")) {
                                     xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing:policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML)
-                                    requestPolicyRefresh()
+                                    requestPolicyRefresh(for: String(describing: policyID))
                                 },
                                 secondaryButton: .cancel()
                             )
@@ -814,7 +814,7 @@ struct PolicyScopeTabView: View {
                                                 print("Failed to refresh detailed policy after adding exclusion: \(error)")
                                             }
                                         }
-                                        requestPolicyRefresh()
+                                        requestPolicyRefresh(for: String(describing: policyID))
                                     },
                                     secondaryButton: .cancel()
                                 )
@@ -859,7 +859,7 @@ struct PolicyScopeTabView: View {
                                             print("Failed to refresh detailed policy after adding exclusion: \(error)")
                                         }
                                     }
-                                    requestPolicyRefresh()
+                                    requestPolicyRefresh(for: String(describing: policyID))
                                 },
                                 secondaryButton: .cancel()
                             )
@@ -906,7 +906,7 @@ struct PolicyScopeTabView: View {
                                                 print("Failed to refresh detailed policy after adding department exclusion: \(error)")
                                             }
                                         }
-                                        requestPolicyRefresh()
+                                        requestPolicyRefresh(for: String(describing: policyID))
                                     },
                                     secondaryButton: .cancel()
                                 )
@@ -953,7 +953,7 @@ struct PolicyScopeTabView: View {
                                                 print("Failed to refresh detailed policy after adding building exclusion: \(error)")
                                             }
                                         }
-                                        requestPolicyRefresh()
+                                        requestPolicyRefresh(for: String(describing: policyID))
                                     },
                                     secondaryButton: .cancel()
                                 )
@@ -982,7 +982,7 @@ struct PolicyScopeTabView: View {
                                             print("Failed to refresh detailed policy after clearing exclusion: \(error)")
                                         }
                                     }
-                                    requestPolicyRefresh()
+                                    requestPolicyRefresh(for: String(describing: policyID))
                                 },
                                 secondaryButton: .cancel()
                             )
