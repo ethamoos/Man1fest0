@@ -1056,11 +1056,13 @@ struct PolicySearchView: View {
                                         Button("Refresh Icons") {
                                             progress.showProgress()
                                             progress.waitForABit()
-                                            networkController.getAllIconsDetailed(
-                                                server: server,
-                                                authToken: networkController.authToken,
-                                                loopTotal: 20000
-                                            )
+                                            // Load icons efficiently from the detailed policies' icon URLs.
+                                            Task {
+                                                await networkController.refreshIconsFromPolicies(
+                                                    server: server,
+                                                    authToken: networkController.authToken
+                                                )
+                                            }
                                         }
                                         .buttonStyle(.bordered)
                                     }
@@ -1154,11 +1156,13 @@ struct PolicySearchView: View {
             
             
             if networkController.allIconsDetailed.count <= 1 {
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 1000)
+                print("allIconsDetailed is:\(networkController.allIconsDetailed.count) - extracting from policies")
+                // Icons are sourced from the detailed policies (which contain the icon URLs).
+                // getAllPoliciesDetailed extracts them automatically as they load; this is a
+                // fallback for any policies already in memory.
+                networkController.extractIconsFromDetailedPolicies()
             } else {
-                print("getAllIconsDetailed has already run")
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                print("allIconsDetailed already populated: \(networkController.allIconsDetailed.count)")
             }
             
             

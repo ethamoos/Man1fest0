@@ -245,7 +245,7 @@ struct PolicySelfServiceTabView: View {
                         progress.waitForABit()
                         
                         xmlController.updateIcon(server: server,authToken: networkController.authToken, policyID: String(describing: policyID), iconFilename: String(describing: selectedIcon?.name ?? ""), iconID: String(describing: selectedIcon?.id ?? 0), iconURI: String(describing: selectedIcon?.url ?? ""))
-                        requestPolicyRefresh(for: String(describing: policyID))
+                        requestPolicyRefresh()
                     }) {
                         Text("Update Icon")
                     }
@@ -255,25 +255,28 @@ struct PolicySelfServiceTabView: View {
 //                    }
 //                    HStack {
                         Button(action: {
-                            // Show confirmation before kicking off a potentially long download
+                            // Show confirmation before refreshing the icon set
                             showingRefreshIconsWarning = true
                         }) {
                             Text("Refresh Icons")
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
-                        .alert("Warning", isPresented: $showingRefreshIconsWarning) {
+                        .alert("Refresh Icons", isPresented: $showingRefreshIconsWarning) {
                             Button("Proceed") {
                                 progress.showProgress()
                                 progress.waitForABit()
-                                 networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
-                                 requestPolicyRefresh(for: String(describing: policyID))
+                                // Efficiently load icons from the detailed policies (which already
+                                // contain the icon URLs) instead of brute-force id lookups.
+                                Task {
+                                    await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
+                                }
                             }
                             Button("Cancel", role: .cancel) { }
                         } message: {
-                            Text("please note downloading all the icons can take some time")
+                            Text("This loads Self Service icons from your policies. If policy details haven't been loaded yet this may take a moment.")
                         }
-                        .help("Download the latest icon set from the server (can take a long time).")
+                        .help("Load Self Service icons referenced by your policies.")
                      }
                 }
                 HStack {
@@ -283,7 +286,7 @@ struct PolicySelfServiceTabView: View {
                         progress.waitForABit()
                         
                         networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                        requestPolicyRefresh(for: String(describing: policyID))
+                        requestPolicyRefresh()
                     }) {
                         Text("Enable Self-Service")
                     }
@@ -301,7 +304,7 @@ struct PolicySelfServiceTabView: View {
                             
                             networkController.separationLine()
                             print("Name Self-Service to:\(newSelfServiceName)")
-                            requestPolicyRefresh(for: String(describing: policyID))
+                            requestPolicyRefresh()
                         }) {
                             Text("Set Name")
                         }
@@ -318,13 +321,14 @@ struct PolicySelfServiceTabView: View {
         }
         .onAppear{
             if networkController.allIconsDetailed.count <= 1 {
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                print("allIconsDetailed is:\(networkController.allIconsDetailed.count) - extracting from policies")
+                // Extract icons from already-loaded detailed policies (efficient); if none
+                // are loaded yet this will load them, then extract the icon URLs.
                 Task {
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 2000)
+                    await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
                 }
             } else {
-                print("getAllIconsDetailed has already run")
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                print("allIconsDetailed already populated: \(networkController.allIconsDetailed.count)")
             }
         }
 //        .onChange(of: networkController.allIconsDetailed) { newIcons in

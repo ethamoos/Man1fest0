@@ -141,12 +141,15 @@ struct  IconsView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
-                    .alert("This will download all icons again, which may take some time. Do you want to continue?", isPresented: $showingRefreshIconsWarning) {
+                    .alert("This loads the Self Service icons referenced by your policies. Continue?", isPresented: $showingRefreshIconsWarning) {
                         Button("Cancel", role: .cancel) { }
                         Button("Continue") {
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)
+                            // Load icons efficiently from the detailed policies' icon URLs.
+                            Task {
+                                await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
+                            }
                         }
                     }
                 }
@@ -156,11 +159,13 @@ struct  IconsView: View {
             .frame(width: 400, height: 50)
             .onAppear() {
                 if networkController.allIconsDetailed.count <= 1 {
-                    print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 5000)
+                    print("allIconsDetailed is:\(networkController.allIconsDetailed.count) - loading from policies")
+                    // Load icons efficiently from the detailed policies' icon URLs.
+                    Task {
+                        await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
+                    }
                 } else {
-                    print("getAllIconsDetailed has already run")
-                    print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                    print("allIconsDetailed already populated: \(networkController.allIconsDetailed.count)")
                 }
             }
         }

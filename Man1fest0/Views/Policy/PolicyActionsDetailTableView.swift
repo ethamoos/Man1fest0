@@ -611,11 +611,11 @@ struct PolicyActionsDetailTableView: View {
             }
 
             if networkController.allIconsDetailed.count <= 1 {
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
-                networkController.getAllIconsDetailed(server: effectiveServer, authToken: networkController.authToken, loopTotal: 1000)
+                print("allIconsDetailed is:\(networkController.allIconsDetailed.count) - extracting from policies")
+                // Efficiently source icons from the detailed policies' icon URLs.
+                networkController.extractIconsFromDetailedPolicies()
             } else {
-                print("getAllIconsDetailed has already run")
-                print("getAllIconsDetailed is:\(networkController.allIconsDetailed.count) - running")
+                print("allIconsDetailed already populated: \(networkController.allIconsDetailed.count)")
             }
 
             if scopingController.allLdapServers.count <= 1 {

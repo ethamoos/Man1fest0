@@ -95,10 +95,11 @@ struct BreakoutGameView: View {
                     setupBricks()
                     updateWords()
                 }
-                // If icons are desired by default and none are present, fetch them now.
+                // If icons are desired by default and none are present, load them now
+                // (efficiently, from the icon URLs contained in the detailed policies).
                 if showIcons && networkController.allIconsDetailed.isEmpty {
                     Task {
-                        networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 200)
+                        await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
                         DispatchQueue.main.async { setupBricks() }
                     }
                 }
@@ -142,17 +143,19 @@ struct BreakoutGameView: View {
                 restartGame()
                 return
             }
-            if key == .toggleIcons {
-                // Toggle icons and request icons if needed
-                showIcons.toggle()
-                if showIcons && networkController.allIconsDetailed.isEmpty {
-                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 200)
-                    DispatchQueue.main.async { setupBricks() }
-                } else {
-                    setupBricks()
+                if key == .toggleIcons {
+                    // Toggle icons and request icons if needed
+                    showIcons.toggle()
+                    if showIcons && networkController.allIconsDetailed.isEmpty {
+                        Task {
+                            await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
+                            DispatchQueue.main.async { setupBricks() }
+                        }
+                    } else {
+                        setupBricks()
+                    }
+                    return
                 }
-                return
-            }
 
             // Space toggles pause when the game is running; if not running it starts the game
             if key == .space {
@@ -223,10 +226,9 @@ struct BreakoutGameView: View {
                             setupBricks()
                             if enabled && networkController.allIconsDetailed.isEmpty {
                                 Task {
-                                    // getAllIconsDetailed is a synchronous/non-throwing function in NetBrain,
-                                    // so call it directly (no `try`/`await`).
-                                    networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 200)
-                                    // rebuild bricks once icons are fetched
+                                    // Load icons efficiently from the detailed policies' icon URLs.
+                                    await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
+                                    // rebuild bricks once icons are loaded
                                     DispatchQueue.main.async {
                                         setupBricks()
                                     }

@@ -1689,6 +1689,10 @@ print("DEBUG - status code is 200, response is:")
     @MainActor
     private func flushPolicyDetails() {
         guard !policyDetailsBuffer.isEmpty else { isPolicyDetailsFlushScheduled = false; return }
+        // Extract Self Service icons from the newly-arrived detailed policies before we
+        // clear the buffer. This populates `allIconsDetailed` efficiently (using the
+        // icon URLs already present in the policy data) instead of brute-force lookups.
+        self.extractIconsFromDetailedPolicies(policyDetailsBuffer.map { Optional($0) })
         // Prepend buffered items while preserving order
         let toInsertOptional = policyDetailsBuffer.map { Optional($0) }
         var newArray: [PolicyDetailed?] = []
@@ -6612,6 +6616,75 @@ xml = """
         // so provide a courtesy message that the fetch has started.
         messageStore?.show("Icon fetch started", level: .info, details: "Fetching icons in background")
     }
+
+    //    #################################################################################
+    //    Efficient icon loading from detailed policies
+    //    #################################################################################
+
+    /// Extracts the Self Service icons already embedded in detailed policies and stores
+    /// them in `allIconsDetailed` (deduplicated by icon id). This replaces the
+    /// inefficient brute-force id lookup performed by `getAllIconsDetailed`, which
+    /// generated large numbers of failed/timed-out requests.
+    ///
+    /// - Parameter policies: Optional subset of detailed policies to scan. When nil,
+    ///   the full `allPoliciesDetailed` array is used.
+    @MainActor
+    @discardableResult
+    func extractIconsFromDetailedPolicies(_ policies: [PolicyDetailed?]? = nil) -> Int {
+        let source = policies ?? self.allPoliciesDetailed
+        var addedCount = 0
+
+        for policyOpt in source {
+            guard let policy = policyOpt,
+                  let ssIcon = policy.self_service?.selfServiceIcon,
+                  let iconId = ssIcon.id, iconId > 0,
+                  let uri = ssIcon.uri, !uri.isEmpty else { continue }
+
+            // Skip icons we already have (dedupe by server-side id)
+            if self.allIconsDetailed.contains(where: { $0.id == iconId }) { continue }
+
+            let icon = Icon(id: iconId, url: uri, name: ssIcon.filename ?? "icon-\(iconId)")
+            self.allIconsDetailed.append(icon)
+            addedCount += 1
+        }
+
+        if addedCount > 0 {
+            // Keep icons sorted by name for consistent display in pickers/lists
+            self.allIconsDetailed.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            print("extractIconsFromDetailedPolicies: added \(addedCount) icons (total \(self.allIconsDetailed.count))")
+        }
+        return addedCount
+    }
+
+    /// Refresh `allIconsDetailed` using the icons referenced by detailed policies.
+    /// If detailed policies haven't been loaded yet, they are fetched first (loading
+    /// the basic policy list if necessary), then the icons are extracted from them.
+    /// This is the efficient replacement for the brute-force `getAllIconsDetailed`.
+    @MainActor
+    func refreshIconsFromPolicies(server: String, authToken: String) async {
+        // Ensure we have detailed policies to source icons from
+        if self.allPoliciesDetailed.compactMap({ $0 }).isEmpty {
+            messageStore?.show("Loading policy icons…", level: .info, details: "Fetching policy details", showSpinner: true)
+            do {
+                if self.allPoliciesConverted.isEmpty {
+                    try await self.getAllPolicies(server: server, authToken: authToken)
+                }
+                try await self.getAllPoliciesDetailed(server: server, authToken: authToken, policies: self.allPoliciesConverted)
+            } catch {
+                print("refreshIconsFromPolicies: failed to load detailed policies: \(error)")
+                messageStore?.show("Failed to load policy icons", level: .error, details: error.localizedDescription)
+                return
+            }
+        }
+
+        let added = self.extractIconsFromDetailedPolicies()
+        if self.allIconsDetailed.isEmpty {
+            messageStore?.show("No policy icons found", level: .info, details: "No Self Service icons are set on any policy")
+        } else {
+            messageStore?.show("Icons refreshed", level: .success, details: "\(self.allIconsDetailed.count) icons (\(added) new) from policies")
+        }
+    }
+
     
     
     
@@ -6709,7 +6782,9 @@ xml = """
         }
         
         if self.allIconsDetailed.count == 0 {
-            self.getAllIconsDetailed(server: server, authToken: self.authToken, loopTotal: 1000)
+            // Icons are extracted from detailed policies (which contain the icon URLs)
+            // rather than brute-force id lookups. Extract from any already-loaded policies.
+            self.extractIconsFromDetailedPolicies()
         }
         
     }

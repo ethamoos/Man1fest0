@@ -278,12 +278,16 @@ struct PolicyDetailGeneralTabView: View {
                         Button(action: {
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.getAllIconsDetailed(server: server, authToken: networkController.authToken, loopTotal: 20000)                        }) {
+                            // Load icons efficiently from the detailed policies' icon URLs.
+                            Task {
+                                await networkController.refreshIconsFromPolicies(server: server, authToken: networkController.authToken)
+                            }
+                        }) {
                                 Text("Refresh Icons")
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
-                            .help("Refresh the icon list from the server (may take time).")
+                            .help("Load Self Service icons referenced by your policies.")
                     }
                 }
             }
