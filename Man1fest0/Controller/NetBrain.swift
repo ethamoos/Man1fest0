@@ -408,7 +408,19 @@ extension NetBrain {
     var authToken = ""
     
     // Track token expiration for automatic refresh
-    var tokenExpirationTime: Date?
+    @Published var tokenExpirationTime: Date?
+    /// Observable token state exposed to the UI so a status indicator can react to expiry.
+    enum TokenState {
+        case unknown
+        case valid
+        case expiringSoon
+        case expired
+    }
+    @Published var tokenState: TokenState = .unknown
+    // Human-readable remaining time exposed for quick UI display
+    @Published var tokenTimeRemaining: String = ""
+    // Timer used to update the remaining time / state periodically
+    private var tokenExpiryTimer: Timer? = nil
     private var refreshUsername: String = ""
     private var refreshPassword: String = ""
     var password: String = ""
@@ -2781,6 +2793,9 @@ print("DEBUG - status code is 200, response is:")
         self.needsCredentials = false
         // Store expiration time and credentials for refresh
         self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
+        // Start observing expiry and update published state for UI
+        startTokenExpiryTimer()
+        updateTokenState()
         self.refreshUsername = username
         self.refreshPassword = password
         return auth
@@ -2814,6 +2829,9 @@ print("DEBUG - status code is 200, response is:")
         let newAuth = try await getToken(server: server, username: refreshUsername, password: refreshPassword)
         self.authToken = newAuth.token
         self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
+        // Ensure UI is updated and timer restarted
+        startTokenExpiryTimer()
+        updateTokenState()
         print("Token refreshed successfully")
     }
 
@@ -2874,6 +2892,48 @@ print("DEBUG - status code is 200, response is:")
         let authString = username + ":" + password
         let encoded = authString.data(using: .utf8)?.base64EncodedString()
         return encoded
+    }
+
+    // MARK: - Token expiry helpers (UI friendly)
+    /// Update the published token state and human readable remaining time.
+    @MainActor
+    func updateTokenState() {
+        guard let expiry = tokenExpirationTime else {
+            tokenState = .unknown
+            tokenTimeRemaining = ""
+            return
+        }
+        let remaining = expiry.timeIntervalSinceNow
+        if remaining <= 0 {
+            tokenState = .expired
+            tokenTimeRemaining = "Expired"
+            stopTokenExpiryTimer()
+        } else if remaining <= 60 {
+            tokenState = .expiringSoon
+            tokenTimeRemaining = "Expiring in " + formatDuration(remaining)
+        } else {
+            tokenState = .valid
+            tokenTimeRemaining = "Expires in " + formatDuration(remaining)
+        }
+    }
+
+    /// Start a lightweight timer to update token remaining time. Safe to call repeatedly.
+    func startTokenExpiryTimer() {
+        // Ensure timer runs on main runloop since we update @Published properties
+        stopTokenExpiryTimer()
+        tokenExpiryTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateTokenState()
+            }
+        }
+        // Fire immediately so UI updates without waiting for first tick
+        tokenExpiryTimer?.fire()
+    }
+
+    /// Stop the token expiry timer
+    func stopTokenExpiryTimer() {
+        tokenExpiryTimer?.invalidate()
+        tokenExpiryTimer = nil
     }
     
 //    static func get(server: String, username: String, password: String) async throws -> JamfAuthToken {

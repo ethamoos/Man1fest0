@@ -65,6 +65,64 @@ struct MessageBar: View {
     }
 }
 
+// Inline TokenStatusView so it is always compiled with ContentView even if the
+// standalone file in Views/Shared/TokenStatusView.swift has not been added to
+// the Xcode target. This mirrors the fallback approach used for MessageStore
+// above.
+struct TokenStatusView: View {
+    @EnvironmentObject var networkController: NetBrain
+
+    private func color(for state: NetBrain.TokenState) -> Color {
+        switch state {
+        case .unknown: return Color.gray
+        case .valid: return Color.green
+        case .expiringSoon: return Color.orange
+        case .expired: return Color.red
+        }
+    }
+
+    private func label(for state: NetBrain.TokenState) -> String {
+        switch state {
+        case .unknown: return "No token"
+        case .valid, .expiringSoon, .expired: return networkController.tokenTimeRemaining
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(color(for: networkController.tokenState))
+                .frame(width: 10, height: 10)
+            Text(label(for: networkController.tokenState))
+                .font(.caption)
+                .foregroundColor(.primary)
+            Button(action: {
+                Task {
+                    do {
+                        try await networkController.ensureValidToken()
+                        networkController.messageStore?.show("Token refreshed", level: .success)
+                    } catch {
+                        networkController.messageStore?.show("Token refresh failed", level: .error, details: error.localizedDescription)
+                    }
+                }
+            }) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .help("Refresh authentication token")
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.05)))
+        .onAppear {
+            Task { @MainActor in
+                networkController.updateTokenState()
+            }
+        }
+    }
+}
+
 struct ContentView: View {
     
     @EnvironmentObject var networkController: NetBrain
@@ -89,6 +147,13 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Top-right token status indicator
+            HStack {
+                Spacer()
+                TokenStatusView()
+                    .environmentObject(networkController)
+                    .padding(.trailing, 12)
+            }
             NavigationView {
                 // Primary column: always show the app sidebar so navigation links work
                 OptionsView()

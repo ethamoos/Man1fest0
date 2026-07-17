@@ -1524,11 +1524,7 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
             return xmlName.caseInsensitiveCompare(selName) == .orderedSame
         }
     }
-//    guard let targetScript = targetScript else {
-//        print("Could not find script with id '\(selectedScriptId.map { String($0) } ?? "nil")' or name '\(selectedScriptName)'")
-//        return
-//    }
-//    let scriptsRoot = xmlContent.root["scripts"]
+
     self.atSeparationLine()
     print("targetScript is:\(String(describing: targetScript?.xml ?? "nil"))")
     let allScripts = xmlContent.root["scripts"].children
