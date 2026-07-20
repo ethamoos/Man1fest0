@@ -599,6 +599,10 @@ extension NetBrain {
     var singlePolicyDetailedGeneral: General? = nil
     @Published var isFetchingDetailedPolicies: Bool = false
     @Published var retryFailedDetailedPolicyCalls: [String] = []
+    // Tracks the most recently requested detailed-policy ID so that stale/older
+    // in-flight responses (or transient failures) never overwrite the policy the
+    // user is currently viewing. See getDetailedPolicy(...).
+    var latestDetailedPolicyRequestID: String? = nil
     // New: track whether we're actively fetching detailed policies to avoid concurrent/repeat runs
 //    @Published var isFetchingDetailedPolicies: Bool = false
     // Store failed policy IDs so callers can inspect and retry if needed
@@ -1474,6 +1478,21 @@ print("DEBUG - status code is 200, response is:")
 //        if self.debug_enabled == true {
             print("Running getDetailedPolicy - policyID is:\(policyID)")
 //        }
+
+        // Record this as the most recently requested detailed policy. Any older
+        // in-flight request that completes after this one must NOT overwrite the
+        // policy the user is now viewing. This prevents the "wrong/old policy is
+        // displayed" bug when navigating quickly or when an earlier fetch is slow.
+        self.latestDetailedPolicyRequestID = policyID
+
+        // If we're switching to a DIFFERENT policy than the one currently shown,
+        // clear the stale detail immediately so the view shows a loading state for
+        // the correct policy rather than the previous item while the fetch runs.
+        // (Same-policy refreshes — e.g. after an edit — keep the existing data.)
+        if let currentID = self.policyDetailed?.general?.jamfId, String(currentID) != policyID {
+            self.policyDetailed = nil
+        }
+
         let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
         self.currentURL = jamfURLQuery
         let url = URL(string: jamfURLQuery)!
@@ -1507,34 +1526,88 @@ print("DEBUG - status code is 200, response is:")
         }
         lastRequestDate = Date()
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-            self.currentResponseCode = String(describing: statusCode)
-            print("getDetailedPolicy request error - code is:\(statusCode)")
-            messageStore?.show("Failed to load policy details", level: .error, details: "HTTP \(statusCode)")
-            throw JamfAPIError.http(statusCode)
+        //        ########################################################
+        //        Request with retry on transient (5xx) errors
+        //        ########################################################
+        // The Jamf API intermittently returns 5xx (e.g. 500/503). Previously a
+        // single failure threw immediately, leaving `policyDetailed` holding the
+        // PREVIOUS policy — so the detail view kept showing the old item. Retry a
+        // few times with backoff before giving up.
+        let maxAttempts = 3
+        var data = Data()
+        var lastStatusCode = 0
+        var succeeded = false
+
+        for attempt in 1...maxAttempts {
+            do {
+                let (respData, response) = try await URLSession.shared.data(for: request)
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                lastStatusCode = statusCode
+
+                if statusCode == 200 {
+                    data = respData
+                    succeeded = true
+                    break
+                }
+
+                self.currentResponseCode = String(describing: statusCode)
+                print("getDetailedPolicy request error - code is:\(statusCode) (attempt \(attempt)/\(maxAttempts))")
+
+                // Only retry transient server-side errors; client errors won't improve.
+                let isTransient = statusCode >= 500
+                if isTransient && attempt < maxAttempts {
+                    let backoff = Double(attempt) * 0.6
+                    try await Task.sleep(nanoseconds: UInt64(backoff * 1_000_000_000))
+                    continue
+                } else {
+                    break
+                }
+            } catch {
+                print("getDetailedPolicy network error on attempt \(attempt)/\(maxAttempts): \(error)")
+                if attempt < maxAttempts {
+                    let backoff = Double(attempt) * 0.6
+                    try? await Task.sleep(nanoseconds: UInt64(backoff * 1_000_000_000))
+                    continue
+                }
+                // Final attempt failed with a thrown network error. Only clear the
+                // displayed policy if this is still the request the user cares about.
+                if self.latestDetailedPolicyRequestID == policyID {
+                    self.policyDetailed = nil
+                }
+                messageStore?.show("Failed to load policy details", level: .error, details: "Policy ID: \(policyID)")
+                throw error
+            }
         }
-//        ########################################################
-//        DEBUG
-//        ########################################################
-//        separationLine()
-//        print("Raw data is:")
-//        print(String(data: data, encoding: .utf8)!)
-//        ########################################################
-//        DEBUG
-//        ########################################################
-    
+
+        guard succeeded else {
+            // All attempts returned a non-200 status. Clear stale data so the view
+            // doesn't keep showing the previously loaded (wrong) policy.
+            if self.latestDetailedPolicyRequestID == policyID {
+                self.policyDetailed = nil
+            }
+            messageStore?.show("Failed to load policy details", level: .error, details: "HTTP \(lastStatusCode) (Policy ID: \(policyID))")
+            throw JamfAPIError.http(lastStatusCode)
+        }
+
         let decoder = JSONDecoder()
         let decodedData = try decoder.decode(PoliciesDetailed.self, from: data).policy
-        
 
-//        if self.debug_enabled == true {
-            separationLine()
-            print("getDetailedPolicy has run - policy name is:\(self.policyDetailed?.general?.name ?? "")")
-//        print("Policy Trigger:\t\t\t\(self.policyDetailed?.general?.triggerOther ?? "")\n")
+        // Stale-response guard: if the user has since navigated to a different
+        // policy, discard this result rather than clobbering the current view.
+        guard self.latestDetailedPolicyRequestID == policyID else {
+            print("getDetailedPolicy: discarding stale response for \(policyID); current request is \(self.latestDetailedPolicyRequestID ?? "nil")")
+            return
+        }
 
-//        }
+        // Sanity check: confirm the decoded policy id matches what we requested.
+        if let fetchedID = decodedData.general?.jamfId, String(fetchedID) != policyID {
+            print("getDetailedPolicy: WARNING fetched policy id \(fetchedID) does not match requested \(policyID); discarding")
+            return
+        }
+
+        separationLine()
+        print("getDetailedPolicy has run - policy name is:\(decodedData.general?.name ?? "")")
+
         self.policyDetailed = decodedData
 
         // Buffer the fetched detail and schedule a coalesced flush to update the
@@ -1543,7 +1616,7 @@ print("DEBUG - status code is 200, response is:")
         self.scheduleFlushPolicyDetails()
         // Success
         messageStore?.show("Policy details loaded", level: .success, details: self.policyDetailed?.general?.name)
-      
+
     }
     
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
