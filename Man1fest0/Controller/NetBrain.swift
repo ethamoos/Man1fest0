@@ -572,7 +572,15 @@ extension NetBrain {
     @Published var allPackagesAssignedToAPolicyGlobal: [Package?] = []
     @Published var packages: [Package] = []
     @Published var packagesAssignedToPolicy: [ Package ] = []
-    @Published var allPackages: [Package] = []
+    /// Alias for `packages` — a single source of truth for the full package list.
+    /// Retained so existing views/reports that reference `allPackages` keep working.
+    /// Previously this was a separate stored `@Published` property, which meant the
+    /// list could be populated in one property but read from the other (the cause of
+    /// PackageUsageView showing no packages). Both names now point at the same data.
+    var allPackages: [Package] {
+        get { packages }
+        set { packages = newValue }
+    }
     
     @Published var packageDetailed: PackageDetailed? = PackageDetailed(id: 0, name: "", category: "", filename: "" , info: "", notes: "", priority: 0, rebootRequired: false,fillUserTemplate: false, fillExistingUsers: false, allowUninstalled: false,
                                                                        osRequirements: "", requiredProcessor: "", hashType: "", hashValue: "", switchWithPackage: "",
@@ -7328,10 +7336,6 @@ xml = """
             let request = APIRequest<Packages>(endpoint: "packages", method: .get)
             let decoded = try await requestSender.resultFor(apiRequest: request)
             self.packages = decoded.packages
-            // Keep `allPackages` in sync. Several views (e.g. PackageUsageView) read
-            // `allPackages` rather than `packages`; without this they would see an
-            // empty list and package-usage analysis would produce no results.
-            self.allPackages = decoded.packages
             print("Loaded \(packages.count) packages")
             messageStore?.show("Packages loaded", level: .success, details: "\(self.packages.count) packages")
         } catch {
