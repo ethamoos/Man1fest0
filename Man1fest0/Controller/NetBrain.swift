@@ -7328,6 +7328,10 @@ xml = """
             let request = APIRequest<Packages>(endpoint: "packages", method: .get)
             let decoded = try await requestSender.resultFor(apiRequest: request)
             self.packages = decoded.packages
+            // Keep `allPackages` in sync. Several views (e.g. PackageUsageView) read
+            // `allPackages` rather than `packages`; without this they would see an
+            // empty list and package-usage analysis would produce no results.
+            self.allPackages = decoded.packages
             print("Loaded \(packages.count) packages")
             messageStore?.show("Packages loaded", level: .success, details: "\(self.packages.count) packages")
         } catch {

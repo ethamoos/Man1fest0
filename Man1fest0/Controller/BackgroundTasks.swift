@@ -46,20 +46,26 @@ class BackgroundTasks: ObservableObject {
         
         print("allPoliciesDetailed initial count is:\(allPoliciesDetailedArray.count)")
 
+        // Reset accumulators so repeated "Analyse Data" runs don't retain stale
+        // data from a previous pass (which produced incorrect assigned/unassigned lists).
+        assignedPackages.removeAll()
+        assignedPackagesByNameDict.removeAll()
+        assignedPackagesByNameSet.removeAll()
+
 //        let allPoliciesDetailed = networkController.allPoliciesDetailed
-//        
+//
 //        for eachPolicy in allPoliciesDetailed {
 ////            print("Policy is:\(String(describing: eachPolicy))")
-//            
+//
 //            let scriptsFound: [PolicyScripts]? = eachPolicy?.scripts
-//                        
+//
 //            for script in scriptsFound ?? [] {
 //                print("Script is:\(script)")
 //
 //                //        ########################################
 //                //                Convert to dict
 //                //        ########################################
-//                
+//
 //                assignedScriptsByNameDict[script.name ?? "" ] = String(describing: script.jamfId)
 //                assignedScripts.insert(script, at: 0)
         
@@ -77,16 +83,16 @@ class BackgroundTasks: ObservableObject {
 //        //        ########################################
 //        //        Unassigned scripts
 //        //        ########################################
-//        
+//
 //        print("everything not in both - scripts not in use")
 //        unassignedScriptsSet = allScriptsByNameSet.symmetricDifference(assignedScriptsByNameSet)
 //        print(unassignedScriptsSet.count)
-//        
+//
 //        print("unassignedScriptsArray")
 //        unassignedScriptsArray = Array(unassignedScriptsSet)
 //        print(unassignedScriptsArray.count)
-//        
-//        
+//
+//
         
         
         
@@ -158,6 +164,12 @@ class BackgroundTasks: ObservableObject {
         //                Convert all packages to dict
         //        ########################################
         
+        // Reset accumulators so repeated runs start from a clean state and don't
+        // retain stale entries from a previous "Analyse Data" pass.
+        allPackagesByNameDict.removeAll()
+        allPackagesByNameSet.removeAll()
+        unassignedPackagesSet.removeAll()
+        unassignedPackagesArray.removeAll()
         
         
         for package in allPackages {
@@ -192,7 +204,12 @@ class BackgroundTasks: ObservableObject {
         print(self.separationLine())
         print("Confirming how many packages are not in use")
         print("everything not in both - packages not in use as a set")
-        unassignedPackagesSet = allPackagesByNameSet.symmetricDifference(assignedPackagesByNameSet)
+        // "Packages not in use" = every package that is NOT assigned to any policy.
+        // Use `subtracting` (all - assigned), NOT `symmetricDifference`: symmetric
+        // difference also adds back assigned packages whose name isn't found in
+        // allPackages (e.g. deleted-but-still-referenced packages), which caused the
+        // "not in use" list to wrongly duplicate the assigned list.
+        unassignedPackagesSet = allPackagesByNameSet.subtracting(assignedPackagesByNameSet)
         
         //        ########################################
         //        DEBUG
@@ -264,11 +281,11 @@ class BackgroundTasks: ObservableObject {
     
     
 //    func getValues(allPackages: [Package]) async {
-//        
+//
 //        //        ########################################
 //        //                Convert all packages to dict
 //        //        ########################################
-//        
+//
 //  var allPackagesByNameDict: [String: String] = [:]
 //
 //        print("Running: getValues")
@@ -276,15 +293,15 @@ class BackgroundTasks: ObservableObject {
 //        for package in allPackages {
 //            print("Package is:\(package) - add to allPackagesByNameDict")
 //            assignedPackages.append(package)
-//            
+//
 //            //        ########################################
 //            //                Convert to dict
 //            //        ########################################
-//            
+//
 //            allPackagesByNameDict[package.name ] = String(describing: package.jamfId)
-//            
+//
 //        }
-//                
+//
 //        print(self.separationLine())
 //        print("allPackagesByNameDict is:")
 //        print(allPackagesByNameDict)
@@ -292,53 +309,53 @@ class BackgroundTasks: ObservableObject {
 //        print(self.separationLine())
 //        print("assignedPackagesByNameDict is:")
 //        print(assignedPackagesByNameDict)
-//        
-//        
+//
+//
 //        //        ########################################
 //        //        All Packages - convert to set
 //        //        ########################################
-//        
+//
 //        //        All packages in Jamf converted to a set
 //        allPackagesByNameSet = Set(Array(allPackagesByNameDict.keys))
-//        
+//
 //        //        ########################################
 //        //        SET Assigned Packages
 //        //        ########################################
-//        
+//
 //        //        All packages found in policies
 //        assignedPackagesByNameSet = Set(Array(assignedPackagesByNameDict.keys))
-//        
-//    
+//
+//
 //        //        ########################################
 //        //        Unassigned packages
 //        //        ########################################
-//   
+//
 //        print(self.separationLine())
 //        print("everything not in both - packages not in use as a set")
 //        unassignedPackagesSet = allPackagesByNameSet.symmetricDifference(assignedPackagesByNameSet)
 //        print(unassignedPackagesSet)
 //        print(unassignedPackagesSet.count)
-//        
+//
 //        print(self.separationLine())
 //        print("unassignedPackagesArray")
 //        unassignedPackagesArray = Array(unassignedPackagesSet)
 //        print(unassignedPackagesArray.count)
-//   
+//
 //        let assigned = assignedPackagesByNameDict
 //        var allPackages = allPackagesByNameDict
-//        
+//
 //        for (item,value) in assigned {
-//            
+//
 //            print("--------------------------------------------")
 //            print("############################################")
 //            print("Processing assigned items:\(item) = \(value)")
-//            
+//
 //            let assignedItem = (item)
-//            
+//
 //            print("Assigned item is:\(assignedItem)")
-//            
+//
 //            for (item, value) in allPackages {
-//                
+//
 //                let currentItem = (item)
 //                print("--------------------------------------------")
 //                print("Processing all packages")
@@ -354,24 +371,24 @@ class BackgroundTasks: ObservableObject {
 //                }
 //            }
 //        }
-//        
+//
 //        print("--------------------------------------------")
 //        print("unusedPackages are:")
 //        unassignedPackagesByNameDict = allPackages
 //        print(unassignedPackagesByNameDict)
-////      
-//        
+////
+//
 //        //        ########################################
 //        //        SET Unassigned packages
 //        //        ########################################
-//        
+//
 ////
 ////        print(self.separationLine())
 ////        print("One set minus the contents of another - packages not in use")
 ////        clippedPackages = allPackagesByNameSet.subtracting(assignedPackagesByNameSet)
 ////        print(clippedPackages)
 ////        print(clippedPackages.count)
-//        
+//
 //    }
     
     func separationLine() {
