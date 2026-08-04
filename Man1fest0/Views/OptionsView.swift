@@ -273,14 +273,10 @@ struct OptionsView: View {
                         }
                         .foregroundColor(.blue)
                         
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            Task { try? await networkController.getToken(server: server, username: username, password: networkController.password) }
-                        }) {
-                            Image(systemName: "arrow.clockwise.circle")
-                        }
-                        .foregroundColor(.green)
+                        // Token expiry indicator (moved here from the top-right of ContentView).
+                        // Shows remaining token lifetime and includes a refresh action.
+                        TokenStatusView()
+                            .environmentObject(networkController)
                     }
                     
                     // Row 2: Address, Status, Reset Window (right side, appears below row 1)

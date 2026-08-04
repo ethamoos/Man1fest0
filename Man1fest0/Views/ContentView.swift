@@ -147,13 +147,6 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top-right token status indicator
-            HStack {
-                Spacer()
-                TokenStatusView()
-                    .environmentObject(networkController)
-                    .padding(.trailing, 12)
-            }
             NavigationView {
                 // Primary column: always show the app sidebar so navigation links work
                 OptionsView()
