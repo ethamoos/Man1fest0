@@ -5,7 +5,6 @@
 //  Created by Amos Deane on 15/09/2022.
 //
 
-
 import SwiftUI
 
 struct PackagesActionSortedView: View {
@@ -119,6 +118,8 @@ struct PackagesActionSortedView: View {
                             message: Text("This action will delete data.\n Always ensure that you have a backup!"),
                             primaryButton: .destructive(Text("I understand!")) {
                                 networkController.processDeletePackages(selection: selection, server: server, resourceType: selectedResourceType, authToken: networkController.authToken)
+                                networkController.refreshAfterPackageDeletion(deleted: selection, server: server, authToken: networkController.authToken)
+                                selection.removeAll()
                                 print("Yes tapped")
                             },
                             secondaryButton: .cancel()
@@ -180,6 +181,7 @@ struct PackagesActionSortedView: View {
                                         await controller.updatePackageNameLogical(server: server, authToken: authToken, resourceType: ResourceType.package, packageID: String(pkg.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
                                         try? await Task.sleep(nanoseconds: 200_000_000)
                                     }
+                                    try? await networkController.getAllPackages()
                                     progress.endProgress()
                                 }
                             }) {
@@ -208,6 +210,7 @@ struct PackagesActionSortedView: View {
                             progress.waitForABit()
                             if let cat = selectedCategory {
                                 networkController.processUpdatePackagesCategory(selection: selection, server: server, resourceType: ResourceType.package, authToken: networkController.authToken, selectedCategory: cat)
+                                networkController.refreshAfterPackageChanges(server: server, authToken: networkController.authToken)
                             } else {
                                 print("No category selected")
                             }

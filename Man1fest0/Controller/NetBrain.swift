@@ -3700,6 +3700,45 @@ print("DEBUG - status code is 200, response is:")
             print("List is:\(packageProcessList)")
         }
     }
+
+    //    #################################################################################
+    //    Package list refresh helpers (keep the displayed list in sync after actions)
+    //    #################################################################################
+
+    /// Call after deleting packages so the list view updates.
+    /// 1. Optimistically prunes the deleted packages from the in-memory cache so the
+    ///    UI (PackagesActionSortedView) updates immediately.
+    /// 2. Reconciles with the server by reloading the package list after a short delay
+    ///    (giving the fire-and-forget DELETE requests time to complete server-side).
+    func refreshAfterPackageDeletion(deleted: Set<Package>, server: String, authToken: String) {
+        let deletedIDs = Set(deleted.map { $0.jamfId })
+        packages.removeAll { deletedIDs.contains($0.jamfId) }
+        messageStore?.show("Package(s) deleted", level: .success, details: "Removed \(deleted.count) package(s)")
+        Task {
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            do {
+                try await self.getAllPackages()
+                print("refreshAfterPackageDeletion: reloaded package list after deleting \(deleted.count) item(s)")
+            } catch {
+                print("refreshAfterPackageDeletion: failed to reload package list: \(error)")
+            }
+        }
+    }
+
+    /// Call after updating packages (category change, rename, etc.) so the displayed
+    /// list reflects the new server-side values. Reloads the package list after a short
+    /// delay so the in-flight update requests have time to complete.
+    func refreshAfterPackageChanges(server: String, authToken: String, delaySeconds: Double = 1.0) {
+        Task {
+            try? await Task.sleep(nanoseconds: UInt64(max(0, delaySeconds) * 1_000_000_000))
+            do {
+                try await self.getAllPackages()
+                print("refreshAfterPackageChanges: reloaded package list")
+            } catch {
+                print("refreshAfterPackageChanges: failed to reload package list: \(error)")
+            }
+        }
+    }
     
     //    #################################################################################
     //    Delete polcies selection
