@@ -121,11 +121,11 @@ struct OptionsView: View {
                                     Text("Packages")
                                 }
                                 NavigationLink(destination: PackagesActionSortedView(server: server, selectedResourceType: ResourceType.package )) {
-                                    Text("Packages Action(sorted - beta)")
-                                }
-                                NavigationLink(destination: PackagesActionView(selectedResourceType: ResourceType.package, server: server )) {
                                     Text("Package Actions")
                                 }
+//                                NavigationLink(destination: PackagesActionView(selectedResourceType: ResourceType.package, server: server )) {
+//                                    Text("Package Actions")
+//                                }
                                 NavigationLink(destination: PackageUsageView(server: server)) {
                                     Text("Package Usage")
                                 }
