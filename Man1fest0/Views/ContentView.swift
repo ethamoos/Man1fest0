@@ -267,8 +267,8 @@ struct ContentView: View {
             PolicyView(server: server, selectedResourceType: .policy)
         case "PoliciesActionView":
             PoliciesActionView(server: server, selectedResourceType: .policies)
-        case "PackageView", "PackagesView":
-            PackagesView(server: server, selectedResourceType: .packages)
+        case "PackageView", "PackagesActionSortedView":
+            PackagesActionSortedView(server: server, selectedResourceType: .packages)
         case "ScriptsView":
             ScriptsView(server: server)
         case "ScriptUsageView":

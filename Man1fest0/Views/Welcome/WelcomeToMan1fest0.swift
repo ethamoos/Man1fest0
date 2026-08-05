@@ -496,7 +496,7 @@ struct FeatureCategoryCard: View {
                 try? await networkController.getAllPolicies(server: networkController.server, authToken: networkController.authToken)
                 try? await Task.sleep(nanoseconds: 200_000_000) // small delay to let UI update
             }
-        case "PackageView", "PackagesView":
+        case "PackageView", "PackagesActionSortedView":
             Task {
                 print("Prefetching packages data")
                 try? await networkController.getPackages(server: networkController.server)

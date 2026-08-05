@@ -8,16 +8,33 @@
 
 import SwiftUI
 
-struct PackagesView: View {
+struct PackagesActionSortedView: View {
     
     var server: String
     var selectedResourceType: ResourceType
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var progress: Progress
+    @EnvironmentObject var layout: Layout
     @State var searchText = ""
     @State var selection = Set<Package>()
     // macOS Table uses UUID-based selection; keep both representations and sync between them
     @State private var packageSelectionIDs = Set<UUID>()
     @State var packages: [Package] = []
+
+    // ########################################################################################
+    // Action state (mirrors PackagesActionView so the same operations are available here)
+    // ########################################################################################
+    @State private var showingWarning = false
+    // Use jamfId-based selection to avoid UUID identity mismatches in Picker
+    @State private var selectedCategoryId: Int? = nil
+    private var selectedCategory: Category? {
+        networkController.categories.first(where: { $0.jamfId == selectedCategoryId })
+    }
+    // Rename tools
+    @State private var toolsNameAction: String = "removelast"
+    @State private var toolsCountString: String = "1"
+    @State private var toolsMatchString: String = ""
+    @State private var toolsReplacementString: String = ""
 
     // Snapshot of filtered results used by the List to reduce UI work
     // Use a computed property for filtering to simplify the view and help the compiler
@@ -36,20 +53,200 @@ struct PackagesView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerView
+#if os(macOS)
+            // Split the screen: package list on top, actions in the bottom half.
+            VSplitView {
+                packagesListView
+                    .frame(minHeight: 200)
+                actionsSection
+                    .frame(minHeight: 220)
+            }
+#else
             packagesListView
+            Divider()
+            actionsSection
+#endif
         }
         .onAppear {
             // ensure packages are loaded when view appears
             Task {
                 try await networkController.getAllPackages()
             }
+            // ensure categories are available for the Category picker
+            if networkController.categories.count <= 1 {
+                Task { try await networkController.getAllCategories() }
+            }
         }
     }
  
 
     // Extracted subviews to help the compiler type-check large SwiftUI bodies
-    private var headerView: some View {
-        HStack(alignment: .center) {
+
+    // ########################################################################################
+    // Actions section — Delete / Refresh / Rename Tools / Category update / selected list.
+    // Operates on `selection` (kept in sync with the table's UUID selection).
+    // ########################################################################################
+    private var actionsSection: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+
+                Text("Actions")
+                    .font(.headline)
+
+                Text("\(selection.count) selected")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                // Delete + Refresh
+                HStack(spacing: 20) {
+                    Button(action: {
+                        showingWarning = true
+                        progress.showProgressView = true
+                        progress.waitForABit()
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "delete.left.fill")
+                            Text("Delete")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .disabled(selection.isEmpty)
+                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                    .alert(isPresented: $showingWarning) {
+                        Alert(
+                            title: Text("Caution!"),
+                            message: Text("This action will delete data.\n Always ensure that you have a backup!"),
+                            primaryButton: .destructive(Text("I understand!")) {
+                                networkController.processDeletePackages(selection: selection, server: server, resourceType: selectedResourceType, authToken: networkController.authToken)
+                                print("Yes tapped")
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+
+                    Button(action: {
+                        Task { try await networkController.getAllPackages() }
+                        print("Refresh")
+                        progress.showProgress()
+                        progress.waitForABit()
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Refresh")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+
+                // Rename tools for packages
+                DisclosureGroup("Rename Tools") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Action", selection: $toolsNameAction) {
+                            Text("Remove last chars").tag("removelast")
+                            Text("Remove first chars").tag("removefirst")
+                            Text("Replace last chars").tag("replacelast")
+                            Text("Replace first chars").tag("replacefirst")
+                            Text("Replace all occurrences").tag("replaceall")
+                            Text("Add last characters").tag("addlast")
+                            Text("Add first characters").tag("addfirst")
+                        }
+                        .pickerStyle(.segmented)
+
+                        HStack(spacing: 8) {
+                            if toolsNameAction == "removelast" || toolsNameAction == "replacelast" || toolsNameAction == "removefirst" || toolsNameAction == "replacefirst" {
+                                TextField("Count", text: $toolsCountString)
+                                    .frame(width: 80)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+                            if toolsNameAction == "replacelast" || toolsNameAction == "replaceall" || toolsNameAction == "replacefirst" || toolsNameAction == "addlast" || toolsNameAction == "addfirst" {
+                                TextField("Replacement", text: $toolsReplacementString)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+                            if toolsNameAction == "replaceall" {
+                                TextField("Match", text: $toolsMatchString)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                            }
+                            Spacer()
+                            Button(action: {
+                                let countInt = Int(toolsCountString) ?? 0
+                                progress.showProgress()
+                                progress.waitForABit()
+                                Task {
+                                    let controller = networkController
+                                    let authToken = networkController.authToken
+                                    for pkg in selection {
+                                        await controller.updatePackageNameLogical(server: server, authToken: authToken, resourceType: ResourceType.package, packageID: String(pkg.jamfId), action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
+                                        try? await Task.sleep(nanoseconds: 200_000_000)
+                                    }
+                                    progress.endProgress()
+                                }
+                            }) {
+                                Text("Run on Selected")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(selection.isEmpty)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                // Category update
+                LazyVGrid(columns: layout.columnsFlex) {
+                    HStack {
+                        Picker(selection: $selectedCategoryId, label: Text("Category").fontWeight(.bold)) {
+                            Text("No category selected").tag(nil as Int?)
+                            ForEach(networkController.categories) { category in
+                                Text(String(describing: category.name))
+                                    .tag(category.jamfId as Int?)
+                            }
+                        }
+
+                        Button(action: {
+                            progress.showProgress()
+                            progress.waitForABit()
+                            if let cat = selectedCategory {
+                                networkController.processUpdatePackagesCategory(selection: selection, server: server, resourceType: ResourceType.package, authToken: networkController.authToken, selectedCategory: cat)
+                            } else {
+                                print("No category selected")
+                            }
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Update")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .disabled(selection.isEmpty || selectedCategory == nil)
+                    }
+                }
+
+                // Selected packages
+                if !selection.isEmpty {
+                    Divider()
+                    Text("Selected packages")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    ForEach(Array(selection)) { package in
+                        Text(package.name)
+                            .font(.system(size: 12))
+                    }
+                }
+
+                if progress.showProgressView == true {
+                    ProgressView {
+                        Text("Processing").padding()
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var headerView: some View {        HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Packages")
                     .font(.title2)

@@ -336,7 +336,7 @@ func getViewString(data: ResourceType) -> String {
     case .package:
         return "PackageView"
     case .packages:
-        return "PackagesView"
+        return "PackagesActionSortedView"
     case .policy:
         return "PolicyView"
     case .policies:
