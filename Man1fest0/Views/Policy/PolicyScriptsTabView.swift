@@ -193,14 +193,8 @@ struct PolicyScriptsTabView: View {
                             
                             xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: pickerSelectedScript, parameter4: scriptParameter4, parameter5: scriptParameter5, parameter6: scriptParameter6, parameter7: scriptParameter7, parameter8: scriptParameter8, parameter9: scriptParameter9, parameter10: scriptParameter10, parameter11: scriptParameter11, priority: priority )
                             
-                            // Refresh detailed policy to reflect script parameter changes
-                            Task {
-                                do {
-                                    try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                                } catch {
-                                    print("Failed to refresh detailed policy after replacing script parameter: \(error)")
-                                }
-                            }
+                            // Full refresh (detailed policy + XML tree) so subsequent edits use current data
+                            requestPolicyRefresh(for: String(describing: policyID))
                         }) {
                             Text("Update Parameter")
                         }
@@ -540,13 +534,8 @@ struct PolicyScriptsTabViewDetail: View {
 
                         xmlController.replaceScriptParameter(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: xmlController.currentPolicyAsXML, selectedScriptNumber: selectedScriptNumber, parameter4: parameter4, parameter5: parameter5, parameter6: parameter6, parameter7: parameter7, parameter8: parameter8, parameter9: parameter9, parameter10: parameter10, parameter11: parameter11, priority: priority)
 
-                        Task {
-                            do {
-                                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                            } catch {
-                                print("Failed to refresh detailed policy after replacing script parameter: \(error)")
-                            }
-                        }
+                        // Full refresh (detailed policy + XML tree) so subsequent edits use current data
+                        requestPolicyRefresh(for: String(describing: policyID))
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)

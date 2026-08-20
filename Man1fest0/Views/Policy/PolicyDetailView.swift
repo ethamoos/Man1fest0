@@ -358,7 +358,7 @@ struct PolicyDetailView: View {
                             print("Fetching detailed policy as xml")
                             let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                             
-                            xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                            xmlController.readXMLDataFromString(xmlContent: policyAsXML)
                         } catch {
                             print("Fetching detailed policy as xml failed: \(error)")
                             // error handling - no UI change here
@@ -674,6 +674,7 @@ struct PolicyDetailView: View {
                             progress.showProgress()
                             progress.waitForABit()
                             networkController.updateCategory(server: server,authToken: networkController.authToken, resourceType: ResourceType.policyDetail, categoryID: String(describing: selectedCategory.jamfId), categoryName: selectedCategory.name, updatePressed: true, resourceID: String(describing: policyID))
+                            requestPolicyRefresh(for: String(describing: policyID))
                         }) {
                             HStack(spacing: 10) {
                                 Text("Update")
@@ -817,7 +818,7 @@ struct PolicyDetailView: View {
                 print("getPolicyAsXML - running get policy as xml function")
                 let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
                  print("Fetched policy XML length: \(policyAsXML.count)")
-                 xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                 xmlController.readXMLDataFromString(xmlContent: policyAsXML)
             }
 
             if networkController.categories.count <= 1 {
@@ -865,18 +866,12 @@ struct PolicyDetailView: View {
     }
 
         // Whenever the XML representation of the current policy changes (children often edit XML),
-        // refresh the detailed policy from the server so the UI reflects server-side state.
-        .onChange(of: xmlController.currentPolicyAsXML) { _ in
-            Task {
-                do {
-                    let refreshedXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                    print("Refreshed detailed policy after XML change (len: \(refreshedXML.count))")
-                } catch {
-                    print("Failed to refresh detailed policy after XML change: \(error)")
-                }
-                print("Refreshing AEXML to reflect currentPolicyAsXML changes")
-                xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
-            }
+        // keep the in-memory AEXML tree in sync so subsequent edits operate on current data.
+        // No network re-fetch is needed here: whatever set `currentPolicyAsXML` already fetched
+        // the fresh value, and `getPolicyAsXMLaSync` now rebuilds the tree itself.
+        .onChange(of: xmlController.currentPolicyAsXML) { newXML in
+            print("currentPolicyAsXML changed (len: \(newXML.count)) - rebuilding AEXML tree")
+            xmlController.readXMLDataFromString(xmlContent: newXML)
         }
         
         // Whenever the aexmlDoc representation of the current policy changes (children often edit XML),
@@ -915,9 +910,11 @@ struct PolicyDetailView: View {
             Task {
                 do {
                     try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
-                    // Also refresh the XML representation so subsequent XML-based edits work from current state
+                    // Also refresh the XML representation so subsequent XML-based edits work from current state.
+                    // Rebuild the AEXML tree from the freshly *returned* value (the published property is
+                    // updated asynchronously, so reading it back here could still be stale).
                     let refreshedXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
-                    xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                    xmlController.readXMLDataFromString(xmlContent: refreshedXML)
                     // Keep local fields in sync with refreshed detail
                     policyName = networkController.policyDetailed?.general?.name ?? policyName
                     policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? policyCustomTrigger

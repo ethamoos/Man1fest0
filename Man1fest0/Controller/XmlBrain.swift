@@ -2346,15 +2346,22 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
             }
             throw JamfAPIError.badResponseCode
         }
+        let freshPolicyXML = String(data: data, encoding: .utf8) ?? ""
         DispatchQueue.main.async {
-            self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
+            self.currentPolicyAsXML = freshPolicyXML
+            // Rebuild the in-memory AEXML tree from the freshly-fetched server XML so that
+            // subsequent edits operate on current data. Without this, callers that read back
+            // `currentPolicyAsXML` immediately after the await would see a stale value (the
+            // property is set asynchronously), causing the next edit to work from old XML and
+            // effectively revert the previous change.
+            self.readXMLDataFromString(xmlContent: freshPolicyXML)
             self.networkController.messageStore?.show("Policy XML loaded", level: .success, details: "Policy ID: \(policyIdString)")
         }
 //        DEBUG
 //        separationLine()
 //                    print("Policy as XML is:\(self.currentPolicyAsXML ?? ""))")
 
-        return (String(data: data, encoding: .utf8)!)
+        return freshPolicyXML
 
     }
     

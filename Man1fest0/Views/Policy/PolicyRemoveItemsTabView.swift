@@ -256,7 +256,9 @@ struct PolicyRemoveItemsTabView: View {
                     Button(action: {
                         progress.showProgress()
                         progress.waitForABit()
-                        xmlController.readXMLDataFromString(xmlContent: xmlController.currentPolicyAsXML)
+                        // Re-fetch the policy detail and XML from the server so the in-memory
+                        // AEXML tree reflects current server state (not a stale local copy).
+                        requestPolicyRefresh(for: String(describing: policyID))
                         
                         networkController.separationLine()
                         print("Refresh data")
