@@ -2877,7 +2877,7 @@ print("DEBUG - status code is 200, response is:")
         self.status = "Connected"
         // Persist the received token and mark the controller as connected so
         // callers that invoke `getToken` directly (e.g. the ConnectSheet) don't
-        // need to call `connect()` separately.
+        // need to call `establishSession()` separately.
         self.auth = auth
         self.authToken = auth.token
         self.connected = true
@@ -3083,7 +3083,10 @@ print("DEBUG - status code is 200, response is:")
     //    Connect functions and handleConnect function
     //    #################################################################################
     
-    func connect(server: String, resourceType: ResourceType, authToken: String) {
+    /// Fetches a single Jamf resource (packages, policies, computers, etc.) via the request
+    /// pipeline and appends status. Formerly an overload named connect(...) - renamed to avoid
+    /// confusion with establishSession(), which establishes the auth session instead.
+    func loadResource(server: String, resourceType: ResourceType, authToken: String) {
         
         let resourcePath = getURLFormat(data: (resourceType))
         
@@ -3100,7 +3103,7 @@ print("DEBUG - status code is 200, response is:")
     
     func handleConnect(server: String, authToken: String,resourceType: ResourceType) {
         print("Running handleConnect. resourceType is set as:\(resourceType)")
-        self.connect(server: server,resourceType: resourceType, authToken: authToken)
+        self.loadResource(server: server,resourceType: resourceType, authToken: authToken)
     }
     
     
@@ -6915,7 +6918,7 @@ xml = """
         
         if  self.packages.isEmpty {
             print("No package data - fetching")
-            self.connect(server: server,resourceType: ResourceType.packages, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.packages, authToken: self.authToken)
             
         } else {
             print("package data is available")
@@ -6923,7 +6926,7 @@ xml = """
         
         if  self.policies.isEmpty {
             print("No policies data - fetching")
-            self.connect(server: server,resourceType: ResourceType.policies, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.policies, authToken: self.authToken)
             
         } else {
             print("policies data is available")
@@ -6931,7 +6934,7 @@ xml = """
         
         if  self.category.isEmpty {
             print("No category data - fetching")
-            self.connect(server: server,resourceType: ResourceType.category, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.category, authToken: self.authToken)
             
         } else {
             print("category data is available")
@@ -6939,7 +6942,7 @@ xml = """
         
         if  self.department.isEmpty {
             print("No department data - fetching")
-            self.connect(server: server,resourceType: ResourceType.department, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.department, authToken: self.authToken)
             
         } else {
             print("department data is available")
@@ -6947,7 +6950,7 @@ xml = """
         
         if  self.scripts.isEmpty {
             print("No scripts data - fetching")
-            self.connect(server: server,resourceType: ResourceType.scripts, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.scripts, authToken: self.authToken)
             
         } else {
             print("scripts data is available")
@@ -7041,7 +7044,7 @@ xml = """
         
         if self.computers.count < 0 {
             print("Fetching computers")
-            self.connect(server: server,resourceType: ResourceType.computer, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.computer, authToken: self.authToken)
         }
         
     }
@@ -7050,7 +7053,7 @@ xml = """
         
         if self.departments.count <= 1 {
             
-            self.connect(server: server,resourceType: ResourceType.department, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.department, authToken: self.authToken)
         }
     }
     
@@ -7062,7 +7065,7 @@ xml = """
         
         if self.categories.count <= 1 {
             
-            self.connect(server: server,resourceType: ResourceType.category, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.category, authToken: self.authToken)
         }
     }
     
@@ -7072,7 +7075,7 @@ xml = """
         
         if self.policies.count <= 1 {
             
-            self.connect(server: server,resourceType: ResourceType.policy, authToken: self.authToken)
+            self.loadResource(server: server,resourceType: ResourceType.policy, authToken: self.authToken)
         }
     }
     
@@ -7136,7 +7139,7 @@ xml = """
         print("Running JamfController.load")
         
         // attempt to get an auth token
-        await connect()
+        await establishSession()
         
         // only continue if connected
         guard connected, let auth = auth else { return }
@@ -7193,7 +7196,10 @@ xml = """
     //              ##############################################################
     
     @MainActor
-    func connect() async {
+    /// Establishes the authenticated session: validates credentials, pulls the password from
+    /// the keychain if needed, and obtains an auth token. Formerly an overload named connect()
+    /// - renamed to avoid confusion with loadResource(...), which fetches a resource instead.
+    func establishSession() async {
         // do we have all credentials?
         if server.isEmpty || username.isEmpty {
             needsCredentials = true

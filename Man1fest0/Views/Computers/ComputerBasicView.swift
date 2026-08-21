@@ -48,7 +48,7 @@ struct ComputerBasicView: View {
                 Spacer()
                 HStack(spacing: 8) {
                     Button(action: {
-                        networkController.connect(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
+                        networkController.loadResource(server: server,resourceType: ResourceType.computer, authToken: networkController.authToken)
                         progress.showProgress()
                         progress.waitForABit()
                     }) {

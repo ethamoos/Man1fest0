@@ -246,3 +246,58 @@ let updated = true                  // ❌ Inconsistent
 - `handleNetworkRequestFailure`, `processPolicyRequestBatch`
 
 This approach makes your code **significantly more readable**, **easier to debug**, and **faster for team members** to understand and maintain! 🎯
+
+---
+
+## 🔁 **Overloads & Duplicated Function Bodies**
+
+A subtle-but-costly class of bug in this codebase has come from having **two functions with the same name** that each contain their **own copy of the logic**. Over time the copies drift apart, and callers can't tell which one they're getting.
+
+> **Real example:** there were two `getAllPolicies` functions — `getAllPolicies(server:)` and `getAllPolicies(server:authToken:)`. Only one of them set `self.policies`, so the toolbar **Refresh** button appeared to do nothing (the list is bound to `policies`), while navigating away and back — which called the *other* overload — worked. The two bodies had silently diverged.
+
+### **✅ Rules of thumb**
+
+**1. Prefer optional / default parameters over a second overload.**
+```swift
+// ❌ Two overloads, two copies of the body that can drift apart
+func getAllPolicies(server: String) async throws { /* body A */ }
+func getAllPolicies(server: String, authToken: String) async throws { /* body B */ }
+
+// ✅ One implementation; the token is optional and falls back to self
+func getAllPolicies(server: String, authToken: String? = nil) async throws {
+    let token = authToken ?? self.authToken
+    // ...single body...
+}
+```
+
+**2. Never duplicate a body. If you must keep overloads, have one real implementation and let the others delegate to it.**
+```swift
+// ✅ Convenience overload delegates — no duplicated logic
+func updateComputerUsername(from computerFull: ComputerFull, server: String, authToken: String) {
+    updateComputerUsername(server: server, authToken: authToken,
+                           computerID: computerFull.general.id,
+                           newUsername: computerFull.general.username)
+}
+```
+
+**3. Only overload when it's genuinely the *same operation* over different inputs** (e.g. a convenience wrapper, a generic variant, or a `Codable` conformance). Overloads are fine here — they give callers one memorable name.
+
+**4. Give *distinct* names when the functions do *different things***. Sharing a verb by coincidence causes confusion.
+```swift
+// ❌ Same name, different behaviour — reader must open both to tell them apart
+func connect(server: String, resourceType: ResourceType, authToken: String) // fetches a resource
+func connect() async                                                          // establishes the session
+
+// ✅ Intention-revealing names
+func loadResource(server: String, resourceType: ResourceType, authToken: String)
+func establishSession() async
+```
+
+### **🧭 When you spot duplicate function names**
+- Confirm whether it's a **legitimate overload** (same operation, delegates to one body / protocol conformance / different type) or an **accidental duplicate** (two copies of the logic).
+- For accidental duplicates: merge into a single implementation (optional params), update call sites, and comment out the loser with a dated note before deleting.
+- Quick scan for same-named functions within a single file:
+  ```bash
+  grep -oE '^[[:space:]]*func[[:space:]]+[A-Za-z_][A-Za-z0-9_]*' File.swift \
+    | sed -E 's/^[[:space:]]*func[[:space:]]+//' | sort | uniq -d
+  ```

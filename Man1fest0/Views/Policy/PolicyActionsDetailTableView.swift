@@ -557,7 +557,7 @@ struct PolicyActionsDetailTableView: View {
         Task {
             // Ensure we are connected and have a valid auth token
             print("Ensuring networkController is connected and has a token")
-            await networkController.connect()
+            await networkController.establishSession()
 
             let effectiveServer = server.isEmpty ? networkController.server : server
             print("Effective server: \(effectiveServer)")
