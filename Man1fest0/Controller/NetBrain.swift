@@ -1468,6 +1468,11 @@ print("DEBUG - status code is 200, response is:")
         let decoder = JSONDecoder()
         self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
+        // Populate BOTH `policies` (read by PolicyView's list) and `allPoliciesConverted`.
+        // Previously this single-argument variant only set `allPoliciesConverted`, so the
+        // toolbar Refresh button updated the data model but PolicyView (which reads
+        // `networkController.policies`) did not refresh visually until it re-appeared.
+        self.policies = decodedData
         self.allPoliciesConverted = decodedData
         allPoliciesComplete = true
         self.resourceAccess = true

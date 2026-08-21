@@ -80,7 +80,11 @@ struct PolicyView: View {
                                 progress.waitForABit()
                                                                     print("Refreshing getAllPolicies")
 
-                                Task { try await networkController.getAllPolicies(server: server) }
+                                // Use the two-argument variant which populates `self.policies`
+                                // (the array this list reads) as well as `allPoliciesConverted`.
+                                // This makes the list refresh visually without needing to
+                                // navigate away and back.
+                                Task { try await networkController.getAllPolicies(server: server, authToken: networkController.authToken) }
 //                                                                }
 //                                if selection.name.isEmpty == false {
 //                                    print("Policy is selected")
