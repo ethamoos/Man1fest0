@@ -157,34 +157,44 @@ class XmlBrain: ObservableObject {
     //    COMPUTER GROUPS
     //    #################################################################################
     
-    func addComputerToGroup(xmlContent: String, computerName: String, authToken: String, computerId: String,groupId: String, resourceType: ResourceType, server: String) {
-        readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
-        
-        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
-        separationLine()
-        print("Running addComputerToGroup XML brain")
-        separationLine()
-        print("xmlContent is:")
-        separationLine()
-        print(xmlContent)
-        separationLine()
-        print("url is:\(url)")
-        print("computerName is:\(computerName)")
-        print("computerId is:\(computerId)")
-        print("groupId is:\(groupId)")
-        
-        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
-        computers.addChild(name: "id", value: computerId)
-        computers.addChild(name: "name", value: computerName)
-        separationLine()
-        print("updatedContent is:")
-        separationLine()
-        print(self.aexmlDoc.root.xml)
-        let jamfCount = computers.count
-        print("jamfCount is:\(jamfCount)")
-        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
-    }
+    // ------------------------------------------------------------------------------------
+    // DEPRECATED / COMMENTED OUT — 2026-08-21
+    // Duplicate `addComputerToGroup` overload (authToken in the MIDDLE of the parameter
+    // list). It is functionally equivalent to the canonical version further down this file
+    // (`addComputerToGroup(xmlContent:computerName:computerId:groupId:resourceType:server:authToken:)`,
+    // with authToken LAST), which is the one every call site actually uses. This unused
+    // overload is another accidental duplicate; commented out for now, safe to delete once
+    // confirmed stable.
+    //
+    //    func addComputerToGroup(xmlContent: String, computerName: String, authToken: String, computerId: String,groupId: String, resourceType: ResourceType, server: String) {
+    //        readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
+    //
+    //        let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
+    //        let url = URL(string: jamfURLQuery)!
+    //        separationLine()
+    //        print("Running addComputerToGroup XML brain")
+    //        separationLine()
+    //        print("xmlContent is:")
+    //        separationLine()
+    //        print(xmlContent)
+    //        separationLine()
+    //        print("url is:\(url)")
+    //        print("computerName is:\(computerName)")
+    //        print("computerId is:\(computerId)")
+    //        print("groupId is:\(groupId)")
+    //
+    //        let computers = self.aexmlDoc.root["computers"].addChild(name: "computer")
+    //        computers.addChild(name: "id", value: computerId)
+    //        computers.addChild(name: "name", value: computerName)
+    //        separationLine()
+    //        print("updatedContent is:")
+    //        separationLine()
+    //        print(self.aexmlDoc.root.xml)
+    //        let jamfCount = computers.count
+    //        print("jamfCount is:\(jamfCount)")
+    //        self.sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+    //    }
+    // ------------------------------------------------------------------------------------
 
     
     

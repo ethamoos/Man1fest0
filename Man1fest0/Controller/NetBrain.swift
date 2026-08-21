@@ -1444,13 +1444,18 @@ print("DEBUG - status code is 200, response is:")
     
     
     
-    func getAllPolicies(server: String) async throws {
+    // Canonical implementation. The `authToken` parameter is optional: when omitted
+    // (or nil) it falls back to `self.authToken`. This single function replaces the two
+    // former overloads `getAllPolicies(server:)` and `getAllPolicies(server:authToken:)`,
+    // which had drifted apart and caused a UI-refresh bug (only one set `self.policies`).
+    func getAllPolicies(server: String, authToken: String? = nil) async throws {
+        let token = authToken ?? self.authToken
         messageStore?.show("Loading policies…", level: .info, details: "Connecting to server", showSpinner: true)
         let jamfURLQuery = server + "/JSSResource/policies"
         let url = URL(string: jamfURLQuery)!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
         
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -1469,7 +1474,7 @@ print("DEBUG - status code is 200, response is:")
         self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
         let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
         // Populate BOTH `policies` (read by PolicyView's list) and `allPoliciesConverted`.
-        // Previously this single-argument variant only set `allPoliciesConverted`, so the
+        // Previously the single-argument variant only set `allPoliciesConverted`, so the
         // toolbar Refresh button updated the data model but PolicyView (which reads
         // `networkController.policies`) did not refresh visually until it re-appeared.
         self.policies = decodedData
@@ -3412,42 +3417,49 @@ print("DEBUG - status code is 200, response is:")
     
     
     
-    func getAllPolicies(server: String, authToken: String) async throws {
-        messageStore?.show("Loading policies…", level: .info, details: "Connecting to server", showSpinner: true)
-        let jamfURLQuery = server + "/JSSResource/policies"
-        let url = URL(string: jamfURLQuery)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
-
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        separationLine()
-        print("Running func: getAllPolicies")
-        let (data, response) = try await URLSession.shared.data(for: request)
-        self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-            print("Code not 200")
-            print(response)
-            messageStore?.show("Failed to load policies", level: .error, details: "HTTP \(statusCode)")
-            throw JamfAPIError.badResponseCode
-        }
-        let decoder = JSONDecoder()
-//        self.allPolicies = try decoder.decode(PolicyBasic.self, from: data)
-        let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
-//        self.allPoliciesConverted = decodedData
-        // Populate both the legacy `policies` array and the `allPoliciesConverted` used by views
-        self.policies = decodedData
-        self.allPoliciesConverted = decodedData
-        allPoliciesComplete = true
-        separationLine()
-        //        atSeparationLine()
-        print("getAllPolicies status is set to:\(allPoliciesComplete)")
-        print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
-        print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
-        messageStore?.show("Policies loaded", level: .success, details: "\(self.allPoliciesConverted.count) policies")
-    }
+    // ------------------------------------------------------------------------------------
+    // DEPRECATED / COMMENTED OUT — 2026-08-21
+    // This was the second `getAllPolicies` overload: `getAllPolicies(server:authToken:)`.
+    // It has been merged into the single canonical `getAllPolicies(server:authToken:)`
+    // (with an OPTIONAL `authToken` parameter) defined earlier in this file, which now
+    // handles both the token-passed and token-from-self cases. Having two overloads that
+    // had drifted apart caused a UI-refresh bug (only one set `self.policies`).
+    // Left here temporarily for reference; safe to delete entirely once confirmed stable.
+    //
+    //    func getAllPolicies(server: String, authToken: String) async throws {
+    //        messageStore?.show("Loading policies…", level: .info, details: "Connecting to server", showSpinner: true)
+    //        let jamfURLQuery = server + "/JSSResource/policies"
+    //        let url = URL(string: jamfURLQuery)!
+    //        var request = URLRequest(url: url)
+    //        request.httpMethod = "GET"
+    //        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+    //        request.addValue("\(String(describing: product_name ?? ""))/\(String(describing: build_version ?? ""))", forHTTPHeaderField: "User-Agent")
+    //
+    //        request.setValue("application/json", forHTTPHeaderField: "Accept")
+    //        separationLine()
+    //        print("Running func: getAllPolicies")
+    //        let (data, response) = try await URLSession.shared.data(for: request)
+    //        self.allPoliciesStatusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+    //        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+    //            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+    //            print("Code not 200")
+    //            print(response)
+    //            messageStore?.show("Failed to load policies", level: .error, details: "HTTP \(statusCode)")
+    //            throw JamfAPIError.badResponseCode
+    //        }
+    //        let decoder = JSONDecoder()
+    //        let decodedData = try decoder.decode(PolicyBasic.self, from: data).policies
+    //        // Populate both the legacy `policies` array and the `allPoliciesConverted` used by views
+    //        self.policies = decodedData
+    //        self.allPoliciesConverted = decodedData
+    //        allPoliciesComplete = true
+    //        separationLine()
+    //        print("getAllPolicies status is set to:\(allPoliciesComplete)")
+    //        print("allPolicies status code is:\(String(describing: self.allPoliciesStatusCode))")
+    //        print("allPoliciesConverted count is:\(String(describing: self.allPoliciesConverted.count))")
+    //        messageStore?.show("Policies loaded", level: .success, details: "\(self.allPoliciesConverted.count) policies")
+    //    }
+    // ------------------------------------------------------------------------------------
     
      
     
