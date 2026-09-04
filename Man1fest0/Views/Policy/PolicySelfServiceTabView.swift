@@ -128,22 +128,21 @@ struct PolicySelfServiceTabView: View {
                     
 #if os(macOS)
                     HStack {
-                        if enableDisableSelfService == true {
-                            Text("Enabled")
-                        } else {
-                            Text("Disabled")
+                        Toggle(isOn: $enableDisableSelfService) {
+                            Text(enableDisableSelfService ? "Self Service: Enabled" : "Self Service: Disabled")
                         }
-                        
-                        Button(action: {
+                        .toggleStyle(.switch)
+                        .onChange(of: enableDisableSelfService) { newValue in
                             progress.showProgress()
                             progress.waitForABit()
-                            networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                        }) {
-                            Text("Enable")
+                            networkController.enableSelfService(server: server,
+                                                                authToken: networkController.authToken,
+                                                                resourceType: selectedResourceType,
+                                                                itemID: policyID,
+                                                                selfServiceToggle: newValue)
+                            requestPolicyRefresh()
                         }
-                        .help("Enable Self Service for this policy.")
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
+                        .help("Enable or disable Self Service for this policy.")
                     }
 #endif
                     
@@ -280,20 +279,6 @@ struct PolicySelfServiceTabView: View {
                      }
                 }
                 HStack {
-                    Button(action: {
-                        
-                        progress.showProgress()
-                        progress.waitForABit()
-                        
-                        networkController.enableSelfService(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, selfServiceToggle: true)
-                        requestPolicyRefresh()
-                    }) {
-                        Text("Enable Self-Service")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .help("Enable Self Service for this policy so it appears to users.")
-//                    HStack {
                         TextField((localPolicyDetailed ?? networkController.policyDetailed)?.general?.name ?? policyName, text: $newSelfServiceName)
                             .textSelection(.enabled)
                         Button(action: {
@@ -320,6 +305,10 @@ struct PolicySelfServiceTabView: View {
             
         }
         .onAppear{
+            // Initialise the enable/disable toggle from the current policy state
+            if let current = (localPolicyDetailed ?? networkController.policyDetailed)?.self_service?.useForSelfService {
+                enableDisableSelfService = current
+            }
             if networkController.allIconsDetailed.count <= 1 {
                 print("allIconsDetailed is:\(networkController.allIconsDetailed.count) - extracting from policies")
                 // Extract icons from already-loaded detailed policies (efficient); if none
