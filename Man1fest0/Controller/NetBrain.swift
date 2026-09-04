@@ -5632,8 +5632,9 @@ xml = """
         let resourcePath = getURLFormat(data: (resourceType))
         let itemIDString = String(itemID)
         var xml: String
-        print("Running enableSelfService")
-        xml = "<policy><self_service><use_for_self_service>true</use_for_self_service></self_service></policy>"
+        print("Running enableSelfService (toggle=\(selfServiceToggle))")
+        let toggleValue = selfServiceToggle ? "true" : "false"
+        xml = "<policy><self_service><use_for_self_service>\(toggleValue)</use_for_self_service></self_service></policy>"
         if URL(string: server) != nil {
             if let serverURL = URL(string: server) {
                 let url = serverURL.appendingPathComponent("JSSResource").appendingPathComponent(resourcePath).appendingPathComponent(itemIDString)
