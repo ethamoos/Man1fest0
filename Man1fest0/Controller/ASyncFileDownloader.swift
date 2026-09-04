@@ -13,6 +13,19 @@ import SwiftUI
 import AEXML
 
 
+/// The file format used when exporting / downloading Jamf Classic API resources.
+/// Drives both the HTTP `Accept` header sent to Jamf and the saved file's extension.
+enum PolicyExportFormat: String, CaseIterable, Identifiable {
+    case xml
+    case json
+
+    var id: String { rawValue }
+    var displayName: String { self == .xml ? "XML" : "JSON" }
+    var acceptHeader: String { self == .xml ? "application/xml" : "application/json" }
+    var fileExtension: String { self == .xml ? "xml" : "json" }
+}
+
+
 class ASyncFileDownloader {
     
     @EnvironmentObject var networkController: NetBrain
@@ -35,6 +48,22 @@ class ASyncFileDownloader {
         } else {
             return filename + ".xml"
         }
+    }
+
+    // Ensure filename ends with the correct extension for the given export format.
+    // If the name already carries a known extension (.xml/.json), it is swapped for the
+    // one matching `format` so JSON and XML exports never collide on disk.
+    static func ensureExtension(_ filename: String, format: PolicyExportFormat) -> String {
+        let desired = ".\(format.fileExtension)"
+        if filename.lowercased().hasSuffix(desired) {
+            return filename
+        }
+        var base = filename
+        for ext in [".xml", ".json"] where base.lowercased().hasSuffix(ext) {
+            base = String(base.dropLast(ext.count))
+            break
+        }
+        return base + desired
     }
 
     // MARK: - Sandbox / Bookmark helpers
@@ -117,8 +146,8 @@ class ASyncFileDownloader {
     }
 
     // Attempt to write data to a writable folder: Downloads preferred; if not writable, try saved bookmark; if still not, present a panel and save bookmark.
-    static func saveDataToUserDownloads(data: Data, filename: String) -> (String?, Error?) {
-        let safeFilename = ensureXMLExtension(filename)
+    static func saveDataToUserDownloads(data: Data, filename: String, format: PolicyExportFormat = .xml) -> (String?, Error?) {
+        let safeFilename = ensureExtension(filename, format: format)
 
         // 1) Try default destination (Downloads or Documents)
         let defaultBase = destinationBaseURL()
@@ -255,9 +284,9 @@ class ASyncFileDownloader {
     //   downloadFileAsyncAuth
     //   #################################################################################
     
-    static func downloadFileAsyncAuth(objectID: Int, resourceType: ResourceType, server: String, authToken: String, completion: @escaping (String?, Error?) -> Void) {
+    static func downloadFileAsyncAuth(objectID: Int, resourceType: ResourceType, server: String, authToken: String, format: PolicyExportFormat = .xml, notifyOnCompletion: Bool = true, completion: @escaping (String?, Error?) -> Void) {
         
-        print("Running downloadFileAsyncAuth")
+        print("Running downloadFileAsyncAuth (format: \(format.displayName))")
 
         
         self.separationLine()
@@ -272,22 +301,19 @@ class ASyncFileDownloader {
 //            self.separationLine()
             print("URL is set as:\(String(describing: url))")
             
-            let filename = ensureXMLExtension(url.lastPathComponent)
+            let filename = ensureExtension(url.lastPathComponent, format: format)
             let destinationUrl = destinationBaseURL().appendingPathComponent(filename )
             print("destination Url is:\(destinationUrl)")
             
-            if FileManager().fileExists(atPath: destinationUrl.path)
-                
-            {
-                print("File already exists [\(destinationUrl.path)]")
-                completion(destinationUrl.path, nil)
-            }
-            else
+            // Always re-download so the export reflects the current server state and the
+            // requested format. (Previously a cached file with the same name — possibly saved
+            // in the other format — was returned as-is, which made XML exports look like JSON.)
+            do
             {
                 let session = URLSession(configuration: URLSessionConfiguration.default, delegate: nil, delegateQueue: nil)
                 
                 let headers = [
-                    "Accept": "application/json",
+                    "Accept": format.acceptHeader,
                     "Authorization": "Bearer \(authToken)"
                 ]
                 
@@ -312,8 +338,8 @@ class ASyncFileDownloader {
                                 
                                 if let data = data {
                                     print("Data has been received")
-                                    let (path, writeError) = saveDataToUserDownloads(data: data, filename: filename)
-                                    if let p = path, writeError == nil {
+                                    let (path, writeError) = saveDataToUserDownloads(data: data, filename: filename, format: format)
+                                    if let p = path, writeError == nil, notifyOnCompletion {
                                         showDownloadCompletedNotification(savedPath: p)
                                     }
                                     completion(path, writeError)
@@ -494,6 +520,33 @@ class ASyncFileDownloader {
         // On iOS, open the Files app location is not possible programmatically; simply log or consider a share sheet in future.
         DispatchQueue.main.async {
             print("Download complete: \(savedPath)")
+        }
+        #endif
+    }
+
+    /// Shows a single "Download Complete" notification summarising a batch of downloads.
+    /// Use this after a bulk export (calling `downloadFileAsyncAuth` with `notifyOnCompletion: false`
+    /// per file) so the user sees one alert instead of one per file.
+    static func showBatchDownloadCompletedNotification(savedPaths: [String]) {
+        guard !savedPaths.isEmpty else { return }
+        #if os(macOS)
+        DispatchQueue.main.async {
+            let count = savedPaths.count
+            let folder = (savedPaths.first! as NSString).deletingLastPathComponent
+            let alert = NSAlert()
+            alert.messageText = "Download Complete"
+            alert.informativeText = "\(count) file\(count == 1 ? "" : "s") saved to: \(folder)"
+            alert.addButton(withTitle: "Open in Finder")
+            alert.addButton(withTitle: "OK")
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                let urls = savedPaths.map { URL(fileURLWithPath: $0) }
+                NSWorkspace.shared.activateFileViewerSelecting(urls)
+            }
+        }
+        #else
+        DispatchQueue.main.async {
+            print("Batch download complete: \(savedPaths.count) files")
         }
         #endif
     }

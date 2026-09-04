@@ -172,7 +172,7 @@ struct ScriptsActionView: View {
             ProgressView {
                 Text("Processing")
                     .padding()
-            }
+            }   
         } else {
             Text("")
         }

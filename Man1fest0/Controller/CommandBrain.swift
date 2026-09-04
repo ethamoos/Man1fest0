@@ -142,10 +142,10 @@ import AEXML
         request.httpMethod = "POST"
         request.httpBody = postData
         
-        let config = URLSessionConfiguration.default
-        let authString = "Bearer \(self.authToken)"
-        
-        config.httpAdditionalHeaders = ["Authorization" : authString]
+        // NOTE: Set `Authorization` directly on the URLRequest. This request is sent via
+        // URLSession.shared, so any header on a URLSessionConfiguration would be ignored anyway;
+        // `Authorization` is also a reserved header not reliably carried by httpAdditionalHeaders.
+        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data else {

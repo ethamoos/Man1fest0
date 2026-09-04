@@ -244,6 +244,9 @@ import AEXML
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
                 request.httpBody = xmldata
+                // NOTE: Set `Authorization` directly on the URLRequest — it is a reserved header
+                // that URLSessionConfiguration.httpAdditionalHeaders does not reliably carry.
+                request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
                 let config = URLSessionConfiguration.default
                 //API Authentication
                 
@@ -256,10 +259,6 @@ import AEXML
                 
                 
                 
-                let authString = "Bearer \(self.authToken)"
-                
-                
-                config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
                     
@@ -562,10 +561,10 @@ import AEXML
         request.httpMethod = "POST"
         request.httpBody = postData
         
-        let config = URLSessionConfiguration.default
-        let authString = "Bearer \(self.authToken)"
-        
-        config.httpAdditionalHeaders = ["Authorization" : authString]
+        // NOTE: Set `Authorization` directly on the URLRequest. This request is sent via
+        // URLSession.shared, so any header on a URLSessionConfiguration would be ignored anyway;
+        // `Authorization` is also a reserved header not reliably carried by httpAdditionalHeaders.
+        request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data else {

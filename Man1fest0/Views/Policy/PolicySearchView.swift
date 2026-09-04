@@ -61,6 +61,9 @@ struct PolicySearchView: View {
     @State private var policiesSelection = Set<Policy>()
     @State private var selectedActionsTab: Int = 0
 
+    // Export format for the bulk "Export" action (XML or JSON)
+    @State private var exportFormat: PolicyExportFormat = .xml
+
     // Category tab state
     @State private var selectedCategoryId: Int? = nil
     @State private var enableDisable: Bool = true
@@ -536,28 +539,50 @@ struct PolicySearchView: View {
                                             .padding(.horizontal)
                                             .padding(.vertical, 8)
 
-                                        // ── Export XML ────────────────────────────
+                                        // ── Export (XML or JSON) ───────────────────
                                         VStack(alignment: .leading, spacing: 8) {
                                             HStack(spacing: 6) {
                                                 Image(systemName: "arrow.down.doc.fill")
                                                     .foregroundColor(.orange)
-                                                Text("Export as XML")
+                                                Text("Export Policies")
                                                     .font(.headline)
                                             }
-                                            Text("Downloads each selected policy as an individual XML file to your Downloads folder.")
+                                            Text("Downloads each selected policy as an individual \(exportFormat.displayName) file to your Downloads folder.")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
+
+                                            // Format toggle: XML or JSON
+                                            Picker("Format", selection: $exportFormat) {
+                                                ForEach(PolicyExportFormat.allCases) { fmt in
+                                                    Text(fmt.displayName).tag(fmt)
+                                                }
+                                            }
+                                            .pickerStyle(.segmented)
+                                            .frame(maxWidth: 220)
+
                                             HStack(spacing: 12) {
                                                 Button {
                                                     let ids = selectedPoliciesForActions.compactMap { $0 }
                                                     guard !ids.isEmpty else { return }
+                                                    let chosenFormat = exportFormat
+                                                    let total = ids.count
                                                     progress.showProgress()
+
+                                                    // Track completions so a single "Download Complete"
+                                                    // notification is shown after ALL downloads finish
+                                                    // (per-file alerts are suppressed via notifyOnCompletion: false).
+                                                    // These locals are mutated only on the main queue below.
+                                                    var completedCount = 0
+                                                    var savedPaths: [String] = []
+
                                                     for pid in ids {
                                                         ASyncFileDownloader.downloadFileAsyncAuth(
                                                             objectID: pid,
                                                             resourceType: .policies,
                                                             server: server,
-                                                            authToken: networkController.authToken
+                                                            authToken: networkController.authToken,
+                                                            format: chosenFormat,
+                                                            notifyOnCompletion: false
                                                         ) { path, error in
                                                             if let path {
                                                                 print("Exported policy \(pid) to: \(path)")
@@ -565,24 +590,37 @@ struct PolicySearchView: View {
                                                                 print("Export failed for policy \(pid): \(error)")
                                                                 DispatchQueue.main.async {
                                                                     networkController.messageStore?.show(
-                                                                        "XML export failed for policy \(pid)",
+                                                                        "\(chosenFormat.displayName) export failed for policy \(pid)",
                                                                         level: .error,
                                                                         details: error.localizedDescription
                                                                     )
                                                                 }
                                                             }
+                                                            // Tally on the main queue; fire the single
+                                                            // completion notification once everything is done.
+                                                            DispatchQueue.main.async {
+                                                                completedCount += 1
+                                                                if let path { savedPaths.append(path) }
+                                                                if completedCount == total {
+                                                                    progress.waitForABit()
+                                                                    ASyncFileDownloader.showBatchDownloadCompletedNotification(savedPaths: savedPaths)
+                                                                    networkController.messageStore?.show(
+                                                                        "\(chosenFormat.displayName) export complete",
+                                                                        level: .success,
+                                                                        details: "\(savedPaths.count) of \(total) policies saved to Downloads"
+                                                                    )
+                                                                }
+                                                            }
                                                         }
                                                     }
-                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                        progress.waitForABit()
-                                                        networkController.messageStore?.show(
-                                                            "XML export started",
-                                                            level: .info,
-                                                            details: "Exporting \(selectedPoliciesForActions.compactMap { $0 }.count) policies to Downloads"
-                                                        )
-                                                    }
+
+                                                    networkController.messageStore?.show(
+                                                        "\(chosenFormat.displayName) export started",
+                                                        level: .info,
+                                                        details: "Exporting \(total) policies to Downloads"
+                                                    )
                                                 } label: {
-                                                    Label("Export \(selectedPoliciesForActions.compactMap { $0 }.count) Policies as XML",
+                                                    Label("Export \(selectedPoliciesForActions.compactMap { $0 }.count) Policies as \(exportFormat.displayName)",
                                                           systemImage: "arrow.down.doc")
                                                 }
                                                 .buttonStyle(.borderedProminent)

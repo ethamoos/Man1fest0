@@ -6322,10 +6322,10 @@ xml = """
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
                 request.httpBody = xmldata
+                // NOTE: Set `Authorization` directly on the URLRequest — it is a reserved header
+                // that URLSessionConfiguration.httpAdditionalHeaders does not reliably carry.
+                request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
                 let config = URLSessionConfiguration.default
-                let authString = "Bearer \(self.authToken)"
-                
-                config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
                     

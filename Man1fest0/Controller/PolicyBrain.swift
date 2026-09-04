@@ -441,8 +441,10 @@ class PolicyBrain: ObservableObject {
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
                 request.httpBody = xmldata
+                // NOTE: Set `Authorization` directly on the URLRequest — it is a reserved header
+                // that URLSessionConfiguration.httpAdditionalHeaders does not reliably carry.
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 let config = URLSessionConfiguration.default
-                config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
                     
@@ -664,8 +666,10 @@ class PolicyBrain: ObservableObject {
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
                 request.httpBody = xmldata
+                // NOTE: Set `Authorization` directly on the URLRequest — it is a reserved header
+                // that URLSessionConfiguration.httpAdditionalHeaders does not reliably carry.
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 let config = URLSessionConfiguration.default
-                config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
                     
@@ -924,9 +928,10 @@ class PolicyBrain: ObservableObject {
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
                 request.httpBody = xmldata
+                // NOTE: Set `Authorization` directly on the URLRequest — it is a reserved header
+                // that URLSessionConfiguration.httpAdditionalHeaders does not reliably carry.
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 let config = URLSessionConfiguration.default
-                let authString = "Bearer \(authToken)"
-                config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
                     guard let httpResponse = response as? HTTPURLResponse,
@@ -947,43 +952,76 @@ class PolicyBrain: ObservableObject {
     }
     
     
-    func replacePolicy(xmlContent: String,  server: String, resourceType: ResourceType, policyId: String, authToken: String) {
+    /// Sends a PUT to replace the policy identified by `policyId` with `xmlContent`.
+    /// Runs synchronously (blocks the calling thread via a semaphore) and returns the real
+    /// outcome so callers can report accurate per-file results.
+    /// - Returns: (success, statusCode, message). `statusCode` is 0 when no HTTP response was received.
+    @discardableResult
+    func replacePolicy(xmlContent: String,  server: String, resourceType: ResourceType, policyId: String, authToken: String) -> (success: Bool, statusCode: Int, message: String) {
         
         let sem = DispatchSemaphore.init(value: 0)
+        var outcome: (success: Bool, statusCode: Int, message: String) = (false, 0, "Request was not sent.")
         
-        if URL(string: server) != nil {
-            if let serverURL = URL(string: server) {
-                
-                let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
-                let xmldata = xmlContent.data(using: .utf8)
-                separationLine()
-                print("Runing replace policy with ID \(policyId)")
-                print("url is set as:\(url)")
-                var request = URLRequest(url: url)
-                request.httpMethod = "PUT"
-                request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-                request.setValue("application/xml", forHTTPHeaderField: "Accept")
-                request.httpBody = xmldata
-                let config = URLSessionConfiguration.default
-                let authString = "Bearer \(authToken)"
-                config.httpAdditionalHeaders = ["Authorization" : authString]
-                URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
-                    defer { sem.signal() }
-                    guard let httpResponse = response as? HTTPURLResponse,
-                          (200...299).contains(httpResponse.statusCode) else {
-                        print("Bad Credentials")
-                        print(String(describing: response))
-                        return
-                    }
-                    
-                    DispatchQueue.main.async {
-                        print("Success! Policy replaced.")
-                    }
-                }.resume()
-                
-                sem.wait()
-            }
+        guard let serverURL = URL(string: server) else {
+            return (false, 0, "Invalid server URL: \(server)")
         }
+        
+        let url = serverURL.appendingPathComponent("/JSSResource/policies/id/\(policyId)")
+        let xmldata = xmlContent.data(using: .utf8)
+        separationLine()
+        print("Running replace policy with ID \(policyId)")
+        print("url is set as:\(url)")
+
+        // Sanity check: the file should contain XML, not JSON. A leading '{' means the
+        // exported file is JSON (older exports used Accept: application/json), which Jamf
+        // will reject with HTTP 400 when sent as application/xml.
+        let trimmed = xmlContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("{") || trimmed.hasPrefix("[") {
+            let msg = "File for policy \(policyId) looks like JSON, not XML. Re-export it using ‘Export as XML’, then try again."
+            print("replacePolicy: \(msg)")
+            return (false, 0, msg)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/xml", forHTTPHeaderField: "Accept")
+        request.httpBody = xmldata
+        // NOTE: The `Authorization` header MUST be set directly on the URLRequest.
+        // It is one of Apple's reserved headers that URLSessionConfiguration.httpAdditionalHeaders
+        // deliberately does NOT carry, so setting it via `config.httpAdditionalHeaders` results in
+        // the request being sent with no credentials → Jamf returns "Bad Credentials".
+        // This mirrors the working pattern in XmlBrain.clonePolicy.
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        let config = URLSessionConfiguration.default
+        URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
+            defer { sem.signal() }
+            if let err = err {
+                outcome = (false, 0, "Network error replacing policy \(policyId): \(err.localizedDescription)")
+                print("replacePolicy: network error — \(err.localizedDescription)")
+                return
+            }
+            guard let httpResponse = response as? HTTPURLResponse else {
+                outcome = (false, 0, "No HTTP response received for policy \(policyId).")
+                print("replacePolicy: no HTTP response")
+                return
+            }
+            let code = httpResponse.statusCode
+            let bodyText = (data.flatMap { String(data: $0, encoding: .utf8) } ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if (200...299).contains(code) {
+                outcome = (true, code, "Policy \(policyId) replaced successfully (HTTP \(code)).")
+                DispatchQueue.main.async { print("Success! Policy \(policyId) replaced (HTTP \(code)).") }
+            } else {
+                // Surface the ACTUAL server reason instead of a blanket "Bad Credentials".
+                let snippet = bodyText.isEmpty ? "" : " Server said: \(bodyText.prefix(300))"
+                outcome = (false, code, "Server rejected replace for policy \(policyId) — HTTP \(code).\(snippet)")
+                print("replacePolicy: server returned HTTP \(code) for policy \(policyId)")
+                if !bodyText.isEmpty { print("Response body:\n\(bodyText)") }
+            }
+        }.resume()
+        sem.wait()
+        return outcome
     }
     
     
@@ -1258,7 +1296,7 @@ class PolicyBrain: ObservableObject {
                 }
 
                 print("replacePolicies: replacing policy ID \(policyId) from '\(filename)'")
-                self.replacePolicy(
+                let outcome = self.replacePolicy(
                     xmlContent: xmlContent,
                     server: server,
                     resourceType: .policyDetail,
@@ -1269,8 +1307,8 @@ class PolicyBrain: ObservableObject {
                 results.append(ReplacePolicyResult(
                     policyId: policyId,
                     filename: filename,
-                    success: true,
-                    message: "Replace request sent for policy \(policyId)."
+                    success: outcome.success,
+                    message: outcome.message
                 ))
 
                 // Small delay between requests to avoid overwhelming the server

@@ -426,9 +426,6 @@ class XmlBrain: ObservableObject {
                 request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 request.httpBody = xmldata
                 let config = URLSessionConfiguration.default
-                // keep existing config header as a fallback
-                let authString = "Bearer \(authToken)"
-                config.httpAdditionalHeaders = ["Authorization" : authString]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
                     if let httpResponse = response as? HTTPURLResponse {
@@ -867,8 +864,10 @@ class XmlBrain: ObservableObject {
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
                 request.httpBody = xmldata
+                // NOTE: Set `Authorization` directly on the URLRequest — it is a reserved header
+                // that URLSessionConfiguration.httpAdditionalHeaders does not reliably carry.
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 let config = URLSessionConfiguration.default
-                config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     //                        defer { sem.signal() }
                     guard let httpResponse = response as? HTTPURLResponse,
@@ -2015,8 +2014,10 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
                 request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
                 request.setValue("application/xml", forHTTPHeaderField: "Accept")
                 request.httpBody = xmldata
+                // NOTE: Set `Authorization` directly on the URLRequest — it is a reserved header
+                // that URLSessionConfiguration.httpAdditionalHeaders does not reliably carry.
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
                 let config = URLSessionConfiguration.default
-                config.httpAdditionalHeaders = ["Authorization": "Bearer \(authToken)"]
                 URLSession(configuration: config).dataTask(with: request) { (data, response, err) in
                     defer { sem.signal() }
                     guard let httpResponse = response as? HTTPURLResponse,
