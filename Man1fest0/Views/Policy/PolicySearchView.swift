@@ -87,6 +87,13 @@ struct PolicySearchView: View {
     
     
     @State var newSelfServiceName = ""
+
+    // Draggable separator state: user-adjustable height of the Actions Panel.
+    // The ScrollView above expands to fill the remaining space.
+    @State private var actionsPanelHeight: CGFloat = 380
+    private let actionsPanelMinHeight: CGFloat = 140
+    private let actionsPanelMaxHeight: CGFloat = 900
+    @State private var dragStartHeight: CGFloat? = nil
     
     //  ########################################################################################
     //    SELECTIONS
@@ -430,6 +437,39 @@ struct PolicySearchView: View {
             // ── Actions Panel ────────────────────────────────────────────────
             if !selectedPoliciesForActions.isEmpty {
 
+                // Draggable separator — drag up/down to resize the Actions Panel.
+                ZStack {
+                    // Wider invisible hit area for easier grabbing
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 14)
+                        .contentShape(Rectangle())
+                    // Visible handle
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.secondary.opacity(0.45))
+                        .frame(width: 44, height: 4)
+                }
+                .padding(.horizontal)
+                .help("Drag to resize the Actions Panel")
+                #if os(macOS)
+                .onHover { inside in
+                    if inside { NSCursor.resizeUpDown.push() } else { NSCursor.pop() }
+                }
+                #endif
+                .gesture(
+                    DragGesture(minimumDistance: 1)
+                        .onChanged { value in
+                            if dragStartHeight == nil { dragStartHeight = actionsPanelHeight }
+                            // Dragging up (negative translation.height) should increase the
+                            // Actions Panel height; dragging down should decrease it.
+                            let proposed = (dragStartHeight ?? actionsPanelHeight) - value.translation.height
+                            actionsPanelHeight = min(actionsPanelMaxHeight, max(actionsPanelMinHeight, proposed))
+                        }
+                        .onEnded { _ in
+                            dragStartHeight = nil
+                        }
+                )
+
                 // Visual separator with label between results and actions
                 HStack(spacing: 8) {
                     Rectangle()
@@ -480,6 +520,7 @@ struct PolicySearchView: View {
                     Divider()
                         .padding(.horizontal, 14)
 
+                    ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
 
                         // ── Tab picker ───────────────────────────────────────
@@ -1135,8 +1176,10 @@ struct PolicySearchView: View {
                     }
                     .padding(.horizontal, 4)
                     .padding(.bottom, 8)
+                    } // end ScrollView
                 } // end if showActionsPanel
                 } // end inner VStack
+                .frame(height: actionsPanelHeight)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.blue.opacity(0.05))
