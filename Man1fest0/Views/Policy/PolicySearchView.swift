@@ -239,7 +239,7 @@ struct PolicySearchView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     TextField("Search...", text: $searchString)
@@ -438,6 +438,8 @@ struct PolicySearchView: View {
             if !selectedPoliciesForActions.isEmpty {
 
                 // Draggable separator — drag up/down to resize the Actions Panel.
+                // Only shown when the panel is expanded (nothing to resize when collapsed).
+                if showActionsPanel {
                 ZStack {
                     // Wider invisible hit area for easier grabbing
                     Rectangle()
@@ -469,6 +471,7 @@ struct PolicySearchView: View {
                             dragStartHeight = nil
                         }
                 )
+                } // end if showActionsPanel (drag handle)
 
                 // Visual separator with label between results and actions
                 HStack(spacing: 8) {
@@ -1179,7 +1182,7 @@ struct PolicySearchView: View {
                     } // end ScrollView
                 } // end if showActionsPanel
                 } // end inner VStack
-                .frame(height: actionsPanelHeight)
+                .frame(height: showActionsPanel ? actionsPanelHeight : nil)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.blue.opacity(0.05))
@@ -1192,14 +1195,10 @@ struct PolicySearchView: View {
                 .padding(.bottom, 8)
             } // end actions panel
             
-            Group {
-                if progress.showProgressView == true {
-                    ProgressView { Text("Processing") }
-                } else {
-                    Text("")
-                }
+            if progress.showProgressView == true {
+                ProgressView { Text("Processing") }
+                    .padding(8)
             }
-            .padding()
         }
         
         

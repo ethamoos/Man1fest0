@@ -85,10 +85,22 @@ struct ConnectSheet: View {
     #endif
                     }
                         .frame(width: 400)
-                    
+
+                    // Authentication mode picker: username/password vs. API client/secret
                     HStack {
-                        Label("", systemImage: "person")
-                        TextField("Username", text: $username)
+                        Label("", systemImage: "person.badge.key")
+                        Picker("Auth Type", selection: $networkController.clientType) {
+                            ForEach(NetBrain.ClientType.allCases) { ct in
+                                Text(ct.displayName).tag(ct)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                    }
+
+                    HStack {
+                        Label("", systemImage: networkController.clientType == .apiClient ? "key.horizontal" : "person")
+                        TextField(networkController.clientType == .apiClient ? "Client ID" : "Username",
+                                  text: $username)
                             .disableAutocorrection(true)
     #if os(iOS)
                                                     .autocapitalization(.none)
@@ -97,7 +109,8 @@ struct ConnectSheet: View {
                     }
                     HStack {
                         Label("", systemImage: "ellipsis.rectangle")
-                        SecureField("Password", text: $networkController.password)
+                        SecureField(networkController.clientType == .apiClient ? "Client Secret" : "Password",
+                                    text: $networkController.password)
                             .disableAutocorrection(true)
     #if os(iOS)
                                                     .autocapitalization(.none)

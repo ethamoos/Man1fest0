@@ -395,6 +395,34 @@ extension NetBrain {
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
     var username: String { UserDefaults.standard.string(forKey: "username") ?? "" }
     var currentURL: String = ""
+
+    //  #############################################################################
+    //  Authentication Mode (clientType)
+    //  #############################################################################
+    /// How Man1fest0 should authenticate to Jamf Pro.
+    /// - usernamePassword: classic Basic-auth against `/api/v1/auth/token`
+    /// - apiClient: OAuth2 `client_credentials` grant against `/api/oauth/token`
+    enum ClientType: String, Codable, CaseIterable, Identifiable {
+        case usernamePassword = "username / password"
+        case apiClient        = "API client / secret"
+        var id: String { rawValue }
+        var displayName: String { rawValue }
+    }
+
+    /// Currently selected authentication mode. Persisted in UserDefaults so the
+    /// choice survives relaunches. Defaults to classic username/password.
+    @Published var clientType: ClientType = {
+        if let raw = UserDefaults.standard.string(forKey: "clientType"),
+           let ct = ClientType(rawValue: raw) {
+            return ct
+        }
+        return .usernamePassword
+    }() {
+        didSet {
+            UserDefaults.standard.set(clientType.rawValue, forKey: "clientType")
+        }
+    }
+
     //  #############################################################################
     //  Login and Tokens Confirmations
     //  #############################################################################
@@ -2754,37 +2782,70 @@ print("DEBUG - status code is 200, response is:")
     
     func getToken(server: String, username: String, password: String) async throws -> JamfAuthToken {
         
-        print("Getting token - Netbrain")
+        print("Getting token - Netbrain (clientType=\(self.clientType.rawValue))")
         // Inform user the app is attempting to authenticate
         DispatchQueue.main.async {
             self.messageStore?.show("Authenticating…", level: .info, showSpinner: true)
         }
-        guard let base64 = encodeBase64(username: username, password: password) else {
-            print("Error encoding username/password")
-            throw JamfAPIError.couldntEncodeNamePass
-        }
-        
+
+        // ── Build the request depending on the selected auth mode ────────────
         guard var components = URLComponents(string: server) else {
             throw JamfAPIError.badURL
         }
-        components.path="/api/v1/auth/token"
-        guard let url = components.url else {
-            throw JamfAPIError.badURL
-        }
-        
-        // create the request
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Basic \(base64)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
-        // send request and get data
-        if debug_enabled {
-            separationLine()
-            print("[DEBUG] Token request URL: \(url.absoluteString)")
-            print("[DEBUG] Token request Authorization header (first 16 chars): \(String(base64.prefix(16)))...")
+
+        var request: URLRequest
+        // Lifetime (seconds) of the token we obtain — populated per branch below.
+        var tokenLifetimeSeconds: TimeInterval = 1200
+
+        switch self.clientType {
+
+        case .usernamePassword:
+            // Classic Basic-auth against /api/v1/auth/token
+            guard let base64 = encodeBase64(username: username, password: password) else {
+                print("Error encoding username/password")
+                throw JamfAPIError.couldntEncodeNamePass
+            }
+            components.path = "/api/v1/auth/token"
+            guard let url = components.url else { throw JamfAPIError.badURL }
+
+            request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("Basic \(base64)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+            if debug_enabled {
+                separationLine()
+                print("[DEBUG] Token request URL: \(url.absoluteString)")
+                print("[DEBUG] Token request Authorization header (first 16 chars): \(String(base64.prefix(16)))...")
+            }
+
+        case .apiClient:
+            // OAuth2 client_credentials against /api/oauth/token
+            // NOTE: username == clientId, password == clientSecret
+            components.path = "/api/oauth/token"
+            guard let url = components.url else { throw JamfAPIError.badURL }
+
+            // Percent-encode the client_id / client_secret so values that contain
+            // reserved characters (e.g. '&', '=', '+') survive form encoding.
+            let allowed = CharacterSet.urlQueryAllowed.subtracting(CharacterSet(charactersIn: "&=+"))
+            let encodedClientId = username.addingPercentEncoding(withAllowedCharacters: allowed) ?? username
+            let encodedSecret   = password.addingPercentEncoding(withAllowedCharacters: allowed) ?? password
+            let bodyString = "grant_type=client_credentials&client_id=\(encodedClientId)&client_secret=\(encodedSecret)"
+
+            request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.httpBody = bodyString.data(using: .utf8)
+
+            if debug_enabled {
+                separationLine()
+                print("[DEBUG] OAuth token request URL: \(url.absoluteString)")
+                print("[DEBUG] OAuth client_id (first 8 chars): \(String(username.prefix(8)))...")
+            }
         }
 
+        // ── Send the request ─────────────────────────────────────────────────
         guard let (data, response) = try? await URLSession.shared.data(for: request)
         else {
             if debug_enabled { print("[DEBUG] Token request failed: no response/data") }
@@ -2865,14 +2926,38 @@ print("DEBUG - status code is 200, response is:")
             }
         }
         
-        // MARK: Parse JSON returned
+        // MARK: Parse JSON returned (shape differs per auth mode)
         let decoder = JSONDecoder()
-        
-        guard let auth = try? decoder.decode(JamfAuthToken.self, from: data)
-        else {
-            throw JamfAPIError.decode
+        let auth: JamfAuthToken
+
+        switch self.clientType {
+        case .usernamePassword:
+            guard let decoded = try? decoder.decode(JamfAuthToken.self, from: data) else {
+                throw JamfAPIError.decode
+            }
+            auth = decoded
+            tokenLifetimeSeconds = 1200 // Jamf Pro default = 20 minutes
+
+        case .apiClient:
+            // Client-credentials response: { "access_token": "...", "expires_in": 1799, "token_type": "Bearer" }
+            struct OAuthTokenResponse: Decodable {
+                let access_token: String
+                let expires_in: Int?
+                let token_type: String?
+            }
+            guard let oauth = try? decoder.decode(OAuthTokenResponse.self, from: data) else {
+                throw JamfAPIError.decode
+            }
+            let lifetime = TimeInterval(oauth.expires_in ?? 1200)
+            tokenLifetimeSeconds = lifetime
+            // Fabricate an ISO8601 `expires` string so the existing JamfAuthToken
+            // consumers keep working unchanged.
+            let expiresDate = Date().addingTimeInterval(lifetime)
+            let iso = ISO8601DateFormatter()
+            iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            auth = JamfAuthToken(token: oauth.access_token, expires: iso.string(from: expiresDate))
         }
-        
+
         print("We have a token")
         self.status = "Connected"
         // Persist the received token and mark the controller as connected so
@@ -2883,7 +2968,7 @@ print("DEBUG - status code is 200, response is:")
         self.connected = true
         self.needsCredentials = false
         // Store expiration time and credentials for refresh
-        self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
+        self.tokenExpirationTime = Date().addingTimeInterval(tokenLifetimeSeconds)
         // Start observing expiry and update published state for UI
         startTokenExpiryTimer()
         updateTokenState()
@@ -2917,13 +3002,14 @@ print("DEBUG - status code is 200, response is:")
             throw JamfAPIError.requestFailed
         }
 
+        // getToken already branches on clientType and updates authToken /
+        // tokenExpirationTime with the correct lifetime for the chosen mode.
         let newAuth = try await getToken(server: server, username: refreshUsername, password: refreshPassword)
         self.authToken = newAuth.token
-        self.tokenExpirationTime = Date().addingTimeInterval(1200) // 20 minutes
         // Ensure UI is updated and timer restarted
         startTokenExpiryTimer()
         updateTokenState()
-        print("Token refreshed successfully")
+        print("Token refreshed successfully (clientType=\(self.clientType.rawValue))")
     }
 
     /// Wrapper for API calls that ensures valid token
