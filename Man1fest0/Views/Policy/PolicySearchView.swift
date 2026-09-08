@@ -238,8 +238,87 @@ struct PolicySearchView: View {
         return activeFilter ? matchedPolicyPairsState.filter { $0.isHighlighted } : matchedPolicyPairsState
     }
 
+    // NOTE: `body` was previously one very large expression, which made the
+    // Swift type-checker time out ("unable to type-check this expression in
+    // reasonable time"). It has been split into small, explicitly-typed
+    // computed properties and helper functions below so each piece can be
+    // checked independently by the compiler.
     var body: some View {
         VStack(spacing: 0) {
+            searchControlsSection
+            policyListSection
+            actionsPanelSection
+
+            if progress.showProgressView == true {
+                ProgressView { Text("Processing") }
+                    .padding(8)
+            }
+        }
+        .onAppear(perform: handleOnAppear)
+        .onChange(of: searchString) { _ in updateMatchingIDs() }
+        .onChange(of: textSearchScope) { _ in updateMatchingIDs() }
+        .onChange(of: selectedFieldForFilter) { _ in updateMatchingIDs() }
+        .onChange(of: selectedFieldIsEmpty) { _ in updateMatchingIDs() }
+        .onChange(of: matchMode) { _ in updateMatchingIDs() }
+        .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
+        .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
+        .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
+    }
+
+    // MARK: - onAppear (extracted so `body` stays small enough for the type-checker)
+    private func handleOnAppear() {
+            // If basic policies are missing, try fetching them so the list can show something
+            if networkController.allPoliciesConverted.isEmpty {
+                print("PolicySearchView: allPoliciesConverted empty onAppear — fetching basic policies")
+                Task {
+                    do {
+                        try await networkController.getAllPolicies(server: server)
+                        updateMatchingIDs()
+                    } catch {
+                        print("PolicySearchView: failed to fetch basic policies: \(error)")
+                    }
+                }
+            }
+
+            // If detailed policies haven't been fetched, fetch them (existing behavior)
+            if networkController.fetchedDetailedPolicies == false {
+                print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
+                if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
+                    print("fetching detailed policies")
+                    progress.showProgress()
+                    Task {
+                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
+                    }
+                    progress.waitForABit()
+                    networkController.fetchedDetailedPolicies = true
+                } else {
+                    print("Download complete")
+                }
+            } else {
+                print("fetchedDetailedPolicies has run")
+            }
+            
+            
+            if networkController.allIconsDetailed.count <= 1 {
+                print("allIconsDetailed is:\(networkController.allIconsDetailed.count) - extracting from policies")
+                // Icons are sourced from the detailed policies (which contain the icon URLs).
+                // getAllPoliciesDetailed extracts them automatically as they load; this is a
+                // fallback for any policies already in memory.
+                networkController.extractIconsFromDetailedPolicies()
+            } else {
+                print("allIconsDetailed already populated: \(networkController.allIconsDetailed.count)")
+            }
+            
+            
+            
+            
+            
+            // Update the matching IDs when the view appears
+            updateMatchingIDs()
+    }
+
+    // MARK: - Search controls (extracted subview)
+    private var searchControlsSection: some View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     TextField("Search...", text: $searchString)
@@ -306,7 +385,10 @@ struct PolicySearchView: View {
             }
             .padding()
             
-            // Use ScrollView + LazyVStack so rows can expand naturally (List enforces row sizing on macOS which can clip expanded content).
+    }
+
+    // MARK: - Policy list (extracted subview)
+    private var policyListSection: some View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     if matchedPolicyPairsState.isEmpty {
@@ -433,10 +515,12 @@ struct PolicySearchView: View {
                 )
                 .hidden()
             )
-            
-            // ── Actions Panel ────────────────────────────────────────────────
-            if !selectedPoliciesForActions.isEmpty {
+    }
 
+    // MARK: - Actions panel (extracted subview)
+    @ViewBuilder
+    private var actionsPanelSection: some View {
+        if !selectedPoliciesForActions.isEmpty {
                 // Draggable separator — drag up/down to resize the Actions Panel.
                 // Only shown when the panel is expanded (nothing to resize when collapsed).
                 if showActionsPanel {
@@ -472,7 +556,6 @@ struct PolicySearchView: View {
                         }
                 )
                 } // end if showActionsPanel (drag handle)
-
                 // Visual separator with label between results and actions
                 HStack(spacing: 8) {
                     Rectangle()
@@ -492,7 +575,12 @@ struct PolicySearchView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top, 6)
+            actionsPanelBody
+        } // end actions panel
+    }
 
+    @ViewBuilder
+    private var actionsPanelBody: some View {
                 VStack(alignment: .leading, spacing: 0) {
                     // ── Header row ───────────────────────────────────────────
                     HStack {
@@ -519,12 +607,11 @@ struct PolicySearchView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
 
-                if showActionsPanel {
+        if showActionsPanel {
                     Divider()
                         .padding(.horizontal, 14)
-
-                    ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
 
                         // ── Tab picker ───────────────────────────────────────
                         HStack {
@@ -544,15 +631,43 @@ struct PolicySearchView: View {
                         }
                         .padding(.bottom, 8)
 
-                        // ── Tab content ──────────────────────────────────────
-                        Group {
-                            switch selectedActionsTab {
+                    Group {
+                        switch selectedActionsTab {
+                        case 0:
+                            toolsTabContent
+                        case 1:
+                            iconsTabContent
+                        case 2:
+                            categoryTabContent
+                        case 3:
+                            destructiveTabContent
+                        default:
+                            EmptyView()
+                        }
+                    }
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 8)
+                    } // end ScrollView
+                } // end if showActionsPanel
+                } // end inner VStack
+                .frame(height: showActionsPanel ? actionsPanelHeight : nil)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.blue.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.blue.opacity(0.25), lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+    }
 
-                                
-                                // ── Tools ─────────────────────────────────────────
-                                case 0:
-                                    VStack(alignment: .leading, spacing: 0) {
-
+    // -- Tools tab -----------------------------------------------------
+    @ViewBuilder
+    private var toolsTabContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
                                         // ── Open in Browser ───────────────────────
                                         VStack(alignment: .leading, spacing: 8) {
                                             HStack(spacing: 6) {
@@ -582,8 +697,23 @@ struct PolicySearchView: View {
                                         Divider()
                                             .padding(.horizontal)
                                             .padding(.vertical, 8)
+            exportPoliciesSection
 
-                                        // ── Export (XML or JSON) ───────────────────
+                                        Divider()
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+            replacePoliciesSection
+
+                                        Divider()
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+            xmlFindReplaceSection
+        }
+    }
+
+    // -- Export (XML or JSON) -------------------------------------------
+    @ViewBuilder
+    private var exportPoliciesSection: some View {
                                         VStack(alignment: .leading, spacing: 8) {
                                             HStack(spacing: 6) {
                                                 Image(systemName: "arrow.down.doc.fill")
@@ -604,8 +734,24 @@ struct PolicySearchView: View {
                                             .pickerStyle(.segmented)
                                             .frame(maxWidth: 220)
 
-                                            HStack(spacing: 12) {
-                                                Button {
+            HStack(spacing: 12) {
+                Button {
+                    exportSelectedPolicies()
+                } label: {
+                                                    Label("Export \(selectedPoliciesForActions.compactMap { $0 }.count) Policies as \(exportFormat.displayName)",
+                                                          systemImage: "arrow.down.doc")
+                                                }
+                                                .buttonStyle(.borderedProminent)
+                                                .tint(.orange)
+                                                .disabled(selectedPoliciesForActions.isEmpty)
+                                            }
+                                        }
+                                        .padding(.horizontal)
+
+    }
+
+    // MARK: - Export action (extracted from the button closure to help the type-checker)
+    private func exportSelectedPolicies() {
                                                     let ids = selectedPoliciesForActions.compactMap { $0 }
                                                     guard !ids.isEmpty else { return }
                                                     let chosenFormat = exportFormat
@@ -663,22 +809,11 @@ struct PolicySearchView: View {
                                                         level: .info,
                                                         details: "Exporting \(total) policies to Downloads"
                                                     )
-                                                } label: {
-                                                    Label("Export \(selectedPoliciesForActions.compactMap { $0 }.count) Policies as \(exportFormat.displayName)",
-                                                          systemImage: "arrow.down.doc")
-                                                }
-                                                .buttonStyle(.borderedProminent)
-                                                .tint(.orange)
-                                                .disabled(selectedPoliciesForActions.isEmpty)
-                                            }
-                                        }
-                                        .padding(.horizontal)
+    }
 
-                                        Divider()
-                                            .padding(.horizontal)
-                                            .padding(.vertical, 8)
-
-                                        // ── Replace Policies from XML Files ───────
+    // -- Replace Policies from XML Files -------------------------------
+    @ViewBuilder
+    private var replacePoliciesSection: some View {
                                         VStack(alignment: .leading, spacing: 8) {
                                             HStack(spacing: 6) {
                                                 Image(systemName: "arrow.up.doc.fill")
@@ -742,11 +877,11 @@ struct PolicySearchView: View {
                                         }
                                         .padding(.horizontal)
                                         .padding(.bottom, 12)
+    }
 
-                                        Divider()
-                                            .padding(.horizontal)
-                                            .padding(.vertical, 8)
-
+    // -- XML Find & Replace ---------------------------------------------
+    @ViewBuilder
+    private var xmlFindReplaceSection: some View {
                                         // ── XML Find & Replace ────────────────────
                                         VStack(alignment: .leading, spacing: 10) {
                                             HStack(spacing: 6) {
@@ -959,10 +1094,11 @@ struct PolicySearchView: View {
                                         }
                                         .padding(.horizontal)
                                         .padding(.bottom, 12)
-                                    }
-                                
-                            // ── Category ─────────────────────────────────────
-                            case 2:
+    }
+
+    // -- Category tab -----------------------------------------------------
+    @ViewBuilder
+    private var categoryTabContent: some View {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Category")
                                         .font(.headline)
@@ -1043,9 +1179,11 @@ struct PolicySearchView: View {
                                     Spacer()
                                 }
                                 .padding()
+    }
 
-                            // ── Icons ─────────────────────────────────────────
-                            case 1:
+    // -- Icons tab --------------------------------------------------------
+    @ViewBuilder
+    private var iconsTabContent: some View {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Icons")
                                         .font(.headline)
@@ -1151,11 +1289,10 @@ struct PolicySearchView: View {
                                     Spacer()
                                 }
                                 .padding()
+    }
 
-                           
-
-                            // ── Destructive ───────────────────────────────────
-                            case 3:
+    // -- Destructive tab --------------------------------------------------
+    private var destructiveTabContent: some View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "exclamationmark.triangle.fill")
@@ -1170,100 +1307,8 @@ struct PolicySearchView: View {
                                         selectedPoliciesInt: Array(selectedPoliciesForActions)
                                     )
                                 }
-
-                            default:
-                                EmptyView()
-                            }
-                        }
-                        .frame(maxHeight: 500)
-                    }
-                    .padding(.horizontal, 4)
-                    .padding(.bottom, 8)
-                    } // end ScrollView
-                } // end if showActionsPanel
-                } // end inner VStack
-                .frame(height: showActionsPanel ? actionsPanelHeight : nil)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.blue.opacity(0.05))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.blue.opacity(0.25), lineWidth: 1)
-                        )
-                )
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-            } // end actions panel
-            
-            if progress.showProgressView == true {
-                ProgressView { Text("Processing") }
-                    .padding(8)
-            }
-        }
-        
-        
-         .onAppear() {
-            // If basic policies are missing, try fetching them so the list can show something
-            if networkController.allPoliciesConverted.isEmpty {
-                print("PolicySearchView: allPoliciesConverted empty onAppear — fetching basic policies")
-                Task {
-                    do {
-                        try await networkController.getAllPolicies(server: server)
-                        updateMatchingIDs()
-                    } catch {
-                        print("PolicySearchView: failed to fetch basic policies: \(error)")
-                    }
-                }
-            }
-
-            // If detailed policies haven't been fetched, fetch them (existing behavior)
-            if networkController.fetchedDetailedPolicies == false {
-                print("fetchedDetailedPolicies is set to false - running getAllPoliciesDetailed")
-                if networkController.allPoliciesDetailed.count < networkController.allPoliciesConverted.count {
-                    print("fetching detailed policies")
-                    progress.showProgress()
-                    Task {
-                        try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: networkController.allPoliciesConverted)
-                    }
-                    progress.waitForABit()
-                    networkController.fetchedDetailedPolicies = true
-                } else {
-                    print("Download complete")
-                }
-            } else {
-                print("fetchedDetailedPolicies has run")
-            }
-            
-            
-            if networkController.allIconsDetailed.count <= 1 {
-                print("allIconsDetailed is:\(networkController.allIconsDetailed.count) - extracting from policies")
-                // Icons are sourced from the detailed policies (which contain the icon URLs).
-                // getAllPoliciesDetailed extracts them automatically as they load; this is a
-                // fallback for any policies already in memory.
-                networkController.extractIconsFromDetailedPolicies()
-            } else {
-                print("allIconsDetailed already populated: \(networkController.allIconsDetailed.count)")
-            }
-            
-            
-            
-            
-            
-            // Update the matching IDs when the view appears
-            updateMatchingIDs()
-        }
-        // Keep matching IDs up to date when inputs change
-        .onChange(of: searchString) { _ in updateMatchingIDs() }
-        .onChange(of: textSearchScope) { _ in updateMatchingIDs() }
-        .onChange(of: selectedFieldForFilter) { _ in updateMatchingIDs() }
-        .onChange(of: selectedFieldIsEmpty) { _ in updateMatchingIDs() }
-        .onChange(of: matchMode) { _ in updateMatchingIDs() }
-        .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
-         // Also update if the underlying policies array changes
-         .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
-         // Also update when the basic policies list arrives so the UI can show fallback list immediately
-         .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
     }
+
     
     // MARK: - Actions
 
