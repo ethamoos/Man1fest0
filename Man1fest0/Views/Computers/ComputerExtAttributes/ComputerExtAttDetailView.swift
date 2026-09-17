@@ -119,7 +119,9 @@ struct ComputerExtAttDetailView: View {
 
                     VStack(alignment: .leading) {
                         Text("Script:")
-                        TextEditor(text: $eaScriptBody)
+                        // PlainTextEditor disables smart quotes/dashes/autocorrect and
+                        // normalizes pasted text to ASCII so the EA script runs correctly.
+                        PlainTextEditor(text: $eaScriptBody)
                             .frame(minHeight: 160)
                             .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.gray.opacity(0.2)))
                     }

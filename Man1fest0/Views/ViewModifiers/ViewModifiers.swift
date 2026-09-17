@@ -7,6 +7,11 @@
 
 import Foundation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 
 /// Styles supported by the SectionHeading modifier.
 enum SectionHeadingStyle {
@@ -200,3 +205,197 @@ struct OutlinedTextField: View {
             )
     }
 }
+
+// MARK: - Script-safe text handling
+//
+// macOS/iOS text controls silently apply "smart" punctuation substitution
+// (curly quotes, em/en dashes, ellipsis characters, non-breaking spaces).
+// These are invisible in the UI but break shell/script syntax when the text
+// is saved to Jamf and executed on a device. `ScriptTextSanitizer` normalizes
+// known smart-punctuation to their plain ASCII equivalents and (optionally)
+// strips any other non-ASCII characters, and `PlainTextEditor` is a drop-in
+// replacement for SwiftUI's `TextEditor` that disables smart substitution at
+// the source (NSTextView/UITextView) and sanitizes on every change as a
+// backstop (e.g. for pasted content).
+
+/// Utilities for keeping script/command text restricted to ASCII-safe characters.
+enum ScriptTextSanitizer {
+
+    /// Maps common "smart" punctuation (curly quotes, dashes, ellipsis, NBSP)
+    /// to their plain ASCII equivalents.
+    static let smartPunctuationMap: [Character: String] = [
+        "\u{201C}": "\"", "\u{201D}": "\"", "\u{201E}": "\"", "\u{201F}": "\"", // “ ” „ ‟
+        "\u{2018}": "'",  "\u{2019}": "'",  "\u{201A}": "'",  "\u{201B}": "'",  // ‘ ’ ‚ ‛
+        "\u{2013}": "-",  "\u{2014}": "-",  "\u{2212}": "-",                    // – — −
+        "\u{2026}": "...",                                                     // …
+        "\u{00A0}": " "                                                        // non-breaking space
+    ]
+
+    /// Normalizes smart punctuation to ASCII equivalents and, by default,
+    /// strips any remaining non-ASCII characters so the result is guaranteed
+    /// safe to embed in a shell script or Jamf XML payload.
+    /// - Parameters:
+    ///   - input: the raw text (e.g. from a text editor or paste operation).
+    ///   - stripNonASCII: when true (default), removes any character that
+    ///     survives punctuation normalization but is still outside ASCII.
+    static func sanitize(_ input: String, stripNonASCII: Bool = true) -> String {
+        guard !input.isEmpty else { return input }
+        var result = String()
+        result.reserveCapacity(input.count)
+        for character in input {
+            if let replacement = smartPunctuationMap[character] {
+                result.append(replacement)
+            } else {
+                result.append(character)
+            }
+        }
+        if stripNonASCII {
+            result = String(result.unicodeScalars.filter { $0.isASCII })
+        }
+        return result
+    }
+
+    /// Returns true if the string contains any character outside standard ASCII.
+    static func containsNonASCII(_ input: String) -> Bool {
+        input.unicodeScalars.contains { !$0.isASCII }
+    }
+}
+
+#if os(macOS)
+/// A `TextEditor` replacement for editing script/command content.
+/// Disables macOS's automatic quote/dash/text substitution and spelling
+/// correction at the `NSTextView` level, and normalizes any text that still
+/// slips through (e.g. via paste) to plain ASCII using `ScriptTextSanitizer`.
+struct PlainTextEditor: NSViewRepresentable {
+    @Binding var text: String
+    var font: NSFont = .monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+    var sanitizeOnChange: Bool = true
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let textView = NSTextView()
+        textView.delegate = context.coordinator
+        textView.isRichText = false
+        textView.font = font
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.isAutomaticTextReplacementEnabled = false
+        textView.isAutomaticSpellingCorrectionEnabled = false
+        textView.isAutomaticDataDetectionEnabled = false
+        textView.isContinuousSpellCheckingEnabled = false
+        textView.isGrammarCheckingEnabled = false
+        textView.allowsUndo = true
+        textView.textContainerInset = NSSize(width: 4, height: 8)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.textContainer?.widthTracksTextView = true
+        textView.autoresizingMask = [.width]
+        textView.string = ScriptTextSanitizer.sanitize(text, stripNonASCII: false)
+
+        let scrollView = NSScrollView()
+        scrollView.documentView = textView
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .noBorder
+        return scrollView
+    }
+
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let textView = nsView.documentView as? NSTextView else { return }
+        // Re-assert these on every update in case system defaults changed them.
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.isAutomaticTextReplacementEnabled = false
+        textView.isAutomaticSpellingCorrectionEnabled = false
+        textView.isEditable = isEnabled
+        textView.isSelectable = true
+        if textView.string != text {
+            let selectedRanges = textView.selectedRanges
+            textView.string = text
+            textView.selectedRanges = selectedRanges
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        var parent: PlainTextEditor
+        init(_ parent: PlainTextEditor) { self.parent = parent }
+
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            guard parent.sanitizeOnChange else {
+                parent.text = textView.string
+                return
+            }
+            let sanitized = ScriptTextSanitizer.sanitize(textView.string)
+            if sanitized != textView.string {
+                let selectedRanges = textView.selectedRanges
+                textView.string = sanitized
+                textView.selectedRanges = selectedRanges
+            }
+            parent.text = sanitized
+        }
+    }
+}
+#else
+/// A `TextEditor` replacement for editing script/command content.
+/// Disables iOS's automatic quote/dash/text substitution and autocorrection
+/// at the `UITextView` level, and normalizes any text that still slips
+/// through (e.g. via paste) to plain ASCII using `ScriptTextSanitizer`.
+struct PlainTextEditor: UIViewRepresentable {
+    @Binding var text: String
+    var font: UIFont = .monospacedSystemFont(ofSize: UIFont.systemFontSize, weight: .regular)
+    var sanitizeOnChange: Bool = true
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.delegate = context.coordinator
+        textView.font = font
+        textView.smartQuotesType = .no
+        textView.smartDashesType = .no
+        textView.smartInsertDeleteType = .no
+        textView.autocorrectionType = .no
+        textView.autocapitalizationType = .none
+        textView.spellCheckingType = .no
+        textView.text = ScriptTextSanitizer.sanitize(text, stripNonASCII: false)
+        return textView
+    }
+
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        uiView.isEditable = isEnabled
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: PlainTextEditor
+        init(_ parent: PlainTextEditor) { self.parent = parent }
+
+        func textViewDidChange(_ textView: UITextView) {
+            guard parent.sanitizeOnChange else {
+                parent.text = textView.text
+                return
+            }
+            let sanitized = ScriptTextSanitizer.sanitize(textView.text)
+            if sanitized != textView.text {
+                let selectedRange = textView.selectedRange
+                textView.text = sanitized
+                textView.selectedRange = selectedRange
+            }
+            parent.text = sanitized
+        }
+    }
+}
+#endif

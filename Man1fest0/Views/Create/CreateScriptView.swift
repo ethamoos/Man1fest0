@@ -165,7 +165,9 @@ struct CreateScriptView: View {
                     .padding(4)
                     .border(Color.blue)
                 
-                TextEditor(text: $bodyText)
+                // PlainTextEditor disables smart quotes/dashes/autocorrect and
+                // normalizes pasted text to ASCII so the new script is safe to run.
+                PlainTextEditor(text: $bodyText)
                     .border(Color.blue)
                 
             }

@@ -86,6 +86,10 @@ struct ScriptsDetailView: View {
                     Button(action: {
                         // Save: only network update (upload changes to server)
                         progress.showProgress()
+                        // Final safety net: ensure no smart quotes/dashes or other
+                        // non-ASCII characters have slipped into the script body
+                        // before it is uploaded and executed on a device.
+                        bodyText = ScriptTextSanitizer.sanitize(bodyText)
                         Task {
                             print("Updating script")
                             do {
@@ -342,9 +346,10 @@ struct ScriptsDetailView: View {
                     .border(Color.gray.opacity(0.3))
                     .frame(minHeight: 240)
                 } else {
-                    TextEditor(text: $bodyText)
-                        .font(.system(.body, design: .monospaced))
-                        .disableAutocorrection(true)
+                    // PlainTextEditor disables smart quotes/dashes/autocorrect at the
+                    // source and normalizes any pasted text to ASCII, so script content
+                    // saved to Jamf never contains characters that break shell syntax.
+                    PlainTextEditor(text: $bodyText)
                         .frame(minHeight: 240, maxHeight: .infinity)
                         .border(Color.gray.opacity(0.3))
                         .padding(4)

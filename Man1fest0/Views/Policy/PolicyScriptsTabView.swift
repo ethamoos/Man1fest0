@@ -413,7 +413,10 @@ struct PolicyScriptsTabView: View {
                     //  Add custom command in policy4
                     //  ################################################################################
 
-                    TextEditor(text: $command)
+                    // PlainTextEditor disables smart quotes/dashes/autocorrect and
+                    // normalizes pasted text to ASCII so the command runs correctly
+                    // as a shell command on the device.
+                    PlainTextEditor(text: $command)
                         .frame(minHeight: 20)
                         .frame(maxHeight: 40)
                         .border(Color.gray)
