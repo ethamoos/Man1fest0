@@ -211,6 +211,44 @@ struct PolicySearchView: View {
         }
     }
 
+    /// Manually triggers a full refresh of the data behind the Raw Data search.
+    /// Re-fetches detailed policy records from the server (retrying any that
+    /// previously failed and picking up any that changed or were added since
+    /// the last fetch), then rebuilds the raw-data JSON cache and re-evaluates
+    /// matches. Use this when data you know exists on the server isn't
+    /// appearing in Raw Data search results.
+    private func refreshRawDataSource() {
+        guard !networkController.isFetchingDetailedPolicies else {
+            networkController.messageStore?.show("Refresh already in progress…", level: .info)
+            return
+        }
+        networkController.messageStore?.show(
+            "Refreshing policy data…",
+            level: .info,
+            details: "Re-fetching \(networkController.allPoliciesConverted.count) policies",
+            showSpinner: true
+        )
+        Task {
+            do {
+                try await networkController.getAllPoliciesDetailed(
+                    server: server,
+                    authToken: networkController.authToken,
+                    policies: networkController.allPoliciesConverted
+                )
+                await MainActor.run {
+                    networkController.fetchedDetailedPolicies = true
+                    buildRawDataCache()
+                    updateMatchingIDs()
+                    networkController.messageStore?.show("Policy data refreshed", level: .success)
+                }
+            } catch {
+                await MainActor.run {
+                    networkController.messageStore?.show("Failed to refresh policy data", level: .error, details: error.localizedDescription)
+                }
+            }
+        }
+    }
+
     /// Returns up to `maxSnippets` short excerpts of the policy's raw JSON
     /// surrounding each occurrence of the current search string, so the
     /// user can see *where* the string occurs without viewing the entire
@@ -511,19 +549,58 @@ struct PolicySearchView: View {
 
                 // Raw Data mode hint / indexing indicator
                 if textSearchScope == .rawData {
-                    HStack(spacing: 6) {
-                        if isBuildingRawDataCache {
-                            ProgressView().scaleEffect(0.6)
-                            Text("Indexing \(networkController.allPoliciesDetailed.compactMap { $0 }.count) policies for raw search…")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        } else {
-                            Image(systemName: "info.circle")
-                                .foregroundColor(.secondary)
-                                .font(.caption)
-                            Text("Searches every field of each policy (raw JSON), including data not shown as a column below. Matching text is shown as a snippet under each result.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            if isBuildingRawDataCache {
+                                ProgressView().scaleEffect(0.6)
+                                Text("Indexing \(networkController.allPoliciesDetailed.compactMap { $0 }.count) policies for raw search…")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Image(systemName: "info.circle")
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                                Text("Searches every field of each policy (raw JSON), including data not shown as a column below. Matching text is shown as a snippet under each result.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+
+                            // Manual refresh: re-fetches detailed policy data from the server and
+                            // rebuilds the raw-data search index. Use this if data you know exists
+                            // isn't appearing in Raw Data results.
+                            Button(action: { refreshRawDataSource() }) {
+                                HStack(spacing: 4) {
+                                    if networkController.isFetchingDetailedPolicies {
+                                        ProgressView().scaleEffect(0.6)
+                                    } else {
+                                        Image(systemName: "arrow.clockwise")
+                                    }
+                                    Text("Refresh Data")
+                                }
+                            }
+                            .font(.caption)
+                            .buttonStyle(.bordered)
+                            .disabled(networkController.isFetchingDetailedPolicies || isBuildingRawDataCache)
+                            .help("Re-fetch detailed policy data from the server and rebuild the raw search index. Use this if data you know exists isn't showing up.")
+                        }
+
+                        // Diagnostic: shows how many detailed policies are currently indexed and
+                        // whether any failed to fetch, explaining why some data might be missing.
+                        if networkController.detailedPoliciesProgress.loaded < networkController.detailedPoliciesProgress.expected
+                            || !networkController.detailedPoliciesProgress.failedIDs.isEmpty {
+                            let progressInfo = networkController.detailedPoliciesProgress
+                            HStack(spacing: 4) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .foregroundColor(.orange)
+                                    .font(.caption2)
+                                Text(progressInfo.failedIDs.isEmpty
+                                     ? "Indexed \(progressInfo.loaded) of \(progressInfo.expected) policies."
+                                     : "Indexed \(progressInfo.loaded) of \(progressInfo.expected) policies — \(progressInfo.failedIDs.count) failed to load. Tap Refresh Data to retry.")
+                                    .font(.caption2)
+                                    .foregroundColor(.orange)
+                            }
                         }
                     }
                 }
