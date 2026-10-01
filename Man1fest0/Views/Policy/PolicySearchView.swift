@@ -29,17 +29,39 @@ struct PolicySearchView: View {
         case title
         case all
         case selectedField
+        case rawData
         var displayName: String {
             switch self {
             case .title: return "Title"
             case .all: return "All Fields"
             case .selectedField: return "Selected Field"
+            case .rawData: return "Raw Data (Anywhere)"
             }
         }
     }
     @State private var textSearchScope: TextSearchScope = .title
     @State private var selectedFieldForFilter: SearchField = .generalName
     @State private var selectedFieldIsEmpty: Bool = false
+
+    // ── Raw Data search ──────────────────────────────────────────────
+    // "Raw Data (Anywhere)" searches a full JSON serialization of every
+    // decoded PolicyDetailed record (every field the app knows about —
+    // not just the specific columns exposed by `SearchField`). This is
+    // a practical stand-in for "search the raw XML/JSON payload": the
+    // decoded struct already contains everything the server returned
+    // that the app models, and JSON-encoding it in memory is instant
+    // (no network round-trip per policy is required), unlike fetching
+    // each policy's raw XML individually which would be far too slow
+    // to run across a whole list of policies.
+    //
+    // Keyed by jamfId -> pretty-printed JSON string. Rebuilt whenever
+    // the detailed policies collection changes.
+    @State private var rawDataCache: [Int: String] = [:]
+    @State private var isBuildingRawDataCache: Bool = false
+    // Debounces the search text so raw-data matching (a substring scan
+    // across every cached policy's JSON) doesn't re-run on every
+    // keystroke.
+    @StateObject private var searchDebouncer = Debouncer()
     
     // Match-mode and case sensitivity
     enum MatchMode: String, CaseIterable {
@@ -152,6 +174,97 @@ struct PolicySearchView: View {
         selectedPoliciesForActions = Set(ids.map { Optional($0) })
     }
 
+    // MARK: - Raw Data search support
+    //
+    // Builds (or rebuilds) `rawDataCache`, a jamfId -> pretty-printed JSON
+    // dictionary covering every field of every decoded detailed policy.
+    // Runs off the main thread since encoding a few thousand policies can
+    // take a moment; the UI shows a small "Indexing…" hint meanwhile.
+    private func buildRawDataCache() {
+        let policies = networkController.allPoliciesDetailed.compactMap { $0 }
+        guard !policies.isEmpty else {
+            rawDataCache = [:]
+            return
+        }
+        isBuildingRawDataCache = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            var cache: [Int: String] = [:]
+            cache.reserveCapacity(policies.count)
+            for policy in policies {
+                guard let jamfId = policy.general?.jamfId else { continue }
+                if let data = try? encoder.encode(policy),
+                   let json = String(data: data, encoding: .utf8) {
+                    cache[jamfId] = json
+                }
+            }
+            DispatchQueue.main.async {
+                self.rawDataCache = cache
+                self.isBuildingRawDataCache = false
+                // Re-evaluate matches now the cache is ready (most relevant
+                // when the user is actively using the Raw Data scope).
+                if self.textSearchScope == .rawData {
+                    self.updateMatchingIDs()
+                }
+            }
+        }
+    }
+
+    /// Returns up to `maxSnippets` short excerpts of the policy's raw JSON
+    /// surrounding each occurrence of the current search string, so the
+    /// user can see *where* the string occurs without viewing the entire
+    /// record. Returns an empty array if there's no cached data or no match.
+    private func rawDataSnippets(for policy: PolicyDetailed, contextLength: Int = 50, maxSnippets: Int = 3) -> [String] {
+        let trimmed = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let jamfId = policy.general?.jamfId,
+              let raw = rawDataCache[jamfId] else { return [] }
+
+        let options: String.CompareOptions = caseSensitive ? [] : [.caseInsensitive]
+        var snippets: [String] = []
+        var searchStart = raw.startIndex
+        while snippets.count < maxSnippets,
+              searchStart < raw.endIndex,
+              let range = raw.range(of: trimmed, options: options, range: searchStart..<raw.endIndex) {
+            let start = raw.index(range.lowerBound, offsetBy: -contextLength, limitedBy: raw.startIndex) ?? raw.startIndex
+            let end = raw.index(range.upperBound, offsetBy: contextLength, limitedBy: raw.endIndex) ?? raw.endIndex
+            var snippet = String(raw[start..<end])
+                .replacingOccurrences(of: "\n", with: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            // Collapse repeated whitespace left over from pretty-printed JSON indentation.
+            while snippet.contains("  ") { snippet = snippet.replacingOccurrences(of: "  ", with: " ") }
+            if start != raw.startIndex { snippet = "…" + snippet }
+            if end != raw.endIndex { snippet = snippet + "…" }
+            snippets.append(snippet)
+            searchStart = range.upperBound
+        }
+        return snippets
+    }
+
+    /// Downloads a single policy (in the chosen export format) so the user
+    /// can examine a raw-data match more closely.
+    private func downloadPolicyForInspection(jamfId: Int) {
+        progress.showProgress()
+        ASyncFileDownloader.downloadFileAsyncAuth(
+            objectID: jamfId,
+            resourceType: .policies,
+            server: server,
+            authToken: networkController.authToken,
+            format: exportFormat,
+            notifyOnCompletion: true
+        ) { path, error in
+            DispatchQueue.main.async {
+                progress.waitForABit()
+                if let path {
+                    networkController.messageStore?.show("Policy \(jamfId) downloaded", level: .success, details: path)
+                } else if let error {
+                    networkController.messageStore?.show("Download failed for policy \(jamfId)", level: .error, details: error.localizedDescription)
+                }
+            }
+        }
+    }
+
     // Export currently-displayed search results to CSV in the user's Downloads folder.
     private func exportCSV() {
         let pairs = displayedPairs
@@ -255,13 +368,23 @@ struct PolicySearchView: View {
             }
         }
         .onAppear(perform: handleOnAppear)
-        .onChange(of: searchString) { _ in updateMatchingIDs() }
-        .onChange(of: textSearchScope) { _ in updateMatchingIDs() }
+        .onChange(of: searchString) { _ in
+            searchDebouncer.debounce(interval: 0.3) { updateMatchingIDs() }
+        }
+        .onChange(of: textSearchScope) { newScope in
+            if newScope == .rawData && rawDataCache.isEmpty {
+                buildRawDataCache()
+            }
+            updateMatchingIDs()
+        }
         .onChange(of: selectedFieldForFilter) { _ in updateMatchingIDs() }
         .onChange(of: selectedFieldIsEmpty) { _ in updateMatchingIDs() }
         .onChange(of: matchMode) { _ in updateMatchingIDs() }
         .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
-        .onReceive(networkController.$allPoliciesDetailed) { _ in updateMatchingIDs() }
+        .onReceive(networkController.$allPoliciesDetailed) { _ in
+            buildRawDataCache()
+            updateMatchingIDs()
+        }
         .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
     }
 
@@ -332,15 +455,18 @@ struct PolicySearchView: View {
                             }
                         }
                         .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 300)
+                        .frame(maxWidth: 420)
                     
-                    // Selected-field picker (used when scope is .selectedField or to choose which field to check for emptiness)
+                    // Selected-field picker (used when scope is .selectedField, or to choose
+                    // which field the "Selected Field is Empty" toggle checks — independent
+                    // of the text-search scope, so it stays enabled in Raw Data mode too).
                     Picker("Field", selection: $selectedFieldForFilter) {
                         ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
                             Text(field.displayName)
                             }
                         }
                         .pickerStyle(MenuPickerStyle())
+                        .help(textSearchScope == .rawData ? "Only used with 'Selected Field is Empty' in Raw Data mode — Raw Data itself searches every field." : "")
                         
                     // Export CSV button for the current search results
                     Button(action: {
@@ -381,6 +507,25 @@ struct PolicySearchView: View {
                     .toggleStyle(SwitchToggleStyle())
                     
                     Spacer()
+                }
+
+                // Raw Data mode hint / indexing indicator
+                if textSearchScope == .rawData {
+                    HStack(spacing: 6) {
+                        if isBuildingRawDataCache {
+                            ProgressView().scaleEffect(0.6)
+                            Text("Indexing \(networkController.allPoliciesDetailed.compactMap { $0 }.count) policies for raw search…")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                            Text("Searches every field of each policy (raw JSON), including data not shown as a column below. Matching text is shown as a snippet under each result.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             }
             .padding()
@@ -1309,6 +1454,50 @@ struct PolicySearchView: View {
                                 }
     }
 
+    // -- Raw Data match detail (snippet + single-policy download) --------
+    // Shown under a policy row when the "Raw Data (Anywhere)" search scope
+    // is active and that policy matched. Displays where the search string
+    // occurs within the policy's full record and offers a quick way to
+    // download just that policy for closer examination.
+    @ViewBuilder
+    private func rawMatchDetail(for policy: PolicyDetailed) -> some View {
+        let snippets = rawDataSnippets(for: policy)
+        if !snippets.isEmpty, let jamfId = policy.general?.jamfId {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(snippets.enumerated()), id: \.offset) { _, snippet in
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "text.magnifyingglass")
+                            .foregroundColor(.teal)
+                            .font(.caption2)
+                        Text(snippet)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundColor(.primary)
+                            .textSelection(.enabled)
+                            .lineLimit(2)
+                    }
+                }
+                Button {
+                    downloadPolicyForInspection(jamfId: jamfId)
+                } label: {
+                    Label("Download Policy \(jamfId) (\(exportFormat.displayName)) for Inspection", systemImage: "arrow.down.doc")
+                        .font(.caption2)
+                }
+                .buttonStyle(.bordered)
+                .tint(.teal)
+                .controlSize(.small)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.teal.opacity(0.08))
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.teal.opacity(0.25), lineWidth: 1))
+            )
+            .padding(.leading, 36)
+            .padding(.trailing, 8)
+            .padding(.bottom, 6)
+        }
+    }
+
     
     // MARK: - Actions
 
@@ -1367,6 +1556,20 @@ struct PolicySearchView: View {
                 return SearchField.all.isMatch(in: policy, search: trimmed, matchMode: matchMode, caseSensitive: caseSensitive)
             case .selectedField:
                 return selectedFieldForFilter.isMatch(in: policy, search: trimmed, matchMode: matchMode, caseSensitive: caseSensitive)
+            case .rawData:
+                // Search the full JSON serialization of the decoded policy —
+                // i.e. every field the app knows about, not just a specific
+                // column. Uses the pre-built cache so this stays fast even
+                // across a large number of policies.
+                guard let jamfId = policy.general?.jamfId,
+                      let raw = rawDataCache[jamfId] else { return false }
+                let options: String.CompareOptions = caseSensitive ? [] : [.caseInsensitive]
+                switch matchMode {
+                case .contains:
+                    return raw.range(of: trimmed, options: options) != nil
+                case .startsWith:
+                    return raw.range(of: trimmed, options: options.union([.anchored])) != nil
+                }
             }
         }()
         
