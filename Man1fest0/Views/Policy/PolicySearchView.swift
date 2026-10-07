@@ -24,6 +24,8 @@ struct PolicySearchView: View {
     
     
     @State private var searchString: String = ""
+    // Focus state so Cmd-F can jump straight to the search field below.
+    @FocusState private var searchFieldFocused: Bool
     // New: replace the previous simple searchField/searchForEmptyField with explicit controls:
     private enum TextSearchScope: String, CaseIterable {
         case title
@@ -156,8 +158,11 @@ struct PolicySearchView: View {
             return MatchedPolicyPair(policy: policy, isHighlighted: isHighlighted)
         }
         return pairs
-            // Previously we filtered out non-highlights here which hid all items when filters matched none.
-            // Return all pairs so the UI can display every policy and use `isHighlighted` only for styling.
+        
+       
+// Previously we filtered out non-highlights here which hid all items when filters matched none.
+// Return all pairs so the UI can display every policy and use `isHighlighted` only for styling.
+ 
     }
 
     // Helper to update matching IDs (and sync to NetBrain if desired)
@@ -1327,6 +1332,10 @@ struct PolicySearchView: View {
                                     Text("Selected: \(selectedPoliciesForActions.compactMap { $0 }.count) policies")
                                         .font(.subheadline).foregroundColor(.secondary)
 
+                                    // Build a fast lookup table for categories so batch
+                                    // actions avoid repeated `.first(where:)` scans.
+                                    let categoriesById = Dictionary(uniqueKeysWithValues: networkController.categories.map { ($0.jamfId, $0) })
+
                                     // All category controls on one line
                                     HStack(spacing: 10) {
                                         Picker("Category:", selection: $selectedCategoryId) {
@@ -1347,9 +1356,9 @@ struct PolicySearchView: View {
                                             }
                                         }
 
-                                        Button("Update Category") {
+                                         Button("Update Category") {
                                             guard let catId = selectedCategoryId,
-                                                  let cat = networkController.categories.first(where: { $0.jamfId == catId })
+                                                  let cat = categoriesById[catId]
                                             else { return }
                                             progress.showProgress()
                                             progress.waitForABit()
@@ -1376,9 +1385,9 @@ struct PolicySearchView: View {
                                             .foregroundColor(enableDisable ? .green : .red)
                                             .font(.subheadline)
 
-                                        Button("Update Category / Enable") {
+                                         Button("Update Category / Enable") {
                                             guard let catId = selectedCategoryId,
-                                                  let cat = networkController.categories.first(where: { $0.jamfId == catId })
+                                                  let cat = categoriesById[catId]
                                             else { return }
                                             progress.showProgressView = true
                                             networkController.processingComplete = false

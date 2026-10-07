@@ -44,6 +44,8 @@ struct PolicyView: View {
     @State private var selection: Policy = Policy(name: "")
     
     @State var searchText = ""
+    // Focus state for the search field, used so Cmd-F can jump straight to search.
+    @FocusState private var searchFieldFocused: Bool
     
     var body: some View {
         
@@ -109,8 +111,20 @@ struct PolicyView: View {
                             }
                             .buttonStyle(.bordered)
                             .tint(.blue)
+                            // Keyboard shortcut: Cmd-R refreshes the full policy list.
+                            .keyboardShortcut("r", modifiers: [.command])
+                            .help("Refresh (⌘R)")
+
+                            // Hidden button so Cmd-F focuses the search field below,
+                            // matching the pattern used in PoliciesActionView.
+                            Button(action: { searchFieldFocused = true }) {
+                                EmptyView()
+                            }
+                            .keyboardShortcut("f", modifiers: [.command])
+                            .hidden()
                         }
                         .searchable(text: $searchText)
+                        .searchFocusedCompat($searchFieldFocused)
                         
                         Text("\(networkController.policies.count) total policies")
                             .toolbar {

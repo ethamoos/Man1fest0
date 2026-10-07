@@ -281,6 +281,9 @@ struct PoliciesActionView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(.blue)
+                    // Keyboard shortcut: Cmd-R refreshes the policy/package list.
+                    .keyboardShortcut("r", modifiers: [.command])
+                    .help("Refresh (⌘R)")
                     // Hidden shortcut to focus the inline search (Cmd-F)
                     Button(action: { searchFieldFocused = true }) {
                         EmptyView()
@@ -509,6 +512,13 @@ struct PoliciesActionView: View {
 
         }
         .frame(minWidth: 200, minHeight: 100, alignment: .leading)
+
+        // Listen for app-level focus search command and move focus to the
+        // inline search field. This allows the central menu command created in
+        // Man1fest0App to focus the policy search UI.
+        .onReceive(NotificationCenter.default.publisher(for: .focusSearch)) { _ in
+            searchFieldFocused = true
+        }
     }
     
     private func getAllPolicies() {
@@ -1005,6 +1015,9 @@ struct PoliciesActionGeneralTab: View {
                     Label("Export XML", systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(.bordered)
+                // Keyboard shortcut: Cmd-E exports the currently selected policies as XML.
+                .keyboardShortcut("e", modifiers: [.command])
+                .help("Export selected policies as XML (⌘E)")
             }
 
             Spacer()

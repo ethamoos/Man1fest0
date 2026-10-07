@@ -245,35 +245,29 @@ class BackgroundTasks: ObservableObject {
             //        If it does, remove it so that eventually a list remains that contains only unused packages.
             //        ########################################
 
+        // PERFORMANCE FIX (2026-10-07): This previously nested a loop over
+        // every package in `allPackages` inside a loop over every assigned
+        // package - and mutated `allPackages` while iterating over a copy of
+        // it inside that inner loop. That's an O(n * m) comparison count
+        // (with ~2,400 packages and hundreds of assigned packages, that is
+        // hundreds of thousands of string comparisons per run) plus heavy
+        // per-comparison logging on top.
+        //
+        // Replaced with the same O(n) Set-based technique already used in
+        // getPackagesNotInUse() above: compute the set of package names that
+        // are NOT assigned to any policy via `subtracting`, then rebuild the
+        // name -> id dictionary with a single `filter` pass. Behaviour and
+        // the function's signature/contract are unchanged.
         let assigned = assignedPackagesByNameDict
-        var allPackages = allPackagesByNameDict
-        
-        for (item,value) in assigned {
-            print(self.separationLine())
-            print("Processing assigned items:\(item) = \(value)")
-            let assignedItem = (item)
-            print("Assigned item is:\(assignedItem)")
-            
-            for (item, _) in allPackages {
-                let currentItem = (item)
-                print(self.separationLine())
-                print("Processing all packages")
-//                print("Current value pair is:\(item) = \(value)")
-//                print("Current item is:\(currentItem)")
-                if currentItem == assignedItem {
-                    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-                    print("Match found for \(currentItem)")
-                    print("Removing a key-Value pair")
-                    allPackages.removeValue(forKey: currentItem)
-                } else {
-                    print("No match found for:\(currentItem)")
-                }
-            }
-        }
-        
+        let allPackages = allPackagesByNameDict
+
+        let assignedNames = Set(assigned.keys)
+        let unusedNames = Set(allPackages.keys).subtracting(assignedNames)
+        let unused = allPackages.filter { unusedNames.contains($0.key) }
+
         print("--------------------------------------------")
         print("unusedPackages are:")
-        unassignedPackagesByNameDict = allPackages
+        unassignedPackagesByNameDict = unused
         print(unassignedPackagesByNameDict)
         print("Return unusedPackages")
         return unassignedPackagesByNameDict

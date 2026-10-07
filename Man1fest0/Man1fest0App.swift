@@ -294,6 +294,29 @@ struct Man1fest0App: App {
         }.commands {
             SidebarCommands()
         }
+        // App-wide keyboard menu for high-frequency actions. These post simple
+        // NotificationCenter notifications that specific views can observe and
+        // act on (e.g. focus search, trigger refresh, or start export). Keeps the
+        // shortcut wiring centralized and avoids duplicating keyboardShortcut
+        // declarations throughout the codebase.
+        .commands {
+            CommandMenu("Actions") {
+                Button("Refresh") {
+                    NotificationCenter.default.post(name: .globalRefresh, object: nil)
+                }
+                .keyboardShortcut("r", modifiers: .command)
+
+                Button("Focus Search") {
+                    NotificationCenter.default.post(name: .focusSearch, object: nil)
+                }
+                .keyboardShortcut("f", modifiers: .command)
+
+                Button("Export") {
+                    NotificationCenter.default.post(name: .globalExport, object: nil)
+                }
+                .keyboardShortcut("e", modifiers: .command)
+            }
+        }
         // Add a macOS-only menu command to open Preferences directly from the app menu
         #if os(macOS)
         .commands {

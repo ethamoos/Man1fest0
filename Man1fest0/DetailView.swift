@@ -1,5 +1,8 @@
 import SwiftUI
 
+// NOTE: This legacy variant has been copied to `Retired Files/PolicyDetailView_legacy_from_root.swift`.
+// The original content is preserved in the Retired Files folder for reference.
+// Consider removing this file from the active sources if it is no longer needed.
 // Renamed duplicate to avoid redeclaration conflict with `Views/Policy/PolicyDetailView.swift`.
 // This file's view appears to be a legacy/alternate detail layout, so rename to keep it available.
 struct PolicyDetailLegacyView: View {

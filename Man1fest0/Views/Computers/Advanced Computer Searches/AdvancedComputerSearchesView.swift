@@ -167,9 +167,11 @@ struct ComputerSearchesView: View {
                             let nc = networkController
                             let srv = server
                             let token = networkController.authToken
-                            // Build a Set<AdvancedComputerSearch> from the selected IDs
+                            // PERFORMANCE: build a fast lookup dictionary once rather than
+                            // calling `.first(where:)` for each selected id.
+                            let searchesById = Dictionary(uniqueKeysWithValues: nc.allAdvancedComputerSearches.map { ($0.id, $0) })
                             let selSet: Set<AdvancedComputerSearch> = Set(selection.compactMap { id in
-                                nc.allAdvancedComputerSearches.first(where: { $0.id == id })
+                                searchesById[id]
                             })
                             Task {
                                 try await nc.batchDeleteAdvancedComputerSearch(selection: selSet, server: srv, authToken: token, resourceType: .advancedComputerSearch)

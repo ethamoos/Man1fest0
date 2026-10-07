@@ -37,9 +37,16 @@ struct PrestagesAssignedView: View {
                 NavigationView {
                     VStack {
                         VStack {
+                            // Build lookup dictionaries once to avoid an O(n*m)
+                            // pattern where `.first(where:)` is called for every
+                            // row. This reduces repeated full-array scans to O(1)
+                            // dictionary lookups per row.
+                            let computersBySerial = Dictionary(uniqueKeysWithValues: networkController.allComputersBasic.computers.map { ($0.serialNumber, $0) })
+                            let prestageByID = Dictionary(uniqueKeysWithValues: prestageController.allPrestages.map { ($0.id, $0) })
+
                             List (searchResults, id: \.self) { serial in
-                                // Map serial -> ComputerBasicRecord if available
-                                let found = networkController.allComputersBasic.computers.first(where: { $0.serialNumber == serial })
+                                // Map serial -> ComputerBasicRecord if available (fast dictionary lookup)
+                                let found = computersBySerial[serial]
                                 NavigationLink(destination: PrestagesEditView(initialPrestageID:  prestageController.serialPrestageAssignment[serial] ?? "", targetPrestageID: "", serial: serial, server: server, showProgressScreen: false)) {
                                     HStack {
                                         Image(systemName: "desktopcomputer")
@@ -62,7 +69,7 @@ struct PrestagesAssignedView: View {
                                                 }
                                                 // Show current prestage ID if available
                                                 if let ps = prestageController.serialPrestageAssignment[serial], !ps.isEmpty {
-                                                    let psName = prestageController.allPrestages.first(where: { $0.id == ps })?.displayName ?? "(id:\(ps))"
+                                                    let psName = prestageByID[ps]?.displayName ?? "(id:\(ps))"
                                                     Text("Prestage: \(psName)").font(.caption).foregroundColor(.secondary)
                                                 }
                                             }

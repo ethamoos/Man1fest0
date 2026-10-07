@@ -399,3 +399,42 @@ struct PlainTextEditor: UIViewRepresentable {
     }
 }
 #endif
+
+// MARK: - Keyboard-shortcut-friendly search focus (deployment-target safe)
+
+/// Applies `.searchFocused(_:)` to a `.searchable(...)` field, but only on OS
+/// versions that actually support that modifier (macOS 14 / iOS 17+).
+///
+/// This project's deployment target is macOS 13.5, where `.searchFocused`
+/// doesn't exist, so calling it directly would fail to compile. Wrapping it
+/// in an `#available` check inside a `ViewModifier` lets call sites bind a
+/// `@FocusState` to a native `.searchable()` field (so a Cmd-F keyboard
+/// shortcut can jump straight into the search box) without every call site
+/// needing its own `#if/#available` block. On macOS 13.x this is a no-op —
+/// the search field itself still works, it just can't be focused
+/// programmatically via keyboard shortcut on that older OS.
+struct SearchFocusCompat: ViewModifier {
+    var isFocused: FocusState<Bool>.Binding
+
+    func body(content: Content) -> some View {
+        if #available(macOS 14.0, iOS 17.0, *) {
+            if #available(macOS 15.0, *) {
+                content.searchFocused(isFocused)
+            } else {
+                // Fallback on earlier versions
+            }
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    /// See `SearchFocusCompat`. Use alongside a hidden `Button` carrying
+    /// `.keyboardShortcut("f", modifiers: [.command])` that sets the bound
+    /// `@FocusState` to `true`, matching the pattern already used for plain
+    /// `TextField` search boxes elsewhere in the app (e.g. `PoliciesActionView`).
+    func searchFocusedCompat(_ isFocused: FocusState<Bool>.Binding) -> some View {
+        modifier(SearchFocusCompat(isFocused: isFocused))
+    }
+}

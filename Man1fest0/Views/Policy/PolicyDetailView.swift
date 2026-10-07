@@ -346,7 +346,9 @@ struct PolicyDetailView: View {
                         print(error)
                     }
                 }
-                
+                // EXPORTED: add a keyboard shortcut for Export (⌘E) so power users can
+                // quickly save the current policy XML without reaching for the mouse.
+                .keyboardShortcut("e", modifiers: .command)
                 Button(action: {
                     
                     print("Refresh detailPolicyView")
@@ -376,10 +378,14 @@ struct PolicyDetailView: View {
                         Text("Refresh Detail")
                     }
                 }
+                // Provide a keyboard shortcut for refresh as well; also support the
+                // global menu command which posts a NotificationCenter notification
+                // observed by this view.
                 .help("Reload policy details and XML from the server to reflect current state.")
                 .buttonStyle(.borderedProminent)
                 .tint(.green)
                 .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                .keyboardShortcut("r", modifiers: .command)
                 
                 
                 
@@ -924,6 +930,15 @@ struct PolicyDetailView: View {
                 }
             }
         }
+        // Observe app-level commands posted from the central menu (Man1fest0App).
+        .onReceive(NotificationCenter.default.publisher(for: .globalRefresh)) { _ in
+            // Refresh only this policy (use the helper to keep behaviour identical)
+            refreshDetail()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .globalExport)) { _ in
+            // Start the export flow equivalent to pressing the Export button
+            exporting = true
+        }
     }
     
     func fetchData() {
@@ -1306,6 +1321,37 @@ func requestPolicyRefresh(for policyID: String? = nil, after delay: TimeInterval
             NotificationCenter.default.post(name: .policyDidChange, object: nil, userInfo: ["policyID": pid])
         } else {
             NotificationCenter.default.post(name: .policyDidChange, object: nil)
+        }
+    }
+}
+
+// MARK: - PolicyDetailView helpers
+extension PolicyDetailView {
+    /// Helper used by both the Refresh button and the global Refresh command to
+    /// reload the detailed policy and its XML representation.
+    private func refreshDetail() {
+        print("Refresh requested (global or button)")
+        progress.showProgress()
+        progress.waitForABit()
+
+        Task {
+            do {
+                print("Fetching detailed policy as xml")
+                let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                xmlController.readXMLDataFromString(xmlContent: policyAsXML)
+            } catch {
+                print("Fetching detailed policy as xml failed: \(error)")
+            }
+        }
+
+        Task {
+            do {
+                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                policyName = networkController.policyDetailed?.general?.name ?? ""
+                policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? ""
+            } catch {
+                print("Failed to getDetailedPolicy in refreshDetail: \(error)")
+            }
         }
     }
 }

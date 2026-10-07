@@ -4,7 +4,10 @@
 ////
 ////  Created by Amos Deane on 19/09/2024.
 ////
-//
+////
+// NOTE: The legacy iOS variant has been moved to:
+// `Retired Files/PolicyDetailView_iOS_legacy.swift` to reduce clutter in
+// `Views/Shared`. The original commented content is preserved there.
 //import SwiftUI
 //
 //struct PolicyDetailView_iOS: View {
