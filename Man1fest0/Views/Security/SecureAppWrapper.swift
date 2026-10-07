@@ -16,6 +16,7 @@ struct SecureAppWrapper<Content: View>: View {
     @EnvironmentObject var securitySettings: SecuritySettingsManager
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var messageStore: MessageStore
     
     // MARK: - macOS Preferences Window Handle
     #if os(macOS)
@@ -90,6 +91,25 @@ struct SecureAppWrapper<Content: View>: View {
                             }
                         }
                      }
+                    Divider()
+                    Section(header: Text("Debugging")) {
+                        Picker("Log level", selection: Binding(get: {
+                            return Logger.shared.currentLevel.rawValue
+                        }, set: { newVal in
+                            UserDefaults.standard.set(newVal, forKey: "Man1fest0LogLevel")
+                            messageStore.info("Log level updated", details: "Level: \(newVal)")
+                        })) {
+                            Text("Off").tag(Logger.Level.off.rawValue)
+                            Text("Normal").tag(Logger.Level.normal.rawValue)
+                            Text("Verbose").tag(Logger.Level.verbose.rawValue)
+                        }
+                        Toggle("Verbose per-item logging (detailed)", isOn: Binding(get: {
+                            AppDebug.verbosePerItemLogging
+                        }, set: { v in
+                            AppDebug.verbosePerItemLogging = v
+                            messageStore.info("Verbose per-item logging \(v ? "enabled" : "disabled")")
+                        }))
+                    }
                 }
                 .navigationTitle("Preferences")
                 .frame(minWidth: 250, minHeight: 200)
@@ -121,10 +141,12 @@ struct SecureAppWrapper<Content: View>: View {
         }
 
         // Build the SwiftUI content and attach environment objects
+        // Also inject messageStore so the Preferences UI can give user feedback
         let prefsContent = PreferencesWindowContent()
             .environmentObject(securitySettings)
             .environmentObject(inactivityMonitor)
             .environmentObject(networkController)
+            .environmentObject(messageStore)
 
         let hostingController = NSHostingController(rootView: prefsContent)
         // Allow the hosting view to resize with the window
@@ -160,12 +182,28 @@ struct SecureAppWrapper<Content: View>: View {
     #endif
 }
 
+// Compute the app log file URL using the same logic as Logger (Application Support / <bundleID> / Man1fest0.log)
+fileprivate func logFileURL() -> URL? {
+#if os(macOS)
+    let bundleID = Bundle.main.bundleIdentifier
+    guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+    let dir = appSupport.appendingPathComponent(bundleID ?? "Man1fest0", isDirectory: true)
+    return dir.appendingPathComponent("Man1fest0.log")
+#else
+    return nil
+#endif
+}
+
 // MARK: - Preferences window content (reused for the custom NSWindow)
 #if os(macOS)
 fileprivate struct PreferencesWindowContent: View {
     @EnvironmentObject var securitySettings: SecuritySettingsManager
     @EnvironmentObject var inactivityMonitor: InactivityMonitor
     @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var messageStore: MessageStore
+
+    @State private var selectedLogLevel: Int = Logger.shared.currentLevel.rawValue
+    @State private var verbosePerItem: Bool = AppDebug.verbosePerItemLogging
 
     var body: some View {
         
@@ -199,6 +237,61 @@ fileprivate struct PreferencesWindowContent: View {
                             }
                         }
                  }
+                    
+                    Divider()
+
+                    Section(header: Text("Debugging").font(.headline)) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Picker("Log level", selection: $selectedLogLevel) {
+                                Text("Off").tag(Logger.Level.off.rawValue)
+                                Text("Normal").tag(Logger.Level.normal.rawValue)
+                                Text("Verbose").tag(Logger.Level.verbose.rawValue)
+                            }
+                            .pickerStyle(RadioGroupPickerStyle())
+                            .onChange(of: selectedLogLevel) { newValue in
+                                // Persist as Int so Logger.currentLevel can read it
+                                UserDefaults.standard.set(newValue, forKey: "Man1fest0LogLevel")
+                                messageStore.info("Log level updated", details: "Level: \(newValue)")
+                            }
+
+                            Toggle("Verbose per-item logging (detailed)", isOn: $verbosePerItem)
+                                .onChange(of: verbosePerItem) { v in
+                                    AppDebug.verbosePerItemLogging = v
+                                    messageStore.info("Verbose per-item logging \(v ? "enabled" : "disabled")")
+                                }
+
+                            HStack {
+                                Button("Reveal Log File") {
+                                    #if os(macOS)
+                                    if let url = logFileURL() {
+                                        if FileManager.default.fileExists(atPath: url.path) {
+                                            NSWorkspace.shared.activateFileViewerSelecting([url])
+                                        } else {
+                                            messageStore.warn("Log file not found", details: url.path)
+                                        }
+                                    } else {
+                                        messageStore.warn("Unable to compute log file path")
+                                    }
+                                    #else
+                                    messageStore.info("Log file reveal is macOS-only")
+                                    #endif
+                                }
+                                Spacer()
+                                Button("Clear Log File") {
+                                    if let url = logFileURL(), FileManager.default.fileExists(atPath: url.path) {
+                                        do {
+                                            try Data().write(to: url)
+                                            messageStore.success("Log file cleared")
+                                        } catch {
+                                            messageStore.error("Failed to clear log file", details: "\(error)")
+                                        }
+                                    } else {
+                                        messageStore.warn("No log file to clear")
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 .navigationTitle("Preferences")
                 .frame(minWidth: 250, minHeight: 200)
