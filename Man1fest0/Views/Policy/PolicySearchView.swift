@@ -477,7 +477,7 @@ struct PolicySearchView: View {
             
             
             
-            
+        
             
             // Update the matching IDs when the view appears
             updateMatchingIDs()

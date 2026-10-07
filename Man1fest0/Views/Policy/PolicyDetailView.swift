@@ -112,6 +112,13 @@ struct PolicyDetailView: View {
 
     @State var enableDisableButton: Bool = true
 
+    // When true, programmatic updates to `enableDisableButton` (e.g. syncing from
+    // the server-provided detailed policy on appear / refresh) will NOT trigger
+    // the server-side toggle call in `.onChange(of: enableDisableButton)`.
+    // This prevents the toggle from drifting out of sync with the displayed
+    // "Enabled Status" value and avoids an infinite feedback loop.
+    @State private var isSyncingEnableToggle: Bool = false
+
     @State var enableDisableStatus: Bool = true
 
     @State var enableDisableSelfServiceStatus: Bool = true
@@ -263,8 +270,16 @@ struct PolicyDetailView: View {
                 Toggle("", isOn: $enableDisableButton)
                     .toggleStyle(SwitchToggleStyle(tint: .red))
                     .onChange(of: enableDisableButton) { value in
+                        // Ignore changes that originated from syncing with the
+                        // server-side value (otherwise we'd re-send the same
+                        // state to the server in a loop).
+                        if isSyncingEnableToggle {
+                            print("enableDisableButton synced from server (value=\(value)) - skipping server call")
+                            return
+                        }
                         networkController.togglePolicyOnOff(server: server, authToken: networkController.authToken, resourceType: selectedResourceType, itemID: policyID, policyToggle: enableDisableButton)
                         print("enableDisableButton changed - value is now:\(value) for policy:\(policyID)")
+                        requestPolicyRefresh(for: String(describing: policyID))
                     }
                 
 #if os(macOS)
@@ -570,6 +585,11 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Renaming Policy:\(policyName)")
+                                // Refresh the cached detailed policy immediately so that
+                                // a follow-up button press (Trigger / Self-Service / etc.)
+                                // operates on the up-to-date server data rather than the
+                                // stale cached copy from before this rename.
+                                refreshCachedPolicyAfterEdit()
                                 requestPolicyRefresh(for: String(describing: policyID))
                             }) {
                                 Text("Rename")
@@ -597,6 +617,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Updating Policy Trigger to:\(policyName)")
+                                refreshCachedPolicyAfterEdit()
                                 requestPolicyRefresh(for: String(describing: policyID))
                                 
                             }) {
@@ -625,6 +646,7 @@ struct PolicyDetailView: View {
                                 
                                 networkController.separationLine()
                                 print("Name Self-Service to:\(policyName)")
+                                refreshCachedPolicyAfterEdit()
                                 requestPolicyRefresh(for: String(describing: policyID))
                             }) {
                                 Text("Self-Service")
@@ -814,6 +836,12 @@ struct PolicyDetailView: View {
                 trigger_checkin = networkController.policyDetailed?.general?.triggerCheckin ?? false
                 trigger_startup = networkController.policyDetailed?.general?.triggerStartup ?? false
                 trigger_enrollment_complete = networkController.policyDetailed?.general?.triggerEnrollmentComplete ?? false
+
+                // Sync the enable/disable toggle with the actual Enabled Status
+                // displayed above (which reads from `policyDetailed.general.enabled`).
+                // Guarded via `isSyncingEnableToggle` so the `.onChange` handler
+                // does NOT re-send this value back to the server.
+                syncEnableToggleFromDetail()
                
                // print current computed trigger status for debugging
                print("Push trigger active? \(pushTriggerActiveWarningComputed)")
@@ -879,6 +907,13 @@ struct PolicyDetailView: View {
             print("currentPolicyAsXML changed (len: \(newXML.count)) - rebuilding AEXML tree")
             xmlController.readXMLDataFromString(xmlContent: newXML)
         }
+
+        // Keep the enable/disable toggle synced with the Enabled Status shown
+        // above whenever the detailed policy is replaced (e.g. after any refresh
+        // triggered by a child view or a different code path).
+        .onChange(of: networkController.policyDetailed?.general?.enabled) { _ in
+            syncEnableToggleFromDetail()
+        }
         
         // Whenever the aexmlDoc representation of the current policy changes (children often edit XML),
         // refresh the detailed policy from the server so the UI reflects server-side state.
@@ -924,6 +959,9 @@ struct PolicyDetailView: View {
                     // Keep local fields in sync with refreshed detail
                     policyName = networkController.policyDetailed?.general?.name ?? policyName
                     policyCustomTrigger = networkController.policyDetailed?.general?.triggerOther ?? policyCustomTrigger
+                    // Keep the enable/disable toggle in step with the refreshed
+                    // Enabled Status shown at the top of the view.
+                    syncEnableToggleFromDetail()
                     print("Refreshed detailed policy + XML (len: \(refreshedXML.count)) in response to policyDidChange notification")
                 } catch {
                     print("Failed to refresh detailed policy after policyDidChange notification: \(error)")
@@ -942,13 +980,54 @@ struct PolicyDetailView: View {
     }
     
     func fetchData() {
-        
+
         if  networkController.packages.isEmpty {
             print("No package data - fetching")
              Task { try await networkController.getAllPackages() }
-            
+
         } else {
             print("package data is available")
+        }
+    }
+
+    /// Immediately refresh the cached detailed policy (and its XML representation)
+    /// after an edit so that any subsequent button press operates on the
+    /// up-to-date server data rather than the stale cached copy. A short delay
+    /// is applied to let the server finish processing the PUT. This runs in
+    /// addition to the `requestPolicyRefresh` notification (which is observed
+    /// elsewhere) so the local cache is updated as quickly as possible even if
+    /// the user clicks another edit button before the notification fires.
+    private func refreshCachedPolicyAfterEdit() {
+        Task {
+            // Give the server a brief moment to process the PUT that was just sent.
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            do {
+                try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                let refreshedXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: policyID, authToken: networkController.authToken)
+                await MainActor.run {
+                    xmlController.readXMLDataFromString(xmlContent: refreshedXML)
+                    syncEnableToggleFromDetail()
+                }
+            } catch {
+                print("refreshCachedPolicyAfterEdit failed: \(error)")
+            }
+        }
+    }
+
+    /// Sync the enable/disable `Toggle` with the currently displayed
+    /// The `isSyncingEnableToggle` guard prevents the `.onChange` handler on the
+    /// Toggle from re-posting the value to the server (which would create a
+    /// feedback loop and could also flip the server-side state unexpectedly).
+    private func syncEnableToggleFromDetail() {
+        let serverEnabled = networkController.policyDetailed?.general?.enabled ?? true
+        if enableDisableButton != serverEnabled {
+            isSyncingEnableToggle = true
+            enableDisableButton = serverEnabled
+            // Reset the guard on the next runloop tick, after SwiftUI has
+            // delivered the `.onChange` callback for the programmatic change.
+            DispatchQueue.main.async {
+                isSyncingEnableToggle = false
+            }
         }
     }
 
