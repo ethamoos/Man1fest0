@@ -200,9 +200,12 @@ class XmlBrain: ObservableObject {
     
     func addMultipleComputersToGroupOld(xmlContent: String, computers: Set<ComputerBasicRecord.ID>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
         readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
-        
+
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         separationLine()
         print("Running addMultipleComputersToGroupOLD XML brain")
         separationLine()
@@ -238,9 +241,12 @@ class XmlBrain: ObservableObject {
     
     func addMultipleComputersToGroup(xmlContent: String, computers: Set<ComputerBasicRecord>, authToken: String,groupId: String, resourceType: ResourceType, server: String) {
         readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
-        
+
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         separationLine()
         print("Running addMultipleComputersToGroupOLD XML brain")
         separationLine()
@@ -277,10 +283,13 @@ class XmlBrain: ObservableObject {
     // ######################################################################################
     
     func addCategoryToPolicy(xmlContent: String,authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
-        
+
         self.readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         self.separationLine()
         print("Running addCategoryToPolicy")
         print("xmlContent is:\(xmlContent)")
@@ -303,10 +312,13 @@ class XmlBrain: ObservableObject {
     }
     
     func addCategoryToPolicy2(authToken: String, resourceType: ResourceType, server: String, policyId: String, categoryName: String, categoryId: String, newPolicyFlag: Bool ) {
-        
+
         //        self.readXMLDataFromStringXmlBrain(xmlContent: xmlContent)
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         self.separationLine()
         print("Running addCategoryToPolicy")
         //        print("xmlContent is:\(xmlContent)")
@@ -895,7 +907,10 @@ class XmlBrain: ObservableObject {
 
         let groupIdString = String(describing: groupId )
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupIdString)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         var request = URLRequest(url: url,timeoutInterval: Double.infinity)
         request.addValue("application/xml", forHTTPHeaderField: "Accept")
         request.addValue("application/xml", forHTTPHeaderField: "Content-Type")
@@ -2539,9 +2554,12 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     //    ##################################################
     
     func addComputerToPolicyScope(xmlContent: String, computerName: String, authToken: String, computerId: String, resourceType: ResourceType, server: String, policyId: String) {
-        
+
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         self.separationLine()
         print("Running addComputerToPolicyScope")
@@ -2564,9 +2582,12 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     //    ##################################################
     
     func enableAllComputersToScope(xmlContent: String, authToken: String, resourceType: ResourceType, server: String, policyId: String) {
-        
+
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         self.separationLine()
         print("Running addAllComputersToScope")
@@ -2582,9 +2603,12 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     }
     
     func disableAllComputersToScope(xmlContent: String, authToken: String, resourceType: ResourceType, server: String, policyId: String) {
-        
+
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         self.separationLine()
         print("Running addAllComputersToScope")
@@ -2608,7 +2632,10 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         print("Running:addDepartmentToPolicyScope")
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         print("Adding XML data")
         print("Adding departmentName: \(departmentName)")
         print("Adding departmentId: \(departmentId)")
@@ -2629,7 +2656,10 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         print("Running:addBuildingToPolicyScope")
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         let buildings = self.aexmlDoc.root["scope"]["buildings"].addChild(name: "building")
         buildings.addChild(name: "name", value: buildingName)
         buildings.addChild(name: "id", value: buildingId)
@@ -3019,9 +3049,12 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         
     func addComputerToGroup(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String, authToken: String) {
         readXMLDataFromString(xmlContent: xmlContent)
-        
+
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         self.separationLine()
         print("Running addComputerToGroup XmlBrain")
         print("xmlContent is:\(xmlContent)")
@@ -3090,9 +3123,12 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
     
     func removeLastComputer(xmlContent: String, computerName: String,  computerId: String,groupId: String, resourceType: ResourceType, server: String, authToken: String) {
         readXMLDataFromString(xmlContent: xmlContent)
-        
+
         let jamfURLQuery = server + "/JSSResource/computergroups/id/" + "\(groupId)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid URL: \(jamfURLQuery)")
+            return
+        }
         self.separationLine()
         print("Running removeLastComputer")
         print("xmlContent is:\(xmlContent)")

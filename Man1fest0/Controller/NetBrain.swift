@@ -1305,7 +1305,7 @@ print("DEBUG - status code is 200, response is:")
     func getCategoryScope(server: String, id: String) async throws {
         
         let jamfURLQuery = server + "/v1/categories/" + id
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
           request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
@@ -1335,7 +1335,7 @@ print("DEBUG - status code is 200, response is:")
     func getCategories(server: String, authToken: String) async throws {
         
         let jamfURLQuery = server + "/JSSResource/categories"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -1373,7 +1373,7 @@ print("DEBUG - status code is 200, response is:")
     func getDepartments(server: String) async throws {
         
         let jamfURLQuery = server + "/JSSResource/departments"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
           request.setValue("Bearer \(self.authToken)", forHTTPHeaderField: "Authorization")
@@ -1400,7 +1400,7 @@ print("DEBUG - status code is 200, response is:")
     func getOSXConfigProfiles(server: String, authToken: String) async throws {
         
         let jamfURLQuery = server + "/JSSResource/osxconfigurationprofiles"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -1452,7 +1452,7 @@ print("DEBUG - status code is 200, response is:")
         let token = authToken ?? self.authToken
         messageStore?.show("Loading policies…", level: .info, details: "Connecting to server", showSpinner: true)
         let jamfURLQuery = server + "/JSSResource/policies"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1513,7 +1513,7 @@ print("DEBUG - status code is 200, response is:")
 
         let jamfURLQuery = server + "/JSSResource/policies/id/" + policyID
         self.currentURL = jamfURLQuery
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -1864,7 +1864,7 @@ print("DEBUG - status code is 200, response is:")
         print("Running getDetailedPackage - packageID is:\(packageID)")
         let jamfURLQuery = server + "/JSSResource/packages/id/" + packageID
         print("jamfURLQuery is:\(jamfURLQuery)")
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
         print("url is:\(url)")
 //        print("authToken is:\(authToken)")
         var request = URLRequest(url: url)

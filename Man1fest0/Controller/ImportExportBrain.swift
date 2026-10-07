@@ -112,7 +112,10 @@ class ImportExportBrain: ObservableObject {
         print("packageId is:\(packageId)")
         print("server is:\(server)")
         
-        let url = URL(string: "\(server)/api/v1/packages/\(packageId)/upload")!
+        guard let url = URL(string: "\(server)/api/v1/packages/\(packageId)/upload") else {
+            print("Invalid uploadPackage URL: \(server)/api/v1/packages/\(packageId)/upload")
+            return
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "accept")
@@ -334,7 +337,11 @@ class ImportExportBrain: ObservableObject {
         
         let postData = parameters.data(using: .utf8)
 
-        var request = URLRequest(url: URL(string: "\(server)/api/v1/packages")!,timeoutInterval: Double.infinity)
+        guard let requestURL = URL(string: "\(server)/api/v1/packages") else {
+            print("Invalid createPackage URL: \(server)/api/v1/packages")
+            return
+        }
+        var request = URLRequest(url: requestURL,timeoutInterval: Double.infinity)
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -357,7 +364,10 @@ class ImportExportBrain: ObservableObject {
     func uploadIcon(jamfURL: String, authToken: String, file: String) throws {
         
         let jamfURLQuery = jamfURL + "/api/v1/icon/"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URL(string: jamfURLQuery) else {
+            print("Invalid uploadIcon URL: \(jamfURLQuery)")
+            throw JamfAPIError.badURL
+        }
         print("Running:uploadIcon for file:\(file)")
         print("jamfURL is:\(jamfURL)")
         print("Request url is:\(url)")
@@ -411,7 +421,11 @@ class ImportExportBrain: ObservableObject {
 //          -H 'Content-Type: multipart/form-data' \
 //          -F 'file=@badger.png;type=image/png'
         
-        var request = URLRequest(url: URL(string: jamfURL)!,timeoutInterval: Double.infinity)
+        guard let requestURL = URL(string: jamfURL) else {
+            print("Invalid request URL for uploadIcon: \(jamfURL)")
+            throw JamfAPIError.badURL
+        }
+        var request = URLRequest(url: requestURL,timeoutInterval: Double.infinity)
         request.addValue("multipart/form-data", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
 //        request.addValue("jpro-ingress=50a6373641f21143", forHTTPHeaderField: "Cookie")
@@ -468,7 +482,12 @@ class ImportExportBrain: ObservableObject {
         self.uploadStatus = "Uploading..."
         
         let jamfURL = server + "/api/v1/icon/"
-        let url = URL(string: jamfURL)!
+        guard let url = URL(string: jamfURL) else {
+            print("Invalid uploadPhoto URL: \(jamfURL)")
+            self.isUploading = false
+            self.uploadStatus = "Invalid server URL"
+            return
+        }
         print("Running:uploadIcon for file:\(String(describing: selectedImageURL))")
         print("jamfURL is:\(jamfURL)")
         print("Request url is:\(url)")
