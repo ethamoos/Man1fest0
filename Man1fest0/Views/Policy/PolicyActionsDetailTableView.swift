@@ -179,7 +179,10 @@ struct PolicyActionsDetailTableView: View {
                                         do {
                                             try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: policiesToRetry)
                                         } catch {
-                                            print("Retry failed policies error: \(error)")
+                                            DispatchQueue.main.async {
+                                                networkController.messageStore?.show("Retry failed policies error: \(error)", level: .error)
+                                            }
+                                            if AppDebug.verbosePerItemLogging { print("Retry failed policies error: \(error)") }
                                         }
                                     }
                                     progress.endExtendedProgress()
@@ -240,7 +243,7 @@ struct PolicyActionsDetailTableView: View {
         }
         .padding()
         .onAppear {
-            print("PolicyActionsDetailTableView - getting primary data")
+            if AppDebug.verbosePerItemLogging { print("PolicyActionsDetailTableView - getting primary data") }
             fetchData()
         }
         // When detailed policies are updated, rebuild the simplified general list so the table fills
@@ -260,7 +263,7 @@ struct PolicyActionsDetailTableView: View {
         }
         // Also log when the simplified general array changes so we can diagnose why the Table may be empty
         .onReceive(networkController.$allPoliciesDetailedGeneral) { newList in
-            print("allPoliciesDetailedGeneral changed: count=\(newList.count)")
+            if AppDebug.verbosePerItemLogging { print("allPoliciesDetailedGeneral changed: count=\(newList.count)") }
         }
     }
 
@@ -337,7 +340,20 @@ struct PolicyActionsDetailTableView: View {
                         ldapSearch: $ldapSearch,
                         onUpdateScopeCompGroupSet: { group, _, _ in Task { await xmlController.updateScopeCompGroupSetAsync(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policiesSelection: selectedPoliciesInt) } },
                         onUpdatePolicyScopeLimitationsAuto: { group, policyID in Task { await xmlController.updatePolicyScopeLimitationsAuto(groupSelection: group, authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID) } },
-                        onClearLimitations: { policyID in Task { do { let pidInt = Int(policyID) ?? 0; let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: pidInt, authToken: networkController.authToken); xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID, currentPolicyAsXML: policyAsXML) } catch { print("Fetching detailed policy as xml failed: \(error)") } } },
+                        onClearLimitations: { policyID in
+                            Task {
+                                do {
+                                    let pidInt = Int(policyID) ?? 0
+                                    let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: pidInt, authToken: networkController.authToken)
+                                    xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: policyID, currentPolicyAsXML: policyAsXML)
+                                } catch {
+                                    DispatchQueue.main.async {
+                                        networkController.messageStore?.show("Fetching detailed policy as xml failed: \(error)", level: .error)
+                                    }
+                                    if AppDebug.verbosePerItemLogging { print("Fetching detailed policy as xml failed: \(error)") }
+                                }
+                            }
+                        },
                         onClearExclusions: { for eachItem in selectedPoliciesInt { let pid = (eachItem ?? 0); xmlController.removeExclusions(server: server, policyID: String(describing: pid), authToken: networkController.authToken) } }
                     )
                 case 3:

@@ -64,7 +64,14 @@ struct ComputerSearchesView: View {
                                     .foregroundColor(.secondary)
                                 Button("Refresh") {
                                     Task {
-                                        do { try await networkController.getAdvancedComputerSearch("") } catch { print("Refresh failed: \(error)") }
+                                        do {
+                                            try await networkController.getAdvancedComputerSearch("")
+                                        } catch {
+                                            DispatchQueue.main.async {
+                                                networkController.messageStore?.show("Refresh failed: \(error)", level: .error)
+                                            }
+                                            if AppDebug.verbosePerItemLogging { print("Refresh failed: \(error)") }
+                                        }
                                     }
                                 }
                                 .buttonStyle(.borderedProminent)
@@ -122,7 +129,10 @@ struct ComputerSearchesView: View {
                         do {
                             try await networkController.getAdvancedComputerSearch("")
                         } catch {
-                            print("Failed to fetch advanced computer searches: \(error)")
+                            DispatchQueue.main.async {
+                                networkController.messageStore?.show("Failed to fetch advanced computer searches: \(error)", level: .error)
+                            }
+                            if AppDebug.verbosePerItemLogging { print("Failed to fetch advanced computer searches: \(error)") }
                         }
                     }
                 }) {
@@ -188,7 +198,10 @@ struct ComputerSearchesView: View {
                     do {
                         try await networkController.getAdvancedComputerSearch("")
                     } catch {
-                        print("Failed to load advanced computer searches on appear: \(error)")
+                        DispatchQueue.main.async {
+                            networkController.messageStore?.show("Failed to load advanced computer searches on appear: \(error)", level: .error)
+                        }
+                        if AppDebug.verbosePerItemLogging { print("Failed to load advanced computer searches on appear: \(error)") }
                     }
                 }
             }
@@ -196,7 +209,14 @@ struct ComputerSearchesView: View {
                 // Reload searches when auth token changes (e.g., on login)
                 Task {
                     guard !newToken.isEmpty else { return }
-                    do { try await networkController.getAdvancedComputerSearch("") } catch { print("Reload on authToken change failed: \(error)") }
+                    do {
+                        try await networkController.getAdvancedComputerSearch("")
+                    } catch {
+                        DispatchQueue.main.async {
+                            networkController.messageStore?.show("Reload on authToken change failed: \(error)", level: .error)
+                        }
+                        if AppDebug.verbosePerItemLogging { print("Reload on authToken change failed: \(error)") }
+                    }
                 }
             }
             
@@ -280,9 +300,12 @@ struct ComputerSearchesView: View {
                         .task(id: searchId) {
                             do {
                                 try await networkController.getDetailAdvancedComputerSearch(userID: String(searchId))
-                            } catch {
-                                print("Failed to load detail for id \(searchId): \(error)")
-                            }
+                                } catch {
+                                    DispatchQueue.main.async {
+                                        networkController.messageStore?.show("Failed to load detail for id \(searchId): \(error)", level: .error)
+                                    }
+                                    if AppDebug.verbosePerItemLogging { print("Failed to load detail for id \(searchId): \(error)") }
+                                }
                         }
                 }
             }

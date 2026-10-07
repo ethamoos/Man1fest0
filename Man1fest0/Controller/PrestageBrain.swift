@@ -128,15 +128,15 @@ import SwiftUI
     func getAllPrestages(server: String, authToken: String) async throws {
 
         self.allPsComplete = false
-        print("Setting allPsComplete to:\(self.allPsComplete)")
+        if AppDebug.verbosePerItemLogging { print("Setting allPsComplete to:\(self.allPsComplete)") }
         let jamfURLQuery = server + "/api/v3/computer-prestages"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getAllPrestages") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
-        print("Running func: getAllPrestages")
+        if AppDebug.verbosePerItemLogging { print("Running func: getAllPrestages") }
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -168,7 +168,7 @@ import SwiftUI
         self.allPsScComplete = false
 
         let jamfURLQuery = server + "/api/v2/computer-prestages/scope"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getAllDevicesPrestageScope") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -179,7 +179,7 @@ import SwiftUI
         sessionConfig.timeoutIntervalForResource = 60.0
         
         separationLine()
-        print("Running func: getAllDevicesPrestageScope")
+        if AppDebug.verbosePerItemLogging { print("Running func: getAllDevicesPrestageScope") }
         DispatchQueue.main.async {
             self.messageStore?.show("Loading prestage device assignments…", level: .info, details: "Prestage ID: \(prestageID)", showSpinner: true)
         }
@@ -215,13 +215,13 @@ import SwiftUI
     func getPrestageCurrentScope(jamfURL: String, prestageID: String, authToken: String) async throws {
         
         let jamfURLQuery = jamfURL + "/api/v2/computer-prestages/" + prestageID + "/scope"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getPrestageCurrentScope") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
-        print("Running:getPrestageCurrentScope for prestage id:\(prestageID)")
+        if AppDebug.verbosePerItemLogging { print("Running:getPrestageCurrentScope for prestage id:\(prestageID)") }
         DispatchQueue.main.async {
             self.messageStore?.show("Loading prestage scope…", level: .info, details: "Prestage ID: \(prestageID)", showSpinner: true)
         }
@@ -258,14 +258,14 @@ import SwiftUI
     func getPrestageCurrentScopeToAdd(jamfURL: String, prestageID: String, authToken: String) async throws {
         
         let jamfURLQuery = jamfURL + "/api/v2/computer-prestages/" + prestageID + "/scope"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getPrestageCurrentScopeToAdd") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
         separationLine()
-        print("Running:getPrestageCurrentScopeToAdd for prestage id:\(prestageID)")
+        if AppDebug.verbosePerItemLogging { print("Running:getPrestageCurrentScopeToAdd for prestage id:\(prestageID)") }
         //        print("Get devices assigned to prestage id:\(prestageID)")
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -297,7 +297,7 @@ import SwiftUI
     func addDeviceToPrestage(server: String, prestageID: String, serial: String, authToken: String, depVersionLock: Int) async throws {
 
         let jamfURLQuery = server + "/api/v2/computer-prestages/" + prestageID + "/scope"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "addDeviceToPrestage") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -310,10 +310,10 @@ import SwiftUI
         // ################################################
         //        debugFunc(server: server, url: url, jamfURLQuery: jamfURLQuery, request: request, authToken: authToken)
         separationLine()
-        print("Adding device to prestage:\(serial)")
-        print("versionLock is:\(depVersionLock)")
-        print("json is:\(json)")
-        print("prestageID is:\(prestageID)")
+        if AppDebug.verbosePerItemLogging { print("Adding device to prestage:\(serial)") }
+        if AppDebug.verbosePerItemLogging { print("versionLock is:\(depVersionLock)") }
+        if AppDebug.verbosePerItemLogging { print("json is:\(json)") }
+        if AppDebug.verbosePerItemLogging { print("prestageID is:\(prestageID)") }
         
         let jsonData = try? JSONSerialization.data(withJSONObject: json)
         if let jsonData = jsonData {
@@ -332,7 +332,7 @@ import SwiftUI
     func removeDeviceFromPrestage(server: String, removeComputerPrestageID: String, serial: String, authToken: String, depVersionLock: Int) async throws {
         
         let jamfURLQuery = server + "/api/v2/computer-prestages/" + removeComputerPrestageID + "/scope/delete-multiple"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "removeDeviceFromPrestage") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
@@ -347,10 +347,10 @@ import SwiftUI
             request.httpBody = jsonData
         }
         separationLine()
-        print("Removing device:\(serial)")
-        print("Removing from prestageID:\(removeComputerPrestageID)")
-        print("versionLock is:\(depVersionLock)")
-        print("json is:\(json)")
+        if AppDebug.verbosePerItemLogging { print("Removing device:\(serial)") }
+        if AppDebug.verbosePerItemLogging { print("Removing from prestageID:\(removeComputerPrestageID)") }
+        if AppDebug.verbosePerItemLogging { print("versionLock is:\(depVersionLock)") }
+        if AppDebug.verbosePerItemLogging { print("json is:\(json)") }
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {

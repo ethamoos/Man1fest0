@@ -603,7 +603,7 @@ struct PoliciesActionView: View {
              print("Running for policyName:\(policyName)")
              print("Processing policy id:\(eachPolicyId)")
             let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(eachPolicyId)"
-            let url = URL(string: jamfURLQuery)!
+            guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: networkController.messageStore, context: "updateScopeCompGroupSet") else { continue }
             
 //    #################################################################################
 //            Get policy as xml data
@@ -614,10 +614,10 @@ struct PoliciesActionView: View {
 //            Read data back
 //    #################################################################################
                 Debug.separationLine()
-                 print("Reading current policy and storing in: networkController.aexmlDoc")
+                 if AppDebug.verbosePerItemLogging { print("Reading current policy and storing in: networkController.aexmlDoc") }
                  xmlController.readXMLDataFromString(xmlContent: currentPolicy)
                 Debug.separationLine()
-                 print("Remove old scope for all_computers")
+                 if AppDebug.verbosePerItemLogging { print("Remove old scope for all_computers") }
                 let scope = networkController.aexmlDoc.root["scope"]
                 let currentSettingsAllComps = networkController.aexmlDoc.root["scope"]["all_computers"]
                 currentSettingsAllComps.removeFromParent()
@@ -641,30 +641,33 @@ struct PoliciesActionView: View {
                 }
                 
             } catch {
-                print("currentPolicy failed with error \(error)")
+                DispatchQueue.main.async {
+                    networkController.messageStore?.show("currentPolicy failed with error: \(error)", level: .error)
+                }
+                if AppDebug.verbosePerItemLogging { print("currentPolicy failed with error \(error)") }
             }
         }
     }
     
     func updatePolicyScopeLimitationsAuto(groupSelection: LDAPCustomGroup, authToken: String, resourceType: ResourceType, server: String, policyID: String) async {
         
-        let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
-        let url = URL(string: jamfURLQuery)!
+         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyID)"
+         guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: networkController.messageStore, context: "updatePolicyScopeLimitationsAuto") else { return }
         let ldapUserGroupName = groupSelection.name
         let ldapUserGroupID = groupSelection.id
-        Debug.separationLine()
-         print("Running updatePolicyScopeLimitationsAuto - Scoping Controller")
-         print("policyID is:\(policyID)")
-         print("ldapUserGroupName is:\(ldapUserGroupName)")
-         print("ldapUserGroupID is:\(ldapUserGroupID)")
+         Debug.separationLine()
+          if AppDebug.verbosePerItemLogging { print("Running updatePolicyScopeLimitationsAuto - Scoping Controller") }
+          if AppDebug.verbosePerItemLogging { print("policyID is:\(policyID)") }
+          if AppDebug.verbosePerItemLogging { print("ldapUserGroupName is:\(ldapUserGroupName)") }
+          if AppDebug.verbosePerItemLogging { print("ldapUserGroupID is:\(ldapUserGroupID)") }
 
         Task {
             do {
                 let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: authToken)
-                Debug.separationLine()
-                 print("policyAsXML is:\(policyAsXML)")
-                 print("policyID is:\(policyID)")
-                 print("Xml data is present - reading and adding to:self.readXMLDataFromStringScopingBrain ")
+                 Debug.separationLine()
+                  if AppDebug.verbosePerItemLogging { print("policyAsXML is:\(policyAsXML)") }
+                  if AppDebug.verbosePerItemLogging { print("policyID is:\(policyID)") }
+                  if AppDebug.verbosePerItemLogging { print("Xml data is present - reading and adding to:self.readXMLDataFromStringScopingBrain ") }
 //                print("policyAsXML is:\(policyAsXML)")
                 xmlController.readXMLDataFromString(xmlContent: policyAsXML)
                 print("Adding limit_to_users")
@@ -673,10 +676,10 @@ struct PoliciesActionView: View {
                 let currentLdapGroupsLimitations = networkController.aexmlDoc.root["scope"]["limitations"]["user_groups"].addChild(name: "user_group")
                 currentLdapGroupsLimitations.addChild(name: "id", value: String(describing: ldapUserGroupID))
                 currentLdapGroupsLimitations.addChild(name: "name", value: String(describing: ldapUserGroupName))
-                Debug.separationLine()
-                 print("Read main XML doc - updated")
-                 print(networkController.aexmlDoc.xml)
-                 print("Submit updated doc")
+                 Debug.separationLine()
+                  if AppDebug.verbosePerItemLogging { print("Read main XML doc - updated") }
+                  if AppDebug.verbosePerItemLogging { print(networkController.aexmlDoc.xml) }
+                  if AppDebug.verbosePerItemLogging { print("Submit updated doc") }
                 try await networkController.sendRequestAsXMLAsyncID(url: url, authToken: authToken,resourceType: resourceType, xml: networkController.aexmlDoc.root.xml, httpMethod: "PUT", policyID: policyID)
             } catch {
                 print("Fetching detailed policy as xml failed: \(error)")

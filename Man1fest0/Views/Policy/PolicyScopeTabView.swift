@@ -483,7 +483,14 @@ struct PolicyScopeTabView: View {
                                 xmlController.getPolicyAsXML(server: server, policyID: policyID, authToken: networkController.authToken)
                                 xmlController.addComputerToPolicyScope(xmlContent: xmlController.currentPolicyAsXML, computerName: selectionComp.name, authToken: networkController.authToken, computerId: String(describing: selectionComp.id), resourceType: selectedResourceType, server: server, policyId: String(describing: policyID))
                                 Task {
-                                    do { try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID)) } catch { print("Failed to refresh detailed policy after adding computer to scope: \(error)") }
+                                    do {
+                                        try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
+                                    } catch {
+                                        DispatchQueue.main.async {
+                                            networkController.messageStore?.show("Failed to refresh detailed policy after adding computer to scope: \(error)", level: .error)
+                                        }
+                                        if AppDebug.verbosePerItemLogging { print("Failed to refresh detailed policy after adding computer to scope: \(error)") }
+                                    }
                                 }
                                 requestPolicyRefresh(for: String(describing: policyID))
                             }) {
@@ -691,7 +698,10 @@ struct PolicyScopeTabView: View {
                                     do {
                                         try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                                     } catch {
-                                        print("Failed to refresh detailed policy after adding exclusion: \(error)")
+                                        DispatchQueue.main.async {
+                                            networkController.messageStore?.show("Failed to refresh detailed policy after adding exclusion: \(error)", level: .error)
+                                        }
+                                        if AppDebug.verbosePerItemLogging { print("Failed to refresh detailed policy after adding exclusion: \(error)") }
                                     }
                                 }
                                 requestPolicyRefresh(for: String(describing: policyID))
@@ -736,7 +746,10 @@ struct PolicyScopeTabView: View {
                                 do {
                                     try await networkController.getDetailedPolicy(server: server, authToken: networkController.authToken, policyID: String(describing: policyID))
                                 } catch {
-                                    print("Failed to refresh detailed policy after adding exclusion: \(error)")
+                                    DispatchQueue.main.async {
+                                        networkController.messageStore?.show("Failed to refresh detailed policy after adding exclusion: \(error)", level: .error)
+                                    }
+                                    if AppDebug.verbosePerItemLogging { print("Failed to refresh detailed policy after adding exclusion: \(error)") }
                                 }
                             }
                             requestPolicyRefresh(for: String(describing: policyID))

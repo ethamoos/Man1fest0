@@ -39,7 +39,7 @@ import AEXML
     }
     
     func separationLine() {
-        print("------------------------------------------------------------------")
+        if AppDebug.verbosePerItemLogging { print("------------------------------------------------------------------") }
     }
     
     //    #################################################################################
@@ -48,14 +48,14 @@ import AEXML
     
     func getComputerExtAttributes(server: String, authToken: String) async throws {
         let jamfURLQuery = server + "/JSSResource/computerextensionattributes"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getComputerExtAttributes") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
-        print("Running func: getComputerExtAttributes")
-        print("jamfURLQuery is: \(jamfURLQuery)")
+        if AppDebug.verbosePerItemLogging { print("Running func: getComputerExtAttributes") }
+        if AppDebug.verbosePerItemLogging { print("jamfURLQuery is: \(jamfURLQuery)") }
         DispatchQueue.main.async {
             self.messageStore?.show("Loading extension attributes…", level: .info, showSpinner: true)
         }
@@ -79,14 +79,14 @@ import AEXML
             let response = try decoder.decode(ComputerExtensionAttributes.self, from: data)
             self.allComputerExtensionAttributesDict = response.computerExtensionAttributes
             separationLine()
-            print("allComputerExtensionAttributes Decoding succeeded")
+            if AppDebug.verbosePerItemLogging { print("allComputerExtensionAttributes Decoding succeeded") }
             DispatchQueue.main.async {
                 self.messageStore?.show("Extension attributes loaded", level: .success, details: "Count: \(self.allComputerExtensionAttributesDict.count)")
             }
         } catch {
             self.separationLine()
-            print("allComputerExtensionAttributes Decoding failed - error is:")
-            print(error)
+            if AppDebug.verbosePerItemLogging { print("allComputerExtensionAttributes Decoding failed - error is:") }
+            if AppDebug.verbosePerItemLogging { print(error) }
             DispatchQueue.main.async {
                 self.messageStore?.show("Failed to load extension attributes", level: .error, details: error.localizedDescription)
             }
@@ -100,35 +100,35 @@ import AEXML
     func getComputerExtAttributeDetailed(server: String, authToken: String, compExtAttId: String) async throws {
         
         let jamfURLQuery = server + "/JSSResource/computerextensionattributes/id/" + compExtAttId
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getComputerExtAttributeDetailed") else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
-        print("Running func: getComputerExtAttributeDetailed")
-        print("jamfURLQuery is: \(jamfURLQuery)")
+        if AppDebug.verbosePerItemLogging { print("Running func: getComputerExtAttributeDetailed") }
+        if AppDebug.verbosePerItemLogging { print("jamfURLQuery is: \(jamfURLQuery)") }
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
+            if AppDebug.verbosePerItemLogging { print("Code not 200") }
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             throw JamfAPIError.http(statusCode)
         }
         separationLine()
-        print("getComputerExtAttributeDetailed - Json data as text is:")
-        print(String(data: data, encoding: .utf8)!)
+        if AppDebug.verbosePerItemLogging { print("getComputerExtAttributeDetailed - Json data as text is:") }
+        if AppDebug.verbosePerItemLogging { if let s = String(data: data, encoding: .utf8) { print(s) } }
         let decoder = JSONDecoder()
         separationLine()
         do {
             let response = try decoder.decode(ComputerExtensionAttributeDetailedResponse.self, from: data)
             self.computerExtensionAttributeDetailed = response.computerExtensionAttribute
             separationLine()
-            print("ComputerExtensionAttributeDetailed Decoding succeeded")
-            print("computerExtensionAttributeDetailed is:\(self.computerExtensionAttributeDetailed)")
+            if AppDebug.verbosePerItemLogging { print("ComputerExtensionAttributeDetailed Decoding succeeded") }
+            if AppDebug.verbosePerItemLogging { print("computerExtensionAttributeDetailed is:\(self.computerExtensionAttributeDetailed)") }
         } catch {
             self.separationLine()
-            print("computerExtensionAttributeDetailed Decoding failed - error is:")
-            print(error)
+            if AppDebug.verbosePerItemLogging { print("computerExtensionAttributeDetailed Decoding failed - error is:") }
+            if AppDebug.verbosePerItemLogging { print(error) }
             throw JamfAPIError.decode
         }
     }
@@ -198,8 +198,7 @@ import AEXML
         separationLine()
         print("Running updateComputerExtensionAttribute - id: \(extAtId) enabled: \(enabled)")
 
-        guard let serverURL = URL(string: server) else {
-            print("Invalid server URL: \(server)")
+        guard let serverURL = URLHelpers.safeURL(server, messageStore: self.messageStore, context: "updateComputerExtensionAttribute") else {
             throw JamfAPIError.badURL
         }
 

@@ -88,12 +88,12 @@ import AEXML
         let xmldata = xml.data(using: .utf8)
         // separationLine is MainActor-isolated; ensure we call it on the MainActor from this (possibly background) caller
         Task { await MainActor.run { self.separationLine() } }
-        print("Running sendRequestAsXML Scoping Brain function - resourceType is set as:\(resourceType)")
+        if AppDebug.verbosePerItemLogging { print("Running sendRequestAsXML Scoping Brain function - resourceType is set as:\(resourceType)") }
         //        DEBUG
-        print("url is:\(url)")
+        if AppDebug.verbosePerItemLogging { print("url is:\(url)") }
         // separationLine is MainActor-isolated; ensure we call it on the MainActor from this (possibly background) caller
         Task { await MainActor.run { self.separationLine() } }
-        print("httpMethod is:\(httpMethod)")
+        if AppDebug.verbosePerItemLogging { print("httpMethod is:\(httpMethod)") }
         
         let headers = [
             "Accept": "application/xml",
@@ -113,9 +113,9 @@ import AEXML
                 //                print("Data is:\(data)")
                 //                print("Data is:\(response)")
                 Task { await MainActor.run { self.separationLine() } }
-                print("Doing processing of sendRequestAsXML:\(httpMethod)")
-                print("Data is:\(data)")
-                print("Data is:\(response)")
+                 if AppDebug.verbosePerItemLogging { print("Doing processing of sendRequestAsXML:\(httpMethod)") }
+                 if AppDebug.verbosePerItemLogging { print("Data is:\(data)") }
+                 if AppDebug.verbosePerItemLogging { print("Data is:\(response)") }
                 if resourceType == ResourceType.computer {
                     print("Resource type is:\(resourceType)")
                 } else if resourceType == ResourceType.policy {
@@ -124,12 +124,12 @@ import AEXML
                     print("Resource type is:\(resourceType)")
                 }
             } else {
-                print("Error encountered")
+                if AppDebug.verbosePerItemLogging { print("Error encountered") }
                 var text = "\n\nFailed."
                 if let error = error {
                     text += " \(error)."
                 }
-                print(text)
+                if AppDebug.verbosePerItemLogging { print(text) }
             }
         }
         dataTask.resume()
@@ -143,7 +143,7 @@ import AEXML
         
         let policyIdString = String(describing: policyID )
         let jamfURLQuery = server + "/JSSResource/policies/id/" + "\(policyIdString)"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getPolicyAsXML") else { return }
         
         let headers = [
             "Accept": "application/xml",
@@ -153,21 +153,25 @@ import AEXML
         var request = URLRequest(url: url,timeoutInterval: Double.infinity)
         request.allHTTPHeaderFields = headers
         request.httpMethod = "GET"
-        print("Running: scopingController.getPolicyAsXML")
-        print("policyID set as: \(policyID)")
-        print("jamfURLQuery set as: \(jamfURLQuery)")
+        if AppDebug.verbosePerItemLogging { print("Running: scopingController.getPolicyAsXML") }
+        if AppDebug.verbosePerItemLogging { print("policyID set as: \(policyID)") }
+        if AppDebug.verbosePerItemLogging { print("jamfURLQuery set as: \(jamfURLQuery)") }
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data else {
                 //                layout.separationLine()
-                print("getPolicyAsXML failed")
-                print(String(describing: error))
+                DispatchQueue.main.async { self.messageStore?.show("getPolicyAsXML failed: \(String(describing: error))", level: .error) }
+                if AppDebug.verbosePerItemLogging { print("getPolicyAsXML failed: \(String(describing: error))") }
                 return
             }
-            print("scopingController.getPolicyAsXML data is:")
-            print(String(data: data, encoding: .utf8)!)
-            DispatchQueue.main.async {
-                self.currentPolicyAsXML = (String(data: data, encoding: .utf8)!)
+            if let s = String(data: data, encoding: .utf8) {
+                if AppDebug.verbosePerItemLogging { print("scopingController.getPolicyAsXML data is:") }
+                if AppDebug.verbosePerItemLogging { print(s) }
+                DispatchQueue.main.async {
+                    self.currentPolicyAsXML = s
+                }
+            } else {
+                DispatchQueue.main.async { self.messageStore?.show("getPolicyAsXML: could not decode data to UTF-8 string", level: .error) }
             }
         }
         task.resume()
@@ -564,9 +568,9 @@ import AEXML
     }
 
     func getLdapGroupsSearch(server: String, search: String, authToken: String) async throws {
-        print("Running getLdapGroupsSearch")
+        if AppDebug.verbosePerItemLogging { print("Running getLdapGroupsSearch") }
         let jamfURLQuery = server + "/api/v1/ldap/groups?q=" + search
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getLdapGroupsSearch") else { throw URLError(.badURL) }
         DispatchQueue.main.async {
             self.messageStore?.show("Searching LDAP groups…", level: .info, details: search, showSpinner: true)
         }
@@ -583,11 +587,11 @@ import AEXML
             throw JamfAPIError.badResponseCode
         }
         
-        print("Request was successful")
+        if AppDebug.verbosePerItemLogging { print("Request was successful") }
         let decoder = JSONDecoder()
-        print("Set decoder was successful")
+        if AppDebug.verbosePerItemLogging { print("Set decoder was successful") }
         self.allLDAPSearchResponse = try decoder.decode(LDAPSearchResponse.self, from: data)
-        print("Set allLdapGroupsCombined was successful")
+        if AppDebug.verbosePerItemLogging { print("Set allLdapGroupsCombined was successful") }
         self.allLdapCustomGroupsCombinedArray = allLDAPSearchResponse.results
         DispatchQueue.main.async {
             self.messageStore?.show("LDAP groups loaded", level: .success, details: "Results: \(self.allLdapCustomGroupsCombinedArray.count)")
@@ -599,24 +603,24 @@ import AEXML
     func getLdapServers(server: String, authToken: String ) async throws {
 
         let jamfURLQuery = server + "/JSSResource/ldapservers"
-        let url = URL(string: jamfURLQuery)!
+        guard let url = URLHelpers.safeURL(jamfURLQuery, messageStore: self.messageStore, context: "getLdapServers") else { throw URLError(.badURL) }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         separationLine()
-        print("Running func: getLdapServers")
+        if AppDebug.verbosePerItemLogging { print("Running func: getLdapServers") }
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            print("Code not 200")
-            print("Data is:\(data)")
-            print("Response is:\(response)")
-            print("URL is:\(url)")
+            if AppDebug.verbosePerItemLogging { print("Code not 200") }
+            if AppDebug.verbosePerItemLogging { print("Data is:\(data)") }
+            if AppDebug.verbosePerItemLogging { print("Response is:\(response)") }
+            if AppDebug.verbosePerItemLogging { print("URL is:\(url)") }
             throw JamfAPIError.badResponseCode
         }
-        print("Request was successful")
+        if AppDebug.verbosePerItemLogging { print("Request was successful") }
         let decoder = JSONDecoder()
         self.allLdapServers = try decoder.decode(LDAPServers.self, from: data).ldapServers
 

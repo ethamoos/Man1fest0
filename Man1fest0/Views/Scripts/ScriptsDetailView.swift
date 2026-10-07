@@ -550,7 +550,10 @@ struct ScriptsDetailView: View {
                 try await networkController.updateScript(server: server, scriptName: scriptName.isEmpty ? networkController.scriptDetailed.name : scriptName, scriptContent: bodyText, scriptId: String(scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes)
             }
         } catch {
-            print("Replace failed: \(error)")
+            DispatchQueue.main.async {
+                networkController.messageStore?.show("Replace failed: \(error)", level: .error)
+            }
+            if AppDebug.verbosePerItemLogging { print("Replace failed: \(error)") }
         }
 
         progress.endProgress()
@@ -572,7 +575,14 @@ struct ScriptsDetailView: View {
             lines.insert(injectInsertText, at: idx + 1)
             inserted = 1
             bodyText = lines.joined(separator: "\n")
-            do { try await networkController.updateScript(server: server, scriptName: scriptName.isEmpty ? networkController.scriptDetailed.name : scriptName, scriptContent: bodyText, scriptId: String(scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes) } catch { print("Inject failed: \(error)") }
+            do {
+                try await networkController.updateScript(server: server, scriptName: scriptName.isEmpty ? networkController.scriptDetailed.name : scriptName, scriptContent: bodyText, scriptId: String(scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes)
+            } catch {
+                DispatchQueue.main.async {
+                    networkController.messageStore?.show("Inject failed: \(error)", level: .error)
+                }
+                if AppDebug.verbosePerItemLogging { print("Inject failed: \(error)") }
+            }
         }
 
         progress.endProgress()
@@ -599,7 +609,14 @@ struct ScriptsDetailView: View {
                 inserted += 1
             }
             bodyText = lines.joined(separator: "\n")
-            do { try await networkController.updateScript(server: server, scriptName: scriptName.isEmpty ? networkController.scriptDetailed.name : scriptName, scriptContent: bodyText, scriptId: String(scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes) } catch { print("Inject failed: \(error)") }
+            do {
+                try await networkController.updateScript(server: server, scriptName: scriptName.isEmpty ? networkController.scriptDetailed.name : scriptName, scriptContent: bodyText, scriptId: String(scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes)
+            } catch {
+                DispatchQueue.main.async {
+                    networkController.messageStore?.show("Inject failed: \(error)", level: .error)
+                }
+                if AppDebug.verbosePerItemLogging { print("Inject failed: \(error)") }
+            }
         }
 
         progress.endProgress()

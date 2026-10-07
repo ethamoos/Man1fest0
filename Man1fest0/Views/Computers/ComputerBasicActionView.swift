@@ -64,7 +64,10 @@ struct ComputerBasicActionView: View {
                         do {
                             try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
                         } catch {
-                            print("Failed to refresh computers after username update: \(error)")
+                            DispatchQueue.main.async {
+                                networkController.messageStore?.show("Failed to refresh computers after username update: \(error)", level: .error)
+                            }
+                            if AppDebug.verbosePerItemLogging { print("Failed to refresh computers after username update: \(error)") }
                         }
                         progress.endProgress()
                         isUpdatingUsername = false
@@ -285,21 +288,31 @@ struct ComputerBasicActionView: View {
                                     progress.showProgress()
                                     progress.waitForABit()
                                     let ids = selection.map { String($0) }
-                                    print("Run on Selected pressed. selection=\(selection) ids=\(ids)")
+                                    if AppDebug.verbosePerItemLogging { print("Run on Selected pressed. selection=\(selection) ids=\(ids)") }
 
                                     Task {
                                         for id in ids {
                                             do {
                                                 try await networkController.getDetailedComputer(userID: id)
                                             } catch {
-                                                print("Failed to load detailed computer for id \(id): \(error)")
+                                                DispatchQueue.main.async {
+                                                    networkController.messageStore?.show("Failed to load detailed computer for id \(id): \(error)", level: .error)
+                                                }
+                                                if AppDebug.verbosePerItemLogging { print("Failed to load detailed computer for id \(id): \(error)") }
                                             }
 
                                             networkController.updateComputerNameLogical(server: server, authToken: networkController.authToken, resourceType: ResourceType.computerDetailed, computerID: id, action: toolsNameAction, count: countInt, match: toolsMatchString, replacement: toolsReplacementString)
 
                                             try? await Task.sleep(nanoseconds: 200_000_000)
                                         }
-                                        do { try await networkController.getComputersBasic(server: server, authToken: networkController.authToken) } catch { print("Failed to refresh computers after rename: \(error)") }
+                                        do {
+                                            try await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                                        } catch {
+                                            DispatchQueue.main.async {
+                                                networkController.messageStore?.show("Failed to refresh computers after rename: \(error)", level: .error)
+                                            }
+                                            if AppDebug.verbosePerItemLogging { print("Failed to refresh computers after rename: \(error)") }
+                                        }
                                         progress.endProgress()
                                     }
                                 }) {
@@ -371,7 +384,10 @@ struct ComputerBasicActionView: View {
                                     updateValue: eaValue
                                 )
                             } catch {
-                                print("Failed to update EA: \(error)")
+                                DispatchQueue.main.async {
+                                    networkController.messageStore?.show("Failed to update EA: \(error)", level: .error)
+                                }
+                                if AppDebug.verbosePerItemLogging { print("Failed to update EA: \(error)") }
                             }
                         }
                     }) {
