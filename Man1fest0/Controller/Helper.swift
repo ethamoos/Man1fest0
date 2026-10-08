@@ -14,7 +14,7 @@
 // Put lightweight helpers here so individual classes don't have to re-define them.
 
 public func separationLine() {
-    print("-----------------------------------")
+    Logger.shared.verbose("-----------------------------------")
 }
 
 // Lightweight file-backed logger included here so it's always available to the app
@@ -160,15 +160,15 @@ final class Logger {
 }
 
 public func doubleSeparationLine() {
-    print("===================================")
+    Logger.shared.verbose("===================================")
 }
 
 public func asteriskSeparationLine() {
-    print("***********************************")
+    Logger.shared.verbose("***********************************")
 }
 
 public func atSeparationLine() {
-    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    Logger.shared.verbose("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 }
 
 /// Debug logging helper that can be toggled from one place if you want to silence debug output later.

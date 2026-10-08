@@ -30,6 +30,7 @@ struct PoliciesActionView: View {
     @EnvironmentObject var xmlController: XmlBrain
     
     @EnvironmentObject var scopingController: ScopingBrain
+    @EnvironmentObject var messageStore: MessageStore
     
     
     //  ########################################################################################
@@ -148,7 +149,8 @@ struct PoliciesActionView: View {
                 let policyAsXML = try await xmlController.getPolicyAsXMLaSync(server: server, policyID: Int(policyID) ?? 0, authToken: networkController.authToken)
                 xmlController.updatePolicyScopeLimitAutoRemove(authToken: networkController.authToken, resourceType: ResourceType.policyDetail, server: server, policyID: String(describing: policyID), currentPolicyAsXML: policyAsXML)
             } catch {
-                print("Error clearing limitations: \(error)")
+                Logger.shared.normal("Error clearing limitations: \(error)")
+                messageStore.error("Failed to clear limitations", details: "\(error)")
             }
         }
     }
@@ -225,7 +227,7 @@ struct PoliciesActionView: View {
                         policiesSelection = newSelection
                     }
                     let names = newSelection.map { $0.name }
-                    print("selectedPolicyUUIDs changed. uuids=\(newUUIDs) names=\(names)")
+                    Logger.shared.verbose("selectedPolicyUUIDs changed. uuids=\(newUUIDs) names=\(names)")
                 }
                 // Also ensure programmatic changes to policiesSelection update the UUID set
                 .onChange(of: policiesSelection) { newSelection in
@@ -234,29 +236,29 @@ struct PoliciesActionView: View {
                         selectedPolicyUUIDs = ids
                     }
                     let names = newSelection.map { $0.name }
-                    print("policiesSelection changed. count=\(newSelection.count) uuids=\(ids) names=\(names)")
+                    Logger.shared.verbose("policiesSelection changed. count=\(newSelection.count) uuids=\(ids) names=\(names)")
                 }
                 // .searchable removed to avoid multiple SwiftUI search toolbar items in the same window
                  .onReceive([self.policiesSelection].publisher.first()) { (value) in
                     
                     //                    print("policiesSelection List is:\(value)")
-                    print("getDetailedPolicyHasRun is:\(getDetailedPolicyHasRun)")
+                    Logger.shared.verbose("getDetailedPolicyHasRun is:\(getDetailedPolicyHasRun)")
                     
                     if self.policiesSelection.isEmpty {
                         //                       print("policiesSelection is empty")
                     } else {
                         //                       print("policiesSelection is not empty")
                         if getDetailedPolicyHasRun == false {
-                            print("Calling: getDetailedPolicies")
+                            Logger.shared.verbose("Calling: getDetailedPolicies")
                             getDetailedPolicies(policiesSelection: policiesSelection)
                             getDetailedPolicyHasRun = true
                         }
                     }
                     
                     if xmlController.currentPolicyAsXML.isEmpty {
-                        print("No value for: xmlController.currentPolicyAsXML")
+                        Logger.shared.verbose("No value for: xmlController.currentPolicyAsXML")
                     } else {
-                        print("xmlController.currentPolicyAsXML is populated")
+                        Logger.shared.verbose("xmlController.currentPolicyAsXML is populated")
                     }
                 }
                 
@@ -271,7 +273,7 @@ struct PoliciesActionView: View {
                       Task { try await networkController.getAllPackages() }
                         networkController.refreshPolicies()
                         getDetailedPolicies(policiesSelection: policiesSelection)
-                        print("Refresh button clicked on PoliciesAction View")
+                        Logger.shared.verbose("Refresh button clicked on PoliciesAction View")
                         
                     }) {
                         HStack(spacing: 10) {
@@ -318,13 +320,13 @@ struct PoliciesActionView: View {
                             progress.showProgressView = true
                             networkController.processingComplete = false
                             progress.waitForABit()
-                            if let selectedCategory = categorySelection {
-                                print("Setting category to:\(String(describing: selectedCategory))")
-                                networkController.selectedCategory = selectedCategory
-                            } else {
-                                print("No category selected")
-                            }
-                            print("Policy enable/disable status is set as:\(String(describing: enableDisable))")
+                             if let selectedCategory = categorySelection {
+                                 Logger.shared.verbose("Setting category to:\(String(describing: selectedCategory))")
+                                 networkController.selectedCategory = selectedCategory
+                             } else {
+                                 Logger.shared.verbose("No category selected")
+                             }
+                             Logger.shared.verbose("Policy enable/disable status is set as:\(String(describing: enableDisable))")
                             networkController.processUpdatePolicies(selection: policiesSelection, server: server, resourceType: ResourceType.policies, enableDisable: enableDisable, authToken: networkController.authToken)
                             
                         }) {
@@ -357,11 +359,11 @@ struct PoliciesActionView: View {
                             progress.showProgress()
                             progress.waitForABit()
 
-                            for eachItem in policiesSelection {
-                                let currentPolicyID = (eachItem.jamfId ?? 0)
-                                print("Download file for \(eachItem.name)")
-                                ASyncFileDownloader.downloadFileAsyncAuth(objectID: currentPolicyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in }
-                            }
+                             for eachItem in policiesSelection {
+                                 let currentPolicyID = (eachItem.jamfId ?? 0)
+                                 Logger.shared.verbose("Download file for \(eachItem.name)")
+                                 ASyncFileDownloader.downloadFileAsyncAuth(objectID: currentPolicyID, resourceType: ResourceType.policies, server: server, authToken: networkController.authToken) { (path, error) in }
+                             }
 
                         }) {
                             Image(systemName: "plus.circle")

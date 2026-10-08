@@ -1527,12 +1527,12 @@ print("DEBUG - status code is 200, response is:")
         let now = Date()
         if let last = lastRequestDate {
             let elapsed = now.timeIntervalSince(last)
-            print("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
+            Logger.shared.verbose("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
             if elapsed < policyRequestDelay {
                 let delay = policyRequestDelay - elapsed
                 let human = formatDuration(delay)
                 let nextRunAt = Date().addingTimeInterval(delay)
-                print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
+                Logger.shared.verbose("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
                 // surface a brief delay-specific status to the UI
                 DispatchQueue.main.async {
                     self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))"
@@ -1540,7 +1540,7 @@ print("DEBUG - status code is 200, response is:")
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
         } else {
-            print("No previous request timestamp found; proceeding immediately")
+            Logger.shared.verbose("No previous request timestamp found; proceeding immediately")
         }
         lastRequestDate = Date()
 
@@ -1569,7 +1569,7 @@ print("DEBUG - status code is 200, response is:")
                 }
 
                 self.currentResponseCode = String(describing: statusCode)
-                print("getDetailedPolicy request error - code is:\(statusCode) (attempt \(attempt)/\(maxAttempts))")
+                Logger.shared.normal("getDetailedPolicy request error - code is:\(statusCode) (attempt \(attempt)/\(maxAttempts))")
 
                 // Only retry transient server-side errors; client errors won't improve.
                 let isTransient = statusCode >= 500
@@ -1581,7 +1581,7 @@ print("DEBUG - status code is 200, response is:")
                     break
                 }
             } catch {
-                print("getDetailedPolicy network error on attempt \(attempt)/\(maxAttempts): \(error)")
+                Logger.shared.normal("getDetailedPolicy network error on attempt \(attempt)/\(maxAttempts): \(error)")
                 if attempt < maxAttempts {
                     let backoff = Double(attempt) * 0.6
                     try? await Task.sleep(nanoseconds: UInt64(backoff * 1_000_000_000))
@@ -1593,6 +1593,7 @@ print("DEBUG - status code is 200, response is:")
                     self.policyDetailed = nil
                 }
                 messageStore?.show("Failed to load policy details", level: .error, details: "Policy ID: \(policyID)")
+                Logger.shared.normal("Failed to load policy details - final error: \(error)")
                 throw error
             }
         }
@@ -1613,18 +1614,19 @@ print("DEBUG - status code is 200, response is:")
         // Stale-response guard: if the user has since navigated to a different
         // policy, discard this result rather than clobbering the current view.
         guard self.latestDetailedPolicyRequestID == policyID else {
-            print("getDetailedPolicy: discarding stale response for \(policyID); current request is \(self.latestDetailedPolicyRequestID ?? "nil")")
+            Logger.shared.verbose("getDetailedPolicy: discarding stale response for \(policyID); current request is \(self.latestDetailedPolicyRequestID ?? "nil")")
             return
         }
 
         // Sanity check: confirm the decoded policy id matches what we requested.
         if let fetchedID = decodedData.general?.jamfId, String(fetchedID) != policyID {
-            print("getDetailedPolicy: WARNING fetched policy id \(fetchedID) does not match requested \(policyID); discarding")
+            Logger.shared.normal("getDetailedPolicy: WARNING fetched policy id \(fetchedID) does not match requested \(policyID); discarding")
+            messageStore?.warn("Fetched policy id mismatch", details: "fetched=\(fetchedID) requested=\(policyID)")
             return
         }
 
         separationLine()
-        print("getDetailedPolicy has run - policy name is:\(decodedData.general?.name ?? "")")
+        Logger.shared.verbose("getDetailedPolicy has run - policy name is:\(decodedData.general?.name ?? "")")
 
         self.policyDetailed = decodedData
 
@@ -1640,7 +1642,7 @@ print("DEBUG - status code is 200, response is:")
     func getAllPoliciesDetailed(server: String, authToken: String, policies: [Policy]) async throws {
         // Avoid re-entrancy: if a fetch is already running, skip
         if isFetchingDetailedPolicies {
-            print("getAllPoliciesDetailed called while a fetch is already in progress; skipping")
+            Logger.shared.verbose("getAllPoliciesDetailed called while a fetch is already in progress; skipping")
             return
         }
         await MainActor.run { self.isFetchingDetailedPolicies = true; self.retryFailedDetailedPolicyCalls = [] }
@@ -1653,12 +1655,12 @@ print("DEBUG - status code is 200, response is:")
         // Print visual separator for debugging logs
         self.separationLine()
         // Log that we're running the concurrent version of this function
-        print("Running func: getAllPoliciesDetailed (bounded concurrency)")
+        Logger.shared.verbose("Running func: getAllPoliciesDetailed (bounded concurrency)")
 
         // Filter out policies without a valid jamfId (must be > 0 to be fetchable)
         let validPolicies = policies.filter { ($0.jamfId ?? 0) > 0 }
         // Log the filtering results for debugging
-        print("Total policies provided: \(policies.count) -> valid policies with jamfId>0: \(validPolicies.count)")
+        Logger.shared.verbose("Total policies provided: \(policies.count) -> valid policies with jamfId>0: \(validPolicies.count)")
 
         // Use user-configured concurrency (persisted setting). Default to 4 if invalid.
         let concurrency = max(1, self.policyFetchConcurrency)
@@ -1695,7 +1697,7 @@ print("DEBUG - status code is 200, response is:")
                     if delayNeeded > 0 {
                         let human = await MainActor.run { self.formatDuration(delayNeeded) }
                         let nextRunAt = Date().addingTimeInterval(delayNeeded)
-                        print("Throttling: sleeping for \(delayNeeded) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
+                        Logger.shared.verbose("Throttling: sleeping for \(delayNeeded) seconds (\(human)) before requesting policy \(policyID). Next at: \(nextRunAt)")
                         await MainActor.run { self.policyDelayStatus = "Delaying policy fetch: \(human) (next at \(nextRunAt))" }
                         try? await Task.sleep(nanoseconds: UInt64(delayNeeded * 1_000_000_000))
                     }
@@ -1732,14 +1734,14 @@ print("DEBUG - status code is 200, response is:")
             // Collect results as they complete; buffer successes to minimize UI layout churn
             var successes: [PolicyDetailed] = []
             for await (policyID, result) in group {
-                switch result {
-                case .success(let detailed):
-                    successes.append(detailed)
-                    print("Fetched policy detail for ID: \(policyID)")
-                case .failure(let err):
-                    print("Error fetching detailed policy ID \(policyID): \(err)")
-                    failedCalls.append(policyID)
-                }
+                    switch result {
+                    case .success(let detailed):
+                        successes.append(detailed)
+                        Logger.shared.verbose("Fetched policy detail for ID: \(policyID)")
+                    case .failure(let err):
+                        Logger.shared.normal("Error fetching detailed policy ID \(policyID): \(err)")
+                        failedCalls.append(policyID)
+                    }
             }
 
             // Insert buffered successes in one MainActor update to reduce layout thrash
@@ -1754,7 +1756,7 @@ print("DEBUG - status code is 200, response is:")
 
         // On completion, record failures but mark detailed fetch as completed so callers don't retry infinitely
         if !failedCalls.isEmpty {
-            print("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
+            Logger.shared.normal("getAllPoliciesDetailed completed with failures for IDs: \(failedCalls)")
             await MainActor.run {
                 self.retryFailedDetailedPolicyCalls = failedCalls
                 self.fetchedDetailedPolicies = true
@@ -1763,7 +1765,7 @@ print("DEBUG - status code is 200, response is:")
             // Show partial failure message
             messageStore?.show("Detailed policies fetched with errors", level: .warning, details: "Failed for \(failedCalls.count) policies")
         } else {
-            print("getAllPoliciesDetailed completed successfully for all policies")
+            Logger.shared.verbose("getAllPoliciesDetailed completed successfully for all policies")
             await MainActor.run {
                 self.fetchedDetailedPolicies = true
                 self.isFetchingDetailedPolicies = false
@@ -7627,7 +7629,7 @@ xml = """
     func getAllDetailedUsers(server: String, authToken: String, users: [UserSimple]) async throws {
 
         self.separationLine()
-        print("Running func: getAllPoliciesDetailed")
+        Logger.shared.verbose("Running func: getAllPoliciesDetailed")
 
         //        ########################################################
         //        Rate limiting
@@ -7636,19 +7638,19 @@ xml = """
         let now = Date()
         if let last = lastRequestDate {
             let elapsed = now.timeIntervalSince(last)
-            print("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
+            Logger.shared.verbose("Last request ran at: \(last) (\(formatDuration(elapsed)) ago)")
             if elapsed < policyRequestDelay {
                 let delay = policyRequestDelay - elapsed
                 let human = formatDuration(delay)
                 let nextRunAt = Date().addingTimeInterval(delay)
-                print("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
+                Logger.shared.verbose("Throttling: sleeping for \(delay) seconds (\(human)). Next request at: \(nextRunAt)")
                 DispatchQueue.main.async {
                     self.policyDelayStatus = "Delaying detailed user fetch: \(human) (next at \(nextRunAt))"
                 }
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
         } else {
-            print("No previous request timestamp found; proceeding immediately")
+            Logger.shared.verbose("No previous request timestamp found; proceeding immediately")
         }
         lastRequestDate = Date()
 
@@ -7657,7 +7659,7 @@ xml = """
                 try await getDetailUser(userID: String(describing: user.jamfId))
 
                 if policyDetailed != nil {
-                    print("Users is:\(String(describing: user.name)) - ID is:\(String(describing: user.jamfId ?? 0))")
+                    Logger.shared.verbose("Users is:\(String(describing: user.name)) - ID is:\(String(describing: user.jamfId ?? 0))")
                 }
             }
         }

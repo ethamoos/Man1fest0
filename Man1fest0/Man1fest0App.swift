@@ -10,9 +10,9 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Print bundle id for debugging
         if let bundleId = Bundle.main.bundleIdentifier {
-            print("[AppDelegate] bundle identifier: \(bundleId)")
+            Logger.shared.verbose("[AppDelegate] bundle identifier: \(bundleId)")
         } else {
-            print("[AppDelegate] bundle identifier: nil")
+            Logger.shared.verbose("[AppDelegate] bundle identifier: nil")
         }
 
         // Apply saved frame after a short delay to allow SwiftUI to finish creating windows
@@ -64,7 +64,7 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
         guard window.styleMask.contains(.titled) else { return }
         let frameString = NSStringFromRect(window.frame)
         UserDefaults.standard.set(frameString, forKey: defaultsKey)
-        print("[AppDelegate] Saved window frame: \(frameString)")
+        Logger.shared.verbose("[AppDelegate] Saved window frame: \(frameString)")
     }
 
     private func applySavedFrame() {
@@ -73,17 +73,17 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
         let minHeight: CGFloat = 420
         var rect: NSRect
         if let frameString = UserDefaults.standard.string(forKey: defaultsKey) {
-            print("[AppDelegate] Found saved frame: \(frameString)")
+            Logger.shared.verbose("[AppDelegate] Found saved frame: \(frameString)")
             rect = NSRectFromString(frameString)
             // If the saved rect is unreasonably small, fall back to a default proportional rect
             if rect.size.width < minWidth || rect.size.height < minHeight {
-                print("[AppDelegate] Saved frame too small, using proportional default")
+                Logger.shared.verbose("[AppDelegate] Saved frame too small, using proportional default")
                 rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
             }
         } else {
             // No saved frame; use a default rect proportional to main screen
             rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
-            print("[AppDelegate] No saved frame found, using proportional default: \(rect)")
+            Logger.shared.verbose("[AppDelegate] No saved frame found, using proportional default: \(rect)")
         }
 
         // Find a main/styled window to apply the saved frame to
@@ -106,7 +106,7 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
             // available), fall back to a proportional default rather than
             // applying a huge/clamped rect that can produce odd layout.
             if rect.size.width > targetVisible.width || rect.size.height > targetVisible.height {
-                print("[AppDelegate] Saved frame larger than target screen; using proportional default")
+                Logger.shared.verbose("[AppDelegate] Saved frame larger than target screen; using proportional default")
                 rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
             }
 
@@ -119,7 +119,7 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
             rect.origin.y = max(targetVisible.minY, min(rect.origin.y, targetVisible.maxY - rect.size.height))
 
             window.setFrame(rect, display: true, animate: false)
-            print("[AppDelegate] Applied saved frame to window: \(rect)")
+            Logger.shared.verbose("[AppDelegate] Applied saved frame to window: \(rect)")
         }
     }
 
@@ -128,15 +128,15 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
         let minHeight: CGFloat = 420
         var rect: NSRect
         if let frameString = UserDefaults.standard.string(forKey: defaultsKey) {
-            print("[AppDelegate] applySavedFrame(to:) found saved frame: \(frameString)")
+            Logger.shared.verbose("[AppDelegate] applySavedFrame(to:) found saved frame: \(frameString)")
             rect = NSRectFromString(frameString)
             if rect.size.width < minWidth || rect.size.height < minHeight {
-                print("[AppDelegate] Saved frame too small in applySavedFrame(to:), using proportional default")
+                Logger.shared.verbose("[AppDelegate] Saved frame too small in applySavedFrame(to:), using proportional default")
                 rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
             }
         } else {
             rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
-            print("[AppDelegate] No saved frame in applySavedFrame(to:), using proportional default: \(rect)")
+            Logger.shared.verbose("[AppDelegate] No saved frame in applySavedFrame(to:), using proportional default: \(rect)")
         }
         // Clamp rect to the provided window's screen (if available) or to the main screen
         let screens = NSScreen.screens
@@ -146,7 +146,7 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
         // to, use a proportional default so the window remains usable and the
         // UI (message area, toolbars) stays visible.
         if rect.size.width > targetVisible.width || rect.size.height > targetVisible.height {
-            print("[AppDelegate] Saved frame too large for targetVisible in applySavedFrame(to:); using proportional default")
+            Logger.shared.verbose("[AppDelegate] Saved frame too large for targetVisible in applySavedFrame(to:); using proportional default")
             rect = proportionalDefaultRect(minWidth: minWidth, minHeight: minHeight)
         }
 
@@ -156,7 +156,7 @@ fileprivate class AppDelegate: NSObject, NSApplicationDelegate {
         rect.origin.y = max(targetVisible.minY, min(rect.origin.y, targetVisible.maxY - rect.size.height))
 
         window.setFrame(rect, display: true, animate: false)
-        print("[AppDelegate] Applied saved frame to specific window: \(rect)")
+        Logger.shared.verbose("[AppDelegate] Applied saved frame to specific window: \(rect)")
     }
 
     private func proportionalDefaultRect(minWidth: CGFloat, minHeight: CGFloat) -> NSRect {
@@ -252,9 +252,9 @@ struct Man1fest0App: App {
         // Print the app temporary directory so we can find sandboxed diagnostic files
         let tmpDir = FileManager.default.temporaryDirectory.path
         if let bundleId = Bundle.main.bundleIdentifier {
-            print("[AppInit] bundleID=\(bundleId); tempDir=\(tmpDir)")
+            Logger.shared.verbose("[AppInit] bundleID=\(bundleId); tempDir=\(tmpDir)")
         } else {
-            print("[AppInit] bundleID=nil; tempDir=\(tmpDir)")
+            Logger.shared.verbose("[AppInit] bundleID=nil; tempDir=\(tmpDir)")
         }
         _ = Logger.shared
     }
