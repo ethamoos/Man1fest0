@@ -27,7 +27,7 @@ final class Logger {
     private let queue = DispatchQueue(label: "Man1fest0.Logger")
 
     private init() {
-        var fh: FileHandle? = nil
+        var logFileHandle: FileHandle? = nil
         // Determine a sane Application Support directory and ensure it exists inside the app container.
         let bundleID = Bundle.main.bundleIdentifier ?? "Man1fest0"
         if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
@@ -38,42 +38,42 @@ final class Logger {
                 print("Logger: failed to create Application Support directory '\(dir.path)' - \(error)")
             }
 
-            let f = dir.appendingPathComponent("Man1fest0.log")
-            if !FileManager.default.fileExists(atPath: f.path) {
-                let created = FileManager.default.createFile(atPath: f.path, contents: nil)
+            let logFileURL = dir.appendingPathComponent("Man1fest0.log")
+            if !FileManager.default.fileExists(atPath: logFileURL.path) {
+                let created = FileManager.default.createFile(atPath: logFileURL.path, contents: nil)
                 if !created {
-                    print("Logger: failed to create log file at path: \(f.path)")
+                    print("Logger: failed to create log file at path: \(logFileURL.path)")
                 }
             }
 
             do {
-                fh = try FileHandle(forWritingTo: f)
+                logFileHandle = try FileHandle(forWritingTo: logFileURL)
                 // Place cursor at end so we append
-                try fh?.seekToEnd()
+                try logFileHandle?.seekToEnd()
 
                 // Write a guaranteed startup line so a user can locate the file immediately.
                 let time = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withInternetDateTime, .withFractionalSeconds])
                 let startup = "[\(time)] [startup] Application started\n"
-                if let d = startup.data(using: .utf8) {
-                    fh?.write(d)
+                if let startupData = startup.data(using: .utf8) {
+                    logFileHandle?.write(startupData)
                 }
-                print("Logger initialized, log file: \(f.path)")
+                print("Logger initialized, log file: \(logFileURL.path)")
                 // Also write a small diagnostic file into the app's temporary directory so the developer
                 // can quickly confirm that Logger.init ran even if Application Support writes fail.
                 let diagDir = FileManager.default.temporaryDirectory
                 let diagURL = diagDir.appendingPathComponent("Man1fest0_logger_diagnostic.txt")
-                let diagLine = "[\(time)] Logger init; bundleID=\(bundleID); logPath=\(f.path); fhPresent=\(fh != nil)\n"
+                let diagLine = "[\(time)] Logger init; bundleID=\(bundleID); logPath=\(logFileURL.path); fhPresent=\(logFileHandle != nil)\n"
                 if FileManager.default.fileExists(atPath: diagURL.path) {
-                    if let dh = try? FileHandle(forWritingTo: diagURL) {
-                        try? dh.seekToEnd()
-                        if let dd = diagLine.data(using: .utf8) { dh.write(dd) }
-                        try? dh.close()
+                    if let diagFileHandle = try? FileHandle(forWritingTo: diagURL) {
+                        _ = try? diagFileHandle.seekToEnd()
+                        if let diagData = diagLine.data(using: .utf8) { diagFileHandle.write(diagData) }
+                        _ = try? diagFileHandle.close()
                     }
                 } else {
-                    try? diagLine.write(to: diagURL, atomically: true, encoding: .utf8)
+                    _ = try? diagLine.write(to: diagURL, atomically: true, encoding: .utf8)
                 }
             } catch {
-                print("Logger: failed to open or write to log file '\(f.path)' - \(error)")
+                print("Logger: failed to open or write to log file '\(logFileURL.path)' - \(error)")
             }
         } else {
             print("Logger: unable to determine Application Support directory; bundleID=\(bundleID)")
@@ -82,38 +82,38 @@ final class Logger {
         // DEV fallback: if we couldn't open the Application Support log, write to /tmp for easy local debugging.
         // This is guarded by DEBUG so it won't affect production builds.
 #if DEBUG
-            if fh == nil {
+            if logFileHandle == nil {
             let tmpDir = FileManager.default.temporaryDirectory
-            let tmp = tmpDir.appendingPathComponent("Man1fest0_dev.log")
-            if !FileManager.default.fileExists(atPath: tmp.path) {
-                FileManager.default.createFile(atPath: tmp.path, contents: nil)
+            let tmpLogURL = tmpDir.appendingPathComponent("Man1fest0_dev.log")
+            if !FileManager.default.fileExists(atPath: tmpLogURL.path) {
+                FileManager.default.createFile(atPath: tmpLogURL.path, contents: nil)
             }
-            if let tmpFH = try? FileHandle(forWritingTo: tmp) {
-                try? tmpFH.seekToEnd()
+                if let tmpFileHandle = try? FileHandle(forWritingTo: tmpLogURL) {
+                _ = try? tmpFileHandle.seekToEnd()
                 let time = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withInternetDateTime, .withFractionalSeconds])
                 let startup = "[\(time)] [startup/dev-fallback] Application started\n"
-                if let d = startup.data(using: .utf8) { tmpFH.write(d) }
+                if let startupData = startup.data(using: .utf8) { tmpFileHandle.write(startupData) }
                 // Also append a diagnostic line to the same diagnostic file used elsewhere
-                let diagLine = "[\(time)] Logger fallback to temp; bundleID=\(bundleID); logPath=\(tmp.path); fhPresent=true\n"
+                let diagLine = "[\(time)] Logger fallback to temp; bundleID=\(bundleID); logPath=\(tmpLogURL.path); fhPresent=true\n"
                 let diagURL = FileManager.default.temporaryDirectory.appendingPathComponent("Man1fest0_logger_diagnostic.txt")
                 if FileManager.default.fileExists(atPath: diagURL.path) {
-                    if let dh = try? FileHandle(forWritingTo: diagURL) {
-                        try? dh.seekToEnd()
-                        if let dd = diagLine.data(using: .utf8) { dh.write(dd) }
-                        try? dh.close()
+                    if let diagFileHandle = try? FileHandle(forWritingTo: diagURL) {
+                        _ = try? diagFileHandle.seekToEnd()
+                        if let diagData = diagLine.data(using: .utf8) { diagFileHandle.write(diagData) }
+                        _ = try? diagFileHandle.close()
                     }
                 } else {
-                    try? diagLine.write(to: diagURL, atomically: true, encoding: .utf8)
+                    _ = try? diagLine.write(to: diagURL, atomically: true, encoding: .utf8)
                 }
-                fh = tmpFH
-                print("Logger fallback to temp: \(tmp.path)")
+                logFileHandle = tmpFileHandle
+                print("Logger fallback to temp: \(tmpLogURL.path)")
             } else {
-                print("Logger: failed to open fallback temp log at \(tmp.path)")
+                print("Logger: failed to open fallback temp log at \(tmpLogURL.path)")
             }
         }
 #endif
 
-        self.fileHandle = fh
+        self.fileHandle = logFileHandle
     }
 
     var currentLevel: Level {
@@ -150,8 +150,8 @@ final class Logger {
         let line = "[\(time)] [\(level)] \(message)\n"
         print(line, terminator: "")
         queue.async { [weak self] in
-            guard let fh = self?.fileHandle else { return }
-            if let d = line.data(using: .utf8) { fh.write(d) }
+            guard let fileHandle = self?.fileHandle else { return }
+            if let data = line.data(using: .utf8) { fileHandle.write(data) }
         }
     }
 
@@ -201,14 +201,14 @@ private let _Man1fest0_logger_module_load: Void = {
     // Use the process-local temporary directory (sandbox-friendly) for module-load diagnostics
     let diagURL = FileManager.default.temporaryDirectory.appendingPathComponent("Man1fest0_module_load.txt")
     // Write to /tmp (best-effort); do not throw.
-    if FileManager.default.fileExists(atPath: diagURL.path) {
-        if let fh = try? FileHandle(forWritingTo: diagURL) {
-            try? fh.seekToEnd()
-            if let d = diag1.data(using: .utf8) { fh.write(d) }
-            try? fh.close()
+        if FileManager.default.fileExists(atPath: diagURL.path) {
+        if let diagFileHandleLocal = try? FileHandle(forWritingTo: diagURL) {
+            _ = try? diagFileHandleLocal.seekToEnd()
+            if let diagDataLocal = diag1.data(using: .utf8) { diagFileHandleLocal.write(diagDataLocal) }
+            _ = try? diagFileHandleLocal.close()
         }
     } else {
-        try? diag1.write(to: diagURL, atomically: true, encoding: .utf8)
+        _ = try? diag1.write(to: diagURL, atomically: true, encoding: .utf8)
     }
     // Also write a simple NSLog so Console.app can show it if available
     NSLog("Man1fest0: module_load; bundleID=%@", bundleID)

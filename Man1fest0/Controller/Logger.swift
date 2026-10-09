@@ -29,12 +29,12 @@ final class Logger {
         if let dir = supportURL {
             do {
                 try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true, attributes: nil)
-                let f = dir.appendingPathComponent("Man1fest0.log")
-                self.fileURL = f
-                if !FileManager.default.fileExists(atPath: f.path) {
-                    FileManager.default.createFile(atPath: f.path, contents: nil, attributes: nil)
+                let logFileURL = dir.appendingPathComponent("Man1fest0.log")
+                self.fileURL = logFileURL
+                if !FileManager.default.fileExists(atPath: logFileURL.path) {
+                    FileManager.default.createFile(atPath: logFileURL.path, contents: nil, attributes: nil)
                 }
-                self.fileHandle = try FileHandle(forWritingTo: f)
+                self.fileHandle = try FileHandle(forWritingTo: logFileURL)
                 // move to end for appending
                 try self.fileHandle?.seekToEnd()
             } catch {
@@ -100,9 +100,9 @@ final class Logger {
 
         // Append to file asynchronously
         queue.async { [weak self] in
-            guard let fh = self?.fileHandle else { return }
+            guard let fileHandle = self?.fileHandle else { return }
             if let data = line.data(using: .utf8) {
-                fh.write(data)
+                fileHandle.write(data)
             }
         }
     }

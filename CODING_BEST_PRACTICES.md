@@ -58,6 +58,22 @@ let preferredPageSize = 25                // ✅ User preference
 let networkTimeoutDuration = 30          // ✅ Time duration
 ```
 
+## ⚠️ Avoid single- or two-letter variable names
+
+Short, non-descriptive variable names (for example `a`, `d`, `f`, `fh`, `tmp`, `dh`) make code harder to read and maintain. They are acceptable only in conventional, very small contexts (e.g., `i`, `j`, `k` as loop indices, or `x` in small math expressions). For everything else prefer descriptive names that convey purpose, type, and intent.
+
+Examples:
+- ❌ `let f = dir.appendingPathComponent("Man1fest0.log")`
+- ✅ `let logFileURL = dir.appendingPathComponent("Man1fest0.log")`
+
+- ❌ `var fh: FileHandle? = nil`
+- ✅ `var logFileHandle: FileHandle? = nil`
+
+Practical rules for this project:
+- Replace single- or two-letter variable names with clear, intention-revealing names (e.g., `tmp` -> `temporaryLogURL`, `d` -> `startupData`).
+- Use full words rather than abbreviations unless the abbreviation is a well-known domain term.
+- When updating legacy code, prefer small, local renames that improve clarity without changing behavior.
+
 ### **3. Collection Variables**
 ```swift
 // Use plural nouns and indicate content type
