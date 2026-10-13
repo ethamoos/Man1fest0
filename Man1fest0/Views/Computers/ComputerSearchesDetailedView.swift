@@ -10,11 +10,11 @@ struct ComputerSearchesDetailedView: View {
 
     var body: some View {
         Group {
-            if let d = networkController.advancedComputerSearchDetailed {
+            if let detail = networkController.advancedComputerSearchDetailed {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(d.name).font(.title)
-                    Text("ID: \(d.id)").foregroundColor(.secondary)
-                    if let crit = d.criteria {
+                    Text(detail.name).font(.title)
+                    Text("ID: \(detail.id)").foregroundColor(.secondary)
+                    if let crit = detail.criteria {
                         Text("Criteria:")
                             .font(.headline)
                         ScrollView { Text(crit).font(.body) }
@@ -32,7 +32,7 @@ struct ComputerSearchesDetailedView: View {
 
                         Button("Delete Selection") {
                             Task {
-                                let setSel: Set<AdvancedComputerSearch> = Set([AdvancedComputerSearch(id: d.id, name: d.name)])
+                                let setSel: Set<AdvancedComputerSearch> = Set([AdvancedComputerSearch(id: detail.id, name: detail.name)])
                                 try? await networkController.batchDeleteAdvancedComputerSearch(selection: setSel, server: networkController.server, authToken: networkController.authToken, resourceType: .advancedComputerSearch)
                             }
                         }

@@ -1298,16 +1298,16 @@ print("Running: clonePerPackage")
 
                         } else {
                             // Only include a single instance of the script with only the selected parameter set (or no parameters if none)
-                            let ms = matchedScripts[job.scriptIndex]
+                            let matchedScript = matchedScripts[job.scriptIndex]
                             let scriptElement = newScriptsNode.addChild(name: "script")
                             // basic fields
-                            _ = scriptElement.addChild(name: "id", value: ms.id)
-                            _ = scriptElement.addChild(name: "name", value: ms.name)
+                            _ = scriptElement.addChild(name: "id", value: matchedScript.id)
+                            _ = scriptElement.addChild(name: "name", value: matchedScript.name)
 
                             // attempt to copy priority if present in original matched xml (safe, non-throwing)
                             var priorityValue: String? = nil
-                            if ms.xmlString.range(of: "<priority>") != nil {
-                                if let doc = try? AEXMLDocument(xml: Data(("<root>\(ms.xmlString)</root>").utf8)) {
+                            if matchedScript.xmlString.range(of: "<priority>") != nil {
+                                if let doc = try? AEXMLDocument(xml: Data(("<root>\(matchedScript.xmlString)</root>").utf8)) {
                                     priorityValue = doc.root["script"]["priority"].string
                                 }
                             }
@@ -1320,9 +1320,9 @@ print("Running: clonePerPackage")
                                 _ = scriptElement.addChild(name: param.key, value: param.value)
                             } else {
                                 // If no parameter and useParameters was true but script had none, copy all parameters (fallback)
-                                if ms.parameters.isEmpty {
-                                    // parse ms.xmlString and copy all children except id/name
-                                    if let msDoc = try? AEXMLDocument(xml: Data(ms.xmlString.utf8)) {
+                                if matchedScript.parameters.isEmpty {
+                                    // parse matchedScript.xmlString and copy all children except id/name
+                                    if let msDoc = try? AEXMLDocument(xml: Data(matchedScript.xmlString.utf8)) {
                                         for child in msDoc.root.children {
                                             if child.name != "id" && child.name != "name" && child.name != "priority" {
                                                 _ = scriptElement.addChild(name: child.name, value: child.string)
@@ -1341,7 +1341,7 @@ print("Running: clonePerPackage")
                                 candidateName = "\(sanitizeForName(param.value))"
                             } else {
                                 // fallback to script name or id
-                                candidateName = sanitizeForName(ms.name.isEmpty ? ms.id : ms.name)
+                                 candidateName = sanitizeForName(matchedScript.name.isEmpty ? matchedScript.id : matchedScript.name)
                             }
                             var finalName = sanitizeForName("\(base)-\(candidateName)")
                             if generatedNames.contains(finalName) {

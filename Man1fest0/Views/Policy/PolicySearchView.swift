@@ -321,31 +321,31 @@ struct PolicySearchView: View {
         }
 
         for pair in pairs {
-            let p = pair.policy
-            let id = p.general?.jamfId.map { String($0) } ?? ""
-            let name = p.general?.name ?? ""
-            let ssName = p.self_service?.selfServiceDisplayName ?? ""
-            let ssDesc = p.self_service?.selfServiceDescription ?? ""
-            let enabled = p.general?.enabled.map { String($0) } ?? ""
+            let policy = pair.policy
+            let id = policy.general?.jamfId.map { String($0) } ?? ""
+            let name = policy.general?.name ?? ""
+            let ssName = policy.self_service?.selfServiceDisplayName ?? ""
+            let ssDesc = policy.self_service?.selfServiceDescription ?? ""
+            let enabled = policy.general?.enabled.map { String($0) } ?? ""
 
-            let packages = (p.package_configuration?.packages.map { $0.name ?? "" } ?? []).joined(separator: "; ")
-            let scripts = (p.scripts?.map { $0.name ?? "" } ?? []).joined(separator: "; ")
+            let packages = (policy.package_configuration?.packages.map { $0.name ?? "" } ?? []).joined(separator: "; ")
+            let scripts = (policy.scripts?.map { $0.name ?? "" } ?? []).joined(separator: "; ")
 
             // Simple scope summary: concatenate common scope names/counts
             var scopeParts: [String] = []
-            if let comps = p.scope?.computers, !comps.isEmpty { scopeParts.append("computers:[\(comps.compactMap { $0.name }.joined(separator: ", "))]") }
-            if let cgs = p.scope?.computerGroups, !cgs.isEmpty { scopeParts.append("computerGroups:[\(cgs.compactMap { $0.name ?? "" }.joined(separator: ", "))]") }
-            if let blds = p.scope?.buildings, !blds.isEmpty { scopeParts.append("buildings:[\(blds.compactMap { $0.name }.joined(separator: ", "))]") }
-            if let depts = p.scope?.departments, !depts.isEmpty { scopeParts.append("departments:[\(depts.compactMap { $0.name }.joined(separator: ", "))]") }
-            if let limitToUsers = p.scope?.limitToUsers?.users, !limitToUsers.isEmpty { scopeParts.append("limitToUsers:[\(limitToUsers.compactMap { $0.name }.joined(separator: ", "))]") }
-            if let limitations = p.scope?.limitations?.users, !limitations.isEmpty { scopeParts.append("limitations:[\(limitations.compactMap { $0.name }.joined(separator: ", "))]") }
-            if let excl = p.scope?.exclusions, ((excl.computers?.isEmpty == false) || (excl.computerGroups?.isEmpty == false) || (excl.buildings?.isEmpty == false) || (excl.departments?.isEmpty == false) || (excl.users?.isEmpty == false)) {
+            if let comps = policy.scope?.computers, !comps.isEmpty { scopeParts.append("computers:[\(comps.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let cgs = policy.scope?.computerGroups, !cgs.isEmpty { scopeParts.append("computerGroups:[\(cgs.compactMap { $0.name ?? "" }.joined(separator: ", "))]") }
+            if let blds = policy.scope?.buildings, !blds.isEmpty { scopeParts.append("buildings:[\(blds.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let depts = policy.scope?.departments, !depts.isEmpty { scopeParts.append("departments:[\(depts.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let limitToUsers = policy.scope?.limitToUsers?.users, !limitToUsers.isEmpty { scopeParts.append("limitToUsers:[\(limitToUsers.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let limitations = policy.scope?.limitations?.users, !limitations.isEmpty { scopeParts.append("limitations:[\(limitations.compactMap { $0.name }.joined(separator: ", "))]") }
+            if let excl = policy.scope?.exclusions, ((excl.computers?.isEmpty == false) || (excl.computerGroups?.isEmpty == false) || (excl.buildings?.isEmpty == false) || (excl.departments?.isEmpty == false) || (excl.users?.isEmpty == false)) {
                 var exParts: [String] = []
-                if let ec = excl.computers, !ec.isEmpty { exParts.append("computers:[\(ec.compactMap { $0.name }.joined(separator: ", "))]") }
-                if let eg = excl.computerGroups, !eg.isEmpty { exParts.append("computerGroups:[\(eg.compactMap { $0.name ?? "" }.joined(separator: ", "))]") }
-                if let eb = excl.buildings, !eb.isEmpty { exParts.append("buildings:[\(eb.compactMap { $0.name }.joined(separator: ", "))]") }
-                if let ed = excl.departments, !ed.isEmpty { exParts.append("departments:[\(ed.compactMap { $0.name }.joined(separator: ", "))]") }
-                if let eu = excl.users, !eu.isEmpty { exParts.append("users:[\(eu.compactMap { $0.name }.joined(separator: ", "))]") }
+                if let exclComps = excl.computers, !exclComps.isEmpty { exParts.append("computers:[\(exclComps.compactMap { $0.name }.joined(separator: ", "))]") }
+                if let exclCompGrps = excl.computerGroups, !exclCompGrps.isEmpty { exParts.append("computerGroups:[\(exclCompGrps.compactMap { $0.name ?? "" }.joined(separator: ", "))]") }
+                if let exclBuildings = excl.buildings, !exclBuildings.isEmpty { exParts.append("buildings:[\(exclBuildings.compactMap { $0.name }.joined(separator: ", "))]") }
+                if let exclDepartments = excl.departments, !exclDepartments.isEmpty { exParts.append("departments:[\(exclDepartments.compactMap { $0.name }.joined(separator: ", "))]") }
+                if let exclUsers = excl.users, !exclUsers.isEmpty { exParts.append("users:[\(exclUsers.compactMap { $0.name }.joined(separator: ", "))]") }
                 scopeParts.append("exclusions:[\(exParts.joined(separator: "; "))]")
             }
             let scopeSummary = scopeParts.joined(separator: " | ")
@@ -728,13 +728,13 @@ struct PolicySearchView: View {
                 NavigationLink(
                     isActive: $isDetailNavActive,
                     destination: {
-                        if let p = detailNavPolicy {
-                            PolicyDetailView(server: server, policy: {
-                                var basicPolicy = Policy(name: p.general?.name ?? "")
-                                basicPolicy.jamfId = p.general?.jamfId
-                                return basicPolicy
-                            }(), policyID: p.general?.jamfId ?? 0)
-                        } else {
+                            if let navPolicy = detailNavPolicy {
+                                    PolicyDetailView(server: server, policy: {
+                                        var basicPolicy = Policy(name: navPolicy.general?.name ?? "")
+                                        basicPolicy.jamfId = navPolicy.general?.jamfId
+                                        return basicPolicy
+                                    }(), policyID: navPolicy.general?.jamfId ?? 0)
+                                } else {
                             EmptyView()
                         }
                     },

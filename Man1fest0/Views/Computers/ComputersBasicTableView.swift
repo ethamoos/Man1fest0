@@ -798,8 +798,8 @@ struct ComputersBasicTableView: View {
             let idString = String(comp.id)
 
             for token in csvComputerIdentifiers {
-                let t = token.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-                if t == name || t == serial || t == mac || t == idString {
+                let tokenNormalized = token.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                if tokenNormalized == name || tokenNormalized == serial || tokenNormalized == mac || tokenNormalized == idString {
                     selection.insert(comp.id)
                     break
                 }

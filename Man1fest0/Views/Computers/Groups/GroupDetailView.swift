@@ -648,18 +648,18 @@ struct GroupDetailView: View {
         if let cb = comp as? ComputerBasicRecord { return cb.id }
 
         // Mirror-based fallback: inspect child labels for common id field names
-        let m = Mirror(reflecting: comp)
-        for child in m.children {
+        let mirror = Mirror(reflecting: comp)
+        for child in mirror.children {
             guard let label = child.label?.lowercased() else { continue }
             if ["id", "jamfid", "computerid", "computer_id", "jamf_id", "jamfid"].contains(label) {
-                if let i = child.value as? Int { return i }
-                if let s = child.value as? String, let i = Int(s) { return i }
+                if let intValue = child.value as? Int { return intValue }
+                if let stringValue = child.value as? String, let intValue = Int(stringValue) { return intValue }
             }
         }
 
         // If comp is itself a primitive wrapped (e.g. Int/String), try casting directly
-        if let i = comp as? Int { return i }
-        if let s = comp as? String, let i = Int(s) { return i }
+        if let intValue = comp as? Int { return intValue }
+        if let stringValue = comp as? String, let intValue = Int(stringValue) { return intValue }
 
         return nil
     }
@@ -721,14 +721,14 @@ struct GroupDetailView: View {
         // show spinner while matching
         self.isMatching = true
         // When debugging, print token contents + scalar values to help detect invisible chars
-        if importDebugLogging {
-            print("[parseTokensAndMatch] Raw incoming tokens: \(tokens)")
-            for t in tokens {
-                let s = sanitizeToken(t)
-                let scalars = s.unicodeScalars.map { String(format: "%04X", $0.value) }.joined(separator: " ")
-                print("  token raw='\(t)' -> sanitized='\(s)' scalars=[\(scalars)]")
+            if importDebugLogging {
+                print("[parseTokensAndMatch] Raw incoming tokens: \(tokens)")
+                for token in tokens {
+                    let sanitized = sanitizeToken(token)
+                    let scalars = sanitized.unicodeScalars.map { String(format: "%04X", $0.value) }.joined(separator: " ")
+                    print("  token raw='\(token)' -> sanitized='\(sanitized)' scalars=[\(scalars)]")
+                }
             }
-        }
         var matches: [ComputerBasicRecord] = []
         var unmatched: [String] = []
         var selectedIDs: Set<Int> = []
