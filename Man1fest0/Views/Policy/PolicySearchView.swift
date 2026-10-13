@@ -78,6 +78,17 @@ struct PolicySearchView: View {
     }
     @State private var matchMode: MatchMode = .contains
     @State private var caseSensitive: Bool = false
+    // Trigger filters — each can be enabled and set to true/false. When disabled they are ignored.
+    @State private var filterTriggerCheckinEnabled: Bool = false
+    @State private var filterTriggerCheckinValue: Bool = false
+    @State private var filterTriggerEnrollmentCompleteEnabled: Bool = false
+    @State private var filterTriggerEnrollmentCompleteValue: Bool = false
+    @State private var filterTriggerLoginEnabled: Bool = false
+    @State private var filterTriggerLoginValue: Bool = false
+    @State private var filterTriggerNetworkStateChangedEnabled: Bool = false
+    @State private var filterTriggerNetworkStateChangedValue: Bool = false
+    @State private var filterTriggerStartupEnabled: Bool = false
+    @State private var filterTriggerStartupValue: Bool = false
     
     // Bulk actions for selected policies
     @State private var selectedPoliciesForActions = Set<Int?>()
@@ -424,6 +435,16 @@ struct PolicySearchView: View {
         .onChange(of: selectedFieldIsEmpty) { _ in updateMatchingIDs() }
         .onChange(of: matchMode) { _ in updateMatchingIDs() }
         .onChange(of: caseSensitive) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerCheckinEnabled) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerCheckinValue) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerEnrollmentCompleteEnabled) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerEnrollmentCompleteValue) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerLoginEnabled) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerLoginValue) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerNetworkStateChangedEnabled) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerNetworkStateChangedValue) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerStartupEnabled) { _ in updateMatchingIDs() }
+        .onChange(of: filterTriggerStartupValue) { _ in updateMatchingIDs() }
         .onReceive(networkController.$allPoliciesDetailed) { _ in
             buildRawDataCache()
             updateMatchingIDs()
@@ -551,6 +572,68 @@ struct PolicySearchView: View {
                     
                     Spacer()
                 }
+
+                        // Trigger filters: collapsible group allowing the user to require specific trigger booleans
+                        DisclosureGroup("Trigger Filters (optional)") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(spacing: 8) {
+                                    Toggle("Checkin", isOn: $filterTriggerCheckinEnabled)
+                                    Picker("", selection: $filterTriggerCheckinValue) {
+                                        Text("True").tag(true)
+                                        Text("False").tag(false)
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(width: 120)
+                                    .disabled(!filterTriggerCheckinEnabled)
+                                }
+
+                                HStack(spacing: 8) {
+                                    Toggle("Enrollment Complete", isOn: $filterTriggerEnrollmentCompleteEnabled)
+                                    Picker("", selection: $filterTriggerEnrollmentCompleteValue) {
+                                        Text("True").tag(true)
+                                        Text("False").tag(false)
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(width: 120)
+                                    .disabled(!filterTriggerEnrollmentCompleteEnabled)
+                                }
+
+                                HStack(spacing: 8) {
+                                    Toggle("Login", isOn: $filterTriggerLoginEnabled)
+                                    Picker("", selection: $filterTriggerLoginValue) {
+                                        Text("True").tag(true)
+                                        Text("False").tag(false)
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(width: 120)
+                                    .disabled(!filterTriggerLoginEnabled)
+                                }
+
+                                HStack(spacing: 8) {
+                                    Toggle("Network State Changed", isOn: $filterTriggerNetworkStateChangedEnabled)
+                                    Picker("", selection: $filterTriggerNetworkStateChangedValue) {
+                                        Text("True").tag(true)
+                                        Text("False").tag(false)
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(width: 120)
+                                    .disabled(!filterTriggerNetworkStateChangedEnabled)
+                                }
+
+                                HStack(spacing: 8) {
+                                    Toggle("Startup", isOn: $filterTriggerStartupEnabled)
+                                    Picker("", selection: $filterTriggerStartupValue) {
+                                        Text("True").tag(true)
+                                        Text("False").tag(false)
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(width: 120)
+                                    .disabled(!filterTriggerStartupEnabled)
+                                }
+                            }
+                            .padding(.top, 6)
+                        }
+                        .padding(.vertical, 6)
 
                 // Raw Data mode hint / indexing indicator
                 if textSearchScope == .rawData {
@@ -1660,7 +1743,31 @@ struct PolicySearchView: View {
         }()
         
         // Both filters must pass to be considered a match
-        return emptyFieldMatches && textFilterMatches
+        // Evaluate trigger filters (if any are enabled)
+        let triggerFiltersMatch: Bool = {
+            // If none enabled, ignore
+            if !filterTriggerCheckinEnabled && !filterTriggerEnrollmentCompleteEnabled && !filterTriggerLoginEnabled && !filterTriggerNetworkStateChangedEnabled && !filterTriggerStartupEnabled {
+                return true
+            }
+            if filterTriggerCheckinEnabled {
+                if (policy.general?.triggerCheckin ?? false) != filterTriggerCheckinValue { return false }
+            }
+            if filterTriggerEnrollmentCompleteEnabled {
+                if (policy.general?.triggerEnrollmentComplete ?? false) != filterTriggerEnrollmentCompleteValue { return false }
+            }
+            if filterTriggerLoginEnabled {
+                if (policy.general?.triggerLogin ?? false) != filterTriggerLoginValue { return false }
+            }
+            if filterTriggerNetworkStateChangedEnabled {
+                if (policy.general?.triggerNetworkStateChanged ?? false) != filterTriggerNetworkStateChangedValue { return false }
+            }
+            if filterTriggerStartupEnabled {
+                if (policy.general?.triggerStartup ?? false) != filterTriggerStartupValue { return false }
+            }
+            return true
+        }()
+
+        return emptyFieldMatches && textFilterMatches && triggerFiltersMatch
     }
 }
 
