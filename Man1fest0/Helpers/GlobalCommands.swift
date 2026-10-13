@@ -18,4 +18,12 @@ extension Notification.Name {
     /// Posted by the app-level "Export" command. Views that support an export
     /// flow (e.g. policy detail) can observe this and present their export UI.
     static let globalExport = Notification.Name("globalExport")
+    /// Toggle the Trigger Filters disclosure group (expanded/collapsed)
+    static let toggleTriggerFilters = Notification.Name("toggleTriggerFilters")
+    /// Reset view spacing/layout (e.g., Actions panel height) to defaults
+    static let resetViewSpacing = Notification.Name("resetViewSpacing")
+    /// Toggle whether non-matching items are hidden when trigger filters are active
+    static let toggleHideNonMatchingWhenTriggers = Notification.Name("toggleHideNonMatchingWhenTriggers")
+    /// Toggle the visibility of the Actions panel
+    static let toggleActionsPanel = Notification.Name("toggleActionsPanel")
 }

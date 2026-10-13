@@ -89,6 +89,10 @@ struct PolicySearchView: View {
     @State private var filterTriggerNetworkStateChangedValue: Bool = false
     @State private var filterTriggerStartupEnabled: Bool = false
     @State private var filterTriggerStartupValue: Bool = false
+    // UI state: whether the trigger filters disclosure is expanded and whether
+    // non-matching items should be hidden when trigger filters are active.
+    @State private var triggerFiltersExpanded: Bool = false
+    @State private var hideNonMatchingWhenTriggerFiltersActive: Bool = true
     
     // Bulk actions for selected policies
     @State private var selectedPoliciesForActions = Set<Int?>()
@@ -401,8 +405,20 @@ struct PolicySearchView: View {
     // Computed displayed pairs depending on active filter
     private var displayedPairs: [MatchedPolicyPair] {
         let trimmedSearch = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
-        let activeFilter = !trimmedSearch.isEmpty || selectedFieldIsEmpty || matchMode != .contains || caseSensitive
-        return activeFilter ? matchedPolicyPairsState.filter { $0.isHighlighted } : matchedPolicyPairsState
+        // Consider trigger-enabled filters as an active filter only when the
+        // user has chosen to hide non-matching items for trigger filters.
+        let anyTriggerEnabled = filterTriggerCheckinEnabled || filterTriggerEnrollmentCompleteEnabled || filterTriggerLoginEnabled || filterTriggerNetworkStateChangedEnabled || filterTriggerStartupEnabled
+        let triggerShouldFilter = anyTriggerEnabled && hideNonMatchingWhenTriggerFiltersActive
+        let activeFilter = !trimmedSearch.isEmpty || selectedFieldIsEmpty || matchMode != .contains || caseSensitive || triggerShouldFilter
+        if activeFilter {
+            return matchedPolicyPairsState.filter { pair in
+                // If trigger-based filtering is active but search text is empty, ensure
+                // only highlighted items (which include trigger matches) are shown.
+                // Otherwise keep original behaviour of filtering to highlighted items.
+                return pair.isHighlighted
+            }
+        }
+        return matchedPolicyPairsState
     }
 
     // NOTE: `body` was previously one very large expression, which made the
@@ -450,6 +466,24 @@ struct PolicySearchView: View {
             updateMatchingIDs()
         }
         .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
+        // Respond to app-level menu commands for view/layout control
+        .onReceive(NotificationCenter.default.publisher(for: .toggleTriggerFilters)) { _ in
+            triggerFiltersExpanded.toggle()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .resetViewSpacing)) { _ in
+            // Reset actions panel height to a sensible midpoint and refresh layout
+            withAnimation {
+                actionsPanelHeight = (actionsPanelMinHeight + actionsPanelMaxHeight) / 2.0
+            }
+            updateMatchingIDs()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .toggleHideNonMatchingWhenTriggers)) { _ in
+            hideNonMatchingWhenTriggerFiltersActive.toggle()
+            updateMatchingIDs()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .toggleActionsPanel)) { _ in
+            showActionsPanel.toggle()
+        }
     }
 
     // MARK: - onAppear (extracted so `body` stays small enough for the type-checker)
@@ -506,135 +540,153 @@ struct PolicySearchView: View {
 
     // MARK: - Search controls (extracted subview)
     private var searchControlsSection: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    TextField("Search...", text: $searchString)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(maxWidth: 300)
-                    
-                    // Text search scope segmented control
-                    Picker("", selection: $textSearchScope) {
-                        ForEach(TextSearchScope.allCases, id: \.self) { scope in
-                            Text(scope.displayName)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 420)
-                    
-                    // Selected-field picker (used when scope is .selectedField, or to choose
-                    // which field the "Selected Field is Empty" toggle checks — independent
-                    // of the text-search scope, so it stays enabled in Raw Data mode too).
-                    Picker("Field", selection: $selectedFieldForFilter) {
-                        ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
-                            Text(field.displayName)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .help(textSearchScope == .rawData ? "Only used with 'Selected Field is Empty' in Raw Data mode — Raw Data itself searches every field." : "")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                TextField("Search...", text: $searchString)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(maxWidth: 300)
+                
+                // Text search scope segmented control
+                Picker("", selection: $textSearchScope) {
+                    ForEach(TextSearchScope.allCases, id: \.self) { scope in
+                        Text(scope.displayName)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(maxWidth: 420)
+                
+                // Selected-field picker (used when scope is .selectedField, or to choose
+                // which field the "Selected Field is Empty" toggle checks — independent
+                // of the text-search scope, so it stays enabled in Raw Data mode too).
+                Picker("Field", selection: $selectedFieldForFilter) {
+                    ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
+                        Text(field.displayName)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .help(textSearchScope == .rawData ? "Only used with 'Selected Field is Empty' in Raw Data mode — Raw Data itself searches every field." : "")
+                
+                // Export CSV button for the current search results
+                Button(action: {
+                    exportCSV()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("Export CSV")
+                    }
+                }
+                .tint(.green)
+                .buttonStyle(.borderedProminent)
+                .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                //                    .help("Export policy summary data to a CSV file.")
+                Spacer()
+            }
+            
+            HStack {
+                // Match mode segmented control (Contains / Starts With)
+                Picker("Mode", selection: $matchMode) {
+                    ForEach(MatchMode.allCases, id: \.self) { mode in
+                        Text(mode.displayName)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(maxWidth: 240)
+                
+                // Case sensitivity toggle
+                Toggle(isOn: $caseSensitive) {
+                    Text("Case")
+                }
+                .toggleStyle(SwitchToggleStyle())
+                
+                // Toggle to check selected field is empty. Can be combined with text search scope.
+                Toggle(isOn: $selectedFieldIsEmpty) {
+                    Text("Selected Field is Empty")
+                }
+                .toggleStyle(SwitchToggleStyle())
+                
+                Spacer()
+                
+                // Trigger filters: collapsible group allowing the user to require specific trigger booleans
+                DisclosureGroup("Trigger Filters (optional)", isExpanded: $triggerFiltersExpanded) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Hide non-matching items when trigger filters active", isOn: $hideNonMatchingWhenTriggerFiltersActive)
+                            .font(.caption)
+                            .help("If enabled (default) items that don't match the selected trigger filters will be hidden when trigger filters are active")
                         
-                    // Export CSV button for the current search results
-                    Button(action: {
-                        exportCSV()
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "square.and.arrow.down")
-                            Text("Export CSV")
+                        HStack(spacing: 8) {
+                            Toggle("Checkin", isOn: $filterTriggerCheckinEnabled)
+                            Picker("", selection: $filterTriggerCheckinValue) {
+                                Text("True").tag(true)
+                                Text("False").tag(false)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 120)
+                            .disabled(!filterTriggerCheckinEnabled)
+                        }
+                        
+                        HStack(spacing: 8) {
+                            Toggle("Enrollment Complete", isOn: $filterTriggerEnrollmentCompleteEnabled)
+                            Picker("", selection: $filterTriggerEnrollmentCompleteValue) {
+                                Text("True").tag(true)
+                                Text("False").tag(false)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 120)
+                            .disabled(!filterTriggerEnrollmentCompleteEnabled)
+                        }
+                        
+                        HStack(spacing: 8) {
+                            Toggle("Login", isOn: $filterTriggerLoginEnabled)
+                            Picker("", selection: $filterTriggerLoginValue) {
+                                Text("True").tag(true)
+                                Text("False").tag(false)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 120)
+                            .disabled(!filterTriggerLoginEnabled)
+                        }
+                        
+                        HStack(spacing: 8) {
+                            Toggle("Network State Changed", isOn: $filterTriggerNetworkStateChangedEnabled)
+                            Picker("", selection: $filterTriggerNetworkStateChangedValue) {
+                                Text("True").tag(true)
+                                Text("False").tag(false)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 120)
+                            .disabled(!filterTriggerNetworkStateChangedEnabled)
+                        }
+                        
+                        HStack(spacing: 8) {
+                            Toggle("Startup", isOn: $filterTriggerStartupEnabled)
+                            Picker("", selection: $filterTriggerStartupValue) {
+                                Text("True").tag(true)
+                                Text("False").tag(false)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 120)
+                            .disabled(!filterTriggerStartupEnabled)
                         }
                     }
-                    .tint(.green)
-                    .buttonStyle(.borderedProminent)
-                    .shadow(color: .gray, radius: 2, x: 0, y: 2)
-//                    .help("Export policy summary data to a CSV file.")
-                        Spacer()
+                    .padding(.top, 6)
+                }
+                .padding(.vertical, 6)
+                .onChange(of: triggerFiltersExpanded) { expanded in
+                    // When expanding/collapsing, nudge the actions panel height so layout
+                    // redistributes and ensures content remains visible. Also update matches.
+                    withAnimation {
+                        if expanded {
+                            // reduce actions panel to make room
+                            actionsPanelHeight = min(actionsPanelHeight, actionsPanelMaxHeight - 80)
+                        } else {
+                            // expand actions panel slightly toward default
+                            let defaultMid = (actionsPanelMinHeight + actionsPanelMaxHeight) / 2.0
+                            actionsPanelHeight = max(actionsPanelMinHeight, min(actionsPanelMaxHeight, defaultMid))
+                        }
+                    }
+                    updateMatchingIDs()
                 }
                 
-                HStack {
-                    // Match mode segmented control (Contains / Starts With)
-                    Picker("Mode", selection: $matchMode) {
-                        ForEach(MatchMode.allCases, id: \.self) { mode in
-                            Text(mode.displayName)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .frame(maxWidth: 240)
-                    
-                    // Case sensitivity toggle
-                    Toggle(isOn: $caseSensitive) {
-                        Text("Case")
-                    }
-                    .toggleStyle(SwitchToggleStyle())
-                    
-                    // Toggle to check selected field is empty. Can be combined with text search scope.
-                    Toggle(isOn: $selectedFieldIsEmpty) {
-                        Text("Selected Field is Empty")
-                    }
-                    .toggleStyle(SwitchToggleStyle())
-                    
-                    Spacer()
-                }
-
-                        // Trigger filters: collapsible group allowing the user to require specific trigger booleans
-                        DisclosureGroup("Trigger Filters (optional)") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack(spacing: 8) {
-                                    Toggle("Checkin", isOn: $filterTriggerCheckinEnabled)
-                                    Picker("", selection: $filterTriggerCheckinValue) {
-                                        Text("True").tag(true)
-                                        Text("False").tag(false)
-                                    }
-                                    .pickerStyle(.segmented)
-                                    .frame(width: 120)
-                                    .disabled(!filterTriggerCheckinEnabled)
-                                }
-
-                                HStack(spacing: 8) {
-                                    Toggle("Enrollment Complete", isOn: $filterTriggerEnrollmentCompleteEnabled)
-                                    Picker("", selection: $filterTriggerEnrollmentCompleteValue) {
-                                        Text("True").tag(true)
-                                        Text("False").tag(false)
-                                    }
-                                    .pickerStyle(.segmented)
-                                    .frame(width: 120)
-                                    .disabled(!filterTriggerEnrollmentCompleteEnabled)
-                                }
-
-                                HStack(spacing: 8) {
-                                    Toggle("Login", isOn: $filterTriggerLoginEnabled)
-                                    Picker("", selection: $filterTriggerLoginValue) {
-                                        Text("True").tag(true)
-                                        Text("False").tag(false)
-                                    }
-                                    .pickerStyle(.segmented)
-                                    .frame(width: 120)
-                                    .disabled(!filterTriggerLoginEnabled)
-                                }
-
-                                HStack(spacing: 8) {
-                                    Toggle("Network State Changed", isOn: $filterTriggerNetworkStateChangedEnabled)
-                                    Picker("", selection: $filterTriggerNetworkStateChangedValue) {
-                                        Text("True").tag(true)
-                                        Text("False").tag(false)
-                                    }
-                                    .pickerStyle(.segmented)
-                                    .frame(width: 120)
-                                    .disabled(!filterTriggerNetworkStateChangedEnabled)
-                                }
-
-                                HStack(spacing: 8) {
-                                    Toggle("Startup", isOn: $filterTriggerStartupEnabled)
-                                    Picker("", selection: $filterTriggerStartupValue) {
-                                        Text("True").tag(true)
-                                        Text("False").tag(false)
-                                    }
-                                    .pickerStyle(.segmented)
-                                    .frame(width: 120)
-                                    .disabled(!filterTriggerStartupEnabled)
-                                }
-                            }
-                            .padding(.top, 6)
-                        }
-                        .padding(.vertical, 6)
-
                 // Raw Data mode hint / indexing indicator
                 if textSearchScope == .rawData {
                     VStack(alignment: .leading, spacing: 4) {
@@ -652,9 +704,9 @@ struct PolicySearchView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
-
+                            
                             Spacer()
-
+                            
                             // Manual refresh: re-fetches detailed policy data from the server and
                             // rebuilds the raw-data search index. Use this if data you know exists
                             // isn't appearing in Raw Data results.
@@ -673,7 +725,7 @@ struct PolicySearchView: View {
                             .disabled(networkController.isFetchingDetailedPolicies || isBuildingRawDataCache)
                             .help("Re-fetch detailed policy data from the server and rebuild the raw search index. Use this if data you know exists isn't showing up.")
                         }
-
+                        
                         // Diagnostic: shows how many detailed policies are currently indexed and
                         // whether any failed to fetch, explaining why some data might be missing.
                         if networkController.detailedPoliciesProgress.loaded < networkController.detailedPoliciesProgress.expected
@@ -686,15 +738,15 @@ struct PolicySearchView: View {
                                 Text(progressInfo.failedIDs.isEmpty
                                      ? "Indexed \(progressInfo.loaded) of \(progressInfo.expected) policies."
                                      : "Indexed \(progressInfo.loaded) of \(progressInfo.expected) policies — \(progressInfo.failedIDs.count) failed to load. Tap Refresh Data to retry.")
-                                    .font(.caption2)
-                                    .foregroundColor(.orange)
+                                .font(.caption2)
+                                .foregroundColor(.orange)
                             }
                         }
                     }
                 }
             }
             .padding()
-            
+        }
     }
 
     // MARK: - Policy list (extracted subview)
@@ -1137,7 +1189,7 @@ struct PolicySearchView: View {
                                             HStack(spacing: 12) {
                                                 Button {
                                                     Task { @MainActor in
-                                                        let files = await policyBrain.showOpenPanelForXMLFiles()
+                                                        let files = policyBrain.showOpenPanelForXMLFiles()
                                                         guard !files.isEmpty else { return }
                                                         progress.showProgress()
                                                         policyBrain.replacePolicies(

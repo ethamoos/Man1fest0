@@ -317,6 +317,29 @@ struct Man1fest0App: App {
                 .keyboardShortcut("e", modifiers: .command)
             }
         }
+        .commands {
+            CommandMenu("View") {
+                Button("Toggle Trigger Filters") {
+                    NotificationCenter.default.post(name: .toggleTriggerFilters, object: nil)
+                }
+                .keyboardShortcut("t", modifiers: [.command, .shift])
+
+                Button("Reset Screen Spacing") {
+                    NotificationCenter.default.post(name: .resetViewSpacing, object: nil)
+                }
+                .keyboardShortcut("0", modifiers: [.command, .option])
+
+                Button("Toggle Hide Non-Matching (Triggers)") {
+                    NotificationCenter.default.post(name: .toggleHideNonMatchingWhenTriggers, object: nil)
+                }
+                .keyboardShortcut("h", modifiers: [.command, .option])
+
+                Button("Toggle Actions Panel") {
+                    NotificationCenter.default.post(name: .toggleActionsPanel, object: nil)
+                }
+                .keyboardShortcut("a", modifiers: [.command, .option])
+            }
+        }
         // Add a macOS-only menu command to open Preferences directly from the app menu
         #if os(macOS)
         .commands {
