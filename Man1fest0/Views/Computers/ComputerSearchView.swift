@@ -369,7 +369,7 @@ struct ComputerSearchView: View {
             if let col = SortColumn(rawValue: persistedSort) {
                 sortColumn = col
             }
-            sortAscending = UserDefaults.standard.bool(forKey: "computerListSortAscending") ?? true
+            sortAscending = UserDefaults.standard.bool(forKey: "computerListSortAscending")
             
             // prepare initial matched state
             matchedPairsState = computeMatchedPairs()

@@ -93,6 +93,8 @@ struct PolicySearchView: View {
     // non-matching items should be hidden when trigger filters are active.
     @State private var triggerFiltersExpanded: Bool = false
     @State private var hideNonMatchingWhenTriggerFiltersActive: Bool = true
+    // When toggled, the policy list ScrollViewReader will scroll to the top
+    @State private var scrollPolicyListToTopTrigger: Bool = false
     
     // Bulk actions for selected policies
     @State private var selectedPoliciesForActions = Set<Int?>()
@@ -337,14 +339,18 @@ struct PolicySearchView: View {
 
         for pair in pairs {
             let policy = pair.policy
-            let id = policy.general?.jamfId.map { String($0) } ?? ""
-            let name = policy.general?.name ?? ""
-            let ssName = policy.self_service?.selfServiceDisplayName ?? ""
-            let ssDesc = policy.self_service?.selfServiceDescription ?? ""
-            let enabled = policy.general?.enabled.map { String($0) } ?? ""
+            let id: String
+            if let jamfId = policy.general?.jamfId { id = String(jamfId) } else { id = "" }
+            let name: String = policy.general?.name ?? ""
+            let ssName: String
+            if let sName = policy.self_service?.selfServiceDisplayName { ssName = sName } else { ssName = "" }
+            let ssDesc: String
+            if let sDesc = policy.self_service?.selfServiceDescription { ssDesc = sDesc } else { ssDesc = "" }
+            let enabled: String
+            if let en = policy.general?.enabled { enabled = String(en) } else { enabled = "" }
 
-            let packages = (policy.package_configuration?.packages.map { $0.name ?? "" } ?? []).joined(separator: "; ")
-            let scripts = (policy.scripts?.map { $0.name ?? "" } ?? []).joined(separator: "; ")
+            let packages = (policy.package_configuration?.packages.compactMap { $0.name } ?? []).joined(separator: "; ")
+            let scripts = (policy.scripts?.compactMap { $0.name } ?? []).joined(separator: "; ")
 
             // Simple scope summary: concatenate common scope names/counts
             var scopeParts: [String] = []
@@ -606,8 +612,15 @@ struct PolicySearchView: View {
                 
                 Spacer()
                 
-                // Trigger filters: collapsible group allowing the user to require specific trigger booleans
-                DisclosureGroup("Trigger Filters (optional)", isExpanded: $triggerFiltersExpanded) {
+                // Trigger filters: a compact button on the same row that opens a popover.
+                // A popover floats above the layout, so it can never push or hide other controls.
+                Button {
+                    triggerFiltersExpanded.toggle()
+                } label: {
+                    Label("Trigger Filters", systemImage: triggerFiltersExpanded ? "chevron.down" : "chevron.right")
+                }
+                .help("Filter by policy trigger values (optional)")
+                .popover(isPresented: $triggerFiltersExpanded, arrowEdge: .bottom) {
                     VStack(alignment: .leading, spacing: 8) {
                         Toggle("Hide non-matching items when trigger filters active", isOn: $hideNonMatchingWhenTriggerFiltersActive)
                             .font(.caption)
@@ -668,25 +681,14 @@ struct PolicySearchView: View {
                             .disabled(!filterTriggerStartupEnabled)
                         }
                     }
-                    .padding(.top, 6)
+                    .padding(12)
+                    .frame(minWidth: 380)
                 }
-                .padding(.vertical, 6)
-                .onChange(of: triggerFiltersExpanded) { expanded in
-                    // When expanding/collapsing, nudge the actions panel height so layout
-                    // redistributes and ensures content remains visible. Also update matches.
-                    withAnimation {
-                        if expanded {
-                            // reduce actions panel to make room
-                            actionsPanelHeight = min(actionsPanelHeight, actionsPanelMaxHeight - 80)
-                        } else {
-                            // expand actions panel slightly toward default
-                            let defaultMid = (actionsPanelMinHeight + actionsPanelMaxHeight) / 2.0
-                            actionsPanelHeight = max(actionsPanelMinHeight, min(actionsPanelMaxHeight, defaultMid))
-                        }
-                    }
+                .onChange(of: triggerFiltersExpanded) { _ in
                     updateMatchingIDs()
                 }
-                
+            }
+            
                 // Raw Data mode hint / indexing indicator
                 if textSearchScope == .rawData {
                     VStack(alignment: .leading, spacing: 4) {
@@ -744,15 +746,17 @@ struct PolicySearchView: View {
                         }
                     }
                 }
-            }
-            .padding()
         }
+        .padding()
     }
 
     // MARK: - Policy list (extracted subview)
     private var policyListSection: some View {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 8) {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        // Top anchor so we can scroll the list to reveal the controls above
+                        Color.clear.frame(height: 0).id("policyListTop")
                     if matchedPolicyPairsState.isEmpty {
                         // If there are basic policies available but no detailed policies, show a basic list and allow fetching details
                         if !networkController.allPoliciesConverted.isEmpty && networkController.allPoliciesDetailed.isEmpty {
@@ -762,6 +766,7 @@ struct PolicySearchView: View {
                                 Text("Total basic policies: \(networkController.allPoliciesConverted.count)")
                                     .foregroundColor(.secondary)
 
+                                // Show a simple list of basic policies
                                 ForEach(networkController.allPoliciesConverted, id: \.jamfId) { p in
                                     HStack {
                                         Text(p.name)
@@ -877,6 +882,10 @@ struct PolicySearchView: View {
                 )
                 .hidden()
             )
+            .onChange(of: scrollPolicyListToTopTrigger) { _ in
+                withAnimation { scrollProxy.scrollTo("policyListTop", anchor: .top) }
+            }
+        }
     }
 
     // MARK: - Actions panel (extracted subview)
