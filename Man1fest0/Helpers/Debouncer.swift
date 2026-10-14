@@ -7,6 +7,11 @@ final class Debouncer: ObservableObject {
     /// Debounce the provided action by `interval` seconds.
     /// Cancels any previously scheduled action.
     func debounce(interval: TimeInterval, action: @escaping () -> Void) {
+        // Ensure state is only ever touched on the main thread
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in self?.debounce(interval: interval, action: action) }
+            return
+        }
         workItem?.cancel()
         let item = DispatchWorkItem(block: action)
         workItem = item

@@ -467,11 +467,11 @@ struct PolicySearchView: View {
         .onChange(of: filterTriggerNetworkStateChangedValue) { _ in updateMatchingIDs() }
         .onChange(of: filterTriggerStartupEnabled) { _ in updateMatchingIDs() }
         .onChange(of: filterTriggerStartupValue) { _ in updateMatchingIDs() }
-        .onReceive(networkController.$allPoliciesDetailed) { _ in
+        .onReceive(networkController.$allPoliciesDetailed.receive(on: DispatchQueue.main)) { _ in
             buildRawDataCache()
             updateMatchingIDs()
         }
-        .onReceive(networkController.$allPoliciesConverted) { _ in updateMatchingIDs() }
+        .onReceive(networkController.$allPoliciesConverted.receive(on: DispatchQueue.main)) { _ in updateMatchingIDs() }
         // Respond to app-level menu commands for view/layout control
         .onReceive(NotificationCenter.default.publisher(for: .toggleTriggerFilters)) { _ in
             triggerFiltersExpanded.toggle()

@@ -2976,8 +2976,13 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
             print("currentPolicyID is: \(String(describing: currentPolicyID))")
             Task {
                 do {
-                    let policyAsXML = try await getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: authToken)
-                    updateIcon(server: server, authToken: authToken, policyID: String(describing: currentPolicyID), iconFilename: iconFilename, iconID: iconID, iconURI: iconURI)
+                    _ = try await getPolicyAsXMLaSync(server: server, policyID: currentPolicyID, authToken: authToken)
+                    // updateIcon mutates @Published state, so it must run on the main thread
+                    await MainActor.run {
+                        self.updateIcon(server: server, authToken: authToken, policyID: String(describing: currentPolicyID), iconFilename: iconFilename, iconID: iconID, iconURI: iconURI)
+                    }
+                } catch {
+                    print("updateIconBatch: failed for policy \(currentPolicyID): \(error)")
                 }
             }
         }
@@ -3035,7 +3040,12 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
                 //                // print("xml is set as:\(xml)")
                 sendRequestAsXML(url: url, authToken: authToken, resourceType: resourceType, xml: xml, httpMethod: "PUT")
                 print("Set updateXML to true ")
-                self.updateXML = true
+                // Always publish on the main thread, whatever thread the caller is on
+                if Thread.isMainThread {
+                    self.updateXML = true
+                } else {
+                    DispatchQueue.main.async { self.updateXML = true }
+                }
             }
         }
         else {
