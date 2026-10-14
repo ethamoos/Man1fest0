@@ -78,6 +78,17 @@ struct PolicySearchView: View {
     }
     @State private var matchMode: MatchMode = .contains
     @State private var caseSensitive: Bool = false
+
+    // Optional second search line — same options as the first line, AND-combined with it.
+    // Hidden (collapsed) by default and ignored unless `secondLineEnabled` is switched on.
+    @State private var secondLineExpanded: Bool = false
+    @State private var secondLineEnabled: Bool = false
+    @State private var secondSearchString: String = ""
+    @State private var secondTextSearchScope: TextSearchScope = .title
+    @State private var secondSelectedFieldForFilter: SearchField = .generalName
+    @State private var secondSelectedFieldIsEmpty: Bool = false
+    @State private var secondMatchMode: MatchMode = .contains
+    @State private var secondCaseSensitive: Bool = false
     // Trigger filters — each can be enabled and set to true/false. When disabled they are ignored.
     @State private var filterTriggerCheckinEnabled: Bool = false
     @State private var filterTriggerCheckinValue: Bool = false
@@ -135,6 +146,20 @@ struct PolicySearchView: View {
     private let actionsPanelMinHeight: CGFloat = 140
     private let actionsPanelMaxHeight: CGFloat = 900
     @State private var dragStartHeight: CGFloat? = nil
+    // Measured layout sizes, used to clamp the Actions Panel so the stack never
+    // overflows the window (overflow is what pushed the list over the search controls).
+    @State private var availableHeight: CGFloat = 0
+    @State private var controlsHeight: CGFloat = 0
+    private let minPolicyListHeight: CGFloat = 120
+    private let separatorAllowance: CGFloat = 60
+
+    /// Actions Panel height actually used for layout: the user's preferred height,
+    /// reduced if needed so the search controls and a minimum list height still fit.
+    private var effectiveActionsPanelHeight: CGFloat {
+        guard availableHeight > 0 else { return actionsPanelHeight }
+        let room = availableHeight - controlsHeight - minPolicyListHeight - separatorAllowance
+        return max(80, min(actionsPanelHeight, room))
+    }
     
     //  ########################################################################################
     //    SELECTIONS
@@ -226,10 +251,17 @@ struct PolicySearchView: View {
                 self.isBuildingRawDataCache = false
                 // Re-evaluate matches now the cache is ready (most relevant
                 // when the user is actively using the Raw Data scope).
-                if self.textSearchScope == .rawData {
+                if self.textSearchScope == .rawData || (self.secondLineEnabled && self.secondTextSearchScope == .rawData) {
                     self.updateMatchingIDs()
                 }
             }
+        }
+    }
+
+    /// Builds the raw-data cache if the second search line needs it and it hasn't been built yet.
+    private func ensureRawCacheForSecondLine() {
+        if secondLineEnabled && secondTextSearchScope == .rawData && rawDataCache.isEmpty && !isBuildingRawDataCache {
+            buildRawDataCache()
         }
     }
 
@@ -415,7 +447,7 @@ struct PolicySearchView: View {
         // user has chosen to hide non-matching items for trigger filters.
         let anyTriggerEnabled = filterTriggerCheckinEnabled || filterTriggerEnrollmentCompleteEnabled || filterTriggerLoginEnabled || filterTriggerNetworkStateChangedEnabled || filterTriggerStartupEnabled
         let triggerShouldFilter = anyTriggerEnabled && hideNonMatchingWhenTriggerFiltersActive
-        let activeFilter = !trimmedSearch.isEmpty || selectedFieldIsEmpty || matchMode != .contains || caseSensitive || triggerShouldFilter
+        let activeFilter = !trimmedSearch.isEmpty || selectedFieldIsEmpty || matchMode != .contains || caseSensitive || triggerShouldFilter || secondLineIsActive
         if activeFilter {
             return matchedPolicyPairsState.filter { pair in
                 // If trigger-based filtering is active but search text is empty, ensure
@@ -433,15 +465,34 @@ struct PolicySearchView: View {
     // computed properties and helper functions below so each piece can be
     // checked independently by the compiler.
     var body: some View {
+        GeometryReader { geo in
         VStack(spacing: 0) {
             searchControlsSection
+                // Never let the policy list compress (and hide) the search controls,
+                // e.g. when the second search line is expanded.
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
+                .background(
+                    GeometryReader { controlsGeo in
+                        Color.clear
+                            .onAppear { controlsHeight = controlsGeo.size.height }
+                            .onChange(of: controlsGeo.size.height) { newHeight in controlsHeight = newHeight }
+                    }
+                )
             policyListSection
+                .frame(minHeight: 0, maxHeight: .infinity)
+                .clipped()
             actionsPanelSection
 
             if progress.showProgressView == true {
                 ProgressView { Text("Processing") }
                     .padding(8)
             }
+        }
+        .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+        .clipped()
+        .onAppear { availableHeight = geo.size.height }
+        .onChange(of: geo.size.height) { newHeight in availableHeight = newHeight }
         }
         .onAppear(perform: handleOnAppear)
         .onChange(of: searchString) { _ in
@@ -467,6 +518,22 @@ struct PolicySearchView: View {
         .onChange(of: filterTriggerNetworkStateChangedValue) { _ in updateMatchingIDs() }
         .onChange(of: filterTriggerStartupEnabled) { _ in updateMatchingIDs() }
         .onChange(of: filterTriggerStartupValue) { _ in updateMatchingIDs() }
+        // Second search line
+        .onChange(of: secondLineEnabled) { _ in
+            ensureRawCacheForSecondLine()
+            updateMatchingIDs()
+        }
+        .onChange(of: secondSearchString) { _ in
+            searchDebouncer.debounce(interval: 0.3) { updateMatchingIDs() }
+        }
+        .onChange(of: secondTextSearchScope) { _ in
+            ensureRawCacheForSecondLine()
+            updateMatchingIDs()
+        }
+        .onChange(of: secondSelectedFieldForFilter) { _ in updateMatchingIDs() }
+        .onChange(of: secondSelectedFieldIsEmpty) { _ in updateMatchingIDs() }
+        .onChange(of: secondMatchMode) { _ in updateMatchingIDs() }
+        .onChange(of: secondCaseSensitive) { _ in updateMatchingIDs() }
         .onReceive(networkController.$allPoliciesDetailed.receive(on: DispatchQueue.main)) { _ in
             buildRawDataCache()
             updateMatchingIDs()
@@ -478,8 +545,14 @@ struct PolicySearchView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .resetViewSpacing)) { _ in
             // Reset actions panel height to a sensible midpoint and refresh layout
+            // Split the space below the search controls evenly between the list and the Actions Panel
             withAnimation {
-                actionsPanelHeight = (actionsPanelMinHeight + actionsPanelMaxHeight) / 2.0
+                let remaining = availableHeight - controlsHeight - separatorAllowance
+                if remaining > 0 {
+                    actionsPanelHeight = max(actionsPanelMinHeight, min(actionsPanelMaxHeight, remaining / 2.0))
+                } else {
+                    actionsPanelHeight = actionsPanelMinHeight
+                }
             }
             updateMatchingIDs()
         }
@@ -689,6 +762,9 @@ struct PolicySearchView: View {
                 }
             }
             
+            // Optional second search line (collapsed and inactive by default)
+            secondSearchLineSection
+            
                 // Raw Data mode hint / indexing indicator
                 if textSearchScope == .rawData {
                     VStack(alignment: .leading, spacing: 4) {
@@ -748,6 +824,71 @@ struct PolicySearchView: View {
                 }
         }
         .padding()
+    }
+
+    // MARK: - Second search line (extracted subview)
+    private var secondSearchLineSection: some View {
+        DisclosureGroup(isExpanded: $secondLineExpanded) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    TextField("Refine search...", text: $secondSearchString)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(maxWidth: 300)
+
+                    Picker("", selection: $secondTextSearchScope) {
+                        ForEach(TextSearchScope.allCases, id: \.self) { scope in
+                            Text(scope.displayName)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(maxWidth: 420)
+
+                    Picker("Field", selection: $secondSelectedFieldForFilter) {
+                        ForEach(SearchField.allCases.filter { $0 != .all }, id: \.self) { field in
+                            Text(field.displayName)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+
+                    Spacer()
+                }
+
+                HStack {
+                    Picker("Mode", selection: $secondMatchMode) {
+                        ForEach(MatchMode.allCases, id: \.self) { mode in
+                            Text(mode.displayName)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .frame(maxWidth: 240)
+
+                    Toggle(isOn: $secondCaseSensitive) { Text("Case") }
+                        .toggleStyle(SwitchToggleStyle())
+
+                    Toggle(isOn: $secondSelectedFieldIsEmpty) { Text("Selected Field is Empty") }
+                        .toggleStyle(SwitchToggleStyle())
+
+                    Spacer()
+                }
+            }
+            .disabled(!secondLineEnabled)
+            .opacity(secondLineEnabled ? 1.0 : 0.5)
+            .padding(.top, 4)
+        } label: {
+            HStack(spacing: 8) {
+                Text("Second Search Line")
+                    .font(.subheadline)
+                Toggle("Enable", isOn: $secondLineEnabled)
+                    .toggleStyle(SwitchToggleStyle())
+                    .controlSize(.small)
+                    .help("When enabled, results must also match this second line (combined with the first line)")
+                if secondLineIsActive {
+                    Text("Active")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                }
+            }
+        }
     }
 
     // MARK: - Policy list (extracted subview)
@@ -916,10 +1057,10 @@ struct PolicySearchView: View {
                 .gesture(
                     DragGesture(minimumDistance: 1)
                         .onChanged { value in
-                            if dragStartHeight == nil { dragStartHeight = actionsPanelHeight }
+                            if dragStartHeight == nil { dragStartHeight = effectiveActionsPanelHeight }
                             // Dragging up (negative translation.height) should increase the
                             // Actions Panel height; dragging down should decrease it.
-                            let proposed = (dragStartHeight ?? actionsPanelHeight) - value.translation.height
+                            let proposed = (dragStartHeight ?? effectiveActionsPanelHeight) - value.translation.height
                             actionsPanelHeight = min(actionsPanelMaxHeight, max(actionsPanelMinHeight, proposed))
                         }
                         .onEnded { _ in
@@ -1022,7 +1163,7 @@ struct PolicySearchView: View {
                     } // end ScrollView
                 } // end if showActionsPanel
                 } // end inner VStack
-                .frame(height: showActionsPanel ? actionsPanelHeight : nil)
+                .frame(height: showActionsPanel ? effectiveActionsPanelHeight : nil)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.blue.opacity(0.05))
@@ -1192,7 +1333,7 @@ struct PolicySearchView: View {
                                                 Text("Replace Policies from XML")
                                                     .font(.headline)
                                             }
-                                            Text("Select one or more XML files. Each file replaces the policy whose ID matches the filename (e.g. 12345.xml → policy 12345).")
+                                            Text("Select one or more XML files. These can be uploaded to replace the policy whose ID matches the filename (e.g. 12345.xml → policy 12345).")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                             HStack(spacing: 12) {
@@ -1209,7 +1350,7 @@ struct PolicySearchView: View {
                                                         progress.waitForABit()
                                                     }
                                                 } label: {
-                                                    Label("Replace Policies…", systemImage: "arrow.up.doc")
+                                                    Label("Upload Replacements…", systemImage: "arrow.up.doc")
                                                 }
                                                 .buttonStyle(.borderedProminent)
                                                 .tint(.purple)
@@ -1743,67 +1884,88 @@ struct PolicySearchView: View {
     }
 
     // MARK: - Matching Logic
-    func isPolicyMatch(_ policy: PolicyDetailed) -> Bool {
-        // Evaluate empty-field filter (if requested)
-        let emptyFieldMatches: Bool = {
-            if selectedFieldIsEmpty {
-                return selectedFieldForFilter.isFieldEmpty(in: policy)
-            } else {
-                return true
-            }
-        }()
-        
-        // Evaluate text search filter (if provided) according to the selected scope
-        let textFilterMatches: Bool = {
-            let trimmed = searchString.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { return true }
-            // Helper to match a single text value according to options
-            func matchText(_ value: String?) -> Bool {
-                guard let value = value else { return false }
-                if caseSensitive {
-                    switch matchMode {
-                    case .contains:
-                        return value.contains(trimmed)
-                    case .startsWith:
-                        return value.hasPrefix(trimmed)
-                    }
-                } else {
-                    let lhs = value.lowercased()
-                    let rhs = trimmed.lowercased()
-                    switch matchMode {
-                    case .contains:
-                        return lhs.contains(rhs)
-                    case .startsWith:
-                        return lhs.hasPrefix(rhs)
-                    }
-                }
-            }
 
-            switch textSearchScope {
-            case .title:
-                return matchText(policy.general?.name)
-            case .all:
-                return SearchField.all.isMatch(in: policy, search: trimmed, matchMode: matchMode, caseSensitive: caseSensitive)
-            case .selectedField:
-                return selectedFieldForFilter.isMatch(in: policy, search: trimmed, matchMode: matchMode, caseSensitive: caseSensitive)
-            case .rawData:
-                // Search the full JSON serialization of the decoded policy —
-                // i.e. every field the app knows about, not just a specific
-                // column. Uses the pre-built cache so this stays fast even
-                // across a large number of policies.
-                guard let jamfId = policy.general?.jamfId,
-                      let raw = rawDataCache[jamfId] else { return false }
-                let options: String.CompareOptions = caseSensitive ? [] : [.caseInsensitive]
-                switch matchMode {
-                case .contains:
-                    return raw.range(of: trimmed, options: options) != nil
-                case .startsWith:
-                    return raw.range(of: trimmed, options: options.union([.anchored])) != nil
-                }
+    /// Evaluates one line of search criteria (text + scope + field + mode + case + empty-field)
+    /// against a policy. Shared by the primary search line and the optional second line.
+    private func lineMatches(
+        _ policy: PolicyDetailed,
+        search: String,
+        scope: TextSearchScope,
+        field: SearchField,
+        fieldIsEmpty: Bool,
+        mode: MatchMode,
+        caseSensitive isCaseSensitive: Bool
+    ) -> Bool {
+        // Evaluate empty-field filter (if requested)
+        if fieldIsEmpty && !field.isFieldEmpty(in: policy) { return false }
+
+        // Evaluate text search filter (if provided) according to the selected scope
+        let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return true }
+
+        // Helper to match a single text value according to options
+        func matchText(_ value: String?) -> Bool {
+            guard let value = value else { return false }
+            let lhs = isCaseSensitive ? value : value.lowercased()
+            let rhs = isCaseSensitive ? trimmed : trimmed.lowercased()
+            switch mode {
+            case .contains: return lhs.contains(rhs)
+            case .startsWith: return lhs.hasPrefix(rhs)
             }
+        }
+
+        switch scope {
+        case .title:
+            return matchText(policy.general?.name)
+        case .all:
+            return SearchField.all.isMatch(in: policy, search: trimmed, matchMode: mode, caseSensitive: isCaseSensitive)
+        case .selectedField:
+            return field.isMatch(in: policy, search: trimmed, matchMode: mode, caseSensitive: isCaseSensitive)
+        case .rawData:
+            // Search the full JSON serialization of the decoded policy using the pre-built cache.
+            guard let jamfId = policy.general?.jamfId,
+                  let raw = rawDataCache[jamfId] else { return false }
+            let options: String.CompareOptions = isCaseSensitive ? [] : [.caseInsensitive]
+            switch mode {
+            case .contains:
+                return raw.range(of: trimmed, options: options) != nil
+            case .startsWith:
+                return raw.range(of: trimmed, options: options.union([.anchored])) != nil
+            }
+        }
+    }
+
+    /// True when the second search line is enabled and actually has criteria to apply.
+    private var secondLineIsActive: Bool {
+        secondLineEnabled && (!secondSearchString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || secondSelectedFieldIsEmpty)
+    }
+
+    func isPolicyMatch(_ policy: PolicyDetailed) -> Bool {
+        // Primary (first line) criteria
+        let firstLineMatches = lineMatches(
+            policy,
+            search: searchString,
+            scope: textSearchScope,
+            field: selectedFieldForFilter,
+            fieldIsEmpty: selectedFieldIsEmpty,
+            mode: matchMode,
+            caseSensitive: caseSensitive
+        )
+
+        // Optional second line — ignored unless enabled via its toggle (AND-combined with the first line)
+        let secondLineMatchesResult: Bool = {
+            guard secondLineEnabled else { return true }
+            return lineMatches(
+                policy,
+                search: secondSearchString,
+                scope: secondTextSearchScope,
+                field: secondSelectedFieldForFilter,
+                fieldIsEmpty: secondSelectedFieldIsEmpty,
+                mode: secondMatchMode,
+                caseSensitive: secondCaseSensitive
+            )
         }()
         
-        // Both filters must pass to be considered a match
         // Evaluate trigger filters (if any are enabled)
         let triggerFiltersMatch: Bool = {
             // If none enabled, ignore
@@ -1828,7 +1990,7 @@ struct PolicySearchView: View {
             return true
         }()
 
-        return emptyFieldMatches && textFilterMatches && triggerFiltersMatch
+        return firstLineMatches && secondLineMatchesResult && triggerFiltersMatch
     }
 }
 
