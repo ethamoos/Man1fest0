@@ -31,38 +31,32 @@ struct DepartmentsView: View {
                 
                 NavigationView {
                     
-#if os(macOS)
-//                    List(searchResults, id: \.self, selection: $selection) { department in
-//                        NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
-                            
-                            List(searchResults, selection: $selection) { department in
-                                                     NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
-                            
+                    List(searchResults, selection: $selection) { department in
+                        NavigationLink(destination: DepartmentsDetailedView(server: server, department: department)) {
                             HStack {
                                 Image(systemName: "rectangle.3.group")
-                                Text(department.name ).font(.system(size: 12.0)).foregroundColor(colorScheme == .dark ? .blue : .blue)
+                                Text(department.name).font(.system(size: 12.0)).foregroundColor(colorScheme == .dark ? .blue : .blue)
                             }
                             .background(Color.gray.opacity(0.05))
                             .foregroundColor(.blue)
+#if os(macOS)
                             .navigationTitle("Departments")
                             .frame(width: 600, alignment: .leading)
-
-
+#endif
                         }
                     }
-                        .frame(minWidth: 300, maxWidth: .infinity)
+                    .searchable(text: $searchText, prompt: "Filter departments")
+#if os(macOS)
+                    .frame(minWidth: 300, maxWidth: .infinity)
 #endif
-                #if !os(macOS)
-                    .searchable(text: $searchText)
-                #endif
-                    
-                    
-                    Text("\(networkController.departments.count) total departments")
+
+                    if searchText.isEmpty {
+                        Text("\(networkController.departments.count) total departments")
+                    } else {
+                        Text("\(searchResults.count) of \(networkController.departments.count) departments")
+                    }
                 }
                 .navigationViewStyle(DefaultNavigationViewStyle())
-#if os(macOS)
-//                .searchable(text: $searchText)
-#endif
 
             } else {
                 ProgressView {
@@ -90,16 +84,11 @@ struct DepartmentsView: View {
     
     var searchResults: [Department] {
         
-        let allDepartments = networkController.departments
-        let allDepartmentsArray = Array (allDepartments)
-        
-        if searchText.isEmpty {
-            // print("Search is empty")
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query.isEmpty {
             return networkController.departments
-        } else {
-            print("Search Added")
-            return allDepartmentsArray.filter { $0.name.lowercased().contains(searchText.lowercased())}
         }
+        return networkController.departments.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
  
     
