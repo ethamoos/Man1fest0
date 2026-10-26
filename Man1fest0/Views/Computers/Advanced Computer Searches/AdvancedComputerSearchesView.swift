@@ -32,6 +32,20 @@ struct ComputerSearchesView: View {
     
     // Single selected search for the detail pane
     @State private var selectedSearch: AdvancedComputerSearch? = nil
+
+    // Filtered list used by the sidebar list and empty-state check.
+    private var searchResults: [AdvancedComputerSearch] {
+        let searches = networkController.allAdvancedComputerSearches
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return searches
+        } else {
+            return searches.filter {
+                $0.name.localizedCaseInsensitiveContains(trimmed)
+                || String(describing: $0.id).localizedCaseInsensitiveContains(trimmed)
+            }
+        }
+    }
     
     var body: some View {
         
@@ -228,16 +242,6 @@ struct ComputerSearchesView: View {
                 }
                 .padding()
                 Spacer()
-            }
-        }
-        
-        var searchResults: [AdvancedComputerSearch] {
-            let searches = networkController.allAdvancedComputerSearches
-            let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty {
-                return searches
-            } else {
-                return searches.filter { $0.name.localizedCaseInsensitiveContains(trimmed) || String(describing: $0.id).localizedCaseInsensitiveContains(trimmed) }
             }
         }
     }
