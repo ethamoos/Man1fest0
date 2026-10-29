@@ -32,7 +32,9 @@ struct PolicyActionsDetailTableView: View {
     
     @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
-    @State private var selectedIDs = []
+    // Explicit element type required by Xcode 27 (empty literal can no longer infer [Any]).
+    // Currently unused in this view.
+    @State private var selectedIDs: [Int] = []
     // Toggle to show failed-policy debug panel (click missing count to toggle)
     @State private var showDetailedFetchDebug: Bool = false
     // policiesSelection mirrors selectedPolicyIDs (used by PoliciesActionScopeTab)

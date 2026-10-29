@@ -230,15 +230,17 @@ struct ComputerSearchesView: View {
                 Spacer()
             }
         }
-        
-        var searchResults: [AdvancedComputerSearch] {
-            let searches = networkController.allAdvancedComputerSearches
-            let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty {
-                return searches
-            } else {
-                return searches.filter { $0.name.localizedCaseInsensitiveContains(trimmed) || String(describing: $0.id).localizedCaseInsensitiveContains(trimmed) }
-            }
+    }
+    
+    // Filtered list of searches. Moved out of `body` to struct level:
+    // Xcode 27 rejects local declarations used before they are declared.
+    var searchResults: [AdvancedComputerSearch] {
+        let searches = networkController.allAdvancedComputerSearches
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return searches
+        } else {
+            return searches.filter { $0.name.localizedCaseInsensitiveContains(trimmed) || String(describing: $0.id).localizedCaseInsensitiveContains(trimmed) }
         }
     }
     

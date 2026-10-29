@@ -42,7 +42,7 @@ struct PackageTableView: View {
     
     @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
-    @State private var selectedIDs = []
+    @State private var selectedIDs: [Int] = []  // explicit type required by Xcode 27
     @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
     @State private var policiesSelection = Set<Policy>()
     @State var searchText = ""

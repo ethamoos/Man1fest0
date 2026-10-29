@@ -43,7 +43,8 @@ struct ScriptDetailTableView: View {
     @State var selection = Set<ScriptClassic.ID>()
 //    @State private var selectedPolicyIDs = Set<General.ID>()
     @State private var selectedPolicyjamfIDs = Set<General>()
-    @State private var selectedIDs = []
+    // Explicit element type required by Xcode 27 (empty literal can no longer infer [Any]).
+    @State private var selectedIDs: [Int] = []
     @State private var sortOrder = [KeyPathComparator(\General.name, order: .reverse)]
     @State private var sortOrderScript = [KeyPathComparator(\ScriptClassic.name, order: .reverse)]
     @State var searchText = ""
