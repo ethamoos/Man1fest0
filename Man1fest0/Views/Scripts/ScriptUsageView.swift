@@ -69,6 +69,27 @@ struct ScriptUsageView: View {
     @State private var showScriptRenameConfirmation: Bool = false
     @State private var showDeleteConfirmation: Bool = false
 
+    // Selected scripts that are currently in the "unused" pane.
+    private var selectedUnusedScriptCount: Int {
+        selection.filter { unassignedScriptsSet.contains($0) }.count
+    }
+
+    private var deleteConfirmationTitle: String {
+        if !selection.isEmpty && selectedUnusedScriptCount == selection.count {
+            return "Confirm Delete Unused Scripts"
+        }
+        return "Confirm Delete"
+    }
+
+    private var deleteConfirmationMessage: String {
+        let total = selection.count
+        let unused = selectedUnusedScriptCount
+        if unused > 0 {
+            return "You are about to permanently delete \(total) script\(total == 1 ? "" : "s") (\(unused) unused). This action cannot be undone. Ensure you have a backup before continuing."
+        }
+        return "You are about to permanently delete \(total) script\(total == 1 ? "" : "s"). This action cannot be undone. Ensure you have a backup before continuing."
+    }
+
     // Small helper views to reduce type-checking complexity in large body
     @ViewBuilder
     private func allScriptRow(_ script: ScriptClassic) -> some View {
@@ -504,19 +525,6 @@ struct ScriptUsageView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
                 .disabled(selection.isEmpty)
-                .alert("Confirm Delete", isPresented: $showDeleteConfirmation) {
-                    Button("Delete", role: .destructive) {
-                        let items = Array(selection)
-                        progress.showProgress()
-                        Task {
-                            await performDeleteSelection(items)
-                            await MainActor.run { selection.removeAll() }
-                        }
-                    }
-                    Button("Cancel", role: .cancel) { }
-                } message: {
-                    Text("Are you sure you want to permanently delete \(selection.count) script\(selection.count == 1 ? "" : "s")? This action cannot be undone.")
-                }
 
                 Spacer()
 
@@ -694,6 +702,19 @@ struct ScriptUsageView: View {
         .onChange(of: unassignedFilter) { _ in
             // Unassigned filter text changed: update unassigned scripts list
             updateUnassignedScripts()
+        }
+        .alert(deleteConfirmationTitle, isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                let items = Array(selection)
+                progress.showProgress()
+                Task {
+                    await performDeleteSelection(items)
+                    await MainActor.run { selection.removeAll() }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text(deleteConfirmationMessage)
         }
      }
     
