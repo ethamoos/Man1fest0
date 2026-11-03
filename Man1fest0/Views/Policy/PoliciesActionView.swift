@@ -372,6 +372,21 @@ struct PoliciesActionView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.yellow)
                         .shadow(color: .gray, radius: 2, x: 0, y: 2)
+
+                        // ######################################################################
+                        //              OPEN IN BROWSER
+                        // ######################################################################
+
+                        // Opens every selected policy in the Jamf Pro web UI
+                        // (mirrors the Open in Browser button in PolicyDetailView).
+                        Button(action: { openSelectedPoliciesInBrowser() }) {
+                            Image(systemName: "safari")
+                            Text("Open in Browser")
+                        }
+                        .help("Open the selected policies in the Jamf web interface in your default browser.")
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .disabled(policiesSelection.isEmpty)
                         
                     }
                     
@@ -525,6 +540,16 @@ struct PoliciesActionView: View {
     
     private func getAllPolicies() {
         print("Clicking Button")
+    }
+
+    /// Opens each selected policy in the Jamf Pro web UI (server/policies.html?id=<id>&o=r).
+    private func openSelectedPoliciesInBrowser() {
+        let policyIDs = policiesSelection.compactMap { $0.jamfId }.sorted()
+        guard !policyIDs.isEmpty else { return }
+        let effectiveServer = server.isEmpty ? networkController.server : server
+        for policyID in policyIDs {
+            layout.openURL(urlString: "\(effectiveServer)/policies.html?id=\(policyID)&o=r")
+        }
     }
 
     // MARK: - Row styling helpers
