@@ -303,6 +303,24 @@ struct PolicyActionsDetailTableView: View {
             }) { Image(systemName: "doc.on.doc"); Text("Copy Selected") }
             .buttonStyle(.bordered)
             .disabled(selectedPolicyIDs.isEmpty)
+
+            Button(action: { openSelectedPoliciesInBrowser() }) {
+                Image(systemName: "safari"); Text("Open in Browser")
+            }
+            .help("Open the selected policies in the Jamf web interface in your default browser.")
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .disabled(selectedPoliciesInt.compactMap { $0 }.isEmpty)
+        }
+    }
+
+    /// Opens each selected policy in the Jamf Pro web UI (server/policies.html?id=<id>&o=r).
+    private func openSelectedPoliciesInBrowser() {
+        let ids = selectedPoliciesInt.compactMap { $0 }
+        guard !ids.isEmpty else { return }
+        let effectiveServer = server.isEmpty ? networkController.server : server
+        for pid in ids {
+            layout.openURL(urlString: "\(effectiveServer)/policies.html?id=\(pid)&o=r")
         }
     }
 
