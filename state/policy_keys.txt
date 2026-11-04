@@ -1,0 +1,431 @@
++
+Action
+Action Tab
+Active
+Add
+Add Building
+Add Department
+Add Group 
+Add Individual Command To Policy
+Add Individual Command/s To Run In Policy
+Add Note:
+Add Package
+Add a custom shell command to be run by this policy.
+Add first characters
+Add last characters
+Add the selected package to this policy with the chosen options.
+Add the selected script to this policy with provided parameters.
+Add/Remove Scripts
+Additional Notes
+All Computers
+All Computers is not enabled
+All Parameters
+All Users is not enabled
+Apply Changes
+Apply results
+Apply the selected icon to the selected policies in bulk.
+BULK ACTIONS
+Before/After
+Building:
+Buildings: 
+Cancel
+Case
+Category
+Category:
+Category:\t\t
+Caution!
+Checkin
+Checkin:
+Clear
+Clear Computer Groups
+Clear Computers
+Clear DockItems
+Clear Exclusions
+Clear Individual Commands
+Clear Items
+Clear Limitations
+Clear Maintenance
+Clear Packages
+Clear Printers
+Clear Reboot
+Clear Scope
+Clear Scripts
+Clear Self-Service
+Clear file selection
+Clear limitations from the selected policies' scope (requires re-adding if needed).
+Clear maintenance settings from the selected policies.
+Clear scoped devices/users from the selected policies (you'll need to rescope to deploy).
+Clear search
+Click to show failed policy IDs and retry them
+Clone
+Clone Policy
+Clone per Package
+Clone per Script
+Computer Groups: 
+Computer:
+Computers: 
+Confirm
+Confirm Clear Scope?
+Confirm Delete
+Confirm Scope to All Computers & Users?
+Confirm Scope to All Computers?
+Confirm Scope to All Users?
+Confirm Set DP to Default
+Controls for scoping, limitations and exclusions for selected policies.
+Copy Selected
+Count
+Create a copy of this policy on the server. Provide a clone name or a '-1' suffix will be used.
+Create one cloned policy per package currently assigned to this policy. Each clone will contain exactly one package.
+Current Icon:\t\t\t\tNo icon set\n
+Custom Trigger
+Delete
+Delete Selected
+Delete Selections
+Delete the selected policies. This action is destructive and will remove policies from the server.
+Delete the selected policies? This action cannot be undone.
+Delete this policy from the Jamf server. This action is destructive and cannot be undone.
+Department:
+Departments: 
+Destructive
+Detailed policies not loaded yet — showing basic policy list
+Details
+Disable All Computers
+Disable All Users
+Disabled
+Download
+Download the selected policies as XML files from the server.
+Downloaded policies:
+Drag to resize the Actions Panel
+Edit Exclusions
+Edit Limitations
+Edit Scoping
+Enable
+Enable All Computers
+Enable All Computers & Users
+Enable All Users
+Enable Bulk Scoping
+Enable or disable Self Service for this policy.
+Enabled
+Enrollment Complete
+Enrollment Complete:
+Exclude Building
+Exclude Computer
+Exclude Department
+Exclude Group
+Exclude a Building
+Exclude a Computer Group
+Exclude a Department
+Excluded Buildings
+Excluded Computer Groups
+Excluded Computers
+Excluded Departments
+Exclusions
+Exclusions: 
+Export
+Export CSV
+Export Policies
+Export XML
+Export policy summary data to a CSV file for reporting or analysis.
+Export selected policies as XML (⌘E)
+Export the current policy XML to a file for saving or sharing.
+FEU
+FUT
+False
+Fetch detailed policies
+Field
+Filter
+Filter buildings...
+Filter by policy trigger values (optional)
+Filter departments...
+Filter groups...
+Filter icons…
+Filter scripts
+Filter scripts...
+Filter search results...
+Find:
+Flush Log Interval
+Format
+Frequency
+General
+General actions for selected policies (delete, export, etc).
+Group to exclude:
+Group:
+Groups
+Hide non-matching items when trigger filters active
+I understand!
+Icons
+If checked, use FEU (Fill Existing Up) behavior when assigning the package.
+If checked, use FUT (Fill Up To) behavior when assigning the package.
+If enabled (default) items that don't match the selected trigger filters will be hidden when trigger filters are active
+Interval Number
+Interval Unit
+JamfPolicy
+Ldap Servers:
+Limit
+Limit To Ldap
+Limitations
+Limitations:
+Load Self Service icons referenced by your policies.
+Loading
+Loading...... please wait
+Login
+Login:
+Main Body
+Manage package assignments for selected policies.
+Match
+Mode
+More Parameters
+Network State Changed
+No Buildings Excluded
+No Computer Groups Excluded
+No Computers Excluded
+No Departments Excluded
+No categories available
+No category selected
+No detailed policies loaded
+No failed detailed policy IDs to show
+No group selected
+No limitations configured
+No package selected
+No packages present
+No policies selected
+No policies to display yet
+No scripts match filter
+No server selected
+Not Scoped to any Buildings
+Not Scoped to any Departments
+Not Scoped to any Groups
+Not Scoped to any individual Computers
+Notes
+Open in Browser
+Open the selected policies in the Jamf web interface in your default browser.
+Open this policy in the Jamf web interface in your default browser.
+Open this policy's detail view
+Opens each selected policy in the Jamf Pro web interface. Each policy opens in a new browser tab.
+Packages
+Parameter 10:
+Parameter 11:
+Parameter 4:
+Parameter 5:
+Parameter 6:
+Parameter 7:
+Parameter 8:
+Parameter 9:
+Policies Action - General
+Policies Action - Packages
+Policies Action - Scope
+Policies are being fetched. If this message persists, try Refresh or check connection settings.
+Policy Name Tools
+Preview Changes
+Priority:
+Proceed
+Processing
+Re-fetch detailed policy data from the server and rebuild the raw search index. Use this if data you know exists isn't showing up.
+Reference
+Refine search...
+Refresh
+Refresh (⌘R)
+Refresh Data
+Refresh Detail
+Refresh Icons
+Refresh policies list
+Refresh the package list from the Jamf server.
+Reload policy details and XML from the server to reflect current state.
+Remove
+Remove All
+Remove Package
+Remove all packages currently assigned to this policy.
+Remove all packages from the selected policies.
+Remove all packages?
+Remove all scripts currently assigned to this policy.
+Remove all scripts from the selected policies.
+Remove all scripts?
+Remove first chars
+Remove last chars
+Remove selected script?
+Remove the selected script from this policy.
+Rename
+Rename the policy on the server to the provided name.
+Replace All
+Replace Policies from XML
+Replace all occurrences
+Replace all packages in this policy with the selected package and options.
+Replace first chars
+Replace last chars
+Replace:
+Replacement
+Replacement string…
+Replacing…
+Reset
+Retry Failed
+Run on Selected
+Scope
+Scope To All Computers
+Scope To All Computers & Users
+Scope To All Users
+Scope To Group
+Scope to Group
+Scope: All Computers
+Scope: All JSS Users
+Scoped To All Computers
+Scoped To All Users
+Script
+Script Index
+Scripts
+Search
+Search Computers
+Search LDAP
+Search Ldap
+Search Results:
+Search policies
+Search string…
+Search...
+Searches every field of each policy (raw JSON), including data not shown as a column below. Matching text is shown as a snippet under each result.
+Second Search Line
+Select Files / Folder…
+Select XML files or a folder, preview matches, then apply the replacement.
+Select one or more XML files. These can be uploaded to replace the policy whose ID matches the filename (e.g. 12345.xml → policy 12345).
+Select one or more policies from the table above to enable Scope / Limitations / Exclusions controls.
+Select policy for bulk actions
+Selected Field is Empty
+Selected icon
+Selected:
+Self-Service
+Set DP to Default
+Set Default
+Set Name
+Set Self-Service Name = Policy Name
+Set Triggers
+Set the Self Service display name for this policy.
+Set the selected category for this policy.
+Set the selected icon as the policy's Self Service icon.
+Set the selected trigger options for this policy and refresh its details.
+Smart Groups
+Specific Computers
+Startup
+Startup:
+Static Groups
+These actions are irreversible — confirm each prompt carefully.
+This action will add the selected building to the exclusions for this policy.
+This action will add the selected computer group to the exclusions for this policy.
+This action will add the selected computer to the exclusions for this policy.
+This action will add the selected department to the exclusions for this policy.
+This action will clear all static or smart computer groups from this policy scoping.\n You will need to rescope in order to deploy
+This action will clear any current exclusions on the policy scoping.\n Some devices previously blocked may now receive the policy
+This action will clear any current limitations on the policy scoping.\n Some devices previously blocked may now receive the policy
+This action will clear any individually assigned computers from this policy scoping.\n You will need to rescope in order to deploy
+This action will clear any limitations from the policy scoping.\n You will need to re-add these if you still require them
+This action will clear devices from the policy scoping.\n You will need to rescope in order to deploy
+This action will clear maintenance from the polices selected.\n
+This action will clear packages from the polices selected.\n
+This action will clear scripts from the polices selected.\n
+This action will clear the policy scoping.\n You will need to rescope in order to deploy
+This action will delete data.\n Always ensure that you have a backup!
+This action will delete policy data.\n Always ensure that you have a backup!
+This action will disable the policy scoping for all computers.\n This might cause the policy to stop running on many devices
+This action will disable the policy scoping for all users.\n This might cause the policy to stop running on many devices
+This action will enable the policy scoping for all computers and all users.\n This might cause the policy to run immediately to many devices
+This action will enable the policy scoping for all computers.\n This might cause the policy to run immediately to many devices
+This action will enable the policy scoping for all users.\n This might cause the policy to run immediately to many devices
+This action will limit the policy scoping.\n Some devices may not receive the policy
+This clears the dock_items node from the policy
+This clears the maintenance node from the policy
+This clears the printers node from the policy
+This clears the reboot node from the policy
+This clears the self-service node from the policy
+This loads Self Service icons from your policies. If policy details haven't been loaded yet this may take a moment.
+This refreshes the data for the latest selected policy
+This will clear Dock items from the policy.
+This will clear printers from the policy.
+This will clear reboot settings from the policy.
+This will clear scope/exclusions on the selected policies. You may need to rescope to redeploy. Proceed?
+This will clear the Maintenance configuration from the policy.
+This will clear the Self-Service configuration from the policy. This action cannot be undone.
+This will remove all packages from the policy. This action cannot be undone. Proceed?
+This will remove all scripts from the policy. This action cannot be undone. Proceed?
+This will remove the selected script from the policy. This action cannot be undone. Proceed?
+This will scope the selected policies to all computers and all users. This action cannot easily be undone. Proceed?
+This will scope the selected policies to all computers. This action may be large in scope and difficult to undo. Proceed?
+This will scope the selected policies to all users. This action may be large in scope and difficult to undo. Proceed?
+This will set the selected policies' distribution points to default. Do you want to continue?
+Tools
+Trigger
+Trigger Filters
+True
+Update
+Update Category
+Update Category / Enable
+Update Category/Enable
+Update Icon
+Update Parameter
+Update category and enable/disable the selected policies.
+Update the category for the selected policies on the server.
+Update the chosen script parameter(s) for this policy and refresh details.
+Update the custom trigger value for this policy on the server.
+Upload Replacements…
+Use Parameters
+When enabled, results must also match this second line (combined with the first line)
+XML Find & Replace
+Yes, clone
+before/after
+parameter10
+parameter11
+parameter4
+parameter5
+parameter6
+parameter7
+parameter8
+parameter9
+⚠️ Push Trigger Active! ⚠️\n
+##### INTERPOLATED #####
+Assigned Scripts:\(scripts.count)
+Category:\t\t\t\t\(networkController.policyDetailed?.general?.category?.name ?? 
+Computers: \(comps.count)
+Distribution Point :\t\t\t\t\t\((localPolicyDetailed ?? networkController.policyDetailed)?.general?.overrideDefaultSettings?.distributionPoint ?? 
+Download Policy \(jamfId) (\(exportFormat.displayName)) for Inspection
+Downloads each selected policy as an individual \(exportFormat.displayName) file to your Downloads folder.
+Enabled Status:\t\t\t\(String(describing: networkController.policyDetailed?.general?.enabled ?? true))\n
+Enabled: \(enabledString)
+Export \(selectedPoliciesForActions.compactMap { $0 }.count) Policies as \(exportFormat.displayName)
+Groups: \(groups.count)
+IDs: \(selectedNonZero.map({String($0)}).joined(separator: 
+Icon: \(uri)
+Indexing \(networkController.allPoliciesDetailed.compactMap { $0 }.count) policies for raw search…
+Jamf ID:\t\t\t\t\t\(String(describing: networkController.policyDetailed?.general?.jamfId ?? 0))\n
+Jamf Name:\t\t\t\t\(networkController.policyDetailed?.general?.name ?? 
+Packages (\(pkgs.count))
+Policy Trigger:\t\t\t\(networkController.policyDetailed?.general?.triggerOther ?? 
+Preview — \(policyBrain.xmlFindReplacePreviewResults.filter { $0.matchCount > 0 }.count) file(s) with matches
+Priority: \(pri)
+Scripts (\(scripts.count))
+Selected policies: \(selectedNonZero.count)
+Selected policies: \(selectedPoliciesInt.compactMap { $0 }.count)
+Selected: \(selectedPoliciesForActions.compactMap { $0 }.count) policies
+Self Service Name:\t\t\(String(describing: networkController.policyDetailed?.self_service?.selfServiceDisplayName ?? 
+Self Service Status:\t\t\(String(describing: networkController.policyDetailed?.self_service?.useForSelfService ?? true))\n
+Self Service: \(ss)
+Show selected files (\(policyBrain.xmlFindReplaceFiles.count))
+This will create \(networkController.packagesAssignedToPolicy.count) new policies (one per package). Are you sure?
+This will create clones based on script '\(idText)'. Proceed?
+Total Policies:\t\(networkController.allPoliciesConverted.count)
+Total basic policies: \(networkController.allPoliciesConverted.count)
+Trigger: \(customTrigger)
+You selected: \(pickerSelectedScript)
+\($0)
+\(actual) / \(expected)
+\(actual) / \(expected) (missing: \(missing))
+\(i)
+\(networkController.policies.count) total policies
+\(p.filename) — \(p.matchCount) match(es)
+\(policy.name)
+\(policyBrain.xmlFindReplaceFiles.count) file(s) selected
+\(selectedPoliciesForActions.compactMap { $0 }.count) policies selected
+\(trigger_checkin)
+\(trigger_enrollment_complete)
+\(trigger_login)
+\(trigger_startup)
+allPoliciesConverted.count = \(networkController.allPoliciesConverted.count)
+allPoliciesDetailed.count = \(networkController.allPoliciesDetailed.count)
+id: \(jamfID)
+id: \(p.jamfId ?? 0)
+id: \(pkg.jamfId)
