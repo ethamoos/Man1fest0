@@ -8,7 +8,7 @@ struct PolicyDetailView: View {
     var server: String
 
     //  ########################################################################################
-    //  EnvironmentObjects
+    //  EnvironmentObjects	
     //  ########################################################################################
 
     @EnvironmentObject var networkController: NetBrain
