@@ -105,6 +105,33 @@ struct ComputersDetailedView: View {
                     HStack(spacing: 8) { Image(systemName: "trash"); Text("Delete Selection") }
                 }
                 .disabled(isDeleting)
+
+                Button(action: {
+                    guard let computerIntID = Int(self.computerID) else {
+                        return
+                    }
+                    progress.showProgress()
+                    progress.waitForABit()
+                    ASyncFileDownloader.downloadFileAsyncAuth(
+                        objectID: computerIntID,
+                        resourceType: ResourceType.computerDetailed,
+                        server: self.server,
+                        authToken: networkController.authToken,
+                        format: .xml
+                    ) { (_, _) in
+                        DispatchQueue.main.async {
+                            progress.endProgress()
+                        }
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("Download XML")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.yellow)
+                .help("Download this computer record as an XML file.")
                 
                 Button(action: { progress.showProgress(); progress.waitForABit(); layout.openURL(urlString: "\(self.server)/computers.html?id=\(self.computerID)&o=r", requestType: "computers") }) { HStack(spacing: 8) { Image(systemName: "safari"); Text("Open In Browser") } }
                     .buttonStyle(.borderedProminent).tint(.green)
