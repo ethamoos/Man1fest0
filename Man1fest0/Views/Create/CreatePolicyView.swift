@@ -215,6 +215,255 @@ struct CreatePolicyView: View {
         }
     }
 
+    // Scripts picker (shown inside a disclosure below Packages)
+    private var scriptsSection: some View {
+                            HStack {
+                                Text("Script").bold()
+                                Picker("Script", selection: Binding(get: { selectedScriptId ?? -1 }, set: { selectedScriptId = $0 == -1 ? nil : $0 })) {
+                                    Text("None").tag(-1)
+                                    ForEach(networkController.scripts, id: \.jamfId) { s in
+                                        Text(s.name).tag(s.jamfId)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .frame(maxWidth: 300)
+                                Spacer()
+                            }
+    }
+
+    // Import policy from XML disclosure
+#if os(macOS)
+    private var importXMLSection: some View {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Import Policy from XML").font(.headline)
+                    } content: {
+                        
+                        //                    LazyVGrid(columns: layout.column, spacing: 5) {
+                        //
+                        //                        VStack(alignment: .leading) {
+                        
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                let openURL = importExportBrain.showOpenPanel()
+                                print("openURL path is:\(String(describing: openURL?.path ?? ""))")
+                                if let url = openURL {
+                                    self.importFilePath = url.path
+                                    // Import the file contents into the shared ImportExportBrain so other views can access it too
+                                    importExportBrain.selectedFilename = url.lastPathComponent
+                                    do {
+                                        importExportBrain.importedString = try String(contentsOf: url, encoding: .utf8)
+                                        print("Imported file length: \(importExportBrain.importedString.count)")
+                                    } catch {
+                                        print("Failed to read file: \(error)")
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "doc")
+                                    Text("Select File")
+                                }
+                            }
+                            
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                // Use the imported string as the XML content and POST it as a new policy
+                                let xml = importExportBrain.importedString
+                                if xml.isEmpty {
+                                    print("No XML imported - cannot import policy")
+                                } else {
+                                    xmlController.createPolicyManual(xmlContent: xml, server: server, resourceType: ResourceType.policyDetail, policyName: newPolicyName, authToken: networkController.authToken)
+                                    layout.separationLine()
+                                    print("Import Policy requested for file:\(importExportBrain.selectedFilename)")
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "square.and.arrow.down")
+                                    Text("Import Policy")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            
+                            // show selected file name
+                            if !importExportBrain.selectedFilename.isEmpty {
+                                Text("Selected: \(importExportBrain.selectedFilename)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+    }
+#endif
+
+    // Policy templates disclosure (includes edit sheet)
+#if os(macOS)
+    private var templatesSection: some View {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Policy Templates").font(.headline)
+                    } content: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                TextField("Template name", text: $newTemplateName)
+                                Button("Save Template") {
+                                    saveCurrentAsTemplate()
+                                }
+                                .disabled(newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                Spacer()
+                                Button("Export") { exportTemplatesToDownloads() }
+                                    .buttonStyle(.bordered)
+                                Button("Import") { importTemplatesFromFile() }
+                                    .buttonStyle(.bordered)
+                                Button("Reset") {
+                                    showResetTemplatesConfirmation = true
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(.red)
+                             }
+                            
+                            if templates.isEmpty {
+                                Text("No templates saved for this server").foregroundColor(.secondary)
+                            } else {
+                                ForEach(templates) { t in
+                                    HStack {
+                                        Text(t.name)
+                                        Spacer()
+                                        Button("Apply") { applyTemplate(t) }
+                                            .buttonStyle(.bordered)
+                                        Button("Edit") { editingTemplate = t }
+                                            .buttonStyle(.bordered)
+                                        Button("Delete") {
+                                            // Ask for confirmation before deleting template
+                                            templateToDelete = t
+                                        }
+                                            .buttonStyle(.bordered)
+                                            .tint(.red)
+                                    }
+                                }
+                            }
+                        }
+                        // Confirmation alert for deleting a saved template
+                        .alert(item: $templateToDelete) { tpl in
+                            Alert(title: Text("Confirm Delete"),
+                                  message: Text("Delete template '\(tpl.name)'? This action cannot be undone."),
+                                  primaryButton: .destructive(Text("Delete")) {
+                                deleteTemplate(tpl)
+                            }, secondaryButton: .cancel())
+                        }
+                        // Confirmation alert for resetting all templates
+                        .alert(isPresented: $showResetTemplatesConfirmation) {
+                            Alert(title: Text("Reset Templates"),
+                                  message: Text("Are you sure you want to delete all saved templates for this server? This action cannot be undone."),
+                                  primaryButton: .destructive(Text("Reset")) {
+                                templates.removeAll()
+                                persistTemplates()
+                                networkController.messageStore?.show("Templates reset", level: .success, details: "All templates removed for this server")
+                            }, secondaryButton: .cancel())
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .sheet(item: $editingTemplate) { tpl in
+                        TemplateEditView(template: tpl, onSave: { updated in
+                            if let idx = templates.firstIndex(where: { $0.id == updated.id }) {
+                                templates[idx] = updated
+                            } else {
+                                templates.append(updated)
+                            }
+                            persistTemplates()
+                            editingTemplate = nil
+                        }, onCancel: {
+                            editingTemplate = nil
+                        })
+                    }
+    }
+#endif
+
+    // Scope presets disclosure
+#if os(macOS)
+    private var scopePresetsSection: some View {
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Scope Presets").font(.headline)
+                    } content: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 8) {
+                                Button("Preset: No devices or users") {
+                                    currentScope = Scope.defaultEmpty()
+                                    networkController.messageStore?.show("Scope set", level: .info, details: "No devices or users")
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button("Preset: All computers and all users") {
+                                    currentScope = Scope.allComputersAllUsers()
+                                    networkController.messageStore?.show("Scope set", level: .info, details: "All computers and all users")
+                                }
+                                .buttonStyle(.bordered)
+
+                                Spacer()
+                            }
+
+                            HStack {
+                                TextField("Preset name", text: $newScopePresetName)
+                                    .frame(maxWidth: 300)
+                                Button("Save Preset") {
+                                    let preset = ScopePreset(name: newScopePresetName.trimmingCharacters(in: .whitespacesAndNewlines), scope: currentScope)
+                                    guard !preset.name.isEmpty else { return }
+                                    scopePresets.append(preset)
+                                    persistScopePresets()
+                                    newScopePresetName = ""
+                                    networkController.messageStore?.show("Scope preset saved", level: .success, details: preset.name)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(newScopePresetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                Spacer()
+                                Button(showScopePreview ? "Hide JSON" : "Preview JSON") {
+                                    showScopePreview.toggle()
+                                }
+                                .buttonStyle(.bordered)
+                            }
+
+                            if scopePresets.isEmpty {
+                                Text("No scope presets saved for this server").foregroundColor(.secondary)
+                            } else {
+                                ForEach(scopePresets) { sp in
+                                    HStack {
+                                        Text(sp.name)
+                                        Spacer()
+                                        Button("Apply") {
+                                            currentScope = sp.scope
+                                            networkController.messageStore?.show("Scope applied", level: .info, details: sp.name)
+                                        }
+                                        .buttonStyle(.bordered)
+                                        Button("Delete") {
+                                            scopePresetToDelete = sp
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .tint(.red)
+                                    }
+                                }
+                            }
+
+                            if showScopePreview {
+                                Text("Scope JSON Preview").font(.subheadline)
+                                TextEditor(text: .constant(scopeToJSON(currentScope)))
+                                    .frame(minHeight: 120)
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .disabled(true)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                        // Confirmation alert for deleting a saved scope preset
+                        .alert(item: $scopePresetToDelete) { pres in
+                            Alert(title: Text("Confirm Delete"),
+                                  message: Text("Delete scope preset '\(pres.name)'? This action cannot be undone."),
+                                  primaryButton: .destructive(Text("Delete")) {
+                                scopePresets.removeAll { $0.id == pres.id }
+                                persistScopePresets()
+                            }, secondaryButton: .cancel())
+                        }
+                    }
+    }
+#endif
+
     // Sorted packages according to local sort selections
     private var sortedPackages: [Package] {
         let src = networkController.packages
@@ -455,6 +704,23 @@ struct CreatePolicyView: View {
                         }
                         .padding(.horizontal)
                     }
+
+                    // Scripts - hidden behind a disclosure
+                    ProminentDisclosure(indicatorColor: .accentColor) {
+                        Text("Scripts").font(.headline)
+                    } content: {
+                        scriptsSection
+                    }
+                    .padding(.horizontal)
+
+#if os(macOS)
+                    importXMLSection
+                        .padding(.horizontal)
+                    templatesSection
+                        .padding(.horizontal)
+                    scopePresetsSection
+                        .padding(.horizontal)
+#endif
                 }
                 .onAppear() {
                     
@@ -624,250 +890,7 @@ struct CreatePolicyView: View {
                             }
                             .toggleStyle(.checkbox)
                         }
-                            
-                            // Script picker: choose a script to attach to the new policy
-                            HStack {
-                                Text("Script").bold()
-                                Picker("Script", selection: Binding(get: { selectedScriptId ?? -1 }, set: { selectedScriptId = $0 == -1 ? nil : $0 })) {
-                                    Text("None").tag(-1)
-                                    ForEach(networkController.scripts, id: \.jamfId) { s in
-                                        Text(s.name).tag(s.jamfId)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                                .frame(maxWidth: 300)
-                                Spacer()
-                            }
-                            
-//                        }
                     }
-                    
-#if os(macOS)
-                    // File import controls - Select a local XML file and import as a policy
-                    
-                    ProminentDisclosure(indicatorColor: .accentColor) {
-                        Text("Import Policy from XML").font(.headline)
-                    } content: {
-                        
-                        //                    LazyVGrid(columns: layout.column, spacing: 5) {
-                        //
-                        //                        VStack(alignment: .leading) {
-                        
-                        HStack(spacing: 8) {
-                            Button(action: {
-                                let openURL = importExportBrain.showOpenPanel()
-                                print("openURL path is:\(String(describing: openURL?.path ?? ""))")
-                                if let url = openURL {
-                                    self.importFilePath = url.path
-                                    // Import the file contents into the shared ImportExportBrain so other views can access it too
-                                    importExportBrain.selectedFilename = url.lastPathComponent
-                                    do {
-                                        importExportBrain.importedString = try String(contentsOf: url, encoding: .utf8)
-                                        print("Imported file length: \(importExportBrain.importedString.count)")
-                                    } catch {
-                                        print("Failed to read file: \(error)")
-                                    }
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: "doc")
-                                    Text("Select File")
-                                }
-                            }
-                            
-                            Button(action: {
-                                progress.showProgress()
-                                progress.waitForABit()
-                                // Use the imported string as the XML content and POST it as a new policy
-                                let xml = importExportBrain.importedString
-                                if xml.isEmpty {
-                                    print("No XML imported - cannot import policy")
-                                } else {
-                                    xmlController.createPolicyManual(xmlContent: xml, server: server, resourceType: ResourceType.policyDetail, policyName: newPolicyName, authToken: networkController.authToken)
-                                    layout.separationLine()
-                                    print("Import Policy requested for file:\(importExportBrain.selectedFilename)")
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.down")
-                                    Text("Import Policy")
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-                            
-                            // show selected file name
-                            if !importExportBrain.selectedFilename.isEmpty {
-                                Text("Selected: \(importExportBrain.selectedFilename)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                    
-                    // Templates section
-                    ProminentDisclosure(indicatorColor: .accentColor) {
-                        Text("Policy Templates").font(.headline)
-                    } content: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                TextField("Template name", text: $newTemplateName)
-                                Button("Save Template") {
-                                    saveCurrentAsTemplate()
-                                }
-                                .disabled(newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                Spacer()
-                                Button("Export") { exportTemplatesToDownloads() }
-                                    .buttonStyle(.bordered)
-                                Button("Import") { importTemplatesFromFile() }
-                                    .buttonStyle(.bordered)
-                                Button("Reset") {
-                                    showResetTemplatesConfirmation = true
-                                }
-                                .buttonStyle(.bordered)
-                                .tint(.red)
-                             }
-                            
-                            if templates.isEmpty {
-                                Text("No templates saved for this server").foregroundColor(.secondary)
-                            } else {
-                                ForEach(templates) { t in
-                                    HStack {
-                                        Text(t.name)
-                                        Spacer()
-                                        Button("Apply") { applyTemplate(t) }
-                                            .buttonStyle(.bordered)
-                                        Button("Edit") { editingTemplate = t }
-                                            .buttonStyle(.bordered)
-                                        Button("Delete") {
-                                            // Ask for confirmation before deleting template
-                                            templateToDelete = t
-                                        }
-                                            .buttonStyle(.bordered)
-                                            .tint(.red)
-                                    }
-                                }
-                            }
-                        }
-                        // Confirmation alert for deleting a saved template
-                        .alert(item: $templateToDelete) { tpl in
-                            Alert(title: Text("Confirm Delete"),
-                                  message: Text("Delete template '\(tpl.name)'? This action cannot be undone."),
-                                  primaryButton: .destructive(Text("Delete")) {
-                                deleteTemplate(tpl)
-                            }, secondaryButton: .cancel())
-                        }
-                        // Confirmation alert for resetting all templates
-                        .alert(isPresented: $showResetTemplatesConfirmation) {
-                            Alert(title: Text("Reset Templates"),
-                                  message: Text("Are you sure you want to delete all saved templates for this server? This action cannot be undone."),
-                                  primaryButton: .destructive(Text("Reset")) {
-                                templates.removeAll()
-                                persistTemplates()
-                                networkController.messageStore?.show("Templates reset", level: .success, details: "All templates removed for this server")
-                            }, secondaryButton: .cancel())
-                        }
-                        .padding(.vertical, 6)
-                    }
-                    // Scope Presets
-                    ProminentDisclosure(indicatorColor: .accentColor) {
-                        Text("Scope Presets").font(.headline)
-                    } content: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 8) {
-                                Button("Preset: No devices or users") {
-                                    currentScope = Scope.defaultEmpty()
-                                    networkController.messageStore?.show("Scope set", level: .info, details: "No devices or users")
-                                }
-                                .buttonStyle(.bordered)
-
-                                Button("Preset: All computers and all users") {
-                                    currentScope = Scope.allComputersAllUsers()
-                                    networkController.messageStore?.show("Scope set", level: .info, details: "All computers and all users")
-                                }
-                                .buttonStyle(.bordered)
-
-                                Spacer()
-                            }
-
-                            HStack {
-                                TextField("Preset name", text: $newScopePresetName)
-                                    .frame(maxWidth: 300)
-                                Button("Save Preset") {
-                                    let preset = ScopePreset(name: newScopePresetName.trimmingCharacters(in: .whitespacesAndNewlines), scope: currentScope)
-                                    guard !preset.name.isEmpty else { return }
-                                    scopePresets.append(preset)
-                                    persistScopePresets()
-                                    newScopePresetName = ""
-                                    networkController.messageStore?.show("Scope preset saved", level: .success, details: preset.name)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(newScopePresetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                Spacer()
-                                Button(showScopePreview ? "Hide JSON" : "Preview JSON") {
-                                    showScopePreview.toggle()
-                                }
-                                .buttonStyle(.bordered)
-                            }
-
-                            if scopePresets.isEmpty {
-                                Text("No scope presets saved for this server").foregroundColor(.secondary)
-                            } else {
-                                ForEach(scopePresets) { sp in
-                                    HStack {
-                                        Text(sp.name)
-                                        Spacer()
-                                        Button("Apply") {
-                                            currentScope = sp.scope
-                                            networkController.messageStore?.show("Scope applied", level: .info, details: sp.name)
-                                        }
-                                        .buttonStyle(.bordered)
-                                        Button("Delete") {
-                                            scopePresetToDelete = sp
-                                        }
-                                        .buttonStyle(.bordered)
-                                        .tint(.red)
-                                    }
-                                }
-                            }
-
-                            if showScopePreview {
-                                Text("Scope JSON Preview").font(.subheadline)
-                                TextEditor(text: .constant(scopeToJSON(currentScope)))
-                                    .frame(minHeight: 120)
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .disabled(true)
-                            }
-                        }
-                        .padding(.vertical, 6)
-                        // Confirmation alert for deleting a saved scope preset
-                        .alert(item: $scopePresetToDelete) { pres in
-                            Alert(title: Text("Confirm Delete"),
-                                  message: Text("Delete scope preset '\(pres.name)'? This action cannot be undone."),
-                                  primaryButton: .destructive(Text("Delete")) {
-                                scopePresets.removeAll { $0.id == pres.id }
-                                persistScopePresets()
-                            }, secondaryButton: .cancel())
-                        }
-                    }
-                    
-                    // Edit sheet for templates
-                    .sheet(item: $editingTemplate) { tpl in
-                        TemplateEditView(template: tpl, onSave: { updated in
-                            if let idx = templates.firstIndex(where: { $0.id == updated.id }) {
-                                templates[idx] = updated
-                            } else {
-                                templates.append(updated)
-                            }
-                            persistTemplates()
-                            editingTemplate = nil
-                        }, onCancel: {
-                            editingTemplate = nil
-                        })
-                    }
-                    
-#endif
-                    
                     
                     VStack(alignment: .leading) {
                         
@@ -892,7 +915,9 @@ struct CreatePolicyView: View {
                     } // end Group
                 } // end VStack
             } // end body
-            .padding(.vertical, 6)
+//            .padding(.vertical, 6)
+            .padding()
+
     }
 
     // Extracted packages header to simplify type-checking
