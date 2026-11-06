@@ -10,8 +10,20 @@ import SwiftUI
 ///     Text("Expanded content")
 /// }
 ///
+/// Open/closed state:
+/// - Default: starts closed.
+/// - `initiallyExpanded: true` to start open.
+/// - `isExpanded: $someBool` to control/persist it from the parent (e.g. @AppStorage).
+///
 struct ProminentDisclosure<Label: View, Content: View>: View {
-    @State private var isExpanded: Bool = false
+    /// Internal open/closed state (used when no external binding is supplied).
+    /// Its starting value comes from `initiallyExpanded` (default: closed).
+    @State private var internalExpanded: Bool
+    /// Optional caller-owned binding, so the parent view can read/set/persist the state.
+    private var externalExpanded: Binding<Bool>?
+
+    /// The binding actually used: the external one if provided, otherwise the internal state.
+    private var isExpanded: Binding<Bool> { externalExpanded ?? $internalExpanded }
 
     private let label: () -> Label
     private let content: () -> Content
@@ -29,8 +41,12 @@ struct ProminentDisclosure<Label: View, Content: View>: View {
          indicatorWeight: Font.Weight = .bold,
          indicatorSize: CGFloat = 14,
          contentIndent: CGFloat = 18,
+         initiallyExpanded: Bool = false,      // start open/closed (ignored if isExpanded binding is given)
+         isExpanded: Binding<Bool>? = nil,     // optional external control of open/closed state
          @ViewBuilder label: @escaping () -> Label,
          @ViewBuilder content: @escaping () -> Content) {
+        self._internalExpanded = State(initialValue: initiallyExpanded)
+        self.externalExpanded = isExpanded
         self.indicatorColor = indicatorColor
         self.indicatorWeight = indicatorWeight
         self.indicatorSize = indicatorSize
@@ -41,9 +57,9 @@ struct ProminentDisclosure<Label: View, Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Button(action: { withAnimation { isExpanded.toggle() } }) {
+            Button(action: { withAnimation { isExpanded.wrappedValue.toggle() } }) {
                 HStack(spacing: 8) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    Image(systemName: isExpanded.wrappedValue ? "chevron.down" : "chevron.right")
                         .font(.system(size: indicatorSize, weight: indicatorWeight))
                         .foregroundColor(indicatorColor)
                         .imageScale(.medium)
@@ -57,7 +73,7 @@ struct ProminentDisclosure<Label: View, Content: View>: View {
             }
             .buttonStyle(PlainButtonStyle())
 
-            if isExpanded {
+            if isExpanded.wrappedValue {
                 content()
                     .padding(.leading, contentIndent)
             }

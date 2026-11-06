@@ -445,8 +445,16 @@ struct CreatePolicyView: View {
                     .padding(.vertical, 6)
                     .padding(.horizontal)
                     .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.03)))
-                                        
-                        
+                    
+                    // Packages - hidden behind a disclosure
+                    if networkController.packages.count > 0 {
+                        ProminentDisclosure(indicatorColor: .accentColor) {
+                            Text("Packages").font(.headline)
+                        } content: {
+                            packagesSection
+                        }
+                        .padding(.horizontal)
+                    }
                 }
                 .onAppear() {
                     
@@ -462,9 +470,7 @@ struct CreatePolicyView: View {
                 
                 //                        Spacer()
                 
-                if networkController.packages.count > 0 {
-                    packagesSection
-                }
+               
             }
             //              ################################################################################
             //              Toolbar
@@ -690,8 +696,6 @@ struct CreatePolicyView: View {
                             .buttonStyle(.borderedProminent)
                             .tint(.blue)
                             
-                            
-                            
                             // show selected file name
                             if !importExportBrain.selectedFilename.isEmpty {
                                 Text("Selected: \(importExportBrain.selectedFilename)")
@@ -699,8 +703,6 @@ struct CreatePolicyView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        //                    }
-                        //                    }
                     }
                     
                     // Templates section
@@ -889,7 +891,6 @@ struct CreatePolicyView: View {
                     } // end VStack(alignment: .leading)
                     } // end Group
                 } // end VStack
-
             } // end body
             .padding(.vertical, 6)
     }
@@ -915,33 +916,32 @@ struct CreatePolicyView: View {
             }
             .padding(.horizontal)
 
-                    HStack {
-                Text("All Packages").bold().padding(.leading)
-                Spacer()
-                HStack(spacing: 8) {
-                    Picker("Sort by", selection: $packageSortBy) {
-                        Text("Name").tag(PackageSortField.name)
-                        Text("ID").tag(PackageSortField.id)
+            HStack {
+                    Text("All Packages").bold().padding(.leading)
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Picker("Sort by", selection: $packageSortBy) {
+                            Text("Name").tag(PackageSortField.name)
+                            Text("ID").tag(PackageSortField.id)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 220)
+                        
+                        Button(action: { packageSortAscending.toggle() }) {
+                            Image(systemName: packageSortAscending ? "arrow.up" : "arrow.down")
+                        }
+                        .buttonStyle(.plain)
+                        .help("Toggle sort direction")
+                        Button(action: {
+                            // Clear package selection
+                            packageMultiSelection.removeAll()
+                            packageSelectionIDs.removeAll()
+                        }) {
+                            Text("Clear")
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 220)
-
-                    Button(action: { packageSortAscending.toggle() }) {
-                        Image(systemName: packageSortAscending ? "arrow.up" : "arrow.down")
-                    }
-                    .buttonStyle(.plain)
-                    .help("Toggle sort direction")
-                    Button(action: {
-                        // Clear package selection
-                        packageMultiSelection.removeAll()
-                        packageSelectionIDs.removeAll()
-                    }) {
-                        Text("Clear")
-                    }
-                    .buttonStyle(.bordered)
                 }
-            }
-
         }
     }
 
