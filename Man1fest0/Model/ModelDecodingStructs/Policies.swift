@@ -28,9 +28,11 @@ struct Policy: Codable, Hashable, Identifiable {
     var id = UUID()
     var jamfId: Int?
     var name: String
+    var trigger: String? = nil
     enum CodingKeys:String, CodingKey{
         case jamfId = "id"
         case name = "name"
+        case trigger = "trigger"
     }
 
     // Stable equality: prefer jamfId (server-side ID) when present so different decoded

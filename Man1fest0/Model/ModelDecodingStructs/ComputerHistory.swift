@@ -8,6 +8,164 @@
 
 import Foundation
 
+// MARK: - ComputerManagementPoliciesResponse
+// Tolerates multiple response shapes for:
+// /JSSResource/computermanagement/id/{id}/subset/Policies
+struct ComputerManagementPoliciesResponse: Decodable {
+    let policies: [ComputerManagementPolicy]
+
+    enum CodingKeys: String, CodingKey {
+        case computerManagement = "computer_management"
+        case policies
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if let nested = try? container.decode(ComputerManagementPoliciesContainer.self, forKey: .computerManagement) {
+            self.policies = nested.policies
+            return
+        }
+
+        if let direct = try? container.decode([ComputerManagementPolicy].self, forKey: .policies) {
+            self.policies = direct
+            return
+        }
+
+        let single = try decoder.singleValueContainer()
+        if let directArray = try? single.decode([ComputerManagementPolicy].self) {
+            self.policies = directArray
+        } else {
+            self.policies = []
+        }
+    }
+}
+
+struct ComputerManagementPoliciesContainer: Decodable {
+    let policies: [ComputerManagementPolicy]
+}
+
+struct ComputerManagementPolicy: Decodable, Identifiable, Hashable {
+    var id = UUID()
+    let jamfId: Int?
+    let name: String
+    let trigger: String?
+
+    enum CodingKeys: String, CodingKey {
+        case jamfId = "id"
+        case name
+        case trigger
+        case triggers
+        case policy
+        case general
+        case triggerOther = "trigger_other"
+        case triggerCheckin = "trigger_checkin"
+        case triggerEnrollmentComplete = "trigger_enrollment_complete"
+        case triggerLogin = "trigger_login"
+        case triggerLogout = "trigger_logout"
+        case triggerNetworkStateChanged = "trigger_network_state_changed"
+        case triggerStartup = "trigger_startup"
+    }
+
+    private struct GeneralFields: Decodable {
+        let jamfId: Int?
+        let name: String?
+        let trigger: String?
+        let triggers: String?
+        let triggerOther: String?
+        let triggerCheckin: Bool?
+        let triggerEnrollmentComplete: Bool?
+        let triggerLogin: Bool?
+        let triggerLogout: Bool?
+        let triggerNetworkStateChanged: Bool?
+        let triggerStartup: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case jamfId = "id"
+            case name
+            case trigger
+            case triggers
+            case triggerOther = "trigger_other"
+            case triggerCheckin = "trigger_checkin"
+            case triggerEnrollmentComplete = "trigger_enrollment_complete"
+            case triggerLogin = "trigger_login"
+            case triggerLogout = "trigger_logout"
+            case triggerNetworkStateChanged = "trigger_network_state_changed"
+            case triggerStartup = "trigger_startup"
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        let outerId: Int? = (try? container.decodeIfPresent(Int.self, forKey: .jamfId)) ?? nil
+        let outerName: String? = (try? container.decodeIfPresent(String.self, forKey: .name)) ?? nil
+        let outerGeneral: GeneralFields? = (try? container.decodeIfPresent(GeneralFields.self, forKey: .general)) ?? nil
+        let nestedPolicy: ComputerManagementPolicy? = (try? container.decodeIfPresent(ComputerManagementPolicy.self, forKey: .policy)) ?? nil
+
+        self.jamfId = outerId ?? nestedPolicy?.jamfId ?? outerGeneral?.jamfId
+
+        let resolvedName = outerName
+            ?? nestedPolicy?.name
+            ?? outerGeneral?.name
+            ?? "(unknown)"
+        self.name = resolvedName.isEmpty ? "(unknown)" : resolvedName
+
+        // Prefer explicit outer trigger first, then nested policy/general fallbacks.
+        if let directTrigger = try? container.decodeIfPresent(String.self, forKey: .trigger),
+           !directTrigger.isEmpty {
+            self.trigger = directTrigger
+            return
+        }
+        if let directTriggers = try? container.decodeIfPresent(String.self, forKey: .triggers),
+           !directTriggers.isEmpty {
+            self.trigger = directTriggers
+            return
+        }
+        if let nestedTrigger = nestedPolicy?.trigger, !nestedTrigger.isEmpty {
+            self.trigger = nestedTrigger
+            return
+        }
+        if let generalTrigger = outerGeneral?.trigger, !generalTrigger.isEmpty {
+            self.trigger = generalTrigger
+            return
+        }
+        if let generalTriggers = outerGeneral?.triggers, !generalTriggers.isEmpty {
+            self.trigger = generalTriggers
+            return
+        }
+
+        // Then fallback to trigger_other fields.
+        if let triggerOther = try? container.decodeIfPresent(String.self, forKey: .triggerOther),
+           !triggerOther.isEmpty {
+            self.trigger = triggerOther
+            return
+        }
+        if let nestedTriggerOther = outerGeneral?.triggerOther,
+           !nestedTriggerOther.isEmpty {
+            self.trigger = nestedTriggerOther
+            return
+        }
+
+        // If no explicit trigger string is returned, infer from boolean trigger flags.
+        if (try? container.decodeIfPresent(Bool.self, forKey: .triggerCheckin)) == true || (outerGeneral?.triggerCheckin == true) {
+            self.trigger = "CHECKIN"
+        } else if (try? container.decodeIfPresent(Bool.self, forKey: .triggerEnrollmentComplete)) == true || (outerGeneral?.triggerEnrollmentComplete == true) {
+            self.trigger = "ENROLLMENT_COMPLETE"
+        } else if (try? container.decodeIfPresent(Bool.self, forKey: .triggerLogin)) == true || (outerGeneral?.triggerLogin == true) {
+            self.trigger = "LOGIN"
+        } else if (try? container.decodeIfPresent(Bool.self, forKey: .triggerLogout)) == true || (outerGeneral?.triggerLogout == true) {
+            self.trigger = "LOGOUT"
+        } else if (try? container.decodeIfPresent(Bool.self, forKey: .triggerNetworkStateChanged)) == true || (outerGeneral?.triggerNetworkStateChanged == true) {
+            self.trigger = "NETWORK_STATE_CHANGED"
+        } else if (try? container.decodeIfPresent(Bool.self, forKey: .triggerStartup)) == true || (outerGeneral?.triggerStartup == true) {
+            self.trigger = "STARTUP"
+        } else {
+            self.trigger = nil
+        }
+    }
+}
+
 // MARK: - ComputerHistoryResponse
 struct ComputerHistoryResponse: Decodable {
     let computerHistory: ComputerHistory

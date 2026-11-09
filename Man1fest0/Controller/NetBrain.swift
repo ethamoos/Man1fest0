@@ -534,6 +534,9 @@ extension NetBrain {
     @Published var computerHistory: ComputerHistory? = nil
     // Raw JSON of the last computer history response (useful for debugging/preview in UI)
     @Published var lastComputerHistoryRaw: String? = nil
+    @Published var computerManagementPolicies: [ComputerManagementPolicy] = []
+    // Raw JSON from the last computer management subset request.
+    @Published var lastComputerManagementRaw: String? = nil
     // Full decoded detailed computers collection (inventory detail responses)
     @Published var allComputersDetailedFull: [ComputerFull?] = []
     @Published var isFetchingDetailedComputers: Bool = false
@@ -7815,6 +7818,50 @@ xml = """
             print("Loaded computer history subset '\(subset)' for id: \(computerID)")
         } catch {
             publishError(error, title: "Failed to load computer history subset")
+            throw error
+        }
+    }
+
+    // Fetch computer management subset: Policies
+    // Endpoint: computermanagement/id/<id>/subset/Policies
+    func getComputerManagementPolicies(server: String? = nil, computerID: String) async throws {
+        do {
+            let endpoint = "computermanagement/id/" + computerID + "/subset/Policies"
+            let usedServer = server ?? self.server
+            print("getComputerManagementPolicies: using server=\(usedServer), endpoint=\(endpoint)")
+
+            if authToken.isEmpty {
+                _ = try await getToken(server: server ?? self.server, username: username, password: password)
+            }
+
+            let trimmedEndpoint = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+            let jamfURLQuery: String
+            if trimmedEndpoint.lowercased().hasPrefix("http://") || trimmedEndpoint.lowercased().hasPrefix("https://") {
+                jamfURLQuery = trimmedEndpoint
+            } else if trimmedEndpoint.hasPrefix("/") {
+                jamfURLQuery = usedServer + trimmedEndpoint
+            } else if trimmedEndpoint.hasPrefix("api/") {
+                jamfURLQuery = usedServer + "/" + trimmedEndpoint
+            } else {
+                jamfURLQuery = usedServer + "/JSSResource/" + trimmedEndpoint
+            }
+
+            guard let url = URL(string: jamfURLQuery) else { throw JamfAPIError.badURL }
+            var request = URLRequest(url: url)
+            request.httpMethod = HTTPMethod.get.stringValue
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard status == 200 else { throw JamfAPIError.http(status) }
+
+            self.lastComputerManagementRaw = String(data: data, encoding: .utf8)
+            let decoded = try JSONDecoder().decode(ComputerManagementPoliciesResponse.self, from: data)
+            self.computerManagementPolicies = decoded.policies
+            print("Loaded computer management policies for id: \(computerID), count=\(decoded.policies.count)")
+        } catch {
+            publishError(error, title: "Failed to load computer management policies")
             throw error
         }
     }

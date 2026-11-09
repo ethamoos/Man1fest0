@@ -28,8 +28,13 @@ struct ComputersDetailedView: View {
     @State private var selectedTab: Int = 0
     @State private var historyInnerTab: Int = 0
     @State private var historyLoadedForComputerID: String? = nil
+    @State private var managementLoadedForComputerID: String? = nil
     @State private var showDebugHistory: Bool = false
     @State private var showRawHistory: Bool = false
+    @State private var showRawManagement: Bool = false
+    @State private var managementSortBy: Int = 0 // 0=name, 1=trigger, 2=id
+    @State private var managementSortAscending: Bool = true
+    @State private var selectedTriggerFilter: String = "All"
     // Policies sorting: 0 = name, 1 = date
     @State private var policySortBy: Int = 0
     @State private var policySortAscending: Bool = true
@@ -718,6 +723,180 @@ struct ComputersDetailedView: View {
             }
         }
 
+    @ViewBuilder
+    private func managementView() -> some View {
+        let availableTriggers = Array(Set(networkController.computerManagementPolicies.compactMap { policy in
+            guard let trigger = policy.trigger?.trimmingCharacters(in: .whitespacesAndNewlines), !trigger.isEmpty else {
+                return nil
+            }
+            return trigger
+        })).sorted { (lhs: String, rhs: String) in
+            lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+        }
+
+        let filteredPolicies = networkController.computerManagementPolicies.filter { policy in
+            guard selectedTriggerFilter != "All" else { return true }
+            let trigger = policy.trigger?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trigger == selectedTriggerFilter
+        }
+
+        let sortedPolicies = filteredPolicies.sorted { lhs, rhs in
+            switch managementSortBy {
+            case 1:
+                let lt = (lhs.trigger ?? "").lowercased()
+                let rt = (rhs.trigger ?? "").lowercased()
+                if lt == rt {
+                    let ln = lhs.name.lowercased()
+                    let rn = rhs.name.lowercased()
+                    return managementSortAscending ? (ln < rn) : (ln > rn)
+                }
+                return managementSortAscending ? (lt < rt) : (lt > rt)
+            case 2:
+                let lid = lhs.jamfId ?? 0
+                let rid = rhs.jamfId ?? 0
+                if lid == rid {
+                    let ln = lhs.name.lowercased()
+                    let rn = rhs.name.lowercased()
+                    return managementSortAscending ? (ln < rn) : (ln > rn)
+                }
+                return managementSortAscending ? (lid < rid) : (lid > rid)
+            default:
+                let ln = lhs.name.lowercased()
+                let rn = rhs.name.lowercased()
+                if ln == rn {
+                    let lid = lhs.jamfId ?? 0
+                    let rid = rhs.jamfId ?? 0
+                    return managementSortAscending ? (lid < rid) : (lid > rid)
+                }
+                return managementSortAscending ? (ln < rn) : (ln > rn)
+            }
+        }
+
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                Text("Computer Management Policies")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Spacer()
+                Button(action: {
+                    Task { await loadComputerManagementPoliciesIfNeeded(force: true) }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Reload")
+                    }
+                }
+                Button(action: { showRawManagement.toggle() }) {
+                    Text(showRawManagement ? "Hide Raw" : "Show Raw")
+                }
+                .help("Toggle raw JSON response preview")
+            }
+
+            Text("Policy count: \(networkController.computerManagementPolicies.count)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            HStack(alignment: .center, spacing: 10) {
+                Text("Sort by:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Picker("", selection: $managementSortBy) {
+                    Text("Name").tag(0)
+                    Text("Trigger").tag(1)
+                    Text("ID").tag(2)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 240)
+
+                Button(action: { managementSortAscending.toggle() }) {
+                    Image(systemName: managementSortAscending ? "arrow.up" : "arrow.down")
+                }
+                .help("Toggle sort order")
+
+                Spacer()
+
+                Text("Trigger:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Picker("", selection: $selectedTriggerFilter) {
+                    Text("All").tag("All")
+                    ForEach(availableTriggers, id: \.self) { trigger in
+                        Text(trigger).tag(trigger)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(minWidth: 160)
+            }
+
+            if showRawManagement, let raw = networkController.lastComputerManagementRaw {
+                ScrollView {
+                    Text(raw)
+                        .font(.system(.body, design: .monospaced))
+                        .textSelection(.enabled)
+                        .padding(8)
+                }
+                .frame(maxHeight: 220)
+                .background(Color(.windowBackgroundColor).opacity(0.03))
+                .cornerRadius(6)
+            }
+
+            if sortedPolicies.isEmpty {
+                Text("No management policies returned for this computer.")
+                    .foregroundColor(.secondary)
+            } else {
+                HStack {
+                    Text("Name")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("Trigger")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(minWidth: 140, alignment: .leading)
+                    Text("ID")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(minWidth: 50, alignment: .trailing)
+                }
+                Divider()
+
+                ForEach(sortedPolicies) { policy in
+                    HStack {
+                        Text(policy.name)
+                        Spacer()
+                        Text((policy.trigger?.isEmpty == false) ? (policy.trigger ?? "") : "-")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(minWidth: 140, alignment: .leading)
+                        Text(policy.jamfId.map(String.init) ?? "")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .frame(minWidth: 50, alignment: .trailing)
+                    }
+                    .padding(.vertical, 4)
+                    Divider()
+                }
+            }
+        }
+    }
+
+    private func loadComputerManagementPoliciesIfNeeded(force: Bool = false) async {
+        if !force,
+           managementLoadedForComputerID == computerID,
+           !networkController.computerManagementPolicies.isEmpty {
+            return
+        }
+
+        do {
+            try await networkController.getComputerManagementPolicies(server: server, computerID: computerID)
+            await MainActor.run {
+                managementLoadedForComputerID = computerID
+            }
+        } catch {
+            print("Failed to load computer management policies: \(error)")
+        }
+    }
+
     var body: some View {
         Group {
             if isLoading && networkController.computerDetailedFull == nil && networkController.computerDetailed == nil {
@@ -733,6 +912,7 @@ struct ComputersDetailedView: View {
                         Text("General").tag(0)
                         Text("Software").tag(1)
                         Text("History").tag(2)
+                        Text("Management").tag(3)
                     }
                     .pickerStyle(.segmented)
                     .padding([.top, .horizontal])
@@ -748,7 +928,7 @@ struct ComputersDetailedView: View {
                                 softwareView()
                                     .padding()
                             }
-                        } else {
+                        } else if selectedTab == 2 {
                             ScrollView {
                                 historyView()
                                     .padding()
@@ -762,6 +942,16 @@ struct ComputersDetailedView: View {
                                                     print("Failed to load computer history on appear: \(error)")
                                                 }
                                             }
+                                        }
+                                    }
+                            }
+                        } else {
+                            ScrollView {
+                                managementView()
+                                    .padding()
+                                    .onAppear {
+                                        Task {
+                                            await loadComputerManagementPoliciesIfNeeded()
                                         }
                                     }
                             }
@@ -846,7 +1036,16 @@ struct ComputersDetailedView: View {
             } message: { Text("This will update the username attribute for this computer on the server. Continue?") }
             .task(id: self.computerID) {
                 isLoading = true
-                await MainActor.run { networkController.computerDetailedFull = nil; networkController.computerDetailed = nil }
+                await MainActor.run {
+                    networkController.computerDetailedFull = nil
+                    networkController.computerDetailed = nil
+                    networkController.computerManagementPolicies = []
+                    networkController.lastComputerManagementRaw = nil
+                    managementLoadedForComputerID = nil
+                    selectedTriggerFilter = "All"
+                    managementSortBy = 0
+                    managementSortAscending = true
+                }
                 do {
                     try await networkController.getDetailedComputer(userID: self.computerID)
                     await MainActor.run { self.editUsername = networkController.computerDetailedFull?.general?.username ?? networkController.computerDetailed?.username ?? "" }
