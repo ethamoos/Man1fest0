@@ -48,6 +48,10 @@ struct ConfigProfileViewMacOSTable: View {
                             profile in
                             Text(String(profile.jamfId ?? 0))
                         }
+
+                        TableColumn("Category") { profile in
+                            Text(profile.categoryName ?? "-")
+                        }
                     }
                     .onChange(of: sortOrder) { newOrder in
                         networkController.allConfigProfiles.computerConfigurations! .sort(using: newOrder)

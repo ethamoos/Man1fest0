@@ -476,6 +476,7 @@ extension NetBrain {
     //  #############################################################################
 
     @Published var allConfigProfiles: ConfigurationProfiles = ConfigurationProfiles()
+    @Published var lastOSXConfigProfilesRaw: String? = nil
     @Published var OSXConfigProfileDetailed: OSXConfigProfileDetailed? = nil
 
     //  #############################################################################
@@ -1415,6 +1416,16 @@ print("DEBUG - status code is 200, response is:")
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             print("Code not 200")
             throw JamfAPIError.badResponseCode
+        }
+        self.lastOSXConfigProfilesRaw = String(data: data, encoding: .utf8)
+//        print("lastOSXConfigProfilesRaw is:\(lastOSXConfigProfilesRaw)")
+        if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let profiles = jsonObj["os_x_configuration_profiles"] as? [[String: Any]],
+           let first = profiles.first {
+            let keys = first.keys.sorted().joined(separator: ", ")
+            let categoryFieldCount = profiles.filter { row in row["category"] != nil || row["category_name"] != nil }.count
+            print("getOSXConfigProfiles: first profile keys -> [\(keys)]")
+            print("getOSXConfigProfiles: category/category_name present in \(categoryFieldCount)/\(profiles.count) rows")
         }
         let decoder = JSONDecoder()
         print("Decoding without array - using ConfigurationProfiles")

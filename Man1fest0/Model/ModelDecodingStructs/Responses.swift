@@ -19,10 +19,45 @@ struct ConfigProfileSummary: Codable, Identifiable, Hashable {
     var id = UUID()
     var jamfId: Int?
     var name: String
+    var categoryName: String?
     
     enum CodingKeys: String, CodingKey {
         case jamfId = "id"
         case name = "name"
+        case category
+        case categoryName = "category_name"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.jamfId = try container.decodeIfPresent(Int.self, forKey: .jamfId)
+        self.name = (try container.decodeIfPresent(String.self, forKey: .name)) ?? ""
+
+        if let directCategoryName = try container.decodeIfPresent(String.self, forKey: .categoryName),
+           !directCategoryName.isEmpty {
+            self.categoryName = directCategoryName
+        } else if let categoryString = try container.decodeIfPresent(String.self, forKey: .category),
+                  !categoryString.isEmpty {
+            self.categoryName = categoryString
+        } else if let category = try container.decodeIfPresent(ConfigCategoryElement.self, forKey: .category) {
+            self.categoryName = category.name
+        } else {
+            self.categoryName = nil
+        }
+    }
+
+    init(id: UUID = UUID(), jamfId: Int?, name: String, categoryName: String? = nil) {
+        self.id = id
+        self.jamfId = jamfId
+        self.name = name
+        self.categoryName = categoryName
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(jamfId, forKey: .jamfId)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(categoryName, forKey: .categoryName)
     }
 }
 
