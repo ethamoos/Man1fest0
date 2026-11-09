@@ -35,6 +35,8 @@ struct ComputersDetailedView: View {
     @State private var managementSortBy: Int = 0 // 0=name, 1=trigger, 2=id
     @State private var managementSortAscending: Bool = true
     @State private var selectedTriggerFilter: String = "All"
+    @State private var managementSearchText: String = ""
+    @State private var selectedManagementPolicyIDs: Set<Int> = []
     // Policies sorting: 0 = name, 1 = date
     @State private var policySortBy: Int = 0
     @State private var policySortAscending: Bool = true
@@ -725,6 +727,7 @@ struct ComputersDetailedView: View {
 
     @ViewBuilder
     private func managementView() -> some View {
+        let selectedCount = selectedManagementPolicyIDs.count
         let availableTriggers = Array(Set(networkController.computerManagementPolicies.compactMap { policy in
             guard let trigger = policy.trigger?.trimmingCharacters(in: .whitespacesAndNewlines), !trigger.isEmpty else {
                 return nil
@@ -734,10 +737,19 @@ struct ComputersDetailedView: View {
             lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
         }
 
-        let filteredPolicies = networkController.computerManagementPolicies.filter { policy in
+        let triggerFilteredPolicies = networkController.computerManagementPolicies.filter { policy in
             guard selectedTriggerFilter != "All" else { return true }
             let trigger = policy.trigger?.trimmingCharacters(in: .whitespacesAndNewlines)
             return trigger == selectedTriggerFilter
+        }
+
+        let normalizedSearch = managementSearchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let filteredPolicies = triggerFilteredPolicies.filter { policy in
+            guard !normalizedSearch.isEmpty else { return true }
+            let nameMatch = policy.name.lowercased().contains(normalizedSearch)
+            let triggerMatch = (policy.trigger ?? "").lowercased().contains(normalizedSearch)
+            let idMatch = policy.jamfId.map(String.init)?.contains(normalizedSearch) ?? false
+            return nameMatch || triggerMatch || idMatch
         }
 
         let sortedPolicies = filteredPolicies.sorted { lhs, rhs in
@@ -779,6 +791,16 @@ struct ComputersDetailedView: View {
                     .fontWeight(.semibold)
                 Spacer()
                 Button(action: {
+                    openSelectedManagementPoliciesInBrowser()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "safari")
+                        Text("Open In Browser")
+                    }
+                }
+                .disabled(selectedCount == 0)
+                .help(selectedCount == 0 ? "Select at least one policy first" : "Open selected policies in Jamf Pro")
+                Button(action: {
                     Task { await loadComputerManagementPoliciesIfNeeded(force: true) }
                 }) {
                     HStack(spacing: 6) {
@@ -793,6 +815,10 @@ struct ComputersDetailedView: View {
             }
 
             Text("Policy count: \(networkController.computerManagementPolicies.count)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Text("Selected: \(selectedCount)")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -828,6 +854,16 @@ struct ComputersDetailedView: View {
                 .frame(minWidth: 160)
             }
 
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                TextField("Search name, trigger, or ID", text: $managementSearchText)
+                    .textFieldStyle(.roundedBorder)
+                if !managementSearchText.isEmpty {
+                    Button("Clear") { managementSearchText = "" }
+                }
+            }
+
             if showRawManagement, let raw = networkController.lastComputerManagementRaw {
                 ScrollView {
                     Text(raw)
@@ -861,6 +897,8 @@ struct ComputersDetailedView: View {
                 Divider()
 
                 ForEach(sortedPolicies) { policy in
+                    let policyID = policy.jamfId
+                    let isSelected = policyID.map { selectedManagementPolicyIDs.contains($0) } ?? false
                     HStack {
                         Text(policy.name)
                         Spacer()
@@ -872,11 +910,32 @@ struct ComputersDetailedView: View {
                             .font(.caption2)
                             .foregroundColor(.secondary)
                             .frame(minWidth: 50, alignment: .trailing)
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(isSelected ? .accentColor : .secondary)
                     }
                     .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard let pid = policyID else { return }
+                        if selectedManagementPolicyIDs.contains(pid) {
+                            selectedManagementPolicyIDs.remove(pid)
+                        } else {
+                            selectedManagementPolicyIDs.insert(pid)
+                        }
+                    }
+                    .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+                    .cornerRadius(6)
                     Divider()
                 }
             }
+        }
+    }
+
+    private func openSelectedManagementPoliciesInBrowser() {
+        let selectedIDs = selectedManagementPolicyIDs.sorted()
+        guard !selectedIDs.isEmpty else { return }
+        for pid in selectedIDs {
+            layout.openURL(urlString: "\(server)/policies.html?id=\(pid)&o=r", requestType: "policies")
         }
     }
 
@@ -1045,6 +1104,8 @@ struct ComputersDetailedView: View {
                     selectedTriggerFilter = "All"
                     managementSortBy = 0
                     managementSortAscending = true
+                    managementSearchText = ""
+                    selectedManagementPolicyIDs = []
                 }
                 do {
                     try await networkController.getDetailedComputer(userID: self.computerID)
