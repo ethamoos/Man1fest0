@@ -8,11 +8,9 @@
 import SwiftUI
 
 
-
 //    #################################################################################
 //      PrestageEditView
 //    #################################################################################
-
 
 
 struct PrestagesEditView: View {
@@ -375,7 +373,6 @@ struct PrestagesEditView: View {
         }
     }
     
-    
     func updatePrestage(initialPrestageID: String, authToken: String) {
         prestageController.separationLine()
         
@@ -501,7 +498,7 @@ struct PrestagesEditView: View {
         }
     }
     
-    func prestageName(for id: String) -> String {
+    func prestageName(for id: String) -> String 
         prestageController.allPrestages.first(where: { $0.id == id })?.displayName ?? ""
     }
     
@@ -532,9 +529,7 @@ struct PrestagesEditView: View {
     func updatePrestage(initialPrestageID: String, targetPrestageID: String) {
         
         if computerSelection != "" {
-            
             confirmedSerial = computerSelection
-            
             print("computerSelection picker has a value - using this")
         } else {
             print("computerSelection has no value - using passed value")
@@ -548,14 +543,11 @@ struct PrestagesEditView: View {
             print("Running getPrestageCurrentScope - to remove")
             try await prestageController.getPrestageCurrentScope(jamfURL: prestageController.server, prestageID: initialPrestageID, authToken: networkController.authToken)
             
-            
             print("Removing device from current prestage")
             try await prestageController.removeDeviceFromPrestage(server: prestageController.server, removeComputerPrestageID: initialPrestageID, serial: confirmedSerial, authToken: networkController.authToken, depVersionLock: prestageController.depVersionLock)
             
-            
             print("Running getPrestageCurrentScope for target prestage - to add")
             try await prestageController.getPrestageCurrentScope(jamfURL: prestageController.server, prestageID: targetPrestageID, authToken: networkController.authToken)
-            
             
             print("Running: adding to prestage - main")
             try await prestageController.addDeviceToPrestage(server: prestageController.server, prestageID: targetPrestageID, serial: confirmedSerial, authToken: networkController.authToken, depVersionLock: prestageController.depVersionLock)
