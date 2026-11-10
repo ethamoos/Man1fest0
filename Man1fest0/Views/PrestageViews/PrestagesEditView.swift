@@ -80,6 +80,21 @@ struct PrestagesEditView: View {
     /// Filter text for the current prestage pickers (matches serial, prestage ID or prestage name)
     @State private var assignmentFilter: String = ""
     
+    /// Target prestage for the "Add Unassigned Device" section.
+    /// Kept separate from `selectedPrestageTarget` (used by "Update Assigned Prestage") so the two pickers move independently.
+    @State private var addTargetPrestage: PreStage = PreStage(keepExistingSiteMembership: false, enrollmentSiteId: "", id: "", displayName: "")
+    
+    //    Unassign Device section - independent selection
+    
+    /// Serial selected for removal in the "Unassign Device" section
+    @State private var removeSerial: String = ""
+    
+    /// Filter text for the "Unassign Device" picker (matches serial, prestage ID or prestage name)
+    @State private var removeFilter: String = ""
+    
+    /// Shows the confirmation alert before removing a device from its prestage
+    @State private var showingRemoveConfirmation = false
+    
     var body: some View {
         
         
@@ -223,108 +238,13 @@ struct PrestagesEditView: View {
 
                 Divider()
 
-                // Add Unassigned Device
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Add Unassigned Device").font(.title2).fontWeight(.semibold)
-                    Text("Add a device not assigned to a pre-stage").font(.subheadline).foregroundColor(.secondary)
-
-                    HStack {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                        // Width capped so the "Unassigned only" toggle sits next to the field
-                        TextField("Filter by serial or computer name", text: $unassignedFilter)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(minWidth: 180, maxWidth: 280)
-                        if !unassignedFilter.isEmpty {
-                            Button(action: { unassignedFilter = "" }) {
-                                Image(systemName: "xmark.circle.fill")
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                        Toggle("Unassigned only", isOn: $showOnlyUnassigned)
-                            .toggleStyle(.checkbox)
-                        Text("\(filteredUnassignedComputers.count) of \(networkController.allComputersBasic.computers.count)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        // Absorbs spare width so controls stay grouped on the left
-                        Spacer()
-                    }
-
-                    HStack {
-                        Label("Serial", systemImage: "barcode.viewfinder")
-                        Picker(selection: $unassignedSerial, label: EmptyView()) {
-                            Text("").tag("")
-                            // Keep the current selection available even if it is filtered out
-                            if !unassignedSerial.isEmpty && !filteredUnassignedComputers.contains(where: { $0.serialNumber == unassignedSerial }) {
-                                Text(unassignedSerial).tag(unassignedSerial)
-                            }
-                            ForEach(filteredUnassignedComputers, id: \.id) { computer in
-                                Text("\(computer.serialNumber)  (\(computer.name))").tag(computer.serialNumber)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: 360) // Cap picker width
-                        Spacer()
-                    }
-
-                    HStack {
-                        Text("Target Prestage:")
-                        Picker(selection: $selectedPrestageTarget, label: Text("Target Prestage:")) {
-                            Text("").tag(PreStage(keepExistingSiteMembership: false, enrollmentSiteId: "", id: "", displayName: ""))
-                            ForEach(prestageController.allPrestages, id: \.self) { prestage in
-                                Text(String(describing: prestage.displayName)).tag(prestage)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                    }
-
-                    Button(action: {
-                        progress.showProgress()
-                        progress.waitForABit()
-                        let targetID = selectedPrestageTarget.id
-                        showPrestage(targetPrestageID: targetID, serial: unassignedSerial, authToken: networkController.authToken)
-                    }) {
-                        HStack(spacing:30) {
-                            Text("Add")
-                        }
-                    }
-                    .disabled(unassignedSerial.isEmpty || selectedPrestageTarget.id.isEmpty)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                }
-                .padding()
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.windowBackgroundColor)).shadow(radius: 1))
+                // Add Unassigned Device - split into its own property to keep body type-checking fast
+                addUnassignedDeviceSection
 
                 Divider()
 
-                // Unassign Device
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Unassign Device").font(.headline)
-
-                    if prestageController.allPsScComplete == true && prestageController.serialPrestageAssignment.count > 0 {
-
-                        Button(action: {
-                            updatePrestage(initialPrestageID: initialPrestageID, authToken: networkController.authToken)
-                        }) {
-                            Text("Remove")
-                        }
-                        .alert(isPresented: $showingWarning) {
-                            Alert(title: Text("Caution!"), message: Text("This action will delete data.\n Always ensure that you have a backup!"), dismissButton: .default(Text("I understand!")))
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-
-                    } else {
-                        if prestageController.allPsScComplete == false {
-                            ProgressView {
-                                Text("Loading")
-                                    .progressViewStyle(.horizontal)
-                            }
-                        } else {
-                            Text("No Devices Assigned To A Prestage")
-                        }
-                    }
-                }
-                .padding()
+                // Unassign Device - split into its own property to keep body type-checking fast
+                unassignDeviceSection
 
             Spacer()
         }
@@ -513,14 +433,6 @@ struct PrestagesEditView: View {
     }
     
     func prestageName(for id: String) -> String {
-    
-    func prestageName(for id: String) -> String {
-    
-    func prestageName(for id: String) -> String {
-    
-    func prestageName(for id: String) -> String {
-    
-    func prestageName(for id: String) -> String {
         prestageController.allPrestages.first(where: { $0.id == id })?.displayName ?? ""
     }
     
@@ -539,6 +451,88 @@ struct PrestagesEditView: View {
     //    Unassigned device picker
     //    #################################################################################
     
+    /// "Add Unassigned Device" section - separate from body to avoid type-checker timeouts
+    var addUnassignedDeviceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Add Unassigned Device").font(.title2).fontWeight(.semibold)
+            Text("Add a device not assigned to a pre-stage").font(.subheadline).foregroundColor(.secondary)
+            
+            unassignedFilterRow
+            unassignedSerialPickerRow
+            
+            HStack {
+                Text("Target Prestage:")
+                // Uses its own selection (addTargetPrestage) - independent of the Update section's picker
+                Picker(selection: $addTargetPrestage, label: EmptyView()) {
+                    Text("").tag(PreStage(keepExistingSiteMembership: false, enrollmentSiteId: "", id: "", displayName: ""))
+                    ForEach(prestageController.allPrestages, id: \.self) { prestage in
+                        Text("\(prestage.displayName) (ID: \(prestage.id))").tag(prestage)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: 360)
+                Spacer()
+            }
+            
+            Button(action: {
+                progress.showProgress()
+                progress.waitForABit()
+                showPrestage(targetPrestageID: addTargetPrestage.id, serial: unassignedSerial, authToken: networkController.authToken)
+            }) {
+                Text("Add")
+            }
+            .disabled(unassignedSerial.isEmpty || addTargetPrestage.id.isEmpty)
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(NSColor.windowBackgroundColor)).shadow(radius: 1))
+    }
+    
+    /// Filter row for the unassigned serial picker
+    var unassignedFilterRow: some View {
+        HStack {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+            // Width capped so the "Unassigned only" toggle sits next to the field
+            TextField("Filter by serial or computer name", text: $unassignedFilter)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(minWidth: 180, maxWidth: 280)
+            if !unassignedFilter.isEmpty {
+                Button(action: { unassignedFilter = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.borderless)
+            }
+            Toggle("Unassigned only", isOn: $showOnlyUnassigned)
+                .toggleStyle(.checkbox)
+            Text("\(filteredUnassignedComputers.count) of \(networkController.allComputersBasic.computers.count)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            // Absorbs spare width so controls stay grouped on the left
+            Spacer()
+        }
+    }
+    
+    /// Serial picker for the unassigned device
+    var unassignedSerialPickerRow: some View {
+        HStack {
+            Label("Serial", systemImage: "barcode.viewfinder")
+            Picker(selection: $unassignedSerial, label: EmptyView()) {
+                Text("").tag("")
+                // Keep the current selection available even if it is filtered out
+                if !unassignedSerial.isEmpty && !filteredUnassignedComputers.contains(where: { $0.serialNumber == unassignedSerial }) {
+                    Text(unassignedSerial).tag(unassignedSerial)
+                }
+                ForEach(filteredUnassignedComputers, id: \.id) { computer in
+                    Text("\(computer.serialNumber)  (\(computer.name))").tag(computer.serialNumber)
+                }
+            }
+            .pickerStyle(.menu)
+            .frame(maxWidth: 360) // Cap picker width
+            Spacer()
+        }
+    }
+    
     var filteredUnassignedComputers: [ComputerBasicRecord] {
         let filter = unassignedFilter.trimmingCharacters(in: .whitespaces)
         return networkController.allComputersBasic.computers
@@ -546,6 +540,147 @@ struct PrestagesEditView: View {
             .filter { !showOnlyUnassigned || prestageController.serialPrestageAssignment[$0.serialNumber] == nil }
             .filter { filter.isEmpty || $0.serialNumber.localizedCaseInsensitiveContains(filter) || $0.name.localizedCaseInsensitiveContains(filter) }
             .sorted { $0.serialNumber.localizedStandardCompare($1.serialNumber) == .orderedAscending }
+    }
+    
+    //    #################################################################################
+    //    Unassign device - dedicated selection and removal
+    //    #################################################################################
+    
+    /// Assignments matching the Unassign Device filter (serial, prestage ID or name)
+    var filteredRemoveEntries: [AssignmentEntry] {
+        let filter = removeFilter.trimmingCharacters(in: .whitespaces)
+        guard !filter.isEmpty else { return assignmentEntries }
+        return assignmentEntries.filter {
+            $0.serial.localizedCaseInsensitiveContains(filter) ||
+            $0.prestageID.localizedCaseInsensitiveContains(filter) ||
+            $0.prestageName.localizedCaseInsensitiveContains(filter)
+        }
+    }
+    
+    /// Prestage the selected removal device is currently assigned to
+    var removePrestageID: String {
+        prestageController.serialPrestageAssignment[removeSerial] ?? ""
+    }
+    
+    /// "Unassign Device" section - separate from body to avoid type-checker timeouts
+    @ViewBuilder
+    var unassignDeviceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Unassign Device").font(.title2).fontWeight(.semibold)
+            Text("Remove a device from the prestage it is currently assigned to").font(.subheadline).foregroundColor(.secondary)
+            
+            if prestageController.allPsScComplete == true && prestageController.serialPrestageAssignment.count > 0 {
+                removeFilterRow
+                removeDevicePickerRow
+                
+                if !removeSerial.isEmpty {
+                    Text("Will be removed from: \(prestageName(for: removePrestageID)) (ID: \(removePrestageID))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Button(action: {
+                    showingRemoveConfirmation = true
+                }) {
+                    Text("Remove")
+                }
+                .disabled(removeSerial.isEmpty || removePrestageID.isEmpty)
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .alert(isPresented: $showingRemoveConfirmation) {
+                    Alert(
+                        title: Text("Remove Device?"),
+                        message: Text("Remove \(removeSerial) from prestage \(prestageName(for: removePrestageID)) (ID: \(removePrestageID))?"),
+                        primaryButton: .destructive(Text("Remove")) {
+                            removeDevice(serial: removeSerial, prestageID: removePrestageID, authToken: networkController.authToken)
+                        },
+                        secondaryButton: .cancel()
+                    )
+                }
+            } else if prestageController.allPsScComplete == false {
+                ProgressView {
+                    Text("Loading")
+                        .progressViewStyle(.horizontal)
+                }
+            } else {
+                Text("No Devices Assigned To A Prestage")
+            }
+        }
+        .padding()
+    }
+    
+    /// Filter row for the removal picker (independent of the other sections)
+    var removeFilterRow: some View {
+        HStack {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+            TextField("Filter by serial, prestage name or ID", text: $removeFilter)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .frame(minWidth: 180, maxWidth: 280)
+            if !removeFilter.isEmpty {
+                Button(action: { removeFilter = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.borderless)
+            }
+            Text("\(filteredRemoveEntries.count) of \(assignmentEntries.count)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+    }
+    
+    /// Device picker - selecting a serial determines the prestage ID to remove it from
+    var removeDevicePickerRow: some View {
+        HStack {
+            Label("Device", systemImage: "barcode.viewfinder")
+            Picker(selection: $removeSerial, label: EmptyView()) {
+                Text("").tag("")
+                // Keep the current selection available even if it is filtered out
+                if !removeSerial.isEmpty && !filteredRemoveEntries.contains(where: { $0.serial == removeSerial }) {
+                    Text(removeSerial).tag(removeSerial)
+                }
+                ForEach(filteredRemoveEntries, id: \.serial) { entry in
+                    Text(removeEntryLabel(entry)).tag(entry.serial)
+                }
+            }
+            .pickerStyle(.menu)
+            .frame(maxWidth: 420)
+            Spacer()
+        }
+    }
+    
+    func removeEntryLabel(_ entry: AssignmentEntry) -> String {
+        let name = entry.prestageName.isEmpty ? "Unknown" : entry.prestageName
+        return "\(entry.serial)  –  \(name) (ID: \(entry.prestageID))"
+    }
+    
+    /// Removes a single device from its prestage, then refreshes the assignment list.
+    /// Replaces the previous use of updatePrestage(...) for removal.
+    func removeDevice(serial: String, prestageID: String, authToken: String) {
+        guard !serial.isEmpty, !prestageID.isEmpty else { return }
+        prestageController.separationLine()
+        print("Running: removeDevice - serial:\(serial) prestageID:\(prestageID)")
+        progress.showProgress()
+        
+        Task {
+            do {
+                // Fetch current scope first so depVersionLock is up to date
+                try await prestageController.getPrestageCurrentScope(jamfURL: prestageController.server, prestageID: prestageID, authToken: authToken)
+                
+                try await prestageController.removeDeviceFromPrestage(server: prestageController.server, removeComputerPrestageID: prestageID, serial: serial, authToken: authToken, depVersionLock: prestageController.depVersionLock)
+                
+                // Refresh the serial -> prestage map so pickers reflect the removal
+                try await prestageController.getAllDevicesPrestageScope(server: server, prestageID: prestageID, authToken: authToken)
+                
+                await MainActor.run {
+                    removeSerial = ""
+                    progress.endProgress()
+                }
+            } catch {
+                print("removeDevice failed: \(error)")
+                await MainActor.run { progress.endProgress() }
+            }
+        }
     }
     
     func updatePrestage(initialPrestageID: String, targetPrestageID: String) {
@@ -587,6 +722,9 @@ struct PrestagesEditView: View {
 //}
 //struct PrestageEditView_Previews: PreviewProvider {
 //    static var previews: some View {
-//        PrestageEditView()
+// //    }
+//}
+//    }
+//}
 //    }
 //}
