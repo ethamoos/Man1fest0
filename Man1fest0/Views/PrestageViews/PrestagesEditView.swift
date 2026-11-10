@@ -8,9 +8,11 @@
 import SwiftUI
 
 
+
 //    #################################################################################
 //      PrestageEditView
 //    #################################################################################
+
 
 
 struct PrestagesEditView: View {
@@ -111,8 +113,10 @@ struct PrestagesEditView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "line.3.horizontal.decrease.circle")
+                            // Width capped so the field doesn't expand across the whole row
                             TextField("Filter by serial, prestage name or ID", text: $assignmentFilter)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(minWidth: 180, maxWidth: 280)
                             if !assignmentFilter.isEmpty {
                                 Button(action: { assignmentFilter = "" }) {
                                     Image(systemName: "xmark.circle.fill")
@@ -122,6 +126,8 @@ struct PrestagesEditView: View {
                             Text("\(filteredAssignments.count) of \(assignmentEntries.count)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                            // Absorbs spare width so controls stay grouped on the left
+                            Spacer()
                         }
 
                         HStack {
@@ -133,6 +139,8 @@ struct PrestagesEditView: View {
                                 }
                             }
                             .pickerStyle(.menu)
+                            .frame(maxWidth: 320) // Cap picker width
+                            Spacer()
                         }
 
                         HStack {
@@ -222,8 +230,10 @@ struct PrestagesEditView: View {
 
                     HStack {
                         Image(systemName: "line.3.horizontal.decrease.circle")
+                        // Width capped so the "Unassigned only" toggle sits next to the field
                         TextField("Filter by serial or computer name", text: $unassignedFilter)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(minWidth: 180, maxWidth: 280)
                         if !unassignedFilter.isEmpty {
                             Button(action: { unassignedFilter = "" }) {
                                 Image(systemName: "xmark.circle.fill")
@@ -235,6 +245,8 @@ struct PrestagesEditView: View {
                         Text("\(filteredUnassignedComputers.count) of \(networkController.allComputersBasic.computers.count)")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                        // Absorbs spare width so controls stay grouped on the left
+                        Spacer()
                     }
 
                     HStack {
@@ -250,6 +262,8 @@ struct PrestagesEditView: View {
                             }
                         }
                         .pickerStyle(.menu)
+                        .frame(maxWidth: 360) // Cap picker width
+                        Spacer()
                     }
 
                     HStack {
@@ -498,7 +512,15 @@ struct PrestagesEditView: View {
         }
     }
     
-    func prestageName(for id: String) -> String 
+    func prestageName(for id: String) -> String {
+    
+    func prestageName(for id: String) -> String {
+    
+    func prestageName(for id: String) -> String {
+    
+    func prestageName(for id: String) -> String {
+    
+    func prestageName(for id: String) -> String {
         prestageController.allPrestages.first(where: { $0.id == id })?.displayName ?? ""
     }
     
