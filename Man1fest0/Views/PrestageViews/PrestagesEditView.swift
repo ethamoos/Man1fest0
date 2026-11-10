@@ -64,33 +64,43 @@ struct PrestagesEditView: View {
     
     @State var computerSelection: String = ""
     
+    //    #################################################################################
+    //    Picker filters / selections
+    //    #################################################################################
+    
+    /// Serial selected in the "Add Unassigned Device" section
+    @State private var unassignedSerial: String = ""
+    
+    /// Filter text for the "Add Unassigned Device" serial picker (matches serial or computer name)
+    @State private var unassignedFilter: String = ""
+    
+    /// Only show computers that are not currently assigned to any prestage
+    @State private var showOnlyUnassigned: Bool = false
+    
+    /// Filter text for the current prestage pickers (matches serial, prestage ID or prestage name)
+    @State private var assignmentFilter: String = ""
+    
     var body: some View {
         
         
         let serialsPrestageName = Array (prestageController.serialPrestageAssignment.keys)
         
-        
-        
-        //        Objective is to map the serial number to the computer name
-        
-        //        let selectedComputersSerialNames: [String?] = networkController.allComputersBasic.computers.filter {
-        //            prestageController.serialPrestageAssignment[serial]!.contains($0.serialNumber) }
-        //            .map(\.name)
-        
-        //    case serialNumber = "serial_number"
-        
         VStack(alignment: .leading) {
+            
+            VStack{
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                }
+                .buttonStyle(.bordered)
+            } .padding()
             
                 VStack(alignment: .leading, spacing: 12) {
                     // Back button + header
                     HStack(alignment: .center) {
-                        Button(action: { dismiss() }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "chevron.left")
-                                Text("Back")
-                            }
-                        }
-                        .buttonStyle(.bordered)
+                      
 
                         VStack(alignment: .leading) {
                             Text("Update Assigned Prestage").font(.title2).fontWeight(.semibold)
@@ -102,22 +112,52 @@ struct PrestagesEditView: View {
                     // Group: Serial and current prestage
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Label("Serial", systemImage: "barcode.viewfinder")
-                            TextField("serial", text: $serial)
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                            TextField("Filter by serial, prestage name or ID", text: $assignmentFilter)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !assignmentFilter.isEmpty {
+                                Button(action: { assignmentFilter = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                            Text("\(filteredAssignments.count) of \(assignmentEntries.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        HStack {
+                            Label("Serial", systemImage: "barcode.viewfinder")
+                            Picker(selection: assignedSerialBinding, label: EmptyView()) {
+                                Text("").tag("")
+                                ForEach(assignedSerialOptions, id: \.self) { item in
+                                    Text(item).tag(item)
+                                }
+                            }
+                            .pickerStyle(.menu)
                         }
 
                         HStack {
                             VStack(alignment: .leading) {
                                 Text("Current Prestage Name:").fontWeight(.bold)
-                                TextField("Name", text: $currentPrestageName)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                Picker(selection: currentPrestageNameBinding, label: EmptyView()) {
+                                    Text("").tag("")
+                                    ForEach(assignedPrestageNameOptions, id: \.self) { item in
+                                        Text(item).tag(item)
+                                    }
+                                }
+                                .pickerStyle(.menu)
                             }
 
                             VStack(alignment: .leading) {
                                 Text("Current Prestage ID:").fontWeight(.bold)
-                                TextField("ID", text: $initialPrestageID)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                Picker(selection: currentPrestageIDBinding, label: EmptyView()) {
+                                    Text("").tag("")
+                                    ForEach(assignedPrestageIDOptions, id: \.self) { item in
+                                        Text(item).tag(item)
+                                    }
+                                }
+                                .pickerStyle(.menu)
                             }
                         }
                     }
@@ -141,12 +181,10 @@ struct PrestagesEditView: View {
                                 print("currentPrestageID is set as:\(self.initialPrestageID)")
                             }
                         }
-                    }
-                    .padding(.vertical)
 
                     // Update button
                     HStack {
-                        Spacer()
+//                        Spacer()
                         Button(action: {
                             // use selectedPrestageTarget.id safely
                             let targetID = selectedPrestageTarget.id
@@ -163,6 +201,8 @@ struct PrestagesEditView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
                     }
+                    }
+                    .padding(.vertical)
 
                     if progress.showProgressView == true {
                         ProgressView {
@@ -179,12 +219,39 @@ struct PrestagesEditView: View {
 
                 // Add Unassigned Device
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Add Unassigned Device").font(.headline)
+                    Text("Add Unassigned Device").font(.title2).fontWeight(.semibold)
+                    Text("Add a device not assigned to a pre-stage").font(.subheadline).foregroundColor(.secondary)
+
+                    HStack {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                        TextField("Filter by serial or computer name", text: $unassignedFilter)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        if !unassignedFilter.isEmpty {
+                            Button(action: { unassignedFilter = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                        Toggle("Unassigned only", isOn: $showOnlyUnassigned)
+                            .toggleStyle(.checkbox)
+                        Text("\(filteredUnassignedComputers.count) of \(networkController.allComputersBasic.computers.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
 
                     HStack {
                         Label("Serial", systemImage: "barcode.viewfinder")
-                        TextField("serial", text: $serial)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        Picker(selection: $unassignedSerial, label: EmptyView()) {
+                            Text("").tag("")
+                            // Keep the current selection available even if it is filtered out
+                            if !unassignedSerial.isEmpty && !filteredUnassignedComputers.contains(where: { $0.serialNumber == unassignedSerial }) {
+                                Text(unassignedSerial).tag(unassignedSerial)
+                            }
+                            ForEach(filteredUnassignedComputers, id: \.id) { computer in
+                                Text("\(computer.serialNumber)  (\(computer.name))").tag(computer.serialNumber)
+                            }
+                        }
+                        .pickerStyle(.menu)
                     }
 
                     HStack {
@@ -202,12 +269,13 @@ struct PrestagesEditView: View {
                         progress.showProgress()
                         progress.waitForABit()
                         let targetID = selectedPrestageTarget.id
-                        showPrestage(targetPrestageID: targetID, authToken: networkController.authToken)
+                        showPrestage(targetPrestageID: targetID, serial: unassignedSerial, authToken: networkController.authToken)
                     }) {
                         HStack(spacing:30) {
                             Text("Add")
                         }
                     }
+                    .disabled(unassignedSerial.isEmpty || selectedPrestageTarget.id.isEmpty)
                     .buttonStyle(.borderedProminent)
                     .tint(.blue)
                 }
@@ -254,6 +322,24 @@ struct PrestagesEditView: View {
             getCurrentPrestageName(initialPrestageID: initialPrestageID)
             getCurrentPrestage(targetPrestageID: initialPrestageID, authToken: networkController.authToken)
             currentPrestageName = self.currentPrestage.displayName
+            if !serial.isEmpty {
+                selectAssignedSerial(serial)
+            } else if !initialPrestageID.isEmpty {
+                selectPrestageID(initialPrestageID)
+            }
+            // Load the basic computer list (with serial numbers) if needed for the unassigned picker
+            if networkController.allComputersBasic.computers.isEmpty && !networkController.authToken.isEmpty {
+                Task {
+                    try? await networkController.getComputersBasic(server: server, authToken: networkController.authToken)
+                }
+            }
+        }
+        .onChange(of: prestageController.serialPrestageAssignment) { _ in
+            // Re-synchronise once assignments are (re)loaded
+            if !serial.isEmpty { selectAssignedSerial(serial) }
+        }
+        .onChange(of: prestageController.allPrestages) { _ in
+            currentPrestageName = prestageName(for: initialPrestageID)
         }
         .onDisappear() {
             // Ensure global editor state is cleared when the view is dismissed
@@ -312,7 +398,7 @@ struct PrestagesEditView: View {
     }
     
     
-    func showPrestage(targetPrestageID: String, authToken: String) {
+    func showPrestage(targetPrestageID: String, serial: String, authToken: String) {
         prestageController.separationLine()
         print("Running: showPrestage")
         
@@ -322,6 +408,125 @@ struct PrestagesEditView: View {
             print("Running: adding to prestage - main")
             try await prestageController.addDeviceToPrestage(server: prestageController.server, prestageID: targetPrestageID, serial: serial, authToken: authToken, depVersionLock: prestageController.depVersionLock)
         }
+    }
+    
+    //    #################################################################################
+    //    Current prestage pickers - synchronised selection
+    //    #################################################################################
+    
+    struct AssignmentEntry: Hashable {
+        let serial: String
+        let prestageID: String
+        let prestageName: String
+    }
+    
+    /// All serial -> prestage assignments, with the prestage name resolved
+    var assignmentEntries: [AssignmentEntry] {
+        prestageController.serialPrestageAssignment
+            .map { AssignmentEntry(serial: $0.key, prestageID: $0.value, prestageName: prestageName(for: $0.value)) }
+            .sorted { $0.serial.localizedStandardCompare($1.serial) == .orderedAscending }
+    }
+    
+    /// Assignments matching the filter text (serial, prestage ID or name)
+    var filteredAssignments: [AssignmentEntry] {
+        let filter = assignmentFilter.trimmingCharacters(in: .whitespaces)
+        guard !filter.isEmpty else { return assignmentEntries }
+        return assignmentEntries.filter {
+            $0.serial.localizedCaseInsensitiveContains(filter) ||
+            $0.prestageID.localizedCaseInsensitiveContains(filter) ||
+            $0.prestageName.localizedCaseInsensitiveContains(filter)
+        }
+    }
+    
+    var assignedSerialOptions: [String] {
+        withCurrent(serial, in: filteredAssignments.map(\.serial))
+    }
+    
+    var assignedPrestageIDOptions: [String] {
+        let ids = uniqueOrdered(filteredAssignments.map(\.prestageID))
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        return withCurrent(initialPrestageID, in: ids)
+    }
+    
+    var assignedPrestageNameOptions: [String] {
+        let names = uniqueOrdered(filteredAssignments.map(\.prestageName).filter { !$0.isEmpty })
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        return withCurrent(currentPrestageName, in: names)
+    }
+    
+    var assignedSerialBinding: Binding<String> {
+        Binding(get: { serial }, set: { selectAssignedSerial($0) })
+    }
+    
+    var currentPrestageIDBinding: Binding<String> {
+        Binding(get: { initialPrestageID }, set: { selectPrestageID($0) })
+    }
+    
+    var currentPrestageNameBinding: Binding<String> {
+        Binding(get: { currentPrestageName }, set: { selectPrestageName($0) })
+    }
+    
+    /// Selecting a serial updates the prestage ID and name
+    func selectAssignedSerial(_ newSerial: String) {
+        serial = newSerial
+        guard !newSerial.isEmpty else { return }
+        if let id = prestageController.serialPrestageAssignment[newSerial] {
+            initialPrestageID = id
+            currentPrestageName = prestageName(for: id)
+            getCurrentPrestageName(initialPrestageID: id)
+        }
+    }
+    
+    /// Selecting a prestage ID updates the name and, if needed, the serial
+    func selectPrestageID(_ newID: String) {
+        initialPrestageID = newID
+        currentPrestageName = prestageName(for: newID)
+        getCurrentPrestageName(initialPrestageID: newID)
+        guard !newID.isEmpty else { return }
+        // Keep the serial if it already belongs to this prestage, otherwise pick the first matching serial
+        if prestageController.serialPrestageAssignment[serial] != newID {
+            serial = (filteredAssignments.first { $0.prestageID == newID }
+                      ?? assignmentEntries.first { $0.prestageID == newID })?.serial ?? ""
+        }
+    }
+    
+    /// Selecting a prestage name updates the ID and, if needed, the serial
+    func selectPrestageName(_ newName: String) {
+        currentPrestageName = newName
+        guard !newName.isEmpty else { return }
+        if let id = (filteredAssignments.first { $0.prestageName == newName }
+                     ?? assignmentEntries.first { $0.prestageName == newName })?.prestageID
+            ?? prestageController.allPrestages.first(where: { $0.displayName == newName })?.id {
+            selectPrestageID(id)
+        }
+    }
+    
+    func prestageName(for id: String) -> String {
+        prestageController.allPrestages.first(where: { $0.id == id })?.displayName ?? ""
+    }
+    
+    private func uniqueOrdered(_ items: [String]) -> [String] {
+        var seen = Set<String>()
+        return items.filter { seen.insert($0).inserted }
+    }
+    
+    /// Ensures the current selection is always present in a picker's options (avoids invalid picker tags when filtering)
+    private func withCurrent(_ current: String, in options: [String]) -> [String] {
+        guard !current.isEmpty, !options.contains(current) else { return options }
+        return [current] + options
+    }
+    
+    //    #################################################################################
+    //    Unassigned device picker
+    //    #################################################################################
+    
+    var filteredUnassignedComputers: [ComputerBasicRecord] {
+        let filter = unassignedFilter.trimmingCharacters(in: .whitespaces)
+        return networkController.allComputersBasic.computers
+            .filter { !$0.serialNumber.isEmpty }
+            .filter { !showOnlyUnassigned || prestageController.serialPrestageAssignment[$0.serialNumber] == nil }
+            .filter { filter.isEmpty || $0.serialNumber.localizedCaseInsensitiveContains(filter) || $0.name.localizedCaseInsensitiveContains(filter) }
+            .sorted { $0.serialNumber.localizedStandardCompare($1.serialNumber) == .orderedAscending }
     }
     
     func updatePrestage(initialPrestageID: String, targetPrestageID: String) {
