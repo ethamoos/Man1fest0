@@ -55,21 +55,45 @@ struct ConfigProfileViewMacOSTable: View {
                     Divider()
                     VStack(alignment: .leading) {
 
-                        Button(action: {
-                            progress.showProgress()
-                            progress.waitForABit()
-                            showingWarning = true
-                            print("Deleting:\($selectionID)")
-                            networkController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selectionID))
-                        }) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "trash")
-                                Text("Delete")
+                        HStack(spacing: 10) {
+                            Button(action: {
+                                progress.showProgress()
+                                progress.waitForABit()
+                                showingWarning = true
+                                print("Deleting:\($selectionID)")
+                                networkController.deleteConfigProfile(server: server, authToken: networkController.authToken, resourceType: ResourceType.configProfileDetailedMacOS, itemID: String(describing: selectionID))
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "trash")
+                                    Text("Delete")
+                                }
                             }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .shadow(color: .gray, radius: 2, x: 0, y: 2)
+
+                            Button(action: {
+                                guard let profiles = networkController.allConfigProfiles.computerConfigurations else { return }
+                                var base = server.trimmingCharacters(in: .whitespacesAndNewlines)
+                                while base.hasSuffix("/") { base.removeLast() }
+                                for profile in profiles where selectionID.contains(profile.id) {
+                                    guard let profileID = profile.jamfId else { continue }
+                                    let uiURL = "\(base)/OSXConfigurationProfiles.html?id=\(profileID)&o=r&side-tabs=General"
+                                    print("Open in Browser - URL: \(uiURL)")
+                                    layout.openURL(urlString: uiURL)
+                                }
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "safari")
+                                    Text("Open In Browser")
+                                }
+                            }
+                            .help("Open the selected configuration profile(s) in the Jamf web interface in your default browser.")
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+                            .shadow(color: .gray, radius: 2, x: 0, y: 2)
+                            .disabled(selectionID.isEmpty)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .shadow(color: .gray, radius: 2, x: 0, y: 2)
                         
                         // Rename tools
                         DisclosureGroup("Rename Tools") {
