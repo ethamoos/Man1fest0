@@ -61,6 +61,9 @@ struct PoliciesActionView: View {
     @State private var selectedPolicyUUIDs = Set<UUID>()
     
     @State var searchText = ""
+    @State private var filteredPolicies: [Policy] = []
+    @State private var searchDebounceTask: Task<Void, Never>? = nil
+    @State private var didInitialLoad = false
     // Focus for the inline search field so it can be focused via Cmd-F
     @FocusState private var searchFieldFocused: Bool
     
@@ -189,7 +192,7 @@ struct PoliciesActionView: View {
                 }
                 .padding([.leading, .trailing, .top])
                 
-                List(searchResults, id: \.id, selection: $selectedPolicyUUIDs) { policy in
+                List(filteredPolicies, id: \.id, selection: $selectedPolicyUUIDs) { policy in
 
                     HStack {
                         Image(systemName:"text.justify")
@@ -506,6 +509,12 @@ struct PoliciesActionView: View {
         }
         
         .onAppear {
+            if didInitialLoad {
+                // Keep search results in sync if data changed while hidden.
+                applyPolicyFilter()
+                return
+            }
+            didInitialLoad = true
             
             print("PolicyActionView appeared - connecting")
             
@@ -522,6 +531,8 @@ struct PoliciesActionView: View {
                     networkController.refreshComputers()
                     networkController.refreshDepartments()
 
+            applyPolicyFilter()
+
                     // Ensure List background is white on macOS: we set the SwiftUI List's
                     // background to Color.white above. If you need a more targeted
                     // AppKit-level override use NSScrollView.appearance() adjustments,
@@ -535,6 +546,12 @@ struct PoliciesActionView: View {
         // Man1fest0App to focus the policy search UI.
         .onReceive(NotificationCenter.default.publisher(for: .focusSearch)) { _ in
             searchFieldFocused = true
+        }
+        .onChange(of: searchText) { _ in
+            schedulePolicyFilterUpdate()
+        }
+        .onChange(of: networkController.policies) { _ in
+            schedulePolicyFilterUpdate()
         }
     }
     
@@ -584,13 +601,27 @@ struct PoliciesActionView: View {
         }
     }
     
-    var searchResults: [Policy] {
-        if searchText.isEmpty {
-            // print("Search is empty")
-            return networkController.policies
-        } else {
-            // print("Search is currently is currently:\(searchText)")
-            return networkController.policies.filter { $0.name.lowercased().contains(searchText.lowercased())}
+    private func schedulePolicyFilterUpdate() {
+        searchDebounceTask?.cancel()
+        searchDebounceTask = Task {
+            // Debounce typing so large lists are not re-filtered on every keystroke.
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            if Task.isCancelled { return }
+            await MainActor.run {
+                applyPolicyFilter()
+            }
+        }
+    }
+
+    private func applyPolicyFilter() {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            filteredPolicies = networkController.policies
+            return
+        }
+        let needle = trimmed.lowercased()
+        filteredPolicies = networkController.policies.filter { policy in
+            policy.name.lowercased().contains(needle)
         }
     }
     
@@ -752,6 +783,21 @@ struct PoliciesActionScopeTab: View {
     @State private var showingScopeAllBothConfirm: Bool = false
     @State private var showingClearScopeConfirm: Bool = false
 
+    private var filteredComputerGroups: [ComputerGroup] {
+        let trimmed = computerGroupFilter.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return networkController.allComputerGroups }
+        let needle = trimmed.lowercased()
+        return networkController.allComputerGroups.filter { $0.name.lowercased().contains(needle) }
+    }
+
+    private var staticGroups: [ComputerGroup] {
+        filteredComputerGroups.filter { !$0.isSmart }
+    }
+
+    private var smartGroups: [ComputerGroup] {
+        filteredComputerGroups.filter { $0.isSmart }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -850,10 +896,8 @@ struct PoliciesActionScopeTab: View {
                 LazyVGrid(columns: layout.columns, spacing: 10) {
                     Picker(selection: $computerGroupSelection, label: Label("Static Groups", systemImage: "person.3")) {
                         Text("No group selected").tag(nil as ComputerGroup?)
-                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)})) { group in
-                            if group.isSmart != true {
-                                Text(group.name).tag(group as ComputerGroup?)
-                            }
+                        ForEach(staticGroups) { group in
+                            Text(group.name).tag(group as ComputerGroup?)
                         }
                     }
 
@@ -874,10 +918,8 @@ struct PoliciesActionScopeTab: View {
                 LazyVGrid(columns: layout.columns, spacing: 10) {
                     Picker(selection: $computerGroupSelection, label: Label("Smart Groups", systemImage: "person.3")) {
                         Text("No group selected").tag(nil as ComputerGroup?)
-                        ForEach(networkController.allComputerGroups.filter({computerGroupFilter == "" ? true : $0.name.contains(computerGroupFilter)})) { group in
-                            if group.isSmart == true {
-                                Text(group.name).tag(group as ComputerGroup?)
-                            }
+                        ForEach(smartGroups) { group in
+                            Text(group.name).tag(group as ComputerGroup?)
                         }
                     }
 
