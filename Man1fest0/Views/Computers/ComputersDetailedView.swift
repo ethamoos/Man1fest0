@@ -41,6 +41,65 @@ struct ComputersDetailedView: View {
     @State private var policySortBy: Int = 0
     @State private var policySortAscending: Bool = true
     
+    // MARK: - Adaptive layout helpers
+
+    /// Top-level tab selector. Uses a segmented control when there is enough width,
+    /// otherwise falls back to a compact pop-up menu so the tabs are never clipped.
+    @ViewBuilder
+    private func mainTabPicker() -> some View {
+        ViewThatFits(in: .horizontal) {
+            Picker(selection: $selectedTab, label: EmptyView()) {
+                Text("General").tag(0)
+                Text("Software").tag(1)
+                Text("History").tag(2)
+                Text("Management").tag(3)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+
+            Picker("Section", selection: $selectedTab) {
+                Text("General").tag(0)
+                Text("Software").tag(1)
+                Text("History").tag(2)
+                Text("Management").tag(3)
+            }
+            .pickerStyle(.menu)
+            .fixedSize()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// History sub-tab selector with the same segmented → menu fallback.
+    @ViewBuilder
+    private func historyTabPicker() -> some View {
+        ViewThatFits(in: .horizontal) {
+            Picker(selection: $historyInnerTab, label: EmptyView()) {
+                Text("All").tag(0)
+                Text("Policies").tag(1)
+                Text("Commands").tag(2)
+                Text("Mac Apps").tag(3)
+                Text("Locations").tag(4)
+                Text("Audits").tag(5)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+
+            Picker("History", selection: $historyInnerTab) {
+                Text("All").tag(0)
+                Text("Policies").tag(1)
+                Text("Commands").tag(2)
+                Text("Mac Apps").tag(3)
+                Text("Locations").tag(4)
+                Text("Audits").tag(5)
+            }
+            .pickerStyle(.menu)
+            .fixedSize()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     // Main subviews split to help the compiler
     @ViewBuilder
     private func generalView() -> some View {
@@ -106,42 +165,14 @@ struct ComputersDetailedView: View {
             }
             
             
-            HStack {
-                Spacer()
-                Button(role: .destructive) { showDeleteAlert = true } label: {
-                    HStack(spacing: 8) { Image(systemName: "trash"); Text("Delete Selection") }
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    Spacer()
+                    generalActionButtons()
                 }
-                .disabled(isDeleting)
-
-                Button(action: {
-                    guard let computerIntID = Int(self.computerID) else {
-                        return
-                    }
-                    progress.showProgress()
-                    progress.waitForABit()
-                    ASyncFileDownloader.downloadFileAsyncAuth(
-                        objectID: computerIntID,
-                        resourceType: ResourceType.computerDetailed,
-                        server: self.server,
-                        authToken: networkController.authToken,
-                        format: .xml
-                    ) { (_, _) in
-                        DispatchQueue.main.async {
-                            progress.endProgress()
-                        }
-                    }
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "square.and.arrow.down")
-                        Text("Download XML")
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    generalActionButtons()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.yellow)
-                .help("Download this computer record as an XML file.")
-                
-                Button(action: { progress.showProgress(); progress.waitForABit(); layout.openURL(urlString: "\(self.server)/computers.html?id=\(self.computerID)&o=r", requestType: "computers") }) { HStack(spacing: 8) { Image(systemName: "safari"); Text("Open In Browser") } }
-                    .buttonStyle(.borderedProminent).tint(.green)
             }
             
             Divider()
@@ -156,7 +187,7 @@ struct ComputersDetailedView: View {
             
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    TextField("Username", text: $editUsername).textSelection(.enabled).frame(minWidth: 180)
+                    TextField("Username", text: $editUsername).textSelection(.enabled).frame(minWidth: 100)
                     Button(action: { showUpdateUsernameConfirm = true }) { Text("Update Username") }
                         .buttonStyle(.borderedProminent).tint(.blue).disabled(editUsername.isEmpty)
                 }
@@ -187,6 +218,44 @@ struct ComputersDetailedView: View {
         }
     }
 
+    @ViewBuilder
+    private func generalActionButtons() -> some View {
+        Button(role: .destructive) { showDeleteAlert = true } label: {
+            HStack(spacing: 8) { Image(systemName: "trash"); Text("Delete Selection") }
+        }
+        .disabled(isDeleting)
+
+        Button(action: {
+            guard let computerIntID = Int(self.computerID) else {
+                return
+            }
+            progress.showProgress()
+            progress.waitForABit()
+            ASyncFileDownloader.downloadFileAsyncAuth(
+                objectID: computerIntID,
+                resourceType: ResourceType.computerDetailed,
+                server: self.server,
+                authToken: networkController.authToken,
+                format: .xml
+            ) { (_, _) in
+                DispatchQueue.main.async {
+                    progress.endProgress()
+                }
+            }
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "square.and.arrow.down")
+                Text("Download XML")
+            }
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.yellow)
+        .help("Download this computer record as an XML file.")
+
+        Button(action: { progress.showProgress(); progress.waitForABit(); layout.openURL(urlString: "\(self.server)/computers.html?id=\(self.computerID)&o=r", requestType: "computers") }) { HStack(spacing: 8) { Image(systemName: "safari"); Text("Open In Browser") } }
+            .buttonStyle(.borderedProminent).tint(.green)
+    }
+
     // Helpers moved out of historyView to avoid nested function/result-builder issues
     private func formatEpoch(_ epoch: Int64?) -> String {
         guard let e = epoch else { return "" }
@@ -210,7 +279,7 @@ struct ComputersDetailedView: View {
                         Text("Date").tag(1)
                     }
                     .pickerStyle(.segmented)
-                    .frame(width: 180)
+                    .frame(maxWidth: 180)
 
                     Button(action: { policySortAscending.toggle() }) {
                         Image(systemName: policySortAscending ? "arrow.up" : "arrow.down")
@@ -673,17 +742,9 @@ struct ComputersDetailedView: View {
             }
             
             if let history = networkController.computerHistory {
-                // inner segmented picker for history types
-                Picker(selection: $historyInnerTab, label: Text("")) {
-                    Text("All").tag(0)
-                    Text("Policies").tag(1)
-                    Text("Commands").tag(2)
-                    Text("Mac Apps").tag(3)
-                    Text("Locations").tag(4)
-                    Text("Audits").tag(5)
-                }
-                .pickerStyle(.segmented)
-                .padding([.vertical])
+                // inner picker for history types (segmented, or menu on narrow widths)
+                historyTabPicker()
+                    .padding([.vertical])
 
                 Group {
                     switch historyInnerTab {
@@ -785,33 +846,20 @@ struct ComputersDetailedView: View {
         }
 
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                Text("Computer Management Policies")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                Spacer()
-                Button(action: {
-                    openSelectedManagementPoliciesInBrowser()
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "safari")
-                        Text("Open In Browser")
-                    }
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center) {
+                    Text("Computer Management Policies")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    managementHeaderButtons(selectedCount: selectedCount)
                 }
-                .disabled(selectedCount == 0)
-                .help(selectedCount == 0 ? "Select at least one policy first" : "Open selected policies in Jamf Pro")
-                Button(action: {
-                    Task { await loadComputerManagementPoliciesIfNeeded(force: true) }
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Reload")
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Computer Management Policies")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    HStack { managementHeaderButtons(selectedCount: selectedCount) }
                 }
-                Button(action: { showRawManagement.toggle() }) {
-                    Text(showRawManagement ? "Hide Raw" : "Show Raw")
-                }
-                .help("Toggle raw JSON response preview")
             }
 
             Text("Policy count: \(networkController.computerManagementPolicies.count)")
@@ -832,15 +880,16 @@ struct ComputersDetailedView: View {
                     Text("ID").tag(2)
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 240)
+                .frame(maxWidth: 240)
 
                 Button(action: { managementSortAscending.toggle() }) {
                     Image(systemName: managementSortAscending ? "arrow.up" : "arrow.down")
                 }
                 .help("Toggle sort order")
+                Spacer(minLength: 0)
+            }
 
-                Spacer()
-
+            HStack(alignment: .center, spacing: 10) {
                 Text("Trigger:")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -851,7 +900,8 @@ struct ComputersDetailedView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .frame(minWidth: 160)
+                .frame(maxWidth: 240)
+                Spacer(minLength: 0)
             }
 
             HStack(spacing: 8) {
@@ -888,7 +938,7 @@ struct ComputersDetailedView: View {
                     Text("Trigger")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .frame(minWidth: 140, alignment: .leading)
+                        .frame(minWidth: 80, maxWidth: 160, alignment: .leading)
                     Text("ID")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -905,7 +955,7 @@ struct ComputersDetailedView: View {
                         Text((policy.trigger?.isEmpty == false) ? (policy.trigger ?? "") : "-")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .frame(minWidth: 140, alignment: .leading)
+                            .frame(minWidth: 80, maxWidth: 160, alignment: .leading)
                         Text(policy.jamfId.map(String.init) ?? "")
                             .font(.caption2)
                             .foregroundColor(.secondary)
@@ -929,6 +979,32 @@ struct ComputersDetailedView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func managementHeaderButtons(selectedCount: Int) -> some View {
+        Button(action: {
+            openSelectedManagementPoliciesInBrowser()
+        }) {
+            HStack(spacing: 6) {
+                Image(systemName: "safari")
+                Text("Open In Browser")
+            }
+        }
+        .disabled(selectedCount == 0)
+        .help(selectedCount == 0 ? "Select at least one policy first" : "Open selected policies in Jamf Pro")
+        Button(action: {
+            Task { await loadComputerManagementPoliciesIfNeeded(force: true) }
+        }) {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.clockwise")
+                Text("Reload")
+            }
+        }
+        Button(action: { showRawManagement.toggle() }) {
+            Text(showRawManagement ? "Hide Raw" : "Show Raw")
+        }
+        .help("Toggle raw JSON response preview")
     }
 
     private func openSelectedManagementPoliciesInBrowser() {
@@ -967,14 +1043,9 @@ struct ComputersDetailedView: View {
                 // Use a segmented Picker + conditional content instead of TabView to avoid
                 // macOS TabView selection issues (ScrollView consuming events).
                 VStack(alignment: .leading, spacing: 0) {
-                    Picker(selection: $selectedTab, label: Text("")) {
-                        Text("General").tag(0)
-                        Text("Software").tag(1)
-                        Text("History").tag(2)
-                        Text("Management").tag(3)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding([.top, .horizontal])
+                    // Adaptive tab selector: segmented when wide, pop-up menu when narrow
+                    mainTabPicker()
+                        .padding([.top, .horizontal])
 
                     Group {
                         if selectedTab == 0 {
@@ -1016,8 +1087,9 @@ struct ComputersDetailedView: View {
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .topLeading)
                 .onReceive(networkController.$computerDetailedFull) { newDetail in
                     print("ComputersDetailedView: computerDetailedFull changed -> \(String(describing: newDetail?.general?.name))")
                 }
