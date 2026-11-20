@@ -15,6 +15,7 @@ final class MessageStore: ObservableObject {
     @Published var level: Level = .info
     @Published var isVisible: Bool = false
     @Published var showSpinner: Bool = false
+    @Published var details: String? = nil
     // Match the signature of the shared MessageStore so callers can pass details and
     // the named `showSpinner` parameter. The full implementation in Views/Shared
     // supports `details: String?` and `showSpinner: Bool`.
@@ -22,6 +23,7 @@ final class MessageStore: ObservableObject {
         DispatchQueue.main.async {
             self.message = text
             self.level = level
+            self.details = details
             self.showSpinner = showSpinner
             withAnimation { self.isVisible = true }
         }
@@ -53,7 +55,18 @@ struct MessageBar: View {
         if store.isVisible {
             HStack(spacing: 10) {
                 if store.showSpinner { ProgressView().progressViewStyle(CircularProgressViewStyle()) }
-                Text(store.message).foregroundColor(fg(store.level)).lineLimit(2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(store.message).foregroundColor(fg(store.level)).lineLimit(2)
+                    if let details = store.details, !details.isEmpty,
+                       store.level == .error || store.level == .warning {
+                        Text(details)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(3)
+                            .textSelection(.enabled)
+                            .help(details)
+                    }
+                }
                 Spacer()
                 Button(action: { store.hide() }) { Image(systemName: "xmark.circle.fill").foregroundColor(.secondary) }
             }

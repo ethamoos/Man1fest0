@@ -1160,9 +1160,42 @@ class XmlBrain: ObservableObject {
     }
     
     
+    /// Shows a message in the app's message bar. Safe to call from any thread/actor:
+    /// `messageStore` is main-actor isolated, so hop to the main actor first.
+    private func showUserMessage(_ text: String, level: MessageStore.Level, details: String? = nil) {
+        Task { @MainActor [weak self] in
+            self?.networkController?.messageStore?.show(text, level: level, details: details)
+        }
+    }
+    
+    /// Remove <name> from script/package entries of a policy payload. Jamf matches these by <id>,
+    /// and a whitespace difference in the name (e.g. a leading space stored on the server, which
+    /// the XML parser trims when reading) causes a 409 Conflict.
+    func stripItemNames(_ xml: String) -> String {
+        guard let doc = try? AEXMLDocument(xml: xml), doc.root.name == "policy" else { return xml }
+        var removed = 0
+        for path in [["scripts", "script"],
+                     ["package_configuration", "packages", "package"],
+                     ["scope", "computers", "computer"],
+                     ["scope", "computer_groups", "computer_group"]] {
+            var parent = doc.root
+            for key in path.dropLast() { parent = parent[key] }
+            guard parent.error == nil, let itemName = path.last else { continue }
+            for item in parent.children where item.name == itemName {
+                // Only strip the name when an id is present, otherwise Jamf can't resolve the item.
+                guard item["id"].error == nil, !item["id"].string.isEmpty else { continue }
+                for nameElement in item.children where nameElement.name == "name" {
+                    nameElement.removeFromParent()
+                    removed += 1
+                }
+            }
+        }
+        return removed > 0 ? doc.root.xml : xml
+    }
+    
     func sendRequestAsXML(url: URL, authToken: String, resourceType: ResourceType, xml: String, httpMethod: String ) {
         //        Request in XML format
-        let xml = xml
+        let xml = stripItemNames(xml)
         let xmldata = xml.data(using: .utf8)
         self.atSeparationLine()
         print("Running sendRequestAsXML XMLBrain function - resourceType is set as:\(resourceType)")
@@ -1190,6 +1223,17 @@ class XmlBrain: ObservableObject {
                 print("Doing processing of sendRequestAsXML:\(httpMethod)")
                 print("Data is:\(data)")
                 print("Data is:\(response)")
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    let body = String(data: data, encoding: .utf8) ?? "<non-UTF8 body>"
+                    print("sendRequestAsXML FAILED - status \(http.statusCode). Response body:\n\(body)")
+                    let statusCode = http.statusCode
+                    let context = "\(httpMethod) \(resourceType)"
+                    Task { @MainActor [weak self] in
+                        self?.networkController?.presentServerError(statusCode: statusCode, body: body, context: context)
+                    }
+                } else if httpMethod != "GET" {
+                    self.showUserMessage("\(resourceType) updated", level: .success)
+                }
                 
                 if resourceType == ResourceType.computer {
                     print("Resource type is:\(resourceType)")
@@ -1208,6 +1252,10 @@ class XmlBrain: ObservableObject {
                 }
                 //                self.appendStatus(text)
                 print(text)
+                let errText = error?.localizedDescription ?? "Unknown network error"
+                Task { @MainActor [weak self] in
+                    self?.networkController?.messageStore?.error("\(httpMethod) \(resourceType) failed: \(errText)")
+                }
             }
         }
         dataTask.resume()
@@ -1303,12 +1351,36 @@ class XmlBrain: ObservableObject {
         print("url is:\(url)")
         print("scriptName is:\(scriptName)")
         print("scriptId is:\(scriptId)")
-        let scripts = self.aexmlDoc.root["scripts"].addChild(name: "script")
-        //  print("Confirm current number of scripts as:\(numberOfScripts)")
-        //  self.aexmlDoc.root["scripts"].addChild(name: "size", value: String(describing:numberOfScripts))
-        scripts.addChild(name: "id", value: scriptId)
-        scripts.addChild(name: "name", value: scriptName)
-        scripts.addChild(name: "priority", value: "After")
+        // Always operate on the document passed in (previously this mutated self.aexmlDoc but
+        // sent xmlContent, which could diverge).
+        var scriptsElement = xmlContent.root["scripts"]
+        if scriptsElement.error != nil {
+            scriptsElement = xmlContent.root.addChild(name: "scripts")
+        }
+        // Remove any existing <size> elements - a single correct one is re-added below.
+        // (Previously an extra <size> was appended after the <script> nodes on every add,
+        // producing malformed <scripts> blocks that Jamf could mis-parse, duplicating scripts.)
+        for child in scriptsElement.children where child.name == "size" {
+            child.removeFromParent()
+        }
+        let trimmedScriptId = scriptId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedScriptName = scriptName.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Jamf returns 409 Conflict if the same script is listed twice in a policy.
+        let alreadyPresent = scriptsElement.children.contains {
+            $0.name == "script" && $0["id"].string.trimmingCharacters(in: .whitespacesAndNewlines) == trimmedScriptId
+        }
+        if alreadyPresent {
+            print("addScriptToPolicy - script id \(trimmedScriptId) (\(trimmedScriptName)) is already in policy \(policyId) - not adding duplicate")
+            self.showUserMessage("Script already in policy", level: .warning,
+                details: "\(trimmedScriptName) (ID \(trimmedScriptId)) is already attached to policy \(policyId).")
+            return
+        }
+        let scripts = scriptsElement.addChild(name: "script")
+        // Send only the id: Jamf resolves the script by id, and a name that doesn't exactly
+        // match the server's name (e.g. leading/trailing whitespace) causes a 409 Conflict.
+        scripts.addChild(name: "id", value: trimmedScriptId)
+        let trimmedPriority = priority.trimmingCharacters(in: .whitespacesAndNewlines)
+        scripts.addChild(name: "priority", value: trimmedPriority.caseInsensitiveCompare("Before") == .orderedSame ? "Before" : "After")
         
         if scriptParameter4 != "" {
             print("scriptParameter4 value supplied:\(scriptParameter4)")
@@ -1346,19 +1418,23 @@ class XmlBrain: ObservableObject {
         //        packages.addChild(name: "action", value: "Install")
         //        print("updatedContent is:\(self.aexmlDoc.root.xml)")
         
-        let scriptCount = scripts.count
+        let scriptCount = scriptsElement.children.filter { $0.name == "script" }.count
         print("scriptCount is:\(scriptCount)")
-        let updatedScriptCount = scriptCount+1
-        print("updatedScriptCount is:\(updatedScriptCount)")
-        self.aexmlDoc.root["scripts"].addChild(name: "size", value: String(describing:updatedScriptCount))
+        // Rebuild so a single, correct <size> is the first child of <scripts>
+        let existingChildren = scriptsElement.children
+        existingChildren.forEach { $0.removeFromParent() }
+        scriptsElement.addChild(name: "size", value: String(scriptCount))
+        existingChildren.forEach { _ = scriptsElement.addChild($0) }
         
         if newPolicyFlag == true {
             self.separationLine()
             print("Is new policy - not posting package data to Jamf at this point")
         } else {
             self.separationLine()
-            print("Is not new policy - posting updated package data to Jamf")
-            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: xmlContent.xml, httpMethod: "PUT")
+            print("Is not new policy - posting updated scripts data to Jamf")
+            // Only send the <scripts> section so no other part of the policy can be clobbered
+            let payload = "<policy>\(scriptsElement.xml)</policy>"
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: payload, httpMethod: "PUT")
         }
         
         print("addScriptToPolicy - updatedContent is:")
@@ -2287,21 +2363,19 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
                 
             } catch {
                 print("Fetching detailed policy as xml failed: \(error)")
+                self.showUserMessage("Failed to load policy \(eachPolicyId)", level: .error,
+                    details: "Group was not added to this policy. \(error.localizedDescription)")
+                continue
             }
             
-            let currentComputerGroups = aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
-            currentComputerGroups.addChild(name: "name", value: groupName)
-            currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
-            currentComputerGroups.addChild(name: "isSmart", value: "false")
-            let scope = aexmlDoc.root["scope"].addChild(name: "scope")
-            let allComputers = aexmlDoc.root["scope"]["all_computers"]
-            allComputers.removeFromParent()
-            scope.addChild(name: "all_computers", value: "false")
+            let scope = scopeElementEnsuringExists()
+            addComputerGroup(id: String(describing: groupId), to: scope)
+            setAllComputers(false, in: scope)
             self.separationLine()
             print("Read main XML doc - updated")
             print(aexmlDoc.xml)
-            print("Submit updated doc")
-            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+            print("Submit updated scope")
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: scopePayload(scope, sections: ["computer_groups"]), httpMethod: "PUT")
             print("The string is not empty")
         }
     }
@@ -2327,19 +2401,14 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         print(policyAsXML)
         self.readXMLDataFromStringScopingBrain(xmlContent: policyAsXML)
         
-        let currentComputerGroups = aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
-        currentComputerGroups.addChild(name: "name", value: groupName)
-        currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
-        currentComputerGroups.addChild(name: "isSmart", value: "false")
-        let scope = aexmlDoc.root["scope"].addChild(name: "scope")
-        let allComputers = aexmlDoc.root["scope"]["all_computers"]
-        allComputers.removeFromParent()
-        scope.addChild(name: "all_computers", value: "false")
+        let scope = scopeElementEnsuringExists()
+        addComputerGroup(id: String(describing: groupId), to: scope)
+        setAllComputers(false, in: scope)
         self.separationLine()
         print("Read main XML doc - updated")
         print(aexmlDoc.xml)
-        print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+        print("Submit updated scope")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: scopePayload(scope, sections: ["computer_groups"]), httpMethod: "PUT")
         print("The string is not empty")
         
     }
@@ -2430,6 +2499,15 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
                 }
                 return
             }
+            // Never store an error page (e.g. a 500 HTML status page) as the policy XML -
+            // it would replace the real policy and fail to parse.
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard (200...299).contains(statusCode) else {
+                print("getPolicyAsXML failed - HTTP \(statusCode); keeping existing policy XML")
+                self.showUserMessage("Failed to load policy XML", level: .error,
+                                     details: "Policy ID: \(policyIdString) - HTTP \(statusCode)")
+                return
+            }
 
             //            #########################################################################
             //            DEBUG - CHECK XML
@@ -2507,18 +2585,18 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
             }
         } else {
             print("Xml data is present - reading")
-            let currentComputerGroups = aexmlDoc.root["scope"]["computer_groups"].addChild(name: "computer_group")
-            currentComputerGroups.addChild(name: "name", value: groupName)
-            currentComputerGroups.addChild(name: "id", value: String(describing: groupId))
-            currentComputerGroups.addChild(name: "isSmart", value: "false")
-            let scope = aexmlDoc.root["scope"].addChild(name: "scope")
-            scope.addChild(name: "all_computers", value: "false")
+            let scopeElement = scopeElementEnsuringExists()
+            addComputerGroup(id: String(describing: groupId), to: scopeElement)
+            // Scoping to a group means "all computers" must be off.
+            setAllComputers(false, in: scopeElement)
             self.separationLine()
             print("Read main XML doc - updated")
             print(aexmlDoc.xml)
             print("Submit updated doc")
             
-            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+            // Only send all_computers + computer_groups so nothing else in the scope is re-submitted.
+            let payload = scopePayload(scopeElement, sections: ["computer_groups"])
+            self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: payload, httpMethod: "PUT")
             print("The string is not empty")
         }
     }
@@ -2565,16 +2643,80 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         print("Running addComputerToPolicyScope")
         print("computer name is:\(computerName)")
         print("computer id is:\(computerId)")
-        let computers = aexmlDoc.root["scope"]["computers"].addChild(name: "computer")
-        computers.addChild(name: "id", value: computerId)
-        computers.addChild(name: "name", value: computerName)
-        let scope = aexmlDoc.root["scope"].addChild(name: "scope")
-        scope.addChild(name: "all_computers", value: "false")
+        let trimmedId = computerId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let scope = scopeElementEnsuringExists()
+        var computersElement = scope["computers"]
+        if computersElement.error != nil {
+            computersElement = scope.addChild(name: "computers")
+        }
+        let alreadyPresent = computersElement.children.contains {
+            $0.name == "computer" && $0["id"].string.trimmingCharacters(in: .whitespacesAndNewlines) == trimmedId
+        }
+        if alreadyPresent {
+            print("addComputerToPolicyScope - computer \(trimmedId) already in scope of policy \(policyId)")
+            self.showUserMessage("Computer already in scope", level: .warning,
+                details: "\(computerName.trimmingCharacters(in: .whitespaces)) (ID \(trimmedId)) is already scoped to this policy.")
+            return
+        }
+        // Jamf matches computers by id; omitting the name avoids 409s from name mismatches.
+        let computer = computersElement.addChild(name: "computer")
+        computer.addChild(name: "id", value: trimmedId)
+        // Scoping to a specific computer means "all computers" must be off. Update in place
+        // rather than adding a nested <scope><scope> element.
+        setAllComputers(false, in: scope)
         self.separationLine()
         print("Read main XML doc - updated")
         print(aexmlDoc.xml)
-        print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+        print("Submit updated scope")
+        // Only send all_computers + the computers list so nothing else in the scope is re-submitted.
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: scopePayload(scope, sections: ["computers"]), httpMethod: "PUT")
+    }
+
+    /// Returns the policy's <scope> element, creating it if missing.
+    private func scopeElementEnsuringExists() -> AEXMLElement {
+        let scope = aexmlDoc.root["scope"]
+        if scope.error != nil {
+            return aexmlDoc.root.addChild(name: "scope")
+        }
+        return scope
+    }
+
+    /// Adds a computer group (by id) to the scope's <computer_groups>, skipping duplicates.
+    private func addComputerGroup(id: String, to scope: AEXMLElement) {
+        let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        var groups = scope["computer_groups"]
+        if groups.error != nil {
+            groups = scope.addChild(name: "computer_groups")
+        }
+        let alreadyPresent = groups.children.contains {
+            $0.name == "computer_group" && $0["id"].string.trimmingCharacters(in: .whitespacesAndNewlines) == trimmedId
+        }
+        guard !alreadyPresent else { return }
+        groups.addChild(name: "computer_group").addChild(name: "id", value: trimmedId)
+    }
+
+    /// Sets <all_computers> in the given <scope>, removing any duplicates or stray nested <scope> elements.
+    private func setAllComputers(_ enabled: Bool, in scope: AEXMLElement) {
+        for child in scope.children where child.name == "all_computers" || child.name == "scope" {
+            child.removeFromParent()
+        }
+        scope.addChild(name: "all_computers", value: enabled ? "true" : "false")
+    }
+    
+    /// Builds a minimal scope PUT body: <all_computers> plus only the named scope sections.
+    /// Jamf replaces just the sections that are sent and leaves the rest unchanged. Re-sending
+    /// the whole <scope> (departments, exclusions, limit_to_users, jss_users…) can trigger
+    /// HTTP 500 errors on the server.
+    private func scopePayload(_ scope: AEXMLElement, sections: [String]) -> String {
+        let allComputers = scope["all_computers"].string.trimmingCharacters(in: .whitespacesAndNewlines)
+        var inner = "<all_computers>\(allComputers == "true" ? "true" : "false")</all_computers>"
+        for section in sections {
+            let element = scope[section]
+            if element.error == nil {
+                inner += element.xml
+            }
+        }
+        return "<policy><scope>\(inner)</scope></policy>"
     }
     
     //    ##################################################
@@ -2591,15 +2733,13 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         self.separationLine()
         print("Running addAllComputersToScope")
-        let scope = aexmlDoc.root["scope"]
-        let currentSettingsAllComps = aexmlDoc.root["scope"]["all_computers"]
-        currentSettingsAllComps.removeFromParent()
-        scope.addChild(name: "all_computers", value: "true")
+        let scope = scopeElementEnsuringExists()
+        setAllComputers(true, in: scope)
         self.separationLine()
         print("Read main XML doc - updated")
         print(aexmlDoc.xml)
-        print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+        print("Submit updated scope")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: scopePayload(scope, sections: []), httpMethod: "PUT")
     }
     
     func disableAllComputersToScope(xmlContent: String, authToken: String, resourceType: ResourceType, server: String, policyId: String) {
@@ -2611,16 +2751,14 @@ func removeScriptFromPolicy(xmlContent: AEXMLDocument, authToken: String, server
         }
         self.readXMLDataFromStringScopingBrain(xmlContent: xmlContent)
         self.separationLine()
-        print("Running addAllComputersToScope")
-        let scope = aexmlDoc.root["scope"]
-        let currentSettingsAllComps = aexmlDoc.root["scope"]["all_computers"]
-        currentSettingsAllComps.removeFromParent()
-        scope.addChild(name: "all_computers", value: "false")
+        print("Running disableAllComputersToScope")
+        let scope = scopeElementEnsuringExists()
+        setAllComputers(false, in: scope)
         self.separationLine()
         print("Read main XML doc - updated")
         print(aexmlDoc.xml)
-        print("Submit updated doc")
-        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: self.aexmlDoc.root.xml, httpMethod: "PUT")
+        print("Submit updated scope")
+        self.sendRequestAsXML(url: url, authToken: authToken,resourceType: resourceType, xml: scopePayload(scope, sections: []), httpMethod: "PUT")
     }
     
     //    #################################################################################

@@ -116,6 +116,17 @@ import AEXML
                  if AppDebug.verbosePerItemLogging { print("Doing processing of sendRequestAsXML:\(httpMethod)") }
                  if AppDebug.verbosePerItemLogging { print("Data is:\(data)") }
                  if AppDebug.verbosePerItemLogging { print("Data is:\(response)") }
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    let body = String(data: data, encoding: .utf8) ?? ""
+                    let statusCode = http.statusCode
+                    print("ScopingBrain sendRequestAsXML FAILED - status \(statusCode). Response body:\n\(body)")
+                    let context = "\(httpMethod) \(resourceType)"
+                    Task { @MainActor [weak self] in
+                        let description = JamfErrorParser.describe(statusCode: statusCode, body: body, context: context)
+                        let short = JamfErrorParser.extractMessage(from: body)
+                        self?.messageStore?.error("\(context) failed (HTTP \(statusCode))" + (short.isEmpty ? "" : ": \(short)"), details: description)
+                    }
+                }
                 if resourceType == ResourceType.computer {
                     print("Resource type is:\(resourceType)")
                 } else if resourceType == ResourceType.policy {
@@ -162,6 +173,13 @@ import AEXML
                 //                layout.separationLine()
                 DispatchQueue.main.async { self.messageStore?.show("getPolicyAsXML failed: \(String(describing: error))", level: .error) }
                 if AppDebug.verbosePerItemLogging { print("getPolicyAsXML failed: \(String(describing: error))") }
+                return
+            }
+            // Don't store an error page (e.g. HTTP 500 HTML) as the policy XML.
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard (200...299).contains(statusCode) else {
+                DispatchQueue.main.async { self.messageStore?.show("Failed to load policy XML (HTTP \(statusCode))", level: .error) }
+                if AppDebug.verbosePerItemLogging { print("getPolicyAsXML failed - HTTP \(statusCode)") }
                 return
             }
             if let s = String(data: data, encoding: .utf8) {

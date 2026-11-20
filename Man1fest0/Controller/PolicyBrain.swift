@@ -221,6 +221,15 @@ class PolicyBrain: ObservableObject {
                 print("Doing processing of sendRequestAsXML:\(httpMethod)")
                 print("Data is:\(data)")
                 print("Data is:\(response)")
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    let body = String(data: data, encoding: .utf8) ?? ""
+                    let statusCode = http.statusCode
+                    print("PolicyBrain sendRequestAsXML FAILED - status \(statusCode). Response body:\n\(body)")
+                    let context = "\(httpMethod) \(resourceType)"
+                    Task { @MainActor [weak self] in
+                        self?.networkController?.presentServerError(statusCode: statusCode, body: body, context: context)
+                    }
+                }
                 
                 if resourceType == ResourceType.computer {
                     print("Resource type is:\(resourceType)")

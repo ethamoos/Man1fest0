@@ -526,6 +526,10 @@ import AEXML
                 print("Doing processing of sendRequestAsXML:\(httpMethod)")
                 print("Data is:\(data)")
                 print("Data is:\(response)")
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    let body = String(data: data, encoding: .utf8) ?? ""
+                    print("PushBrain sendRequestAsXML FAILED: " + JamfErrorParser.describe(statusCode: http.statusCode, body: body, context: "\(httpMethod) \(resourceType)"))
+                }
                 
             } else {
                 print("Error encountered")

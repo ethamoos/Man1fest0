@@ -6600,6 +6600,14 @@ xml = """
                 print("Data is:\(data)")
                 print("Data is:\(response)")
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                if !(200...299).contains(statusCode) {
+                    let body = String(data: data, encoding: .utf8) ?? ""
+                    print("NetBrain sendRequestAsXML FAILED - status \(statusCode). Response body:\n\(body)")
+                    let context = "\(httpMethod) \(resourceType)"
+                    Task { @MainActor [weak self] in
+                        self?.presentServerError(statusCode: statusCode, body: body, context: context)
+                    }
+                }
             } else {
                 
                 if let error = error {
