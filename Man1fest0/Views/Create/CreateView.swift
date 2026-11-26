@@ -1,11 +1,598 @@
 //
 //  CreateView.swift
+
+struct CreateBulkTriggerPolicyTabView: View {
+    private enum MatchSource: String {
+        case preferredTrigger = "preferred-trigger"
+        case policyName = "policy-name"
+        case generated = "generated"
+    }
+
+    private struct BulkTriggerMatch: Identifiable {
+        let id = UUID()
+        let softwareName: String
+        let matchedPolicyName: String
+        let matchedPolicyID: Int?
+        let selectedTrigger: String
+        let source: MatchSource
+    }
+
+    var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
+
+    @EnvironmentObject var networkController: NetBrain
+    @EnvironmentObject var layout: Layout
+
+    @AppStorage("createBulkTrigger.lastScriptID") private var lastScriptID: Int = 0
+    @AppStorage("createBulkTrigger.lastScriptName") private var lastScriptName: String = ""
+
+    @State private var isImportingFile = false
+    @State private var isWorking = false
+
+    @State private var importedFileName = ""
+    @State private var importedSoftwareNames: [String] = []
+    @State private var matches: [BulkTriggerMatch] = []
+    @State private var generatedFromUnmatched: [String] = []
+
+    @State private var selectedScriptID: Int? = nil
+    @State private var useAutoScriptInstances = true
+    @State private var manualScriptInstances = 1
+
+    @State private var newPolicyName = ""
+    @State private var createdPolicyForSheet: Policy? = nil
+
+    @State private var showCompletionAlert = false
+    @State private var completionMessage = ""
+    @State private var showCreateConfirmation = false
+
+    @State private var workflowReady = false
+    @State private var workflowStatus = "Preparing policy data…"
+
+    private let triggersPerScript = 8
+
+    private var selectedScript: ScriptClassic? {
+        networkController.scripts.first(where: { $0.jamfId == selectedScriptID })
+    }
+
+    private var uniqueTriggers: [String] {
+        var seen = Set<String>()
+        var ordered: [String] = []
+        for trigger in matches.map({ $0.selectedTrigger }).filter({ !$0.isEmpty }) {
+            if !seen.contains(trigger) {
+                seen.insert(trigger)
+                ordered.append(trigger)
+            }
+        }
+        return ordered
+    }
+
+    private var requiredScriptInstances: Int {
+        guard !uniqueTriggers.isEmpty else { return 1 }
+        return Int(ceil(Double(uniqueTriggers.count) / Double(triggersPerScript)))
+    }
+
+    private var selectedScriptInstances: Int {
+        useAutoScriptInstances ? requiredScriptInstances : manualScriptInstances
+    }
+
+    private var canCreatePolicy: Bool {
+        selectedScript != nil
+            && !uniqueTriggers.isEmpty
+            && !newPolicyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && selectedScriptInstances >= requiredScriptInstances
+    }
+
+    private var creationPreviewText: String {
+        let generatedCount = generatedFromUnmatched.count
+        let generatedNote = generatedCount == 0 ? "All imported items matched an existing policy trigger." : "\(generatedCount) item(s) were unmatched and will use generated triggers."
+        return "Policy: \(newPolicyName)\nTriggers: \(uniqueTriggers.count)\nScript instances: \(selectedScriptInstances)\n\n\(generatedNote)"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "tray.and.arrow.down")
+                Text("Bulk Trigger Policy from File")
+                    .font(.headline)
+            }
+
+            Text("Import software names from TXT/CSV, match them to existing policies, and create one trigger-runner policy.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Divider()
+
+            HStack(spacing: 10) {
+                Button(action: { isImportingFile = true }) {
+                    Label("Import TXT/CSV", systemImage: "doc.badge.plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!workflowReady)
+
+                if !importedFileName.isEmpty {
+                    Text("File: \(importedFileName)")
+                        .font(.subheadline)
+                }
+
+                Spacer()
+
+                if isWorking {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+
+            Text(workflowStatus)
+                .font(.caption)
+                .foregroundColor(workflowReady ? .secondary : .orange)
+
+            HStack(spacing: 16) {
+                Text("Software items: \(importedSoftwareNames.count)")
+                Text("Triggers prepared: \(uniqueTriggers.count)")
+                Text("Generated (unmatched): \(generatedFromUnmatched.count)")
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+
+            Divider()
+
+            LazyVGrid(columns: layout.columns, spacing: 14) {
+                Picker("Runner Script", selection: Binding(
+                    get: { selectedScriptID ?? 0 },
+                    set: { selectedScriptID = ($0 == 0 ? nil : $0) }
+                )) {
+                    Text("Select script").tag(0)
+                    ForEach(networkController.scripts.sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })) { script in
+                        Text(script.name).tag(script.jamfId)
+                    }
+                }
+
+                Toggle("Auto script instances", isOn: $useAutoScriptInstances)
+                    .toggleStyle(.switch)
+            }
+
+            if !useAutoScriptInstances {
+                Stepper("Script instances: \(manualScriptInstances)", value: $manualScriptInstances, in: 1...500)
+            } else {
+                Text("Script instances (auto): \(requiredScriptInstances)")
+                    .font(.subheadline)
+            }
+
+            if selectedScriptInstances < requiredScriptInstances {
+                Text("Increase script instances to at least \(requiredScriptInstances) to fit all triggers.")
+                    .foregroundColor(.red)
+                    .font(.caption)
+            }
+
+            TextField("Policy Name", text: $newPolicyName)
+                .textFieldStyle(.roundedBorder)
+
+            HStack(spacing: 10) {
+                Button(action: { showCreateConfirmation = true }) {
+                    Label("Review & Confirm", systemImage: "checkmark.shield")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!canCreatePolicy || isWorking)
+
+                if !lastScriptName.isEmpty {
+                    Text("Last script: \(lastScriptName)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Divider()
+
+            if !matches.isEmpty {
+                List(matches) { item in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.softwareName)
+                            .font(.body)
+                        Text("Trigger: \(item.selectedTrigger)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("Source: \(item.source.rawValue)\(item.matchedPolicyName.isEmpty ? "" : " | Policy: \(item.matchedPolicyName)")")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(minHeight: 160)
+            }
+        }
+        .padding()
+        .fileImporter(
+            isPresented: $isImportingFile,
+            allowedContentTypes: [.plainText, UTType(filenameExtension: "csv") ?? .plainText],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImportedFile(result)
+        }
+        .onAppear {
+            if newPolicyName.isEmpty {
+                newPolicyName = defaultPolicyName()
+            }
+            if selectedScriptID == nil {
+                selectedScriptID = lastScriptID == 0 ? nil : lastScriptID
+            }
+
+            Task {
+                await prepareWorkflowDataIfNeeded()
+            }
+        }
+        .onChange(of: networkController.scripts.count) { _ in
+            ensureDefaultScriptSelection()
+        }
+        .alert("Confirm New Bulk Policy", isPresented: $showCreateConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Create", role: .none) {
+                Task { await createBulkPolicy() }
+            }
+            .disabled(!canCreatePolicy)
+        } message: {
+            Text(creationPreviewText)
+        }
+        .sheet(item: $createdPolicyForSheet) { policy in
+            PolicyDetailView(server: server, policy: policy, policyID: policy.jamfId ?? 0)
+        }
+        .alert("Bulk Trigger Policy", isPresented: $showCompletionAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(completionMessage)
+        }
+    }
+
+    private func handleImportedFile(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            completionMessage = "Import failed: \(error.localizedDescription)"
+            showCompletionAlert = true
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            importedFileName = url.lastPathComponent
+
+            do {
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer {
+                    if accessed {
+                        url.stopAccessingSecurityScopedResource()
+                    }
+                }
+
+                let data = try Data(contentsOf: url)
+                guard let content = String(data: data, encoding: .utf8) else {
+                    completionMessage = "Could not read the selected file as UTF-8 text."
+                    showCompletionAlert = true
+                    return
+                }
+
+                importedSoftwareNames = parseSoftwareNames(content: content, fileExtension: url.pathExtension)
+                Task { await rebuildMatches() }
+            } catch {
+                completionMessage = "Import failed: \(error.localizedDescription)"
+                showCompletionAlert = true
+            }
+        }
+    }
+
+    private func rebuildMatches() async {
+        guard !importedSoftwareNames.isEmpty else {
+            matches = []
+            generatedFromUnmatched = []
+            return
+        }
+
+        if !workflowReady {
+            await prepareWorkflowDataIfNeeded()
+        }
+
+        isWorking = true
+        defer { isWorking = false }
+
+        let allDetails = networkController.allPoliciesDetailed.compactMap({ $0 })
+        guard !allDetails.isEmpty else {
+            completionMessage = "Policy lookup failed: detailed policies are not available yet."
+            showCompletionAlert = true
+            return
+        }
+
+        var detailedByID: [Int: PolicyDetailed] = [:]
+        for detailed in allDetails {
+            if let jamfID = detailed.general?.jamfId {
+                detailedByID[jamfID] = detailed
+            }
+        }
+
+        let candidates: [(id: Int, name: String, normalized: String, triggerOther: String)] = detailedByID.values.compactMap { detailed in
+            guard let id = detailed.general?.jamfId,
+                  let name = detailed.general?.name else { return nil }
+            let trigger = detailed.general?.triggerOther ?? ""
+            return (id, name, normalizeName(name), trigger.lowercased())
+        }
+
+        var nextMatches: [BulkTriggerMatch] = []
+        var unmatched: [String] = []
+
+        for softwareName in importedSoftwareNames {
+            let preferred = preferredTrigger(for: softwareName)
+            let normalizedSoftware = normalizeName(softwareName)
+
+            if let triggerMatch = candidates.first(where: { $0.triggerOther == preferred }) {
+                nextMatches.append(BulkTriggerMatch(
+                    softwareName: softwareName,
+                    matchedPolicyName: triggerMatch.name,
+                    matchedPolicyID: triggerMatch.id,
+                    selectedTrigger: preferred,
+                    source: .preferredTrigger
+                ))
+                continue
+            }
+
+            if let nameMatch = candidates.first(where: {
+                !$0.triggerOther.isEmpty && ($0.normalized == normalizedSoftware || $0.normalized.contains(normalizedSoftware) || normalizedSoftware.contains($0.normalized))
+            }) {
+                nextMatches.append(BulkTriggerMatch(
+                    softwareName: softwareName,
+                    matchedPolicyName: nameMatch.name,
+                    matchedPolicyID: nameMatch.id,
+                    selectedTrigger: nameMatch.triggerOther,
+                    source: .policyName
+                ))
+                continue
+            }
+
+            unmatched.append(softwareName)
+            nextMatches.append(BulkTriggerMatch(
+                softwareName: softwareName,
+                matchedPolicyName: "",
+                matchedPolicyID: nil,
+                selectedTrigger: preferred,
+                source: .generated
+            ))
+        }
+
+        matches = nextMatches
+        generatedFromUnmatched = unmatched
+    }
+
+    private func createBulkPolicy() async {
+        guard let selectedScript else {
+            completionMessage = "Please select a runner script before creating the policy."
+            showCompletionAlert = true
+            return
+        }
+        guard !uniqueTriggers.isEmpty else {
+            completionMessage = "No triggers are prepared yet. Import a TXT/CSV file first."
+            showCompletionAlert = true
+            return
+        }
+
+        isWorking = true
+        defer { isWorking = false }
+
+        let selectedInstanceCount = max(selectedScriptInstances, requiredScriptInstances)
+        let triggerChunks = uniqueTriggers.chunked(into: triggersPerScript)
+
+        var scriptPayloads: [NetBrain.PolicyScriptPayload] = []
+        for index in 0..<selectedInstanceCount {
+            let params = index < triggerChunks.count ? triggerChunks[index] : []
+            scriptPayloads.append(
+                NetBrain.PolicyScriptPayload(
+                    scriptID: selectedScript.jamfId,
+                    scriptName: selectedScript.name,
+                    parameters4to11: params
+                )
+            )
+        }
+
+        let customTrigger = generatedCustomTrigger(from: newPolicyName)
+        do {
+            let createdID = try await networkController.createBulkTriggerPolicy(
+                server: server,
+                authToken: networkController.authToken,
+                policyName: newPolicyName,
+                customTrigger: customTrigger,
+                scripts: scriptPayloads
+            )
+
+            lastScriptID = selectedScript.jamfId
+            lastScriptName = selectedScript.name
+
+            try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+
+            let unresolvedSummary: String
+            if generatedFromUnmatched.isEmpty {
+                unresolvedSummary = "All items matched existing policy triggers."
+            } else {
+                let shortList = generatedFromUnmatched.prefix(15).joined(separator: "\n")
+                let tail = generatedFromUnmatched.count > 15 ? "\n...and \(generatedFromUnmatched.count - 15) more" : ""
+                unresolvedSummary = "Generated triggers for unmatched items:\n\(shortList)\(tail)"
+            }
+
+            completionMessage = "Created policy '\(newPolicyName)'.\n\nTriggers assigned: \(uniqueTriggers.count)\nScript instances: \(selectedInstanceCount)\n\n\(unresolvedSummary)"
+            showCompletionAlert = true
+
+            if let createdID {
+                let matchedPolicy = networkController.policies.first(where: { $0.jamfId == createdID })
+                createdPolicyForSheet = matchedPolicy ?? Policy(jamfId: createdID, name: newPolicyName)
+            }
+        } catch {
+            completionMessage = "Failed to create policy: \(error.localizedDescription)"
+            showCompletionAlert = true
+        }
+    }
+
+    private func normalizeName(_ value: String) -> String {
+        value
+            .lowercased()
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
+    }
+
+    private func preferredTrigger(for softwareName: String) -> String {
+        "install\(normalizeName(softwareName))-latest"
+    }
+
+    private func generatedCustomTrigger(from policyName: String) -> String {
+        let slug = normalizeName(policyName)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMddHHmmss"
+        return "\(slug)-\(formatter.string(from: Date()))"
+    }
+
+    private func defaultPolicyName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return "Bulk Install - \(formatter.string(from: Date()))"
+    }
+
+    private func ensureDefaultScriptSelection() {
+        if selectedScriptID == nil {
+            if let preferred = networkController.scripts.first(where: { $0.jamfId == lastScriptID }) {
+                selectedScriptID = preferred.jamfId
+            } else {
+                selectedScriptID = networkController.scripts.sorted(by: {
+                    $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                }).first?.jamfId
+            }
+        }
+    }
+
+    private func prepareWorkflowDataIfNeeded() async {
+        if workflowReady { return }
+        isWorking = true
+        workflowStatus = "Preparing policy data…"
+        defer { isWorking = false }
+
+        do {
+            if networkController.scripts.isEmpty {
+                workflowStatus = "Loading scripts…"
+                try await networkController.getAllScripts()
+            }
+            ensureDefaultScriptSelection()
+
+            if networkController.policies.isEmpty {
+                workflowStatus = "Loading policies…"
+                try await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+            }
+
+            let basicPolicies = networkController.policies.isEmpty ? networkController.allPoliciesConverted : networkController.policies
+            if networkController.allPoliciesDetailed.compactMap({ $0 }).isEmpty || !networkController.fetchedDetailedPolicies {
+                workflowStatus = "Loading detailed policies for matching…"
+                try await networkController.getAllPoliciesDetailed(server: server, authToken: networkController.authToken, policies: basicPolicies)
+            }
+
+            workflowReady = true
+            workflowStatus = "Ready - import a TXT/CSV file to analyze software names."
+        } catch {
+            workflowReady = false
+            workflowStatus = "Unable to prepare data: \(error.localizedDescription)"
+            completionMessage = "Setup failed: \(error.localizedDescription)"
+            showCompletionAlert = true
+        }
+    }
+
+    private func parseSoftwareNames(content: String, fileExtension: String) -> [String] {
+        if fileExtension.lowercased() == "csv" {
+            let rows = parseCSVRows(content)
+            guard !rows.isEmpty else { return [] }
+
+            let header = rows[0].map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            let nameIndex = header.firstIndex(where: { $0 == "name" || $0 == "software" || $0 == "application" })
+
+            let dataRows: [[String]]
+            let columnIndex: Int
+            if let nameIndex {
+                dataRows = Array(rows.dropFirst())
+                columnIndex = nameIndex
+            } else {
+                dataRows = rows
+                columnIndex = 0
+            }
+
+            let parsed = dataRows.compactMap { row -> String? in
+                guard row.indices.contains(columnIndex) else { return nil }
+                let value = row[columnIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+                return value.isEmpty ? nil : value
+            }
+            return parsed.uniquedPreservingOrder()
+        }
+
+        let lines = content
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return lines.uniquedPreservingOrder()
+    }
+
+    // Lightweight CSV row parsing that supports quoted cells.
+    private func parseCSVRows(_ content: String) -> [[String]] {
+        var rows: [[String]] = []
+        var row: [String] = []
+        var cell = ""
+        var inQuotes = false
+
+        for char in content {
+            switch char {
+            case "\"":
+                inQuotes.toggle()
+            case "," where !inQuotes:
+                row.append(cell)
+                cell = ""
+            case "\n" where !inQuotes:
+                row.append(cell)
+                rows.append(row)
+                row = []
+                cell = ""
+            case "\r":
+                continue
+            default:
+                cell.append(char)
+            }
+        }
+
+        if !cell.isEmpty || !row.isEmpty {
+            row.append(cell)
+            rows.append(row)
+        }
+
+        return rows.filter { !$0.allSatisfy({ $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) }
+    }
+}
+
+private extension Array where Element == String {
+    func uniquedPreservingOrder() -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for value in self {
+            if !seen.contains(value) {
+                seen.insert(value)
+                result.append(value)
+            }
+        }
+        return result
+    }
+}
+
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else { return [] }
+        var chunks: [[Element]] = []
+        var index = 0
+        while index < count {
+            let end = Swift.min(index + size, count)
+            chunks.append(Array(self[index..<end]))
+            index += size
+        }
+        return chunks
+    }
+}
+
 //  Man1fest0
 //
 //  Created by Amos Deane on 17/11/2023.
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct CreateView: View {
     
@@ -80,6 +667,7 @@ struct CreateView: View {
     @State  var tempUUID = (UUID(uuidString: "") ?? UUID())
     
     @State private var showingWarning = false
+    @State private var selectedCreateTab = 0
         
     let columns = [
         GridItem(.fixed(200)),
@@ -138,12 +726,25 @@ struct CreateView: View {
                 //  ################################################################################
                 
                 VStack {
-                    TabView {
-                        
-                        CreateGeneralTabView(selectedFilename: $importExportController.selectedFilename)
-                            .tabItem {
-                                Label("General", systemImage: "square.and.pencil")
-                            }
+                    HStack {
+                        Text("Create Tool")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Picker("Create Tool", selection: $selectedCreateTab) {
+                            Label("General", systemImage: "square.and.pencil").tag(0)
+                            Label("Bulk Trigger Policy", systemImage: "list.bullet.clipboard").tag(1)
+                        }
+                        .pickerStyle(.menu)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+
+                    Group {
+                        if selectedCreateTab == 0 {
+                            CreateGeneralTabView(selectedFilename: $importExportController.selectedFilename)
+                        } else {
+                            CreateBulkTriggerPolicyTabView()
+                        }
                     }
                     .padding()
                 }

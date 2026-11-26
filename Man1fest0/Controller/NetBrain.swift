@@ -6089,6 +6089,293 @@ xml = """
     //    #################################################################################
     //    Create Objects - Push Policies - via XML
     //    #################################################################################
+
+    struct PolicyScriptPayload: Hashable {
+        var scriptID: Int
+        var scriptName: String
+        var parameters4to11: [String]
+    }
+
+    private func escapeXML(_ value: String) -> String {
+        var out = value
+        out = out.replacingOccurrences(of: "&", with: "&amp;")
+        out = out.replacingOccurrences(of: "<", with: "&lt;")
+        out = out.replacingOccurrences(of: ">", with: "&gt;")
+        out = out.replacingOccurrences(of: "\"", with: "&quot;")
+        out = out.replacingOccurrences(of: "'", with: "&apos;")
+        return out
+    }
+
+    private func xmlTag(_ name: String, _ value: String?) -> String {
+        let safeValue = escapeXML(value ?? "")
+        return "<\(name)>\(safeValue)</\(name)>"
+    }
+
+    private func extractPolicyIDFromCreateResponse(data: Data, response: URLResponse) -> Int? {
+        if let httpResponse = response as? HTTPURLResponse,
+           let locationHeader = httpResponse.value(forHTTPHeaderField: "Location"),
+           let idString = locationHeader.split(separator: "/").last,
+           let id = Int(idString) {
+            return id
+        }
+
+        if let xmlString = String(data: data, encoding: .utf8) {
+            let pattern = #"<id>(\d+)</id>"#
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                let fullRange = NSRange(xmlString.startIndex..<xmlString.endIndex, in: xmlString)
+                if let match = regex.firstMatch(in: xmlString, options: [], range: fullRange),
+                   let idRange = Range(match.range(at: 1), in: xmlString),
+                   let id = Int(String(xmlString[idRange])) {
+                    return id
+                }
+            }
+        }
+
+        return nil
+    }
+
+    func createBulkTriggerPolicy(server: String,
+                                 authToken: String,
+                                 policyName: String,
+                                 customTrigger: String,
+                                 scripts: [PolicyScriptPayload],
+                                 categoryID: String = "0",
+                                 categoryName: String = "",
+                                 departmentID: String = "",
+                                 departmentName: String = "",
+                                 notificationStatus: String = "true") async throws -> Int? {
+        guard !scripts.isEmpty else { throw JamfAPIError.badRequest }
+
+        let scriptsXML = scripts.map { script in
+            let params = (0..<8).map { idx -> String in
+                let tag = "parameter\(idx + 4)"
+                let value = idx < script.parameters4to11.count ? script.parameters4to11[idx] : ""
+                return "                    \(xmlTag(tag, value))"
+            }.joined(separator: "\n")
+
+            return """
+                <script>
+                    \(xmlTag("id", String(script.scriptID)))
+                    \(xmlTag("name", script.scriptName))
+                    <priority>After</priority>
+            \(params)
+                </script>
+            """
+        }.joined(separator: "\n")
+
+        let departmentScopeXML: String
+        if departmentID.isEmpty || departmentName.isEmpty {
+            departmentScopeXML = "<departments/>"
+        } else {
+            departmentScopeXML = """
+                <departments>
+                    <department>
+                        \(xmlTag("id", departmentID))
+                        \(xmlTag("name", departmentName))
+                    </department>
+                </departments>
+            """
+        }
+
+        let xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <policy>
+            <general>
+                <id>0</id>
+                \(xmlTag("name", policyName))
+                <enabled>true</enabled>
+                <trigger>EVENT</trigger>
+                <trigger_checkin>false</trigger_checkin>
+                <trigger_enrollment_complete>false</trigger_enrollment_complete>
+                <trigger_login>false</trigger_login>
+                <trigger_logout>false</trigger_logout>
+                <trigger_network_state_changed>false</trigger_network_state_changed>
+                <trigger_startup>false</trigger_startup>
+                \(xmlTag("trigger_other", customTrigger))
+                <frequency>Ongoing</frequency>
+                <retry_event>none</retry_event>
+                <retry_attempts>-1</retry_attempts>
+                <notify_on_each_failed_retry>false</notify_on_each_failed_retry>
+                <location_user_only>false</location_user_only>
+                <target_drive>/</target_drive>
+                <offline>false</offline>
+                <category>
+                    \(xmlTag("id", categoryID))
+                    \(xmlTag("name", categoryName))
+                </category>
+                <date_time_limitations>
+                    <activation_date/>
+                    <activation_date_epoch>0</activation_date_epoch>
+                    <activation_date_utc/>
+                    <expiration_date/>
+                    <expiration_date_epoch>0</expiration_date_epoch>
+                    <expiration_date_utc/>
+                    <no_execute_on/>
+                    <no_execute_start/>
+                    <no_execute_end/>
+                </date_time_limitations>
+                <network_limitations>
+                    <minimum_network_connection>No Minimum</minimum_network_connection>
+                    <any_ip_address>true</any_ip_address>
+                    <network_segments/>
+                </network_limitations>
+                <override_default_settings>
+                    <target_drive>default</target_drive>
+                    <distribution_point/>
+                    <force_afp_smb>false</force_afp_smb>
+                    <sus>default</sus>
+                    <netboot_server>current</netboot_server>
+                </override_default_settings>
+                <network_requirements>Any</network_requirements>
+                <site>
+                    <id>-1</id>
+                    <name>None</name>
+                </site>
+            </general>
+            <scope>
+                <all_computers>false</all_computers>
+                <computers/>
+                <computer_groups/>
+                <buildings/>
+                \(departmentScopeXML)
+                <limit_to_users>
+                    <user_groups/>
+                </limit_to_users>
+                <limitations>
+                    <users/>
+                    <user_groups/>
+                    <network_segments/>
+                    <ibeacons/>
+                </limitations>
+                <exclusions>
+                    <computers/>
+                    <computer_groups/>
+                    <buildings/>
+                    <departments/>
+                    <users/>
+                    <user_groups/>
+                    <network_segments/>
+                    <ibeacons/>
+                </exclusions>
+            </scope>
+            <self_service>
+                <use_for_self_service>false</use_for_self_service>
+                <self_service_display_name/>
+                <install_button_text>Install</install_button_text>
+                <reinstall_button_text>Reinstall</reinstall_button_text>
+                <self_service_description/>
+                <force_users_to_view_description>false</force_users_to_view_description>
+                <self_service_icon/>
+                <feature_on_main_page>false</feature_on_main_page>
+                <self_service_categories/>
+                <notification>\(notificationStatus)</notification>
+                <notification>Self Service</notification>
+                \(xmlTag("notification_subject", policyName))
+                <notification_message/>
+            </self_service>
+            <package_configuration>
+                <packages>
+                    <size>0</size>
+                </packages>
+            </package_configuration>
+            <scripts>
+                <size>\(scripts.count)</size>
+        \(scriptsXML)
+            </scripts>
+            <printers>
+                <size>0</size>
+                <leave_existing_default/>
+            </printers>
+            <dock_items>
+                <size>0</size>
+            </dock_items>
+            <account_maintenance>
+                <accounts>
+                    <size>0</size>
+                </accounts>
+                <directory_bindings>
+                    <size>0</size>
+                </directory_bindings>
+                <management_account>
+                    <action>doNotChange</action>
+                </management_account>
+                <open_firmware_efi_password>
+                    <of_mode>none</of_mode>
+                    <of_password_sha256 since="9.23">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</of_password_sha256>
+                </open_firmware_efi_password>
+            </account_maintenance>
+            <reboot>
+                <message>This computer will restart in 5 minutes. Please save anything you are working on and log out by choosing Log Out from the bottom of the Apple menu.</message>
+                <startup_disk>Current Startup Disk</startup_disk>
+                <specify_startup/>
+                <no_user_logged_in>Do not restart</no_user_logged_in>
+                <user_logged_in>Do not restart</user_logged_in>
+                <minutes_until_reboot>5</minutes_until_reboot>
+                <start_reboot_timer_immediately>false</start_reboot_timer_immediately>
+                <file_vault_2_reboot>false</file_vault_2_reboot>
+            </reboot>
+            <maintenance>
+                <recon>false</recon>
+                <reset_name>false</reset_name>
+                <install_all_cached_packages>false</install_all_cached_packages>
+                <heal>false</heal>
+                <prebindings>false</prebindings>
+                <permissions>false</permissions>
+                <byhost>false</byhost>
+                <system_cache>false</system_cache>
+                <user_cache>false</user_cache>
+                <verify>false</verify>
+            </maintenance>
+            <files_processes>
+                <search_by_path/>
+                <delete_file>false</delete_file>
+                <locate_file/>
+                <update_locate_database>false</update_locate_database>
+                <spotlight_search/>
+                <search_for_process/>
+                <kill_process>false</kill_process>
+                <run_command/>
+            </files_processes>
+            <user_interaction>
+                <message_start/>
+                <allow_users_to_defer>false</allow_users_to_defer>
+                <allow_deferral_until_utc/>
+                <allow_deferral_minutes>0</allow_deferral_minutes>
+                <message_finish/>
+            </user_interaction>
+            <disk_encryption>
+                <action>none</action>
+            </disk_encryption>
+        </policy>
+        """
+
+        guard let serverURL = URL(string: server) else {
+            throw JamfAPIError.badURL
+        }
+
+        let validToken = try await getValidToken(server: server)
+        self.authToken = validToken
+
+        let url = serverURL.appendingPathComponent("/JSSResource/policies/id/0")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/xml", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(validToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = xml.data(using: .utf8)
+
+        messageStore?.show("Creating bulk trigger policy…", level: .info, details: policyName, showSpinner: true)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200...299).contains(statusCode) else {
+            messageStore?.show("Failed to create policy", level: .error, details: "HTTP \(statusCode)")
+            throw JamfAPIError.http(statusCode)
+        }
+
+        let createdPolicyID = extractPolicyIDFromCreateResponse(data: data, response: response)
+        messageStore?.show("Bulk trigger policy created", level: .success, details: createdPolicyID.map { "ID \($0)" } ?? policyName)
+        return createdPolicyID
+    }
     
     
     
