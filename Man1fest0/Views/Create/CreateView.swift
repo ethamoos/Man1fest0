@@ -24,6 +24,7 @@ struct CreateBulkTriggerPolicyTabView: View {
 
     @AppStorage("createBulkTrigger.lastScriptID") private var lastScriptID: Int = 0
     @AppStorage("createBulkTrigger.lastScriptName") private var lastScriptName: String = ""
+    @AppStorage("createBulkTrigger.lastCategoryID") private var lastCategoryID: Int = -1
 
     @State private var isImportingFile = false
     @State private var isWorking = false
@@ -34,6 +35,7 @@ struct CreateBulkTriggerPolicyTabView: View {
     @State private var generatedFromUnmatched: [String] = []
 
     @State private var selectedScriptID: Int? = nil
+    @State private var selectedCategoryID: Int = -1
     @State private var useAutoScriptInstances = true
     @State private var manualScriptInstances = 1
 
@@ -51,6 +53,11 @@ struct CreateBulkTriggerPolicyTabView: View {
 
     private var selectedScript: ScriptClassic? {
         networkController.scripts.first(where: { $0.jamfId == selectedScriptID })
+    }
+
+    private var selectedCategory: Category? {
+        guard selectedCategoryID > 0 else { return nil }
+        return networkController.categories.first(where: { $0.jamfId == selectedCategoryID })
     }
 
     private var uniqueTriggers: [String] {
@@ -84,7 +91,7 @@ struct CreateBulkTriggerPolicyTabView: View {
     private var creationPreviewText: String {
         let generatedCount = generatedFromUnmatched.count
         let generatedNote = generatedCount == 0 ? "All imported items matched an existing policy trigger." : "\(generatedCount) item(s) were unmatched and will use generated triggers."
-        return "Policy: \(newPolicyName)\nTriggers: \(uniqueTriggers.count)\nScript instances: \(selectedScriptInstances)\n\n\(generatedNote)"
+        return "Policy: \(newPolicyName)\nCategory: \(selectedCategory?.name ?? "No category assigned")\nTriggers: \(uniqueTriggers.count)\nScript instances: \(selectedScriptInstances)\n\n\(generatedNote)"
     }
 
     var body: some View {
@@ -146,9 +153,16 @@ struct CreateBulkTriggerPolicyTabView: View {
                     }
                 }
 
-                Toggle("Auto script instances", isOn: $useAutoScriptInstances)
-                    .toggleStyle(.switch)
+                Picker("Category", selection: $selectedCategoryID) {
+                    Text("No category assigned").tag(-1)
+                    ForEach(networkController.categories.sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })) { category in
+                        Text(category.name).tag(category.jamfId)
+                    }
+                }
             }
+
+            Toggle("Auto script instances", isOn: $useAutoScriptInstances)
+                .toggleStyle(.switch)
 
             if !useAutoScriptInstances {
                 Stepper("Script instances: \(manualScriptInstances)", value: $manualScriptInstances, in: 1...500)
@@ -213,6 +227,9 @@ struct CreateBulkTriggerPolicyTabView: View {
             if selectedScriptID == nil {
                 selectedScriptID = lastScriptID == 0 ? nil : lastScriptID
             }
+            if selectedCategoryID == -1 {
+                selectedCategoryID = lastCategoryID
+            }
 
             Task {
                 await prepareWorkflowDataIfNeeded()
@@ -220,6 +237,9 @@ struct CreateBulkTriggerPolicyTabView: View {
         }
         .onChange(of: networkController.scripts.count) { _ in
             ensureDefaultScriptSelection()
+        }
+        .onChange(of: networkController.categories.count) { _ in
+            ensureDefaultCategorySelection()
         }
         .alert("Confirm New Bulk Policy", isPresented: $showCreateConfirmation) {
             Button("Cancel", role: .cancel) {}
@@ -390,11 +410,14 @@ struct CreateBulkTriggerPolicyTabView: View {
                 authToken: networkController.authToken,
                 policyName: newPolicyName,
                 customTrigger: customTrigger,
-                scripts: scriptPayloads
+                scripts: scriptPayloads,
+                categoryID: String(selectedCategory?.jamfId ?? -1),
+                categoryName: selectedCategory?.name ?? "No category assigned"
             )
 
             lastScriptID = selectedScript.jamfId
             lastScriptName = selectedScript.name
+            lastCategoryID = selectedCategoryID
 
             try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
 
@@ -415,7 +438,12 @@ struct CreateBulkTriggerPolicyTabView: View {
                 createdPolicyForSheet = matchedPolicy ?? Policy(jamfId: createdID, name: newPolicyName)
             }
         } catch {
-            completionMessage = "Failed to create policy: \(error.localizedDescription)"
+            let detailed = networkController.lastBulkPolicyCreateErrorMessage
+            if detailed.isEmpty {
+                completionMessage = "Failed to create policy: \(error.localizedDescription)"
+            } else {
+                completionMessage = "Failed to create policy:\n\(detailed)"
+            }
             showCompletionAlert = true
         }
     }
@@ -456,6 +484,18 @@ struct CreateBulkTriggerPolicyTabView: View {
         }
     }
 
+    private func ensureDefaultCategorySelection() {
+        let allIDs = Set(networkController.categories.map { $0.jamfId })
+        if selectedCategoryID > 0, allIDs.contains(selectedCategoryID) {
+            return
+        }
+        if lastCategoryID > 0, allIDs.contains(lastCategoryID) {
+            selectedCategoryID = lastCategoryID
+        } else {
+            selectedCategoryID = -1
+        }
+    }
+
     private func prepareWorkflowDataIfNeeded() async {
         if workflowReady { return }
         isWorking = true
@@ -468,6 +508,12 @@ struct CreateBulkTriggerPolicyTabView: View {
                 try await networkController.getAllScripts()
             }
             ensureDefaultScriptSelection()
+
+            if networkController.categories.isEmpty {
+                workflowStatus = "Loading categories…"
+                try await networkController.getAllCategories()
+            }
+            ensureDefaultCategorySelection()
 
             if networkController.policies.isEmpty {
                 workflowStatus = "Loading policies…"

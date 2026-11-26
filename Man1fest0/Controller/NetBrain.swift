@@ -606,6 +606,7 @@ extension NetBrain {
     @Published var policyDetailed: PolicyDetailed? = nil
     @Published var allPoliciesDetailed: [PolicyDetailed?] = []
     @Published var allPoliciesDetailedGeneral: [General] = []
+    @Published var lastBulkPolicyCreateErrorMessage: String = ""
 
     var singlePolicyDetailedGeneral: General? = nil
     @Published var isFetchingDetailedPolicies: Bool = false
@@ -6139,8 +6140,8 @@ xml = """
                                  policyName: String,
                                  customTrigger: String,
                                  scripts: [PolicyScriptPayload],
-                                 categoryID: String = "0",
-                                 categoryName: String = "",
+                                 categoryID: String = "-1",
+                                 categoryName: String = "No category assigned",
                                  departmentID: String = "",
                                  departmentName: String = "",
                                  notificationStatus: String = "true") async throws -> Int? {
@@ -6269,7 +6270,6 @@ xml = """
                 <feature_on_main_page>false</feature_on_main_page>
                 <self_service_categories/>
                 <notification>\(notificationStatus)</notification>
-                <notification>Self Service</notification>
                 \(xmlTag("notification_subject", policyName))
                 <notification_message/>
             </self_service>
@@ -6364,15 +6364,22 @@ xml = """
         request.setValue("Bearer \(validToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = xml.data(using: .utf8)
 
+        self.lastBulkPolicyCreateErrorMessage = ""
         messageStore?.show("Creating bulk trigger policy…", level: .info, details: policyName, showSpinner: true)
         let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(statusCode) else {
-            messageStore?.show("Failed to create policy", level: .error, details: "HTTP \(statusCode)")
+            let responseBody = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let shortBody = responseBody.isEmpty ? "(empty response body)" : String(responseBody.prefix(600))
+            let details = "HTTP \(statusCode): \(shortBody)"
+            self.lastBulkPolicyCreateErrorMessage = details
+            messageStore?.show("Failed to create policy", level: .error, details: details)
+            print("createBulkTriggerPolicy failed - \(details)")
             throw JamfAPIError.http(statusCode)
         }
 
         let createdPolicyID = extractPolicyIDFromCreateResponse(data: data, response: response)
+        self.lastBulkPolicyCreateErrorMessage = ""
         messageStore?.show("Bulk trigger policy created", level: .success, details: createdPolicyID.map { "ID \($0)" } ?? policyName)
         return createdPolicyID
     }
