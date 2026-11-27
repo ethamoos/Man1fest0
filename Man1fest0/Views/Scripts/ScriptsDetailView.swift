@@ -30,6 +30,13 @@ struct ScriptsDetailView: View {
     @State private var injectMatchText: String = ""
     @State private var injectInsertText: String = ""
     @State private var injectResultMessage: String = ""
+    @State private var injectMode: InjectMode = .newLine
+
+    enum InjectMode: String, CaseIterable, Identifiable {
+        case newLine = "On New Line"
+        case sameLine = "Same Line (directly after match)"
+        var id: String { rawValue }
+    }
 
     // Environment
     @EnvironmentObject var progress: Progress
@@ -251,9 +258,16 @@ struct ScriptsDetailView: View {
                         HStack {
                             TextField("Find line (match)", text: $injectMatchText)
                                 .textFieldStyle(.roundedBorder)
-                            TextField("Line to insert", text: $injectInsertText)
+                            TextField(injectMode == .newLine ? "Line to insert" : "Text to insert", text: $injectInsertText)
                                 .textFieldStyle(.roundedBorder)
                         }
+
+                        Picker("Insert", selection: $injectMode) {
+                            ForEach(InjectMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
 
                         HStack(spacing: 12) {
                             Button("Insert After First") {
@@ -572,8 +586,15 @@ struct ScriptsDetailView: View {
         var inserted = 0
         var lines = bodyText.components(separatedBy: "\n")
         if let idx = lines.firstIndex(where: { $0.lowercased().contains(match.lowercased()) }) {
-            lines.insert(injectInsertText, at: idx + 1)
-            inserted = 1
+            switch injectMode {
+            case .newLine:
+                lines.insert(injectInsertText, at: idx + 1)
+                inserted = 1
+            case .sameLine:
+                let result = insertInline(in: lines[idx], match: match, text: injectInsertText, allOccurrences: false)
+                lines[idx] = result.line
+                inserted = result.count
+            }
             bodyText = lines.joined(separator: "\n")
             do {
                 try await networkController.updateScript(server: server, scriptName: scriptName.isEmpty ? networkController.scriptDetailed.name : scriptName, scriptContent: bodyText, scriptId: String(scriptID), authToken: networkController.authToken, category: category, filename: filename, info: info, notes: notes)
@@ -605,8 +626,15 @@ struct ScriptsDetailView: View {
         var inserted = 0
         if !indices.isEmpty {
             for idx in indices.reversed() {
-                lines.insert(injectInsertText, at: idx + 1)
-                inserted += 1
+                switch injectMode {
+                case .newLine:
+                    lines.insert(injectInsertText, at: idx + 1)
+                    inserted += 1
+                case .sameLine:
+                    let result = insertInline(in: lines[idx], match: match, text: injectInsertText, allOccurrences: true)
+                    lines[idx] = result.line
+                    inserted += result.count
+                }
             }
             bodyText = lines.joined(separator: "\n")
             do {
@@ -620,8 +648,26 @@ struct ScriptsDetailView: View {
         }
 
         progress.endProgress()
-        injectResultMessage = "Inserted lines: \(inserted)"
+        injectResultMessage = injectMode == .newLine ? "Inserted lines: \(inserted)" : "Inserted: \(inserted)"
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { injectResultMessage = "" }
+    }
+
+    /// Inserts `text` directly after the (case-insensitive) occurrence(s) of `match` within a single line.
+    private func insertInline(in line: String, match: String, text: String, allOccurrences: Bool) -> (line: String, count: Int) {
+        var result = line
+        var count = 0
+        var searchOffset = 0
+        while searchOffset < result.count {
+            let searchStart = result.index(result.startIndex, offsetBy: searchOffset)
+            guard let range = result.range(of: match, options: .caseInsensitive, range: searchStart..<result.endIndex) else { break }
+            let insertOffset = result.distance(from: result.startIndex, to: range.upperBound)
+            result.insert(contentsOf: text, at: range.upperBound)
+            count += 1
+            if !allOccurrences { break }
+            // Continue searching after the inserted text
+            searchOffset = insertOffset + text.count
+        }
+        return (result, count)
     }
 }
 
