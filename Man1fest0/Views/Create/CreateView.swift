@@ -5,16 +5,30 @@ struct CreateBulkTriggerPolicyTabView: View {
     private enum MatchSource: String {
         case preferredTrigger = "preferred-trigger"
         case policyName = "policy-name"
+        case manualPolicy = "manual-policy"
         case generated = "generated"
+    }
+
+    private enum PayloadEditorFormat: String, CaseIterable, Identifiable {
+        case xml = "XML"
+        case json = "JSON"
+
+        var id: String { rawValue }
     }
 
     private struct BulkTriggerMatch: Identifiable {
         let id = UUID()
         let softwareName: String
-        let matchedPolicyName: String
-        let matchedPolicyID: Int?
-        let selectedTrigger: String
-        let source: MatchSource
+        var matchedPolicyName: String
+        var matchedPolicyID: Int?
+        var selectedTrigger: String
+        var source: MatchSource
+    }
+
+    private struct TriggerPolicyOption: Identifiable {
+        let id: Int
+        let name: String
+        let trigger: String
     }
 
     var server: String { UserDefaults.standard.string(forKey: "server") ?? "" }
@@ -44,7 +58,11 @@ struct CreateBulkTriggerPolicyTabView: View {
 
     @State private var showCompletionAlert = false
     @State private var completionMessage = ""
-    @State private var showCreateConfirmation = false
+    @State private var showPayloadEditor = false
+    @State private var payloadFormat: PayloadEditorFormat = .xml
+    @State private var payloadXMLText = ""
+    @State private var payloadJSONText = ""
+    @State private var payloadDraft: NetBrain.BulkTriggerPolicyDraft? = nil
 
     @State private var workflowReady = false
     @State private var workflowStatus = "Preparing policy data…"
@@ -86,6 +104,22 @@ struct CreateBulkTriggerPolicyTabView: View {
             && !uniqueTriggers.isEmpty
             && !newPolicyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && selectedScriptInstances >= requiredScriptInstances
+    }
+
+    private var triggerPolicyOptions: [TriggerPolicyOption] {
+        let details = networkController.allPoliciesDetailed.compactMap { $0 }
+        let options = details.compactMap { detailed -> TriggerPolicyOption? in
+            guard let id = detailed.general?.jamfId,
+                  let name = detailed.general?.name else { return nil }
+            let trigger = (detailed.general?.triggerOther ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trigger.isEmpty else { return nil }
+            return TriggerPolicyOption(id: id, name: name, trigger: trigger)
+        }
+        return options.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private var activePayloadTextBinding: Binding<String> {
+        payloadFormat == .xml ? $payloadXMLText : $payloadJSONText
     }
 
     private var creationPreviewText: String {
@@ -181,8 +215,8 @@ struct CreateBulkTriggerPolicyTabView: View {
                 .textFieldStyle(.roundedBorder)
 
             HStack(spacing: 10) {
-                Button(action: { showCreateConfirmation = true }) {
-                    Label("Review & Confirm", systemImage: "checkmark.shield")
+                Button(action: { Task { await preparePayloadForReview() } }) {
+                    Label("Review Payload", systemImage: "checkmark.shield")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!canCreatePolicy || isWorking)
@@ -207,6 +241,15 @@ struct CreateBulkTriggerPolicyTabView: View {
                         Text("Source: \(item.source.rawValue)\(item.matchedPolicyName.isEmpty ? "" : " | Policy: \(item.matchedPolicyName)")")
                             .font(.caption2)
                             .foregroundColor(.secondary)
+
+                        Picker("Use existing policy", selection: policySelectionBinding(for: item)) {
+                            Text("Generate new trigger").tag(0)
+                            ForEach(triggerPolicyOptions) { option in
+                                Text("\(option.name) [\(option.trigger)]").tag(option.id)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .font(.caption)
                     }
                 }
                 .frame(minHeight: 160)
@@ -241,14 +284,41 @@ struct CreateBulkTriggerPolicyTabView: View {
         .onChange(of: networkController.categories.count) { _ in
             ensureDefaultCategorySelection()
         }
-        .alert("Confirm New Bulk Policy", isPresented: $showCreateConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Create", role: .none) {
-                Task { await createBulkPolicy() }
+        .sheet(isPresented: $showPayloadEditor) {
+            NavigationView {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(creationPreviewText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Picker("Payload Format", selection: $payloadFormat) {
+                        ForEach(PayloadEditorFormat.allCases) { format in
+                            Text(format.rawValue).tag(format)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    TextEditor(text: activePayloadTextBinding)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 420)
+                        .border(Color.secondary.opacity(0.25))
+
+                    HStack {
+                        Spacer()
+                        Button("Cancel", role: .cancel) {
+                            showPayloadEditor = false
+                        }
+                        Button("Submit") {
+                            Task { await createBulkPolicy() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isWorking)
+                    }
+                }
+                .padding()
+                .navigationTitle("Review Request Payload")
             }
-            .disabled(!canCreatePolicy)
-        } message: {
-            Text(creationPreviewText)
+            .frame(minWidth: 900, minHeight: 680)
         }
         .sheet(item: $createdPolicyForSheet) { policy in
             PolicyDetailView(server: server, policy: policy, policyID: policy.jamfId ?? 0)
@@ -329,7 +399,6 @@ struct CreateBulkTriggerPolicyTabView: View {
         }
 
         var nextMatches: [BulkTriggerMatch] = []
-        var unmatched: [String] = []
 
         for softwareName in importedSoftwareNames {
             let preferred = preferredTrigger(for: softwareName)
@@ -359,7 +428,6 @@ struct CreateBulkTriggerPolicyTabView: View {
                 continue
             }
 
-            unmatched.append(softwareName)
             nextMatches.append(BulkTriggerMatch(
                 softwareName: softwareName,
                 matchedPolicyName: "",
@@ -370,10 +438,82 @@ struct CreateBulkTriggerPolicyTabView: View {
         }
 
         matches = nextMatches
-        generatedFromUnmatched = unmatched
+        syncGeneratedFromMatches()
     }
 
     private func createBulkPolicy() async {
+        guard let draft = payloadDraft else {
+            completionMessage = "Payload is not prepared yet. Please review the payload first."
+            showCompletionAlert = true
+            return
+        }
+
+        isWorking = true
+        defer { isWorking = false }
+
+        do {
+            var draftToSubmit = draft
+            let xmlToSubmit: String
+
+            if payloadFormat == .json {
+                guard let jsonData = payloadJSONText.data(using: .utf8) else {
+                    throw JamfAPIError.decode
+                }
+                draftToSubmit = try JSONDecoder().decode(NetBrain.BulkTriggerPolicyDraft.self, from: jsonData)
+                xmlToSubmit = networkController.bulkTriggerPolicyXML(from: draftToSubmit)
+                newPolicyName = draftToSubmit.policyName
+                payloadDraft = draftToSubmit
+                payloadXMLText = xmlToSubmit
+            } else {
+                xmlToSubmit = payloadXMLText
+            }
+
+            let createdID = try await networkController.createBulkTriggerPolicyFromXML(
+                server: server,
+                authToken: networkController.authToken,
+                policyNameForMessages: draftToSubmit.policyName,
+                xml: xmlToSubmit
+            )
+
+            showPayloadEditor = false
+
+            if let selectedScript {
+                lastScriptID = selectedScript.jamfId
+                lastScriptName = selectedScript.name
+            }
+
+            lastCategoryID = selectedCategoryID
+
+            try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
+
+            let unresolvedSummary: String
+            if generatedFromUnmatched.isEmpty {
+                unresolvedSummary = "All items matched existing policy triggers."
+            } else {
+                let shortList = generatedFromUnmatched.prefix(15).joined(separator: "\n")
+                let tail = generatedFromUnmatched.count > 15 ? "\n...and \(generatedFromUnmatched.count - 15) more" : ""
+                unresolvedSummary = "Generated triggers for unmatched items:\n\(shortList)\(tail)"
+            }
+
+            completionMessage = "Created policy '\(draftToSubmit.policyName)'.\n\nTriggers assigned: \(triggerCount(in: draftToSubmit))\nScript instances: \(draftToSubmit.scripts.count)\n\n\(unresolvedSummary)"
+            showCompletionAlert = true
+
+            if let createdID {
+                let matchedPolicy = networkController.policies.first(where: { $0.jamfId == createdID })
+                createdPolicyForSheet = matchedPolicy ?? Policy(jamfId: createdID, name: draftToSubmit.policyName)
+            }
+        } catch {
+            let detailed = networkController.lastBulkPolicyCreateErrorMessage
+            if detailed.isEmpty {
+                completionMessage = "Failed to create policy: \(error.localizedDescription)"
+            } else {
+                completionMessage = "Failed to create policy:\n\(detailed)"
+            }
+            showCompletionAlert = true
+        }
+    }
+
+    private func preparePayloadForReview() async {
         guard let selectedScript else {
             completionMessage = "Please select a runner script before creating the policy."
             showCompletionAlert = true
@@ -388,7 +528,6 @@ struct CreateBulkTriggerPolicyTabView: View {
         isWorking = true
         defer { isWorking = false }
 
-        // Always create the exact number of script instances required to hold all triggers.
         let selectedInstanceCount = requiredScriptInstances
         let triggerChunks = uniqueTriggers.chunked(into: triggersPerScript)
 
@@ -404,49 +543,19 @@ struct CreateBulkTriggerPolicyTabView: View {
             )
         }
 
-        let customTrigger = generatedCustomTrigger(from: newPolicyName)
-        do {
-            let createdID = try await networkController.createBulkTriggerPolicy(
-                server: server,
-                authToken: networkController.authToken,
-                policyName: newPolicyName,
-                customTrigger: customTrigger,
-                scripts: scriptPayloads,
-                categoryID: String(selectedCategory?.jamfId ?? -1),
-                categoryName: selectedCategory?.name ?? "No category assigned"
-            )
+        let draft = networkController.buildBulkTriggerPolicyDraft(
+            policyName: newPolicyName,
+            customTrigger: generatedCustomTrigger(from: newPolicyName),
+            scripts: scriptPayloads,
+            categoryID: String(selectedCategory?.jamfId ?? -1),
+            categoryName: selectedCategory?.name ?? "No category assigned"
+        )
 
-            lastScriptID = selectedScript.jamfId
-            lastScriptName = selectedScript.name
-            lastCategoryID = selectedCategoryID
-
-            try? await networkController.getAllPolicies(server: server, authToken: networkController.authToken)
-
-            let unresolvedSummary: String
-            if generatedFromUnmatched.isEmpty {
-                unresolvedSummary = "All items matched existing policy triggers."
-            } else {
-                let shortList = generatedFromUnmatched.prefix(15).joined(separator: "\n")
-                let tail = generatedFromUnmatched.count > 15 ? "\n...and \(generatedFromUnmatched.count - 15) more" : ""
-                unresolvedSummary = "Generated triggers for unmatched items:\n\(shortList)\(tail)"
-            }
-
-            completionMessage = "Created policy '\(newPolicyName)'.\n\nTriggers assigned: \(uniqueTriggers.count)\nScript instances: \(selectedInstanceCount)\n\n\(unresolvedSummary)"
-            showCompletionAlert = true
-
-            if let createdID {
-                let matchedPolicy = networkController.policies.first(where: { $0.jamfId == createdID })
-                createdPolicyForSheet = matchedPolicy ?? Policy(jamfId: createdID, name: newPolicyName)
-            }
-        } catch {
-            let detailed = networkController.lastBulkPolicyCreateErrorMessage
-            if detailed.isEmpty {
-                completionMessage = "Failed to create policy: \(error.localizedDescription)"
-            } else {
-                completionMessage = "Failed to create policy:\n\(detailed)"
-            }
-            showCompletionAlert = true
-        }
+        payloadDraft = draft
+        payloadXMLText = networkController.bulkTriggerPolicyXML(from: draft)
+        payloadJSONText = (try? networkController.bulkTriggerPolicyJSON(from: draft)) ?? "{}"
+        payloadFormat = .xml
+        showPayloadEditor = true
     }
 
     private func normalizeName(_ value: String) -> String {
@@ -494,6 +603,48 @@ struct CreateBulkTriggerPolicyTabView: View {
         } else {
             selectedCategoryID = -1
         }
+    }
+
+    private func policySelectionBinding(for item: BulkTriggerMatch) -> Binding<Int> {
+        Binding<Int>(
+            get: { item.matchedPolicyID ?? 0 },
+            set: { selectedID in
+                updatePolicySelection(matchID: item.id, selectedPolicyID: selectedID == 0 ? nil : selectedID)
+            }
+        )
+    }
+
+    private func updatePolicySelection(matchID: UUID, selectedPolicyID: Int?) {
+        guard let index = matches.firstIndex(where: { $0.id == matchID }) else { return }
+
+        if let selectedPolicyID,
+           let selected = triggerPolicyOptions.first(where: { $0.id == selectedPolicyID }) {
+            matches[index].matchedPolicyID = selected.id
+            matches[index].matchedPolicyName = selected.name
+            matches[index].selectedTrigger = selected.trigger
+            matches[index].source = .manualPolicy
+        } else {
+            matches[index].matchedPolicyID = nil
+            matches[index].matchedPolicyName = ""
+            matches[index].selectedTrigger = preferredTrigger(for: matches[index].softwareName)
+            matches[index].source = .generated
+        }
+
+        syncGeneratedFromMatches()
+    }
+
+    private func syncGeneratedFromMatches() {
+        generatedFromUnmatched = matches
+            .filter { $0.matchedPolicyID == nil }
+            .map { $0.softwareName }
+    }
+
+    private func triggerCount(in draft: NetBrain.BulkTriggerPolicyDraft) -> Int {
+        let allTriggers = draft.scripts
+            .flatMap { $0.parameters4to11 }
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return Set(allTriggers).count
     }
 
     private func prepareWorkflowDataIfNeeded() async {

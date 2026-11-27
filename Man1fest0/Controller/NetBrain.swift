@@ -6091,10 +6091,21 @@ xml = """
     //    Create Objects - Push Policies - via XML
     //    #################################################################################
 
-    struct PolicyScriptPayload: Hashable {
+    struct PolicyScriptPayload: Hashable, Codable {
         var scriptID: Int
         var scriptName: String
         var parameters4to11: [String]
+    }
+
+    struct BulkTriggerPolicyDraft: Codable {
+        var policyName: String
+        var customTrigger: String
+        var scripts: [PolicyScriptPayload]
+        var categoryID: String
+        var categoryName: String
+        var departmentID: String
+        var departmentName: String
+        var notificationStatus: String
     }
 
     private func escapeXML(_ value: String) -> String {
@@ -6135,17 +6146,28 @@ xml = """
         return nil
     }
 
-    func createBulkTriggerPolicy(server: String,
-                                 authToken: String,
-                                 policyName: String,
-                                 customTrigger: String,
-                                 scripts: [PolicyScriptPayload],
-                                 categoryID: String = "-1",
-                                 categoryName: String = "No category assigned",
-                                 departmentID: String = "",
-                                 departmentName: String = "",
-                                 notificationStatus: String = "true") async throws -> Int? {
-        guard !scripts.isEmpty else { throw JamfAPIError.badRequest }
+    func buildBulkTriggerPolicyDraft(policyName: String,
+                                     customTrigger: String,
+                                     scripts: [PolicyScriptPayload],
+                                     categoryID: String = "-1",
+                                     categoryName: String = "No category assigned",
+                                     departmentID: String = "",
+                                     departmentName: String = "",
+                                     notificationStatus: String = "true") -> BulkTriggerPolicyDraft {
+        BulkTriggerPolicyDraft(
+            policyName: policyName,
+            customTrigger: customTrigger,
+            scripts: scripts,
+            categoryID: categoryID,
+            categoryName: categoryName,
+            departmentID: departmentID,
+            departmentName: departmentName,
+            notificationStatus: notificationStatus
+        )
+    }
+
+    func bulkTriggerPolicyXML(from draft: BulkTriggerPolicyDraft) -> String {
+        let scripts = draft.scripts
 
         let scriptsXML = scripts.map { script in
             let params = (0..<8).map { idx -> String in
@@ -6165,14 +6187,14 @@ xml = """
         }.joined(separator: "\n")
 
         let departmentScopeXML: String
-        if departmentID.isEmpty || departmentName.isEmpty {
+        if draft.departmentID.isEmpty || draft.departmentName.isEmpty {
             departmentScopeXML = "<departments/>"
         } else {
             departmentScopeXML = """
                 <departments>
                     <department>
-                        \(xmlTag("id", departmentID))
-                        \(xmlTag("name", departmentName))
+                        \(xmlTag("id", draft.departmentID))
+                        \(xmlTag("name", draft.departmentName))
                     </department>
                 </departments>
             """
@@ -6183,7 +6205,7 @@ xml = """
         <policy>
             <general>
                 <id>0</id>
-                \(xmlTag("name", policyName))
+                \(xmlTag("name", draft.policyName))
                 <enabled>true</enabled>
                 <trigger>EVENT</trigger>
                 <trigger_checkin>false</trigger_checkin>
@@ -6192,7 +6214,7 @@ xml = """
                 <trigger_logout>false</trigger_logout>
                 <trigger_network_state_changed>false</trigger_network_state_changed>
                 <trigger_startup>false</trigger_startup>
-                \(xmlTag("trigger_other", customTrigger))
+                \(xmlTag("trigger_other", draft.customTrigger))
                 <frequency>Ongoing</frequency>
                 <retry_event>none</retry_event>
                 <retry_attempts>-1</retry_attempts>
@@ -6201,8 +6223,8 @@ xml = """
                 <target_drive>/</target_drive>
                 <offline>false</offline>
                 <category>
-                    \(xmlTag("id", categoryID))
-                    \(xmlTag("name", categoryName))
+                    \(xmlTag("id", draft.categoryID))
+                    \(xmlTag("name", draft.categoryName))
                 </category>
                 <date_time_limitations>
                     <activation_date/>
@@ -6269,8 +6291,8 @@ xml = """
                 <self_service_icon/>
                 <feature_on_main_page>false</feature_on_main_page>
                 <self_service_categories/>
-                <notification>\(notificationStatus)</notification>
-                \(xmlTag("notification_subject", policyName))
+                <notification>\(draft.notificationStatus)</notification>
+                \(xmlTag("notification_subject", draft.policyName))
                 <notification_message/>
             </self_service>
             <package_configuration>
@@ -6349,6 +6371,27 @@ xml = """
         </policy>
         """
 
+        return xml
+    }
+
+    func bulkTriggerPolicyJSON(from draft: BulkTriggerPolicyDraft) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(draft)
+        guard let json = String(data: data, encoding: .utf8) else {
+            throw JamfAPIError.encode
+        }
+        return json
+    }
+
+    func createBulkTriggerPolicyFromXML(server: String,
+                                        authToken: String,
+                                        policyNameForMessages: String,
+                                        xml: String) async throws -> Int? {
+        guard !xml.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw JamfAPIError.badRequest
+        }
+
         guard let serverURL = URL(string: server) else {
             throw JamfAPIError.badURL
         }
@@ -6372,7 +6415,7 @@ xml = """
         }
 
         self.lastBulkPolicyCreateErrorMessage = ""
-        messageStore?.show("Creating bulk trigger policy…", level: .info, details: policyName, showSpinner: true)
+        messageStore?.show("Creating bulk trigger policy…", level: .info, details: policyNameForMessages, showSpinner: true)
         let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(statusCode) else {
@@ -6387,8 +6430,39 @@ xml = """
 
         let createdPolicyID = extractPolicyIDFromCreateResponse(data: data, response: response)
         self.lastBulkPolicyCreateErrorMessage = ""
-        messageStore?.show("Bulk trigger policy created", level: .success, details: createdPolicyID.map { "ID \($0)" } ?? policyName)
+        messageStore?.show("Bulk trigger policy created", level: .success, details: createdPolicyID.map { "ID \($0)" } ?? policyNameForMessages)
         return createdPolicyID
+    }
+
+    func createBulkTriggerPolicy(server: String,
+                                 authToken: String,
+                                 policyName: String,
+                                 customTrigger: String,
+                                 scripts: [PolicyScriptPayload],
+                                 categoryID: String = "-1",
+                                 categoryName: String = "No category assigned",
+                                 departmentID: String = "",
+                                 departmentName: String = "",
+                                 notificationStatus: String = "true") async throws -> Int? {
+        guard !scripts.isEmpty else { throw JamfAPIError.badRequest }
+
+        let draft = buildBulkTriggerPolicyDraft(
+            policyName: policyName,
+            customTrigger: customTrigger,
+            scripts: scripts,
+            categoryID: categoryID,
+            categoryName: categoryName,
+            departmentID: departmentID,
+            departmentName: departmentName,
+            notificationStatus: notificationStatus
+        )
+        let xml = bulkTriggerPolicyXML(from: draft)
+        return try await createBulkTriggerPolicyFromXML(
+            server: server,
+            authToken: authToken,
+            policyNameForMessages: policyName,
+            xml: xml
+        )
     }
     
     
