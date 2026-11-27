@@ -133,7 +133,7 @@ struct CreateBulkTriggerPolicyTabView: View {
                 .foregroundColor(workflowReady ? .secondary : .orange)
 
             HStack(spacing: 16) {
-                Text("Software items: \(importedSoftwareNames.count)")
+                Text("Applications identified: \(importedSoftwareNames.count)")
                 Text("Triggers prepared: \(uniqueTriggers.count)")
                 Text("Generated (unmatched): \(generatedFromUnmatched.count)")
             }
@@ -388,7 +388,8 @@ struct CreateBulkTriggerPolicyTabView: View {
         isWorking = true
         defer { isWorking = false }
 
-        let selectedInstanceCount = max(selectedScriptInstances, requiredScriptInstances)
+        // Always create the exact number of script instances required to hold all triggers.
+        let selectedInstanceCount = requiredScriptInstances
         let triggerChunks = uniqueTriggers.chunked(into: triggersPerScript)
 
         var scriptPayloads: [NetBrain.PolicyScriptPayload] = []
@@ -449,10 +450,9 @@ struct CreateBulkTriggerPolicyTabView: View {
     }
 
     private func normalizeName(_ value: String) -> String {
-        value
-            .lowercased()
-            .components(separatedBy: .whitespacesAndNewlines)
-            .joined()
+        let lowered = value.lowercased()
+        let filtered = lowered.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) }
+        return String(String.UnicodeScalarView(filtered))
     }
 
     private func preferredTrigger(for softwareName: String) -> String {
@@ -541,25 +541,23 @@ struct CreateBulkTriggerPolicyTabView: View {
             let rows = parseCSVRows(content)
             guard !rows.isEmpty else { return [] }
 
-            let header = rows[0].map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-            let nameIndex = header.firstIndex(where: { $0 == "name" || $0 == "software" || $0 == "application" })
-
-            let dataRows: [[String]]
-            let columnIndex: Int
-            if let nameIndex {
-                dataRows = Array(rows.dropFirst())
-                columnIndex = nameIndex
-            } else {
-                dataRows = rows
-                columnIndex = 0
-            }
+            let header = rows[0].map { normalizedHeaderValue($0) }
+            let nameIndex = header.firstIndex(where: { ["name", "software", "application", "app"].contains($0) })
+            let dataRows = nameIndex == nil ? rows : Array(rows.dropFirst())
+            let columnIndex = nameIndex ?? 0
 
             let parsed = dataRows.compactMap { row -> String? in
                 guard row.indices.contains(columnIndex) else { return nil }
                 let value = row[columnIndex].trimmingCharacters(in: .whitespacesAndNewlines)
                 return value.isEmpty ? nil : value
             }
-            return parsed.uniquedPreservingOrder()
+            // If we did not detect a header row but the first value looks like one, drop it.
+            let deduped = parsed.uniquedPreservingOrder()
+            if let first = deduped.first,
+               ["name", "software", "application", "app"].contains(normalizedHeaderValue(first)) {
+                return Array(deduped.dropFirst())
+            }
+            return deduped
         }
 
         let lines = content
@@ -569,38 +567,70 @@ struct CreateBulkTriggerPolicyTabView: View {
         return lines.uniquedPreservingOrder()
     }
 
-    // Lightweight CSV row parsing that supports quoted cells.
+    private func normalizedHeaderValue(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\u{feff}", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+
+    // Lightweight CSV row parsing that supports quoted cells and escaped quotes.
+    // Row delimiter is always newline; this intentionally does not support multiline quoted cells.
     private func parseCSVRows(_ content: String) -> [[String]] {
         var rows: [[String]] = []
-        var row: [String] = []
-        var cell = ""
-        var inQuotes = false
+        let normalized = content.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
+        let lines = normalized.components(separatedBy: "\n")
+        let nonEmptyLines = lines.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
-        for char in content {
-            switch char {
-            case "\"":
-                inQuotes.toggle()
-            case "," where !inQuotes:
-                row.append(cell)
-                cell = ""
-            case "\n" where !inQuotes:
-                row.append(cell)
-                rows.append(row)
-                row = []
-                cell = ""
-            case "\r":
-                continue
-            default:
-                cell.append(char)
-            }
-        }
+        let delimiter: Character = {
+            guard let first = nonEmptyLines.first else { return "," }
+            let commaCount = first.filter { $0 == "," }.count
+            let semicolonCount = first.filter { $0 == ";" }.count
+            let tabCount = first.filter { $0 == "\t" }.count
+            if semicolonCount > commaCount && semicolonCount >= tabCount { return ";" }
+            if tabCount > commaCount && tabCount > semicolonCount { return "\t" }
+            return ","
+        }()
 
-        if !cell.isEmpty || !row.isEmpty {
-            row.append(cell)
-            rows.append(row)
+        for line in nonEmptyLines {
+            rows.append(parseCSVLine(line, delimiter: delimiter))
         }
 
         return rows.filter { !$0.allSatisfy({ $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) }
+    }
+
+    private func parseCSVLine(_ line: String, delimiter: Character) -> [String] {
+        var fields: [String] = []
+        var current = ""
+        var inQuotes = false
+        var index = line.startIndex
+
+        while index < line.endIndex {
+            let char = line[index]
+
+            if char == "\"" {
+                let nextIndex = line.index(after: index)
+                if inQuotes, nextIndex < line.endIndex, line[nextIndex] == "\"" {
+                    current.append("\"")
+                    index = line.index(after: nextIndex)
+                    continue
+                }
+                inQuotes.toggle()
+                index = nextIndex
+                continue
+            }
+
+            if char == delimiter, !inQuotes {
+                fields.append(current.trimmingCharacters(in: .whitespacesAndNewlines))
+                current = ""
+            } else {
+                current.append(char)
+            }
+            index = line.index(after: index)
+        }
+
+        fields.append(current.trimmingCharacters(in: .whitespacesAndNewlines))
+        return fields
     }
 }
 

@@ -6364,6 +6364,13 @@ xml = """
         request.setValue("Bearer \(validToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = xml.data(using: .utf8)
 
+        if debug_enabled {
+            separationLine()
+            print("DEBUG createBulkTriggerPolicy request XML:")
+            print(xml)
+            separationLine()
+        }
+
         self.lastBulkPolicyCreateErrorMessage = ""
         messageStore?.show("Creating bulk trigger policy…", level: .info, details: policyName, showSpinner: true)
         let (data, response) = try await URLSession.shared.data(for: request)
